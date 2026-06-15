@@ -57,8 +57,8 @@ struct TestRunnerState
     const struct Test *test;
     u32 processCosts[MAX_PROCESSES];
 
-    u8 result;
-    u8 expectedResult;
+    enum TestResult result:8;
+    enum TestResult expectedResult:8;
     bool8 expectLeaks:1;
     bool8 inBenchmark:1;
     bool8 tearDown:1;
@@ -259,7 +259,7 @@ static inline struct Benchmark BenchmarkStop(void)
 
 #define PARAMETRIZE if (gFunctionTestRunnerState->parameters++ == gFunctionTestRunnerState->runParameter)
 
-#define PARAMETRIZE_LABEL(f, label) if (gFunctionTestRunnerState->parameters++ == gFunctionTestRunnerState->runParameter && (Test_MgbaPrintf(":N%s: " f " (%d/%d)", gTestRunnerState.test->name, label, gFunctionTestRunnerState->runParameter + 1, gFunctionTestRunnerState->parameters), 1))
+#define PARAMETRIZE_LABEL(f, ...) if (gFunctionTestRunnerState->parameters++ == gFunctionTestRunnerState->runParameter && (Test_MgbaPrintf(":N%s: (%d/%d) " f, gTestRunnerState.test->name, gFunctionTestRunnerState->runParameter + 1, gFunctionTestRunnerState->parameters, __VA_ARGS__), 1))
 
 #define SET_RNG(tag, value) SetupRiggedRng(__LINE__, tag, value)
 
