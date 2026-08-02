@@ -17,9 +17,10 @@ boss's ace → heal at a rest stop → next dungeon. Losing wipes the run.
 
 - **13 dungeons × 10 floors = 130 floors.** Eight gym leaders, then Sidney,
   Phoebe, Glacia, Drake, Wallace.
-- **Four themes**: Petalburg Woods (dungeon 1, Roxanne), Granite Cave
-  (dungeon 2, Brawly), New Mauville (dungeon 3, Wattson) and Fiery Path
-  (dungeon 4, Flannery). They cycle past that until more exist.
+- **Five themes**: Petalburg Woods (dungeon 1, Roxanne), Granite Cave
+  (dungeon 2, Brawly), New Mauville (dungeon 3, Wattson), Fiery Path
+  (dungeon 4, Flannery) and Mirage Tower (dungeon 5, Norman). They cycle past
+  that until more exist.
 - Reachable from a new game, which is slimmed to name entry only.
 
 Everything lives in `src/rogue_dungeon.c` / `include/rogue_dungeon.h` plus
@@ -367,6 +368,26 @@ because every Lavaridge edge is a top-layer overlay over one shared bumpy base:
 each sliver is four quadrant copies, no hand-built entries
 (`make_fiery_slivers.py`).
 
+**Diff the candidate secondary against a tileset you have already done.** Some
+vanilla secondaries are pure art reskins of another — same metatile
+definitions, same attributes, different pixels. `gTileset_MirageTower` is one:
+411 of its 414 metatiles are byte-identical to `gTileset_Cave` and all 414
+attributes are, so the cave's whole wall table transferred verbatim and the
+cave's splice recipe produced byte-identical slivers, in sand instead of rock.
+That turned a day of mining into an afternoon. It does not generalise — a scan
+of all 95 secondaries found only `gTileset_NavelRock` even partly similar, at
+32% — but the check costs one script and is worth running first.
+
+Two traps came with it. **The reskin's own vanilla map may not use the
+convention you want**: Mirage Tower walks on `0x211` and never uses `0x201`,
+but those two ids are shared with the cave, where `0x201` is the smooth floor
+and `0x211` the hatched rock. Following vanilla would have put the rock texture
+on the walkable surface and inverted what the player learnt two dungeons
+earlier. **And identical ids are a coincidence to write down, not to rely on**
+— both tilesets happen to have exactly 414 vanilla metatiles, so both append
+their slivers at `0x39E`–`0x3A4`. The constants are spelled out separately per
+theme so either tileset can change without silently corrupting the other.
+
 **Check what the wall art is drawn against.** New Mauville's edge pieces are all
 lit strips over black, so the mass interior has to be the void metatile. Filling
 it with a wall body puts a lit edge in the middle of a dark mass.
@@ -464,8 +485,16 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
 ## 10. Known gaps
 
 1. Nothing happens after floor 130 — the boss table wraps to Roxanne.
-2. Only two themes, so they alternate past dungeon 2.
+2. Five themes against thirteen dungeons, so they cycle past dungeon 5.
 3. A full party silently declines a boss ace — no swap UI. Being unable to take
    a Champion's ace because of a spare Zubat is a bad moment.
 4. The rest stop has only a nurse. It reuses `LAYOUT_POKEMON_CENTER_1F` and is
    ready for a mart and game corner.
+5. Mirage Tower has no floor decoration, so its rooms are large flat expanses of
+   sand. The tileset's only floor variety is a pale sand drift drawn as a **3×3
+   region autotile** (`0x298`–`0x2AA`, all `MB_CAVE`), which neither
+   `RogueDecor` (1- or 2-wide swaps) nor `RogueSkirt` (south/east only) can
+   express. It wants a position-hashed blob pass — the same shape as
+   `GrassAt`'s blobs in the woods, but autotiled on exit. That pass is what
+   would stop this theme reading as a Granite Cave recolour, and it would give
+   the woods a way to draw grass patches with proper edges too.

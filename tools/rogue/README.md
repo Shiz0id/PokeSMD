@@ -33,13 +33,14 @@ their output by hand; all are idempotent.
 | `gen_starters.py` | `include/constants/rogue_dungeon_starters.h`, `starters.inc` |
 | `make_woods_stairs.py` | woods stairs art into `data/tilesets/secondary/rustboro/` |
 | `make_fiery_slivers.py` | composed 1-wide wall metatiles into `data/tilesets/secondary/lavaridge/` |
+| `make_mirage_slivers.py` | composed 1-wide wall metatiles into `data/tilesets/secondary/mirage_tower/` |
 | `compose_metatiles.py` + `append_metatiles.py` | cave sliver metatiles into `data/tilesets/secondary/cave/` |
 | `setup_dungeon_map.py` | the dungeon map's layout and `map.json` scaffolding |
 
 The tileset writers (`make_woods_stairs`, `make_fiery_slivers`,
-`compose_metatiles`+`append_metatiles`) **edit vanilla asset files**. Pulling
-upstream changes to those tilesets means taking upstream's file and re-running
-the script, not merging.
+`make_mirage_slivers`, `compose_metatiles`+`append_metatiles`) **edit vanilla
+asset files**. Pulling upstream changes to those tilesets means taking
+upstream's file and re-running the script, not merging.
 
 **Reference and analysis — read-only.**
 

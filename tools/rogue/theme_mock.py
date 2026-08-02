@@ -63,14 +63,43 @@ THEMES = {
             'SLIVER_HORZ_L': 0x3BC, 'SLIVER_HORZ_R': 0x3BD,
             'SLIVER_ISOLATED': 0x3BE,
         }),
+    # Kept in step with sDungeonThemes by hand. This entry had drifted - floor
+    # 0x21C, NORTH_MID 0x221 and three wrong corners - which is the same class
+    # of divergence that let CarveFloor paint the wrong floor for two themes.
+    # A mock that disagrees with the C is worse than no mock.
     'cave': dict(
         primary='gTileset_General', secondary='gTileset_Cave',
-        floor=0x21C, stairs=0x214,
+        floor=0x201, stairs=0x214,
         wall={
             'INTERIOR_LEFT': 0x210, 'INTERIOR_MID': 0x211, 'INTERIOR_RIGHT': 0x212,
             'FACE_LEFT': 0x218, 'FACE_MID': 0x219, 'FACE_RIGHT': 0x21A,
-            'NORTH_LEFT': 0x220, 'NORTH_MID': 0x221, 'NORTH_RIGHT': 0x222,
-            'CORNER_NW': 0x213, 'CORNER_NE': 0x214, 'CORNER_SOUTH': 0x211,
+            'NORTH_LEFT': 0x220, 'NORTH_MID': 0x209, 'NORTH_RIGHT': 0x222,
+            'CORNER_NW': 0x21B, 'CORNER_NE': 0x21C, 'CORNER_SOUTH': 0x223,
+            'SLIVER_VERT': 0x39E, 'SLIVER_HORZ': 0x39F,
+            'SLIVER_VERT_TOP': 0x3A0, 'SLIVER_VERT_BOT': 0x3A1,
+            'SLIVER_HORZ_L': 0x3A2, 'SLIVER_HORZ_R': 0x3A3,
+            'SLIVER_ISOLATED': 0x3A4,
+        }),
+    # gTileset_MirageTower is a pure art reskin of gTileset_Cave - 411 of 414
+    # metatiles byte-identical, all attributes identical - so the wall table is
+    # the cave's verbatim. The one difference is floor and interior swapping
+    # roles: vanilla Mirage Tower walks on 0x211, so 0x201 becomes the wall
+    # interior. Both are plain sand and both are MB_CAVE; keeping them distinct
+    # is what lets floor decor and wall decor be told apart later.
+    'miragetower': dict(
+        primary='gTileset_General', secondary='gTileset_MirageTower',
+        floor=0x201, stairs=0x217,      # 0x217 is a native MB_LADDER
+        # Rocks embedded in the sand mass, keyed on the wall interior the same
+        # way Fiery Path keys on 0x271. There is no floor decor: the tileset's
+        # only floor variety is the sand drift, which is a 3x3 REGION autotile
+        # and cannot be expressed as a single- or double-wide swap.
+        decor=[(0x211, 0x202, 0), (0x211, 0x203, 0), (0x211, 0x229, 0)],
+        decor_rarity=14,
+        wall={
+            'INTERIOR_LEFT': 0x210, 'INTERIOR_MID': 0x211, 'INTERIOR_RIGHT': 0x212,
+            'FACE_LEFT': 0x218, 'FACE_MID': 0x219, 'FACE_RIGHT': 0x21A,
+            'NORTH_LEFT': 0x220, 'NORTH_MID': 0x209, 'NORTH_RIGHT': 0x222,
+            'CORNER_NW': 0x21B, 'CORNER_NE': 0x21C, 'CORNER_SOUTH': 0x223,
             'SLIVER_VERT': 0x39E, 'SLIVER_HORZ': 0x39F,
             'SLIVER_VERT_TOP': 0x3A0, 'SLIVER_VERT_BOT': 0x3A1,
             'SLIVER_HORZ_L': 0x3A2, 'SLIVER_HORZ_R': 0x3A3,

@@ -122,6 +122,29 @@ static const u16 sFieryPathSpecies[] =
     SPECIES_MAGMAR,   SPECIES_MUK,      SPECIES_HOUNDOOM, SPECIES_NINETALES,
 };
 
+// The Route 111 desert's own residents, plus the two fossils that Mirage Tower
+// is famous for handing out - Lileep and Anorith come from this tower in the
+// stock game, so meeting them here is the point. Ordered weakest to strongest.
+// Deliberately shares nothing with the cave pool despite the shared tileset.
+static const u16 sMirageTowerSpecies[] =
+{
+    SPECIES_SANDSHREW, SPECIES_TRAPINCH, SPECIES_BALTOY,   SPECIES_CACNEA,
+    SPECIES_LILEEP,    SPECIES_ANORITH,  SPECIES_PHANPY,   SPECIES_RHYHORN,
+    SPECIES_SANDSLASH, SPECIES_VIBRAVA,  SPECIES_CLAYDOL,  SPECIES_CACTURNE,
+    SPECIES_DONPHAN,   SPECIES_CRADILY,  SPECIES_ARMALDO,  SPECIES_FLYGON,
+};
+
+// Rocks embedded in the sand mass, keyed on the wall interior the same way
+// Fiery Path keys on its own. No floor decor: the tileset's only floor variety
+// is the sand drift, which is a 3x3 region autotile and cannot be expressed as
+// a single- or double-wide swap.
+static const struct RogueDecor sMirageTowerDecor[] =
+{
+    { MIRAGETOWER_METATILE_WALL_INTERIOR, MIRAGETOWER_METATILE_ROCKS_A },
+    { MIRAGETOWER_METATILE_WALL_INTERIOR, MIRAGETOWER_METATILE_ROCKS_B },
+    { MIRAGETOWER_METATILE_WALL_INTERIOR, MIRAGETOWER_METATILE_BOULDER },
+};
+
 static const struct RogueDecor sFieryPathDecor[] =
 {
     { FIERYPATH_METATILE_FLOOR, FIERYPATH_METATILE_FLOOR_SPARKLE_A },
@@ -137,6 +160,7 @@ enum DungeonThemeId
     DUNGEON_THEME_CAVE,
     DUNGEON_THEME_NEWMAUVILLE,
     DUNGEON_THEME_FIERYPATH,
+    DUNGEON_THEME_MIRAGETOWER,
     DUNGEON_THEME_COUNT
 };
 
@@ -301,11 +325,56 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .species = sFieryPathSpecies,
         .speciesCount = ARRAY_COUNT(sFieryPathSpecies),
     },
+    [DUNGEON_THEME_MIRAGETOWER] =
+    {
+        .layoutId = LAYOUT_ROGUE_DUNGEON_MIRAGETOWER,
+        .generator = DUNGEON_GEN_CAVE,
+        .elevationFloor = DUNGEON_ELEVATION_FLOOR,
+        .elevationWall = DUNGEON_ELEVATION_WALL,
+        .floor = MIRAGETOWER_METATILE_FLOOR,
+        .tallGrass = 0,   // sandstone tower; encounters fire anywhere
+        .longGrass = 0,
+        .stairsDown = MIRAGETOWER_METATILE_STAIRS,
+        .stairsUp = MIRAGETOWER_METATILE_STAIRS,
+        .wall =
+        {
+            [WALL_INTERIOR_LEFT]  = MIRAGETOWER_METATILE_WALL_WEST,
+            [WALL_INTERIOR_MID]   = MIRAGETOWER_METATILE_WALL_INTERIOR,
+            [WALL_INTERIOR_RIGHT] = MIRAGETOWER_METATILE_WALL_EAST,
+            [WALL_FACE_LEFT]      = MIRAGETOWER_METATILE_WALL_FACE_L,
+            [WALL_FACE_MID]       = MIRAGETOWER_METATILE_WALL_FACE_MID,
+            [WALL_FACE_RIGHT]     = MIRAGETOWER_METATILE_WALL_FACE_R,
+            [WALL_NORTH_LEFT]     = MIRAGETOWER_METATILE_WALL_NORTH_L,
+            [WALL_NORTH_MID]      = MIRAGETOWER_METATILE_WALL_NORTH_MID,
+            [WALL_NORTH_RIGHT]    = MIRAGETOWER_METATILE_WALL_NORTH_R,
+            [WALL_CORNER_NW]      = MIRAGETOWER_METATILE_WALL_CORNER_NW,
+            [WALL_CORNER_NE]      = MIRAGETOWER_METATILE_WALL_CORNER_NE,
+            [WALL_CORNER_SOUTH]   = MIRAGETOWER_METATILE_WALL_CORNER_S,
+            [WALL_SLIVER_VERT]    = MIRAGETOWER_METATILE_SLIVER_VERT,
+            [WALL_SLIVER_HORZ]    = MIRAGETOWER_METATILE_SLIVER_HORZ,
+            [WALL_SLIVER_VERT_TOP]= MIRAGETOWER_METATILE_SLIVER_VERT_TOP,
+            [WALL_SLIVER_VERT_BOT]= MIRAGETOWER_METATILE_SLIVER_VERT_BOT,
+            [WALL_SLIVER_HORZ_L]  = MIRAGETOWER_METATILE_SLIVER_HORZ_L,
+            [WALL_SLIVER_HORZ_R]  = MIRAGETOWER_METATILE_SLIVER_HORZ_R,
+            [WALL_SLIVER_ISOLATED]= MIRAGETOWER_METATILE_SLIVER_ISOLATED,
+        },
+
+        // No skirts: this tileset's wall edges are opaque art rather than an
+        // overlay that bleeds, exactly as in the cave, which has none either.
+        .decor = sMirageTowerDecor,
+        .decorCount = ARRAY_COUNT(sMirageTowerDecor),
+        .decorRarity = 14,
+
+        .species = sMirageTowerSpecies,
+        .speciesCount = ARRAY_COUNT(sMirageTowerSpecies),
+    },
 };
 
 // Which theme each dungeon uses, following the stock game: Petalburg Woods then
-// Roxanne, Granite Cave then Brawly, New Mauville then Wattson. Beyond the
-// third they cycle until more themes exist.
+// Roxanne, Granite Cave then Brawly, New Mauville then Wattson, Fiery Path then
+// Flannery, Mirage Tower then Norman - the Go-Goggles and the Route 111 desert
+// are what sit between Lavaridge and Petalburg. Beyond the fifth they cycle
+// until more themes exist.
 static const struct RogueDungeonTheme *ThemeForFloor(u16 floor)
 {
     u32 dungeon = DungeonIndexOf(floor);

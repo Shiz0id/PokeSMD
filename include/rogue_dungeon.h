@@ -184,6 +184,60 @@
 // hole descending, which is exactly what it is.
 #define FIERYPATH_METATILE_STAIRS          0x0A7
 
+// Mirage Tower, under gTileset_General + gTileset_MirageTower. Mined from
+// MirageTower_1F/3F/4F, then found to need no mining at all: that tileset is a
+// pure ART RESKIN of gTileset_Cave. 411 of its 414 metatiles are byte-identical
+// and all 414 attributes are, so every wall id below is the cave's id doing the
+// cave's job, drawn in sandstone instead of rock. Only gTileset_NavelRock comes
+// anywhere close (32%), so this is not a trick that generalises.
+//
+// Because the definitions match, the cave's splice recipe produced slivers that
+// are byte-identical too, and they land on the same appended ids - both
+// tilesets have exactly 414 vanilla metatiles. That is a coincidence worth NOT
+// relying on: these are spelled out separately so either tileset can change
+// without silently corrupting the other theme.
+//
+// The one place this theme deliberately departs from vanilla Mirage Tower: that
+// map walks on 0x211 and never uses 0x201 at all. We use the cave's assignment
+// instead - 0x201 smooth floor, 0x211 hatched rock - because the two ids are
+// shared with the cave and inverting them here would put the rock texture on
+// the walkable surface, contradicting what the player learnt in Granite Cave.
+#define MIRAGETOWER_METATILE_FLOOR          0x201  // smooth sand, MB_CAVE
+#define MIRAGETOWER_METATILE_WALL_INTERIOR  0x211  // hatched sandstone
+
+#define MIRAGETOWER_METATILE_WALL_WEST      0x210  // floor to the west
+#define MIRAGETOWER_METATILE_WALL_EAST      0x212  // floor to the east
+#define MIRAGETOWER_METATILE_WALL_FACE_L    0x218
+#define MIRAGETOWER_METATILE_WALL_FACE_MID  0x219  // the brick face, floor south
+#define MIRAGETOWER_METATILE_WALL_FACE_R    0x21A
+#define MIRAGETOWER_METATILE_WALL_NORTH_L   0x220
+#define MIRAGETOWER_METATILE_WALL_NORTH_MID 0x209  // floor north
+#define MIRAGETOWER_METATILE_WALL_NORTH_R   0x222
+#define MIRAGETOWER_METATILE_WALL_CORNER_NW 0x21B
+#define MIRAGETOWER_METATILE_WALL_CORNER_NE 0x21C
+#define MIRAGETOWER_METATILE_WALL_CORNER_S  0x223
+
+// Composed by tools/rogue/make_mirage_slivers.py, appended after the 414
+// vanilla Mirage Tower metatiles. Same seven cases as the cave, and nothing
+// native to splice against - the tower's own walls are never one block thick.
+#define MIRAGETOWER_METATILE_SLIVER_VERT     0x39E
+#define MIRAGETOWER_METATILE_SLIVER_HORZ     0x39F
+#define MIRAGETOWER_METATILE_SLIVER_VERT_TOP 0x3A0
+#define MIRAGETOWER_METATILE_SLIVER_VERT_BOT 0x3A1
+#define MIRAGETOWER_METATILE_SLIVER_HORZ_L   0x3A2
+#define MIRAGETOWER_METATILE_SLIVER_HORZ_R   0x3A3
+#define MIRAGETOWER_METATILE_SLIVER_ISOLATED 0x3A4
+
+// Rocks embedded in the sand mass. Drop-in swaps for the wall interior, so they
+// keep the collision they replace.
+#define MIRAGETOWER_METATILE_ROCKS_A        0x202  // a pair of boulders
+#define MIRAGETOWER_METATILE_ROCKS_B        0x203  // a cluster of four
+#define MIRAGETOWER_METATILE_BOULDER        0x229  // one large stone
+
+// A native MB_LADDER, unlike the cave's 0x214 - the tower has its own wooden
+// ladder art and it reads correctly against sand.
+#define MIRAGETOWER_METATILE_STAIRS         0x217
+
 // Composed by tools/rogue/make_woods_stairs.py and appended to the Rustboro
 // secondary tileset: earth steps in a grass-cornered opening.
 //
