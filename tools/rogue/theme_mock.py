@@ -29,6 +29,9 @@ THEMES = {
     'newmauville': dict(
         primary='gTileset_General', secondary='gTileset_BikeShop',
         floor=0x210, stairs=0x0AF,
+        shadowN=0x22F, shadowW=0x27D, shadowNW=0x275,
+        decor=[(0x227, v) for v in (0x277, 0x2C0, 0x2B2, 0x2B4, 0x2B3)],
+        decor_rarity=12,
         wall={
             'INTERIOR_LEFT': 0x272, 'INTERIOR_MID': 0x208, 'INTERIOR_RIGHT': 0x270,
             'FACE_LEFT': 0x294, 'FACE_MID': 0x227, 'FACE_RIGHT': 0x293,
@@ -95,7 +98,18 @@ def carve(seed):
     return solid, rooms
 
 
-def paint(solid, theme):
+def decor_hash(seed, x, y):
+    """The same hash as DecorHash() in src/rogue_dungeon.c."""
+    h = (seed * 2654435761) & 0xFFFFFFFF
+    h ^= ((x + 1) * 40503) & 0xFFFFFFFF
+    h ^= ((y + 1) * 24593) & 0xFFFFFFFF
+    h ^= h >> 13
+    h = (h * 2246822519) & 0xFFFFFFFF
+    h ^= h >> 15
+    return h & 0xFFFF
+
+
+def paint(solid, theme, seed=0):
     """A direct transcription of PaintWalls() in src/rogue_dungeon.c."""
     wall = theme['wall']
     out = [[theme['floor']] * W for _ in range(H)]
@@ -135,6 +149,36 @@ def paint(solid, theme):
                 slot = 'INTERIOR_MID'
             out[y][x] = wall[slot]
             used[slot] = used.get(slot, 0) + 1
+
+    # Walls cast onto the floor below and to the right of them, so a room reads
+    # as a room rather than a flat cutout. Deterministic, not decoration.
+    if theme.get('shadowN'):
+        for y in range(H):
+            for x in range(W):
+                if is_wall(x, y):
+                    continue
+                n, w = is_wall(x, y - 1), is_wall(x - 1, y)
+                if n and w:
+                    out[y][x] = theme['shadowNW']
+                elif n:
+                    out[y][x] = theme['shadowN']
+                elif w:
+                    out[y][x] = theme['shadowW']
+                elif is_wall(x - 1, y - 1):
+                    out[y][x] = theme['shadowNW']
+
+    # Cosmetic wall swaps, position-hashed exactly as ApplyWallDecor does.
+    if theme.get('decor') and theme.get('decor_rarity'):
+        for y in range(H):
+            for x in range(W):
+                if not is_wall(x, y):
+                    continue
+                hsh = decor_hash(seed, x, y)
+                if hsh % theme['decor_rarity']:
+                    continue
+                hits = [v for b, v in theme['decor'] if b == out[y][x]]
+                if hits:
+                    out[y][x] = hits[(hsh >> 8) % len(hits)]
     return out, used
 
 
@@ -153,7 +197,7 @@ def main(name):
     panels, totals = [], {}
     for seed in (11, 29):
         solid, rooms = carve(seed)
-        grid, used = paint(solid, theme)
+        grid, used = paint(solid, theme, seed)
         if theme.get('stairs') and rooms:          # as PrepareFloor places it
             rx, ry, rw, rh = rooms[-1]
             grid[ry + rh // 2][rx + rw // 2] = theme['stairs']

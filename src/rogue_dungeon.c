@@ -84,6 +84,18 @@ static const u16 sNewMauvilleSpecies[] =
     SPECIES_MANECTRIC, SPECIES_RAICHU,   SPECIES_ELECTABUZZ, SPECIES_AMPHAROS,
 };
 
+// Drop-in swaps for the New Mauville wall band. Vanilla interleaves these along
+// a run, which is why the wall mining came back undecisive: the runners up were
+// never noise, they were this set.
+static const struct RogueDecor sNewMauvilleDecor[] =
+{
+    { NEWMAUVILLE_METATILE_WALL_BAND, NEWMAUVILLE_METATILE_WALL_VENT },
+    { NEWMAUVILLE_METATILE_WALL_BAND, NEWMAUVILLE_METATILE_WALL_CRATE },
+    { NEWMAUVILLE_METATILE_WALL_BAND, NEWMAUVILLE_METATILE_WALL_CRATE_LOW },
+    { NEWMAUVILLE_METATILE_WALL_BAND, NEWMAUVILLE_METATILE_WALL_COUNTER },
+    { NEWMAUVILLE_METATILE_WALL_BAND, NEWMAUVILLE_METATILE_WALL_BOXES },
+};
+
 enum DungeonThemeId
 {
     DUNGEON_THEME_WOODS,
@@ -190,6 +202,17 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [WALL_CORNER_NE]      = NEWMAUVILLE_METATILE_VOID,
             [WALL_CORNER_SOUTH]   = NEWMAUVILLE_METATILE_VOID,
         },
+        .shadowNorth  = NEWMAUVILLE_METATILE_FLOOR_SHADOW_N,
+        .shadowWest   = NEWMAUVILLE_METATILE_FLOOR_SHADOW_W,
+        .shadowCorner = NEWMAUVILLE_METATILE_FLOOR_SHADOW_NW,
+
+        // Sparse on purpose. Vanilla is dense because it is a designed
+        // facility; a generated floor read for stairs and trainers wants the
+        // wall mostly plain.
+        .decor = sNewMauvilleDecor,
+        .decorCount = ARRAY_COUNT(sNewMauvilleDecor),
+        .decorRarity = 12,
+
         .species = sNewMauvilleSpecies,
         .speciesCount = ARRAY_COUNT(sNewMauvilleSpecies),
     },
@@ -524,6 +547,123 @@ static bool8 IsWallAt(const u16 *map, s32 x, s32 y)
             & MAPGRID_COLLISION_MASK) != 0;
 }
 
+static u16 GetBlockMetatile(const u16 *map, s32 x, s32 y)
+{
+    if (x < 0 || y < 0 || x >= DUNGEON_WIDTH || y >= DUNGEON_HEIGHT)
+        return 0;
+    return map[(y + MAP_OFFSET) * gBackupMapLayout.width + (x + MAP_OFFSET)]
+           & MAPGRID_METATILE_ID_MASK;
+}
+
+// Cosmetic passes are keyed on position and seed rather than drawn from the
+// dungeon RNG. They run in WriteFloorBlocks, which can repaint a floor without
+// PrepareFloor having run again; consuming RNG there would leave the state
+// dependent on how the player arrived, and a floor would redecorate itself.
+static u16 DecorHash(u16 seed, s32 x, s32 y)
+{
+    u32 h = (u32)seed * 2654435761u;
+
+    h ^= (u32)(x + 1) * 40503u;
+    h ^= (u32)(y + 1) * 24593u;
+    h ^= h >> 13;
+    h *= 2246822519u;
+    h ^= h >> 15;
+    return (u16)h;
+}
+
+// Floor next to a wall picks up its shadow. Deterministic - this is structure,
+// not decoration, and every floor block that qualifies gets it.
+static void ApplyFloorShading(u16 *map, const struct RogueDungeonTheme *theme)
+{
+    s32 x, y;
+
+    if (theme->shadowNorth == 0)
+        return;
+
+    for (y = 0; y < DUNGEON_HEIGHT; y++)
+    {
+        for (x = 0; x < DUNGEON_WIDTH; x++)
+        {
+            bool8 north, west;
+            u16 metatile;
+
+            if (IsWallAt(map, x, y))
+                continue;
+
+            north = IsWallAt(map, x, y - 1);
+            west  = IsWallAt(map, x - 1, y);
+
+            if (north && west)
+                metatile = theme->shadowCorner;
+            else if (north)
+                metatile = theme->shadowNorth;
+            else if (west)
+                metatile = theme->shadowWest;
+            else if (IsWallAt(map, x - 1, y - 1))
+                metatile = theme->shadowCorner;   // only the corner catches it
+            else
+                continue;
+
+            SetBlock(map, x, y, MakeBlock(metatile, 0, theme->elevationFloor));
+        }
+    }
+}
+
+// Swaps the occasional wall block for a decorated variant of the same metatile.
+// Only wall is touched and collision is preserved, so this can never change
+// what is reachable.
+static void ApplyWallDecor(u16 *map, const struct RogueDungeonTheme *theme,
+                           u16 seed)
+{
+    s32 x, y;
+    u32 i;
+
+    if (theme->decorCount == 0 || theme->decorRarity == 0)
+        return;
+
+    for (y = 0; y < DUNGEON_HEIGHT; y++)
+    {
+        for (x = 0; x < DUNGEON_WIDTH; x++)
+        {
+            u16 hash, metatile;
+            u32 matches = 0, pick;
+
+            if (!IsWallAt(map, x, y))
+                continue;
+
+            hash = DecorHash(seed, x, y);
+            if (hash % theme->decorRarity != 0)
+                continue;
+
+            metatile = GetBlockMetatile(map, x, y);
+
+            for (i = 0; i < theme->decorCount; i++)
+            {
+                if (theme->decor[i].base == metatile)
+                    matches++;
+            }
+            if (matches == 0)
+                continue;
+
+            // A second draw off the same hash, so which variant lands does not
+            // correlate with whether one lands at all.
+            pick = (hash >> 8) % matches;
+            for (i = 0; i < theme->decorCount; i++)
+            {
+                if (theme->decor[i].base != metatile)
+                    continue;
+                if (pick-- == 0)
+                {
+                    SetBlock(map, x, y,
+                             MakeBlock(theme->decor[i].variant, 1,
+                                       theme->elevationWall));
+                    break;
+                }
+            }
+        }
+    }
+}
+
 // Second pass over the carved grid, choosing each wall's art from its
 // neighbours. Must run after all carving is done.
 static void ApplyWallAutotiling(u16 *map, const struct RogueDungeonTheme *theme)
@@ -623,7 +763,15 @@ static void ApplyWallAutotiling(u16 *map, const struct RogueDungeonTheme *theme)
             SetBlock(map, x, y, MakeBlock(metatile, 1, theme->elevationWall));
         }
     }
+
+    // Both are cosmetic and both belong here rather than at the call sites:
+    // arena floors return early from WriteFloorBlocks, and this is the one
+    // point every cave-generator path passes through. Running before the stairs
+    // are placed also means neither can paint over them.
+    ApplyFloorShading(map, theme);
+    ApplyWallDecor(map, theme, VarGet(VAR_ROGUE_DUNGEON_SEED));
 }
+
 
 static bool8 RoomsOverlap(const struct DungeonRoom *a, const struct DungeonRoom *b)
 {

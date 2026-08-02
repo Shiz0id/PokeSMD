@@ -57,7 +57,7 @@ tools it turns on:
 
 | script | purpose |
 |---|---|
-| `theme_mock.py` | render a candidate theme table through a transcription of `PaintWalls()`, before writing any C |
+| `theme_mock.py` | render a candidate theme table through a transcription of `PaintWalls()`, `ApplyFloorShading()` and `ApplyWallDecor()`, before writing any C |
 | `add_theme_layout.py` | create the donor layout and append it to `layouts.json` |
 
 **Verification — run these after touching the generator.**

@@ -114,6 +114,21 @@
 #define NEWMAUVILLE_METATILE_WALL_PILLAR_TOP 0x288
 #define NEWMAUVILLE_METATILE_WALL_PILLAR_BOT 0x298
 
+// Light falls from the top left, so a wall shades the floor below it and to its
+// right. Derived from NewMauville_Inside: floor with a wall to the north is
+// 0x22F 40% of the time, to the west 0x27D 67%, diagonally 0x275 40%.
+#define NEWMAUVILLE_METATILE_FLOOR_SHADOW_N  0x22F
+#define NEWMAUVILLE_METATILE_FLOOR_SHADOW_W  0x27D
+#define NEWMAUVILLE_METATILE_FLOOR_SHADOW_NW 0x275
+
+// Wall decoration. All are drop-in replacements for the wall band, so they keep
+// the collision they replace. Vanilla interleaves these along a wall run.
+#define NEWMAUVILLE_METATILE_WALL_VENT       0x277
+#define NEWMAUVILLE_METATILE_WALL_CRATE      0x2C0
+#define NEWMAUVILLE_METATILE_WALL_CRATE_LOW  0x2B2
+#define NEWMAUVILLE_METATILE_WALL_COUNTER    0x2B4
+#define NEWMAUVILLE_METATILE_WALL_BOXES      0x2B3
+
 // The facility tileset has no stairs of its own, but 0x0AF lives in the primary
 // and so is available under any pair. Grey steps read as a service stairwell
 // here, where the same art would be a grey stripe in the woods.
@@ -164,6 +179,16 @@ enum DungeonWallSlot
 
 enum DungeonStampCorner { STAMP_TL, STAMP_TR, STAMP_BL, STAMP_BR, STAMP_COUNT };
 
+// One cosmetic wall swap: wherever `base` was painted, `variant` may replace it.
+// Keyed on the painted metatile rather than on a wall slot, so a variant that
+// suits several slots needs only one entry, and a theme whose slots share a
+// metatile cannot decorate one of them by accident.
+struct RogueDecor
+{
+    u16 base;
+    u16 variant;
+};
+
 struct RogueDungeonTheme
 {
     u16 layoutId;
@@ -179,6 +204,18 @@ struct RogueDungeonTheme
 
     u16 wall[WALL_SLOT_COUNT];  // DUNGEON_GEN_CAVE only
     u16 stamp[STAMP_COUNT];     // DUNGEON_GEN_WOODS only
+
+    // Floor directly below or right of a wall is shaded, so a room reads as a
+    // room rather than a flat cutout. All three zero opts the theme out.
+    u16 shadowNorth;   // wall above
+    u16 shadowWest;    // wall to the left
+    u16 shadowCorner;  // both, or only diagonally above-left
+
+    // Cosmetic swaps applied to already-painted wall blocks. Collision is not
+    // touched, so decoration can never affect connectivity.
+    const struct RogueDecor *decor;
+    u8 decorCount;
+    u8 decorRarity;    // 1 in N eligible blocks; 0 disables
 
     const u16 *species;
     u8 speciesCount;

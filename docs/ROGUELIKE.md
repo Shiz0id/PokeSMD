@@ -345,6 +345,44 @@ sliver cases.
 lit strips over black, so the mass interior has to be the void metatile. Filling
 it with a wall body puts a lit edge in the middle of a dark mass.
 
+### Shading and decoration
+
+Two more passes run at the end of `ApplyWallAutotiling`, both optional per theme
+and both leaving collision alone.
+
+**`ApplyFloorShading` is structure, not decoration.** Vanilla lights its maps
+from the top left, so a wall shades the floor below it and to its right. Without
+it a room is a flat cutout; with it the room reads as a room. It is
+deterministic — every floor block that qualifies gets it. Three fields:
+`shadowNorth`, `shadowWest`, `shadowCorner`; all zero opts out.
+
+Find the tiles by censusing floor blocks by which neighbours are solid, not by
+eye — the shading tile looks like an ordinary floor variant on a contact sheet.
+In New Mauville: floor with a wall north is `0x22F` 40% of the time, west
+`0x27D` 67%, diagonal `0x275` 40%.
+
+**`ApplyWallDecor` swaps the occasional wall block for a decorated variant.**
+Keyed on the *painted metatile*, not the wall slot, so one entry covers every
+slot sharing that metatile. Because only wall is touched and collision is
+preserved, decoration can never change what is reachable — that is the whole
+reason it is limited to walls. Solid props standing on floor could wall off a
+corridor or bury the stairs, and are deliberately not supported.
+
+`decorRarity` is 1-in-N; New Mauville uses 12, landing 6–15% of wall-band blocks
+depending on the floor. Vanilla is far denser because it is a designed facility;
+a generated floor being scanned for stairs and trainers wants the wall mostly
+plain.
+
+**The decoration lists come free from the wall mining.** `derive_wall_table.py`
+reports the runners-up per slot, and on a decorated vanilla map those runners-up
+*are* the decoration set — the same data that makes the wall table look
+undecisive.
+
+**Both passes are position-hashed, not drawn from the dungeon RNG.**
+`WriteFloorBlocks` can repaint a floor without `PrepareFloor` having run again,
+so consuming RNG there would leave the state dependent on how the player arrived
+and a floor would redecorate itself on re-entry.
+
 ---
 
 ## 8. Tooling
