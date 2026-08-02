@@ -262,6 +262,12 @@ struct RogueDungeonTheme
     u16 shadowWest;    // wall to the left
     u16 shadowCorner;  // both, or only diagonally above-left
 
+    // 0 paints every qualifying block - correct for a tileset whose art is a
+    // true directional shadow (New Mauville). N paints 1 in N, position-hashed
+    // - for a tileset whose "shadow" is really scattered rubble (Fiery Path),
+    // where a deterministic band reads as a second floor colour.
+    u8 shadowRarity;
+
     // Cosmetic swaps applied to already-painted wall blocks. Collision is not
     // touched, so decoration can never affect connectivity.
     const struct RogueDecor *decor;

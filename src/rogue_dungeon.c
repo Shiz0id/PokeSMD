@@ -271,7 +271,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
 
         .shadowNorth  = FIERYPATH_METATILE_FLOOR_SHADOW_N,
         .shadowWest   = 0,
-        .shadowCorner = FIERYPATH_METATILE_FLOOR_SHADOW_N,
+        .shadowCorner = 0,
+        .shadowRarity = 5,   // vanilla scatters it, roughly 1 in 5
 
         .decor = sFieryPathDecor,
         .decorCount = ARRAY_COUNT(sFieryPathDecor),
@@ -635,9 +636,13 @@ static u16 DecorHash(u16 seed, s32 x, s32 y)
     return (u16)h;
 }
 
-// Floor next to a wall picks up its shadow. Deterministic - this is structure,
-// not decoration, and every floor block that qualifies gets it.
-static void ApplyFloorShading(u16 *map, const struct RogueDungeonTheme *theme)
+// Floor next to a wall picks up its shadow. With shadowRarity 0 every
+// qualifying block gets it - correct when the art is a true directional shadow.
+// A nonzero rarity thins it to scattered rubble; vanilla Fiery Path puts 0x269
+// under roughly 1 in 5 of its north-wall floor tiles, and painting it as a
+// solid band read as a second floor colour.
+static void ApplyFloorShading(u16 *map, const struct RogueDungeonTheme *theme,
+                              u16 seed)
 {
     s32 x, y;
 
@@ -672,6 +677,12 @@ static void ApplyFloorShading(u16 *map, const struct RogueDungeonTheme *theme)
             // A theme may have art for only some directions - Fiery Path has a
             // north shadow but nothing for west, because its light falls flat.
             if (metatile == 0)
+                continue;
+
+            // Salted so thinning does not correlate with the decor pass, which
+            // hashes the same positions.
+            if (theme->shadowRarity != 0
+             && DecorHash(seed ^ 0x5AD0, x, y) % theme->shadowRarity != 0)
                 continue;
 
             SetBlock(map, x, y, MakeBlock(metatile, 0, theme->elevationFloor));
@@ -852,7 +863,7 @@ static void ApplyWallAutotiling(u16 *map, const struct RogueDungeonTheme *theme)
     // arena floors return early from WriteFloorBlocks, and this is the one
     // point every cave-generator path passes through. Running before the stairs
     // are placed also means neither can paint over them.
-    ApplyFloorShading(map, theme);
+    ApplyFloorShading(map, theme, VarGet(VAR_ROGUE_DUNGEON_SEED));
     ApplyDecor(map, theme, VarGet(VAR_ROGUE_DUNGEON_SEED));
 }
 

@@ -46,7 +46,7 @@ THEMES = {
         primary='gTileset_General', secondary='gTileset_Lavaridge',
         floor=0x308, stairs=0x0A7,
         # Only a north shadow exists in this tileset; the red rock is matte.
-        shadowN=0x269, shadowW=0, shadowNW=0x269,
+        shadowN=0x269, shadowW=0, shadowNW=0, shadow_rarity=5,
         decor=[(0x308, 0x310, 0), (0x308, 0x311, 0),   # ember sparkle floors
                (0x271, 0x268, 0), (0x271, 0x26A, 0),   # embedded rocks
                (0x271, 0x30D, 0)],                     # boulder
@@ -187,6 +187,9 @@ def paint(solid, theme, seed=0):
                     m = theme['shadowNW']
                 else:
                     m = 0
+                if m and theme.get('shadow_rarity'):
+                    if decor_hash(seed ^ 0x5AD0, x, y) % theme['shadow_rarity']:
+                        m = 0
                 if m:
                     out[y][x] = m
 
