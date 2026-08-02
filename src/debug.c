@@ -74,6 +74,7 @@
 #include "vs_seeker.h"
 #include "load_save.h"
 #include "battle_partner.h"
+#include "rogue_dungeon.h"
 
 enum FollowerNPCCreateDebugMenu
 {
@@ -278,6 +279,8 @@ static void DebugAction_Util_Weather(u8 taskId);
 static void DebugAction_Util_Weather_SelectId(u8 taskId);
 static void DebugAction_Util_WatchCredits(u8 taskId);
 static void DebugAction_Util_CheatStart(u8 taskId);
+static void DebugAction_Util_RogueFloor(u8 taskId);
+static void DebugAction_Util_RogueFloor_SelectFloor(u8 taskId);
 
 static void DebugAction_TimeMenu_ChangeTimeOfDay(u8 taskId);
 static void DebugAction_TimeMenu_ChangeWeekdays(u8 taskId);
@@ -439,6 +442,8 @@ static const u8 sDebugText_Util_WarpToMap_SelectMap[] =      _("Map: {STR_VAR_1}
 static const u8 sDebugText_Util_WarpToMap_SelectWarp[] =     _("Warp:{CLEAR_TO 90}\n{STR_VAR_1}{CLEAR_TO 90}\n{CLEAR_TO 90}\n{STR_VAR_3}{CLEAR_TO 90}");
 static const u8 sDebugText_Util_WarpToMap_SelMax[] =         _("{STR_VAR_1} / {STR_VAR_2}");
 static const u8 sDebugText_Util_Weather_ID[] =               _("Weather ID: {STR_VAR_3}\n{STR_VAR_1}\n{STR_VAR_2}");
+static const u8 sDebugText_Util_RogueFloor[] =               _("Floor: {STR_VAR_1}\n{STR_VAR_2}\n{STR_VAR_3}");
+static const u8 sDebugText_Util_RogueFloor_OfTotal[] =       _("{STR_VAR_1} / {STR_VAR_2}");
 
 //Time Menu
 
@@ -581,6 +586,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
 {
     { COMPOUND_STRING("Fly to map…"),       DebugAction_Util_Fly },
     { COMPOUND_STRING("Warp to map warp…"), DebugAction_Util_Warp_Warp },
+    { COMPOUND_STRING("Rogue floor warp…"), DebugAction_Util_RogueFloor },
     { COMPOUND_STRING("Set weather…"),      DebugAction_Util_Weather },
     { COMPOUND_STRING("Font Test…"),        DebugAction_ExecuteScript, Debug_EventScript_FontTest },
     { COMPOUND_STRING("Time Functions…"),   DebugAction_OpenSubMenu, sDebugMenu_Actions_TimeMenu, },
@@ -1704,6 +1710,85 @@ static void DebugAction_Util_Weather_SelectId(u8 taskId)
             gTasks[taskId].data[5] = gTasks[taskId].tInput;
             SetWeather(gTasks[taskId].data[5]);
         }
+    }
+    else if (JOY_NEW(B_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        DebugAction_DestroyExtraWindow(taskId);
+    }
+}
+
+// Redraws the floor readout. Shared by opening the tool and by turning the dial,
+// so the two cannot drift apart.
+static void DebugRogueFloor_Redraw(u8 taskId)
+{
+    u32 floor = gTasks[taskId].tInput;  // 1-based, the way the player sees it
+
+    ConvertIntToDecimalStringN(gStringVar1, floor, STR_CONV_MODE_LEADING_ZEROS, 3);
+    ConvertIntToDecimalStringN(gStringVar2, DUNGEON_TOTAL_FLOORS, STR_CONV_MODE_LEADING_ZEROS, 3);
+    StringExpandPlaceholders(gStringVar1, sDebugText_Util_RogueFloor_OfTotal);
+
+    RogueDungeon_GetDebugFloorInfo(floor - 1, gStringVar2);
+    StringCopy(gStringVar3, gText_DigitIndicator[gTasks[taskId].tDigit]);
+
+    StringExpandPlaceholders(gStringVar4, sDebugText_Util_RogueFloor);
+    AddTextPrinterParameterized(gTasks[taskId].tSubWindowId, DEBUG_MENU_FONT, gStringVar4, 0, 0, 0, NULL);
+}
+
+// Warp straight to any floor of a run. The readout names the dungeon and the
+// floor within it as well as the number, because with the Elite Four's dungeons
+// only five floors long, "floor 97" no longer tells you where you are.
+static void DebugAction_Util_RogueFloor(u8 taskId)
+{
+    u8 windowId;
+
+    ClearStdWindowAndFrame(gTasks[taskId].tWindowId, TRUE);
+    RemoveWindow(gTasks[taskId].tWindowId);
+
+    HideMapNamePopUpWindow();
+    LoadMessageBoxAndBorderGfx();
+    windowId = AddWindow(&sDebugMenuWindowTemplateWeather);
+    DrawStdWindowFrame(windowId, FALSE);
+
+    CopyWindowToVram(windowId, COPYWIN_FULL);
+
+    gTasks[taskId].func = DebugAction_Util_RogueFloor_SelectFloor;
+    gTasks[taskId].tSubWindowId = windowId;
+    gTasks[taskId].tDigit = 0;
+
+    // Opens on the floor the player is standing on rather than at 1, so stepping
+    // to the next boss is a nudge rather than a fresh count.
+    gTasks[taskId].tInput = VarGet(VAR_ROGUE_DUNGEON_FLOOR) + 1;
+    if (gTasks[taskId].tInput > DUNGEON_TOTAL_FLOORS)
+        gTasks[taskId].tInput = DUNGEON_TOTAL_FLOORS;
+
+    DebugRogueFloor_Redraw(taskId);
+}
+
+static void DebugAction_Util_RogueFloor_SelectFloor(u8 taskId)
+{
+    if (JOY_NEW(DPAD_ANY))
+    {
+        PlaySE(SE_SELECT);
+        Debug_HandleInput_Numeric(taskId, 1, DUNGEON_TOTAL_FLOORS, 3);
+        DebugRogueFloor_Redraw(taskId);
+    }
+
+    if (JOY_NEW(A_BUTTON))
+    {
+        // The var is 0-based; the readout is not.
+        VarSet(VAR_ROGUE_DUNGEON_FLOOR, gTasks[taskId].tInput - 1);
+
+        // Deliberately leaves VAR_ROGUE_RUN_STATE alone. Warping in without a
+        // party leaves the run still needing starters, and the frame table asks
+        // for them on arrival - which is how you start a test run deep, not a
+        // case to guard against.
+        SetWarpDestination(MAP_GROUP(MAP_ROGUE_DUNGEON_FLOOR),
+                           MAP_NUM(MAP_ROGUE_DUNGEON_FLOOR), WARP_ID_NONE, -1, -1);
+        DoWarp();
+        ResetInitialPlayerAvatarState();
+        DebugAction_DestroyExtraWindow(taskId);
+        ScriptContext_Stop();
     }
     else if (JOY_NEW(B_BUTTON))
     {

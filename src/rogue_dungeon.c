@@ -722,6 +722,38 @@ void RogueDungeon_GetFloorName(u8 *dest)
     StringCopy(ptr, sText_DungeonFloorSuffix);
 }
 
+static const u8 sText_DebugDungeon[] = _("D");
+static const u8 sText_DebugFloorIn[] = _("F");
+static const u8 sText_DebugLevel[]   = _(" Lv");
+static const u8 sText_DebugBoss[]    = _(" BOSS");
+static const u8 sText_DebugMini[]    = _(" mini");
+
+// One line describing what a floor holds, for the debug warp tool: which dungeon
+// and which floor of it, the encounter level, and whether it is an arena.
+//
+// The dungeon/floor pair is the useful part. It is the whole reason to have this
+// rather than a bare number, because it is what shows the segmentation lining up
+// - floor 85 reading D9 F5 BOSS says the Elite Four's half-length dungeons
+// landed where they should without anyone doing the arithmetic by hand.
+void RogueDungeon_GetDebugFloorInfo(u16 floor, u8 *dest)
+{
+    u8 *ptr = StringCopy(dest, sText_DebugDungeon);
+
+    ptr = ConvertIntToDecimalStringN(ptr, DungeonIndexOf(floor) + 1,
+                                     STR_CONV_MODE_LEFT_ALIGN, 2);
+    ptr = StringCopy(ptr, sText_DebugFloorIn);
+    ptr = ConvertIntToDecimalStringN(ptr, DungeonFloorWithin(floor) + 1,
+                                     STR_CONV_MODE_LEFT_ALIGN, 2);
+    ptr = StringCopy(ptr, sText_DebugLevel);
+    ptr = ConvertIntToDecimalStringN(ptr, FloorTargetLevel(floor),
+                                     STR_CONV_MODE_LEFT_ALIGN, 3);
+
+    if (IsDungeonBossFloor(floor))
+        StringCopy(ptr, sText_DebugBoss);
+    else if (IsMiniBossFloor(floor))
+        StringCopy(ptr, sText_DebugMini);
+}
+
 // Called at the end of NewGameInitData, which must come after InitEventData -
 // that clears every flag, so setting these earlier would be undone.
 //

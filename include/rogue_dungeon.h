@@ -646,4 +646,8 @@ bool8 RogueDungeon_IsBossFloor(u16 floor);
 
 void RogueDungeon_ResetRun(void);
 
+// Debug menu support. Describes a floor in one short line; see the debug warp
+// tool in src/debug.c.
+void RogueDungeon_GetDebugFloorInfo(u16 floor, u8 *dest);
+
 #endif // GUARD_ROGUE_DUNGEON_H

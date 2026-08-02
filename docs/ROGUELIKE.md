@@ -622,6 +622,14 @@ and a floor would redecorate itself on re-entry.
 All of it lives in **`tools/rogue/`** — see `tools/rogue/README.md` for the
 per-script table and which ones write checked-in files.
 
+**In game there is a floor warp**: R + START in the overworld → Utilities →
+*Rogue floor warp…*. It dials 1 to `DUNGEON_TOTAL_FLOORS` and shows the dungeon,
+the floor within it, the encounter level and whether the floor is an arena — so
+floor 85 reading `D9 F5 Lv46 BOSS` confirms the segmentation without anyone
+counting. It opens on the current floor, and it deliberately does not touch the
+run state, so warping in without a party starts a deep test run at the starter
+prompt rather than refusing.
+
 Windows has Pillow; WSL does not, and `python3-venv` is not installed, so
 anything that touches an image has to run from Windows against the repo over
 UNC (`//wsl.localhost/Ubuntu/home/p50/decomps/pokeemerald-expansion`). Scripts
