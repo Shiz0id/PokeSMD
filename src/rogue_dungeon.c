@@ -151,12 +151,16 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .floor = WOODS_METATILE_GRASS,
         .tallGrass = WOODS_METATILE_TALL_GRASS,
         .longGrass = WOODS_METATILE_LONG_GRASS,
+        .longGrassBaseL = WOODS_METATILE_LONG_GRASS_BASE_L,
+        .longGrassBaseR = WOODS_METATILE_LONG_GRASS_BASE_R,
         .stairsDown = WOODS_METATILE_STAIRS,
         .stairsUp = WOODS_METATILE_STAIRS,
         .stamp =
         {
             [STAMP_TL] = WOODS_METATILE_TREE_TL, [STAMP_TR] = WOODS_METATILE_TREE_TR,
             [STAMP_BL] = WOODS_METATILE_TREE_BL, [STAMP_BR] = WOODS_METATILE_TREE_BR,
+            [STAMP_BASE_L] = WOODS_METATILE_TREE_BASE_L,
+            [STAMP_BASE_R] = WOODS_METATILE_TREE_BASE_R,
         },
         .species = sWoodsSpecies,
         .speciesCount = ARRAY_COUNT(sWoodsSpecies),
@@ -613,9 +617,17 @@ static void SetBlock(u16 *map, s32 x, s32 y, u16 block)
     map[(y + MAP_OFFSET) * gBackupMapLayout.width + (x + MAP_OFFSET)] = block;
 }
 
-static void CarveFloor(u16 *map, s32 x, s32 y)
+// Takes the theme rather than the cave's own metatile. This used to be
+// hard-coded to DUNGEON_METATILE_FLOOR, which is right only for the cave: a
+// metatile id means something else under every other tileset pair, so New
+// Mauville's floor came out as a counter fragment and Fiery Path's as a green
+// bush - and the bush is MB_NORMAL, which carries no encounter flag, so ten
+// floors had no wild Pokemon at all. theme->floor existed the whole time but
+// was only ever read on the woods path.
+static void CarveFloor(u16 *map, const struct RogueDungeonTheme *theme,
+                       s32 x, s32 y)
 {
-    SetBlock(map, x, y, MakeBlock(DUNGEON_METATILE_FLOOR, 0, DUNGEON_ELEVATION_FLOOR));
+    SetBlock(map, x, y, MakeBlock(theme->floor, 0, theme->elevationFloor));
 }
 
 // Anything outside the playfield counts as wall, so the map edge tiles the same
@@ -894,21 +906,22 @@ static bool8 RoomsOverlap(const struct DungeonRoom *a, const struct DungeonRoom 
           || a->y + a->h + 1 < b->y || b->y + b->h + 1 < a->y);
 }
 
-static void CarveCorridor(u16 *map, s32 x0, s32 y0, s32 x1, s32 y1)
+static void CarveCorridor(u16 *map, const struct RogueDungeonTheme *theme,
+                          s32 x0, s32 y0, s32 x1, s32 y1)
 {
     s32 x = x0, y = y0;
 
     while (x != x1)
     {
-        CarveFloor(map, x, y);
+        CarveFloor(map, theme, x, y);
         x += (x1 > x) ? 1 : -1;
     }
     while (y != y1)
     {
-        CarveFloor(map, x, y);
+        CarveFloor(map, theme, x, y);
         y += (y1 > y) ? 1 : -1;
     }
-    CarveFloor(map, x, y);
+    CarveFloor(map, theme, x, y);
 }
 
 // One major battle per dungeon, in stock order: the eight gym leaders, then the
@@ -1282,8 +1295,8 @@ static void StampCell(u16 *map, s32 cx, s32 cy, const struct RogueDungeonTheme *
         {
             SetBlock(map, x,     y,     MakeBlock(floorMetatile, 0, theme->elevationFloor));
             SetBlock(map, x + 1, y,     MakeBlock(floorMetatile, 0, theme->elevationFloor));
-            SetBlock(map, x,     y + 1, MakeBlock(WOODS_METATILE_LONG_GRASS_BASE_L, 0, theme->elevationFloor));
-            SetBlock(map, x + 1, y + 1, MakeBlock(WOODS_METATILE_LONG_GRASS_BASE_R, 0, theme->elevationFloor));
+            SetBlock(map, x,     y + 1, MakeBlock(theme->longGrassBaseL, 0, theme->elevationFloor));
+            SetBlock(map, x + 1, y + 1, MakeBlock(theme->longGrassBaseR, 0, theme->elevationFloor));
             return;
         }
 
@@ -1296,8 +1309,8 @@ static void StampCell(u16 *map, s32 cx, s32 cy, const struct RogueDungeonTheme *
     {
         // Where a tree mass ends, its bottom row becomes the ground-contact row
         // instead of the trunk row, which is what vanilla does everywhere.
-        u16 bl = openBelow ? WOODS_METATILE_TREE_BASE_L : theme->stamp[STAMP_BL];
-        u16 br = openBelow ? WOODS_METATILE_TREE_BASE_R : theme->stamp[STAMP_BR];
+        u16 bl = openBelow ? theme->stamp[STAMP_BASE_L] : theme->stamp[STAMP_BL];
+        u16 br = openBelow ? theme->stamp[STAMP_BASE_R] : theme->stamp[STAMP_BR];
 
         SetBlock(map, x,     y,     MakeBlock(theme->stamp[STAMP_TL], 1, theme->elevationWall));
         SetBlock(map, x + 1, y,     MakeBlock(theme->stamp[STAMP_TR], 1, theme->elevationWall));
@@ -1418,7 +1431,8 @@ static void WriteFloorBlocks(u16 *backupMapData)
     {
         for (y = 0; y < sRooms[i].h; y++)
             for (x = 0; x < sRooms[i].w; x++)
-                CarveFloor(backupMapData, sRooms[i].x + x, sRooms[i].y + y);
+                CarveFloor(backupMapData, theme,
+                           sRooms[i].x + x, sRooms[i].y + y);
     }
 
     // An arena floor is the single room, and its exit is not drawn until the
@@ -1432,7 +1446,7 @@ static void WriteFloorBlocks(u16 *backupMapData)
     // Chain the rooms centre-to-centre so the floor is always fully connected.
     for (i = 1; i < sRoomCount; i++)
     {
-        CarveCorridor(backupMapData,
+        CarveCorridor(backupMapData, theme,
                       sRooms[i - 1].x + sRooms[i - 1].w / 2,
                       sRooms[i - 1].y + sRooms[i - 1].h / 2,
                       sRooms[i].x + sRooms[i].w / 2,

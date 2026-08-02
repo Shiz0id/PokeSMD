@@ -227,7 +227,17 @@ enum DungeonWallSlot
     WALL_SLOT_COUNT,
 };
 
-enum DungeonStampCorner { STAMP_TL, STAMP_TR, STAMP_BL, STAMP_BR, STAMP_COUNT };
+// A 2x2 stamp, plus the ground-contact row used where a mass ends and open
+// ground begins. Vanilla never leaves a trunk row exposed, so the bottom pair
+// is swapped for the base pair whenever the cell below is open. These live in
+// the table rather than in the generator because a metatile id means something
+// else under every other tileset pair.
+enum DungeonStampCorner
+{
+    STAMP_TL, STAMP_TR, STAMP_BL, STAMP_BR,
+    STAMP_BASE_L, STAMP_BASE_R,
+    STAMP_COUNT,
+};
 
 // One cosmetic wall swap: wherever `base` was painted, `variant` may replace it.
 // Keyed on the painted metatile rather than on a wall slot, so a variant that
@@ -264,6 +274,8 @@ struct RogueDungeonTheme
     u16 floor;
     u16 tallGrass;   // 0 if the theme has none, in which case encounters fire
     u16 longGrass;   // anywhere rather than only in grass
+    u16 longGrassBaseL;  // where long grass meets open ground below it, or the
+    u16 longGrassBaseR;  // blades are cut off flat
     u16 stairsDown;
     u16 stairsUp;
 

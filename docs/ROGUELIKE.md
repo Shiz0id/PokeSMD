@@ -124,6 +124,27 @@ themed layout is a tileset donor only; no map points at it.
 `gTileset_Rustboro`. **Nothing with a metatile id can be shared between themes.**
 This shipped as a visible bug (grey stairs in the woods).
 
+It shipped a second time, worse, and how it hid is the useful part.
+`CarveFloor` named `DUNGEON_METATILE_FLOOR` directly, so every cave-generator
+theme painted its floor with the *cave's* id. `theme->floor` existed from the
+woods commit onward but was only ever read on the woods path, so the three
+later cave themes each added a `.floor` the generator never looked at. Under
+`gTileset_BikeShop` that id is a counter fragment; under `gTileset_Lavaridge`
+it is a green bush whose behaviour is `MB_NORMAL`, which carries no encounter
+flag — **Fiery Path had ten floors with no wild Pokémon at all**, and its
+ember-sparkle decor could never match, because `ApplyDecor` keys on the
+*painted* metatile and the painted one was never `0x308`.
+
+`theme_mock.py` could not show any of it: it fills the grid from
+`theme['floor']`, so it rendered the table's intent while the game rendered
+something else. **The mock validates a table, not the code that reads it.**
+
+The guard is now in `check_encounter_flags.py`, and it is a source lint rather
+than a simulation: **no `*_METATILE_*` constant may appear inside a function.**
+A function runs under every theme's tileset, so only a table may name a
+metatile. It caught four more latent instances in the woods stamp path the same
+day, now the `STAMP_BASE_L/R` and `longGrassBaseL/R` table entries.
+
 ### Object events
 
 - The engine reads templates for the current map from the **save block**, but

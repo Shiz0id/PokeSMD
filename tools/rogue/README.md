@@ -70,7 +70,7 @@ tools it turns on:
 | `verify_dungeon_gen.py` | connectivity, reachability, no out-of-bounds writes |
 | `verify_seeding.py` | determinism, and that floors do not correlate |
 | `validate_maps.py` | the map.bin codec against vanilla layouts |
-| `check_encounter_flags.py` | encounter table sanity |
+| `check_encounter_flags.py` | every theme can spawn a wild Pokemon under its **own** tileset, and no `*_METATILE_*` constant is named inside a function |
 | `woods_prototype.py` | renders generated woods floors |
 
 Host-side verification over thousands of seeds is much cheaper than emulator
