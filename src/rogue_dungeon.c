@@ -1452,6 +1452,22 @@ static const u16 sDungeonBossGfx[] =
     OBJ_EVENT_GFX_DRAKE, OBJ_EVENT_GFX_WALLACE,
 };
 
+// Parallel to sDungeonBosses. The eight gym entries are exactly what each leader
+// hands over in the stock game.
+//
+// The Elite Four and Champion give no TM in the stock game, so the last five are
+// invented: the signature type where the stock 50 has a TM for it, and Hyper
+// Beam for the Champion because Water Pulse is already Juan's. Sidney is the
+// awkward one - every Dark TM in Gen 3 is a status move - so he gives Taunt,
+// which at least suits him. Set any of these to ITEM_NONE to give nothing.
+static const u16 sDungeonBossTMs[] =
+{
+    ITEM_TM_ROCK_TOMB, ITEM_TM_BULK_UP,     ITEM_TM_SHOCK_WAVE, ITEM_TM_OVERHEAT,
+    ITEM_TM_FACADE,    ITEM_TM_AERIAL_ACE,  ITEM_TM_CALM_MIND,  ITEM_TM_WATER_PULSE,
+    ITEM_TM_TAUNT,     ITEM_TM_SHADOW_BALL, ITEM_TM_BLIZZARD,   ITEM_TM_DRAGON_CLAW,
+    ITEM_TM_HYPER_BEAM,
+};
+
 // Mini bosses are picked by level from sRogueDungeonMiniBosses, not from a
 // fixed list. A fixed list meant the floor-5 mini boss was whatever grunt
 // happened to be in it - which was an Aqua Hideout one, so a level 31 Zubat
@@ -1583,6 +1599,29 @@ static void PrepareArenaFloor(u16 floor)
 u16 RogueDungeon_IsDungeonEndFloor(void)
 {
     return DungeonFloorWithin(VarGet(VAR_ROGUE_DUNGEON_FLOOR)) == DUNGEON_BOSS_FLOOR;
+}
+
+// specialvar target. Hands over the gym leader's TM, the way the stock game
+// does. Buffers the item name into gStringVar1 and returns TRUE only if the item
+// actually reached the bag, so the script never claims a TM the player has not
+// got.
+u16 RogueDungeon_GiveBossTM(void)
+{
+    u32 dungeon = DungeonIndexOf(VarGet(VAR_ROGUE_DUNGEON_FLOOR));
+    u16 item;
+
+    if (DungeonFloorWithin(VarGet(VAR_ROGUE_DUNGEON_FLOOR)) != DUNGEON_BOSS_FLOOR)
+        return FALSE;
+
+    item = sDungeonBossTMs[dungeon % ARRAY_COUNT(sDungeonBossTMs)];
+    if (item == ITEM_NONE)
+        return FALSE;
+
+    if (!AddBagItem(item, 1))
+        return FALSE;
+
+    CopyItemName(item, gStringVar1);
+    return TRUE;
 }
 
 // Called from the boss post-battle script. The exit does not exist until now,

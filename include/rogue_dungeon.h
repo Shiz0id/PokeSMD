@@ -612,6 +612,7 @@ void RogueDungeon_GiveBossAce(void);
 // whatever is left in r0, which is the return address. Keep these returning u16.
 u16 RogueDungeon_IsDungeonEndFloor(void);
 u16 RogueDungeon_PrepareBossAceOffer(void);
+u16 RogueDungeon_GiveBossTM(void);
 bool8 RogueDungeon_IsGeneratedTrainer(void);
 bool8 RogueDungeon_HasTrainerBeenBeaten(u8 objectEventId);
 bool8 RogueDungeon_IsBossFloor(u16 floor);

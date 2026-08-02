@@ -12,8 +12,9 @@ cost real time to find.
 ## 1. Current state
 
 **The run loop is complete.** Pick two starters → descend → catch and build a
-team → mini boss every 5 floors → gym leader every 10 → optionally adopt the
-boss's ace → heal at a rest stop → next dungeon. Losing wipes the run.
+team → mini boss every 5 floors → gym leader every 10 → take their TM and
+optionally adopt their ace → heal at a rest stop → next dungeon. Losing wipes
+the run.
 
 - **13 dungeons × 10 floors = 130 floors.** Eight gym leaders, then Sidney,
   Phoebe, Glacia, Drake, Wallace.

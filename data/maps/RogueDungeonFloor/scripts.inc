@@ -67,10 +67,21 @@ RogueDungeonFloor_EventScript_BossDone::
 	special RogueDungeon_OnBossDefeated
 	goto_if_set FLAG_ROGUE_BOSS_REWARD_TAKEN, RogueDungeonFloor_EventScript_BossExit
 	setflag FLAG_ROGUE_BOSS_REWARD_TAKEN
+	call RogueDungeonFloor_EventScript_BossTM
 	call RogueDungeonFloor_EventScript_BossAce
 	goto RogueDungeonFloor_EventScript_BossExit
 
-@ The special declines on a mini boss floor, so this block is a no-op there.
+@ The stock game's Gym reward. Both specials decline on a mini boss floor, so
+@ this whole block is a no-op there.
+RogueDungeonFloor_EventScript_BossTM::
+	specialvar VAR_RESULT, RogueDungeon_GiveBossTM
+	goto_if_eq VAR_RESULT, FALSE, RogueDungeonFloor_EventScript_BossTMDone
+	playfanfare MUS_OBTAIN_TMHM
+	msgbox RogueDungeonFloor_Text_GotTM, MSGBOX_DEFAULT
+	waitfanfare
+RogueDungeonFloor_EventScript_BossTMDone::
+	return
+
 RogueDungeonFloor_EventScript_BossAce::
 	specialvar VAR_RESULT, RogueDungeon_PrepareBossAceOffer
 	goto_if_eq VAR_RESULT, ROGUE_ACE_PARTY_FULL, RogueDungeonFloor_EventScript_BossAceNoRoom
@@ -141,3 +152,6 @@ RogueDungeonFloor_Text_AceJoined:
 RogueDungeonFloor_Text_AceNoRoom:
 	.string "Their {STR_VAR_1} watched you go.\p"
 	.string "There was no room for it.$"
+
+RogueDungeonFloor_Text_GotTM:
+	.string "You received {STR_VAR_1}!$"
