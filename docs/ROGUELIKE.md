@@ -234,10 +234,34 @@ previous append before rewriting).
 pulling upstream changes to that tileset needs care: take upstream's file, re-run
 the script.
 
-**Limits:** `gTileset_General` is full (512/512). `gTileset_Cave` and
-`gTileset_Rustboro` have ~90 and ~160 free slots. Compositing only works when
-the source tiles have transparency — the cave-mouth metatile is opaque across
-the full 16×16, so a "grassy stairs" needs genuinely new 8×8 art.
+**Limits:** splicing only works when the source tiles have transparency. The
+cave-mouth metatile is opaque across the full 16×16, so the woods stairs needed
+genuinely new art.
+
+### When splicing is not enough: drawing new tiles
+
+`make_woods_stairs.py` draws the woods stairs (`0x35E`). The parts worth reusing:
+
+- **Free slots have to be measured, not assumed.** A tile slot is free only if
+  no metatile in the tileset references it *and* its pixels are blank. For
+  Rustboro that is 220 of 512 tile slots, plus 161 metatile slots after this
+  one. `gTileset_General` is full at 512/512, so new art goes in a secondary.
+- **Draw inside an existing palette.** Palette 2 already carries both the mint
+  greens and a full earth ramp, so the stairs needed no new palette. Check what
+  the palette holds before designing — it has no true black, so `413931` is as
+  dark as the opening gets.
+- **Bake the background into the tile; do not use the top layer for it.** A top
+  layer is drawn *over* the player under `METATILE_LAYER_TYPE_NORMAL`, which
+  would hide them when they stand on it. The stairs are bottom-layer only, with
+  grass composited into the rounded corners.
+- **Save PNGs as 4bpp** (`img.save(path, bits=4)`). `gbagfx` converts other
+  depths fine, but the asset diff stays clean.
+- **Copy the attribute from the metatile it replaces.** Behaviour and layer type
+  came straight from grass; the stairs trigger is by metatile id, not behaviour.
+
+Art was iterated as text art rendered over real grass tiles and compared
+side by side, then round-tripped back out of the written asset files to confirm
+what shipped is what was designed.
 
 ---
 
@@ -293,20 +317,35 @@ walls are genuinely 1×1.
 
 ## 8. Tooling
 
-Python, run from the session scratchpad against the repo over UNC
-(`//wsl.localhost/Ubuntu/home/p50/decomps/pokeemerald-expansion`). Windows has
-Pillow; WSL does not, and `python3-venv` is not installed.
+Python. Windows has Pillow; WSL does not, and `python3-venv` is not installed,
+so anything that touches an image has to run from Windows against the repo over
+UNC (`//wsl.localhost/Ubuntu/home/p50/decomps/pokeemerald-expansion`). Scripts
+resolve the repo from their own location, so they run from either side.
+
+**In the repo, under `tools/rogue/`** — these generate checked-in files, so they
+have to live with what they generate:
+
+| script | purpose |
+|---|---|
+| `gen_trainer_table.py` | depth-indexed trainer + mini-boss tables |
+| `make_woods_stairs.py` | draws the grassy stairs into the Rustboro tileset |
+
+**Still only in the session scratchpad**, which is a temp directory — moving
+them is worth doing before the next asset change:
 
 | script | purpose |
 |---|---|
 | `tileset_resolve.py` | `gTileset_*` → real asset paths |
 | `tileset_atlas.py` | render metatiles; build labelled contact sheets |
 | `build_all_atlases.py` | atlas + JSON index for all 137 tileset pairs |
-| `compose_metatiles.py` / `append_metatiles.py` | splice and append new metatiles |
-| `gen_trainer_table.py` | depth-indexed trainer + mini-boss tables |
+| `compose_metatiles.py` / `append_metatiles.py` | splice and append the cave slivers |
 | `gen_starters.py` | starter table and its script text |
 | `ram_budget.py` | attribute EWRAM/IWRAM to source files |
 | `verify_*.py`, `woods_prototype.py` | host-side invariant checks and previews |
+
+The cave sliver metatiles (0x39E–0x3A4) are appended to a **checked-in vanilla
+file** by tooling that only exists in that temp directory. The result survives
+in `metatiles.bin`; the ability to regenerate or extend it does not.
 
 **Never guess tileset paths from the symbol name.** FRLG secondaries carry an
 `_frlg` directory suffix the symbol lacks, acronyms and digits split
@@ -342,7 +381,4 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    a Champion's ace because of a spare Zubat is a bad moment.
 4. The rest stop has only a nurse. It reuses `LAYOUT_POKEMON_CENTER_1F` and is
    ready for a mart and game corner.
-5. The last gym dungeon's mini boss is underlevelled — stock Team Aqua/Magma
-   trainers cap at level 38 against a target of 45.
-6. Woods stairs use vanilla cave-mouth art rather than a custom grassy opening,
-   which needs new 8×8 tiles.
+5. Most of the tooling still lives in a temp directory (see §8).

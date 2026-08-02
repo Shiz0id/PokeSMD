@@ -90,10 +90,15 @@
 #define WOODS_METATILE_LONG_GRASS_BASE_L 0x016
 #define WOODS_METATILE_LONG_GRASS_BASE_R 0x017
 
-// MB_LADDER, labelled CaveEntrance_Bottom. The cave stairs id means something
-// entirely different under the Rustboro secondary tileset - 0x214 there is a
-// grey stripe - so a theme cannot inherit the cave value.
-#define WOODS_METATILE_STAIRS 0x0A7
+// Composed by tools/rogue/make_woods_stairs.py and appended to the Rustboro
+// secondary tileset: earth steps in a grass-cornered opening.
+//
+// This used to be 0x0A7, the dark interior of the vanilla cave mouth, which
+// reads as a dark rectangle dropped into grass because the sandy surround that
+// frames it never gets painted. Note also that the cave stairs id means
+// something else entirely under Rustboro - 0x214 there is a grey stripe - so a
+// theme can never inherit another theme's metatile ids.
+#define WOODS_METATILE_STAIRS 0x35E
 
 // Woods uses the same two elevations as caves.
 #define DUNGEON_ELEVATION_FLOOR 3
