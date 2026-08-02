@@ -3,8 +3,11 @@
 #include "fieldmap.h"
 #include "random.h"
 #include "script.h"
+#include "pokemon.h"
 #include "wild_encounter.h"
+#include "constants/items.h"
 #include "constants/layouts.h"
+#include "constants/moves.h"
 #include "constants/vars.h"
 #include "constants/wild_encounter.h"
 #include "rogue_dungeon.h"
@@ -61,6 +64,61 @@ static u16 DungeonRandom(void)
 {
     sDungeonRngState = ISO_RANDOMIZE1(sDungeonRngState);
     return sDungeonRngState >> 16;
+}
+
+// Placeholder starting party so the dungeon is testable before run structure
+// exists. Steven's Meteor Falls team, copied from TRAINER_STEVEN in
+// src/data/trainers.party.
+struct DungeonStarterMon
+{
+    u16 species;
+    u8 level;
+    u16 item;
+    u16 moves[MAX_MON_MOVES];
+};
+
+static const struct DungeonStarterMon sStarterTeam[] =
+{
+    { SPECIES_SKARMORY,  77, ITEM_NONE,
+      { MOVE_TOXIC, MOVE_AERIAL_ACE, MOVE_SPIKES, MOVE_STEEL_WING } },
+    { SPECIES_CLAYDOL,   75, ITEM_NONE,
+      { MOVE_REFLECT, MOVE_LIGHT_SCREEN, MOVE_ANCIENT_POWER, MOVE_EARTHQUAKE } },
+    { SPECIES_AGGRON,    76, ITEM_NONE,
+      { MOVE_THUNDER, MOVE_EARTHQUAKE, MOVE_SOLAR_BEAM, MOVE_DRAGON_CLAW } },
+    { SPECIES_CRADILY,   76, ITEM_NONE,
+      { MOVE_GIGA_DRAIN, MOVE_ANCIENT_POWER, MOVE_INGRAIN, MOVE_CONFUSE_RAY } },
+    { SPECIES_ARMALDO,   76, ITEM_NONE,
+      { MOVE_WATER_PULSE, MOVE_ANCIENT_POWER, MOVE_AERIAL_ACE, MOVE_SLASH } },
+    { SPECIES_METAGROSS, 78, ITEM_SITRUS_BERRY,
+      { MOVE_EARTHQUAKE, MOVE_PSYCHIC, MOVE_METEOR_MASH, MOVE_SHADOW_BALL } },
+};
+
+// Replaces the party outright. Guarded by FLAG_ROGUE_STARTER_GIVEN so it
+// happens once rather than wiping progress on every entry.
+static void GiveStarterTeam(void)
+{
+    u32 i, j;
+
+    ZeroPlayerPartyMons();
+
+    for (i = 0; i < ARRAY_COUNT(sStarterTeam); i++)
+    {
+        struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][i];
+        u16 item = sStarterTeam[i].item;
+
+        CreateRandomMonWithIVs(mon, sStarterTeam[i].species, sStarterTeam[i].level,
+                               MAX_PER_STAT_IVS);
+
+        for (j = 0; j < MAX_MON_MOVES; j++)
+            SetMonMoveSlot(mon, sStarterTeam[i].moves[j], j);
+
+        if (item != ITEM_NONE)
+            SetMonData(mon, MON_DATA_HELD_ITEM, &item);
+
+        CalculateMonStats(mon);
+    }
+
+    CalculatePlayerPartyCount();
 }
 
 // Must be called from generation, after SeedDungeonRng, so the table is
@@ -317,9 +375,15 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
         gSaveBlock1Ptr->pos.y = rooms[0].y + rooms[0].h / 2;
     }
 
-    // Last, so it does not shift the RNG sequence the layout depends on -
-    // adding this must not change the floors existing seeds produce.
+    // Last, so they do not shift the RNG sequence the layout depends on -
+    // adding these must not change the floors existing seeds produce.
     BuildWildEncounterTable(VarGet(VAR_ROGUE_DUNGEON_FLOOR));
+
+    if (setPlayerPosition == FALSE && !FlagGet(FLAG_ROGUE_STARTER_GIVEN))
+    {
+        FlagSet(FLAG_ROGUE_STARTER_GIVEN);
+        GiveStarterTeam();
+    }
 }
 
 // Hooked into TryStartStepBasedScript. Returning TRUE means we consumed the
