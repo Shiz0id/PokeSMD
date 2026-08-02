@@ -1,3 +1,4 @@
+#include "rogue_dungeon.h"
 #include "global.h"
 #include "battle_setup.h"
 #include "event_data.h"
@@ -592,6 +593,13 @@ static u8 CheckTrainer(u8 objectEventId)
         if (GetHillTrainerFlag(objectEventId))
             return 0;
     }
+    else if (RogueDungeon_IsGeneratedTrainer())
+    {
+        // A generated trainer has no opponent id in its script to read a defeat
+        // flag from, so it would always look unbeaten and approach forever.
+        if (RogueDungeon_HasTrainerBeenBeaten(objectEventId))
+            return 0;
+    }
     else if (trainerBattlePtr)
     {
         if (GetTrainerFlagFromScriptPointer(trainerBattlePtr))
@@ -613,7 +621,9 @@ static u8 CheckTrainer(u8 objectEventId)
         numTrainers = 0xFF;
     }
 
-    if (trainerBattlePtr)
+    // Same reasoning: reading a battle mode out of a generated trainer script
+    // gets whatever byte happens to be there. They are always singles.
+    if (trainerBattlePtr && !RogueDungeon_IsGeneratedTrainer())
     {
         TrainerBattleParameter *temp = (TrainerBattleParameter *)(trainerBattlePtr + 1);
         if (temp->params.mode == TRAINER_BATTLE_DOUBLE

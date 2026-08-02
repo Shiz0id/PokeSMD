@@ -874,6 +874,21 @@ bool8 RogueDungeon_IsGeneratedTrainer(void)
     return gMapHeader.mapLayoutId == LAYOUT_ROGUE_DUNGEON_FLOOR;
 }
 
+// Has this trainer already been beaten on this floor?
+//
+// The engine normally answers this by reading the opponent id straight out of
+// the trainer script, which a generated trainer does not carry. Looked up by
+// object event instead, the same way the Battle Pyramid and Trainer Hill do it.
+bool8 RogueDungeon_HasTrainerBeenBeaten(u8 objectEventId)
+{
+    u32 slot = gObjectEvents[objectEventId].localId - 1;
+
+    if (slot >= sTrainerCount)
+        return FALSE;
+
+    return FlagGet(TRAINER_FLAGS_START + sTrainerIds[slot]);
+}
+
 void RogueDungeon_SetUpTrainerBattle(void)
 {
     u32 slot = gSpecialVar_LastTalked - 1;
