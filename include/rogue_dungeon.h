@@ -55,6 +55,14 @@
 #define DUNGEON_METATILE_WALL_SLIVER_VERT     0x39E  // floor to both west and east
 #define DUNGEON_METATILE_WALL_SLIVER_HORZ     0x39F  // floor to both north and south
 
+// End caps. A sliver that also has floor at one end needs that end closed, or
+// the run stops abruptly mid-air.
+#define DUNGEON_METATILE_WALL_SLIVER_VERT_TOP 0x3A0  // + floor north
+#define DUNGEON_METATILE_WALL_SLIVER_VERT_BOT 0x3A1  // + floor south
+#define DUNGEON_METATILE_WALL_SLIVER_HORZ_L   0x3A2  // + floor west
+#define DUNGEON_METATILE_WALL_SLIVER_HORZ_R   0x3A3  // + floor east
+#define DUNGEON_METATILE_WALL_SLIVER_ISOLATED 0x3A4  // floor on all four sides
+
 // Caves only ever use elevations 0 and 3 in vanilla.
 #define DUNGEON_ELEVATION_FLOOR 3
 #define DUNGEON_ELEVATION_WALL  0

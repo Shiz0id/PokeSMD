@@ -250,12 +250,31 @@ static void ApplyWallAutotiling(u16 *map)
             openWest  = !IsWallAt(map, x - 1, y);
             openEast  = !IsWallAt(map, x + 1, y);
 
-            if (openNorth && openSouth)
+            // A wall one block thick has floor on opposite sides, and vanilla
+            // has no art for it. These must be tested before the face and north
+            // cases, which would match on a single open side and shade only
+            // that edge. An end of a run is a sliver with a third side open.
+            if (openNorth && openSouth && openWest && openEast)
             {
-                // One block thick top to bottom. Must precede the face case,
-                // which would otherwise match on openSouth alone and shade only
-                // the lower edge.
-                metatile = DUNGEON_METATILE_WALL_SLIVER_HORZ;
+                metatile = DUNGEON_METATILE_WALL_SLIVER_ISOLATED;
+            }
+            else if (openNorth && openSouth)
+            {
+                if (openWest)
+                    metatile = DUNGEON_METATILE_WALL_SLIVER_HORZ_L;
+                else if (openEast)
+                    metatile = DUNGEON_METATILE_WALL_SLIVER_HORZ_R;
+                else
+                    metatile = DUNGEON_METATILE_WALL_SLIVER_HORZ;
+            }
+            else if (openWest && openEast)
+            {
+                if (openNorth)
+                    metatile = DUNGEON_METATILE_WALL_SLIVER_VERT_TOP;
+                else if (openSouth)
+                    metatile = DUNGEON_METATILE_WALL_SLIVER_VERT_BOT;
+                else
+                    metatile = DUNGEON_METATILE_WALL_SLIVER_VERT;
             }
             else if (openSouth)
             {
@@ -277,12 +296,6 @@ static void ApplyWallAutotiling(u16 *map)
                     metatile = DUNGEON_METATILE_WALL_NORTH_RIGHT;
                 else
                     metatile = DUNGEON_METATILE_WALL_NORTH_MID;
-            }
-            else if (openWest && openEast)
-            {
-                // One block thick left to right. Placed after the north/south
-                // cases so a column still gets a proper cap at each end.
-                metatile = DUNGEON_METATILE_WALL_SLIVER_VERT;
             }
             else if (openWest)
             {
