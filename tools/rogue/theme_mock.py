@@ -17,7 +17,8 @@ from tileset_resolve import TilesetResolver
 
 REPO = Path(__file__).resolve().parents[2]
 
-W, H = 40, 32
+W, H = 48, 48   # the real DUNGEON_WIDTH/HEIGHT, so blob positions and room
+                # sizes mean the same here as they do in game
 SLOTS = ('INTERIOR_LEFT', 'INTERIOR_MID', 'INTERIOR_RIGHT',
          'FACE_LEFT', 'FACE_MID', 'FACE_RIGHT',
          'NORTH_LEFT', 'NORTH_MID', 'NORTH_RIGHT',
@@ -90,6 +91,36 @@ THEMES = {
             'SLIVER_HORZ_L': 0x3A2, 'SLIVER_HORZ_R': 0x3A3,
             'SLIVER_ISOLATED': 0x3A4,
         }),
+    # The jungle runs on the CAVE generator even though it looks like woods: the
+    # Fortree canopy is a continuous mass that tiles 1x1, not discrete 2x2 tree
+    # stamps. One edge case only - the row with floor to its south.
+    'jungle': dict(
+        primary='gTileset_General', secondary='gTileset_Fortree',
+        floor=0x001, stairs=0x245,
+        decor=[(0x0C6, 0x0C7, 0), (0x017, 0x016, 0)],
+        decor_rarity=2,
+        patch={'NW': 0x015, 'N': 0x015, 'NE': 0x015,
+               'W': 0x015, 'MID': 0x015, 'E': 0x015,
+               'SW': 0x208, 'S': 0x208, 'SE': 0x208,
+               'NW_WALL': 0x015, 'N_WALL': 0x015, 'NE_WALL': 0x015},
+        patch_blobs=6, patch_radius=8,
+        patch2={'NW': 0x0C8, 'N': 0x0C9, 'NE': 0x0CA,
+                'W': 0x0D0, 'MID': 0x0D1, 'E': 0x0D2,
+                'SW': 0x0D8, 'S': 0x0D9, 'SE': 0x0DA,
+                'NW_WALL': 0x0C8, 'N_WALL': 0x0C9, 'NE_WALL': 0x0CA},
+        patch2_blobs=10, patch2_radius=3,
+        rooms=12, room_min=7, room_max=13, corridor=3,
+        wall={
+            'FACE_LEFT': 0x017, 'FACE_MID': 0x017, 'FACE_RIGHT': 0x017,
+            'SLIVER_HORZ': 0x017, 'SLIVER_HORZ_L': 0x017,
+            'SLIVER_HORZ_R': 0x017, 'SLIVER_VERT_BOT': 0x017,
+            'SLIVER_ISOLATED': 0x017,
+            'INTERIOR_LEFT': 0x0C6, 'INTERIOR_MID': 0x0C6,
+            'INTERIOR_RIGHT': 0x0C6, 'NORTH_LEFT': 0x0C6,
+            'NORTH_MID': 0x0C6, 'NORTH_RIGHT': 0x0C6,
+            'CORNER_NW': 0x0C6, 'CORNER_NE': 0x0C6, 'CORNER_SOUTH': 0x0C6,
+            'SLIVER_VERT': 0x0C6, 'SLIVER_VERT_TOP': 0x0C6,
+        }),
     # gTileset_MirageTower is a pure art reskin of gTileset_Cave - 411 of 414
     # metatiles byte-identical, all attributes identical - so the wall table is
     # the cave's verbatim. The one difference is floor and interior swapping
@@ -136,16 +167,25 @@ class Rng:
         return (self.s >> 16) & 0x7FFF
 
 
-def carve(seed):
-    """Rooms with one block of padding, joined by L corridors."""
+def carve(seed, theme=None):
+    """Rooms with one block of padding, joined by L corridors.
+
+    Takes the theme's openness knobs, so a theme that carves wider than the cave
+    is mocked as it will actually look. Defaults are the cave's own constants.
+    """
+    theme = theme or {}
+    cap = theme.get('rooms', 8)             # DUNGEON_ROOMS_DEFAULT
+    rmin = theme.get('room_min', 5)         # DUNGEON_ROOM_MIN
+    rmax = theme.get('room_max', 10)        # DUNGEON_ROOM_MAX
+    cw = theme.get('corridor', 1)
     rng = Rng(seed)
     solid = [[True] * W for _ in range(H)]
     rooms = []
-    for _ in range(80):
-        if len(rooms) >= 9:
+    for _ in range(cap * 8 + 32):
+        if len(rooms) >= cap:
             break
-        w = 4 + rng.next() % 6
-        h = 3 + rng.next() % 4
+        w = rmin + rng.next() % (rmax - rmin + 1)
+        h = rmin + rng.next() % (rmax - rmin + 1)
         x = 1 + rng.next() % (W - w - 2)
         y = 1 + rng.next() % (H - h - 2)
         if any(not (x + w + 1 < b[0] or b[0] + b[2] + 1 < x or
@@ -155,13 +195,22 @@ def carve(seed):
         for dy in range(h):
             for dx in range(w):
                 solid[y + dy][x + dx] = False
+
+    half = cw // 2
+
+    def open_wide(x, y):
+        for dy in range(-half, half + 1):
+            for dx in range(-half, half + 1):
+                if 0 <= x + dx < W and 0 <= y + dy < H:
+                    solid[y + dy][x + dx] = False
+
     for a, b in zip(rooms, rooms[1:]):
         ax, ay = a[0] + a[2] // 2, a[1] + a[3] // 2
         bx, by = b[0] + b[2] // 2, b[1] + b[3] // 2
         for x in range(min(ax, bx), max(ax, bx) + 1):
-            solid[ay][x] = False
+            open_wide(x, ay)
         for y in range(min(ay, by), max(ay, by) + 1):
-            solid[y][bx] = False
+            open_wide(bx, y)
     return solid, rooms
 
 
@@ -232,15 +281,22 @@ def paint(solid, theme, seed=0):
     # Floor regions, exactly as ApplyFloorPatches. Runs before the skirts so a
     # wall's own edge art still wins for a theme that has both.
     #
-    # The mock grid is 40x32 against the game's 48x48, so blob POSITIONS differ
-    # from what the same seed produces in game. The shapes and the edge choices
-    # do not, which is what this is for.
-    if theme.get('patch') and theme.get('patch_blobs'):
-        p = theme['patch']
-        radius = theme.get('patch_radius', 4)
+    # Layers are painted in order, so a later one wins where they overlap: the
+    # jungle lays long grass and then punches puddles through it.
+    layers = []
+    for which, key in enumerate(('patch', 'patch2')):
+        blobs_key = key + '_blobs'
+        if theme.get(key) and theme.get(blobs_key):
+            layers.append((which, theme[key], theme[blobs_key],
+                           theme.get(key + '_radius', 4)))
+
+    for which, p, nblobs, radius in layers:
         blobs = []
-        for i in range(min(theme['patch_blobs'], 12)):
-            a, b = blob_hash(seed, i, 0), blob_hash(seed, i, 1)
+        for i in range(min(nblobs, 12)):
+            # The layer index is folded into the salt, as BuildPatchBlobs does,
+            # so two layers never stamp the same blobs.
+            a = blob_hash(seed, i, which * 2)
+            b = blob_hash(seed, i, which * 2 + 1)
             blobs.append((a % W, b % H,
                           radius + ((a >> 8) % 3) - 1,
                           radius + ((b >> 8) % 3) - 1))
@@ -269,7 +325,8 @@ def paint(solid, theme, seed=0):
             for x in range(W):
                 if is_wall(x, y):
                     continue
-                used['FLOOR_CELLS'] = used.get('FLOOR_CELLS', 0) + 1
+                if which == 0:      # count the denominator once, not per layer
+                    used['FLOOR_CELLS'] = used.get('FLOOR_CELLS', 0) + 1
                 if not in_patch(x, y):
                     continue
                 n, s = not in_patch(x, y - 1), not in_patch(x, y + 1)
@@ -291,7 +348,8 @@ def paint(solid, theme, seed=0):
                     slot = 'MID'
                 if p.get(slot):
                     out[y][x] = p[slot]
-                    used['PATCH_' + slot] = used.get('PATCH_' + slot, 0) + 1
+                    key = 'PATCH%d_%s' % (which, slot)
+                    used[key] = used.get(key, 0) + 1
 
     # Wall skirts, exactly as ApplySkirts: keyed to the specific wall metatile
     # north or west, deterministic.
@@ -358,7 +416,7 @@ def main(name):
 
     panels, totals = [], {}
     for seed in (11, 29):
-        solid, rooms = carve(seed)
+        solid, rooms = carve(seed, theme)
         grid, used = paint(solid, theme, seed)
         if theme.get('stairs') and rooms:          # as PrepareFloor places it
             rx, ry, rw, rh = rooms[-1]
@@ -385,15 +443,17 @@ def main(name):
         mark = '' if n else '   <-- never hit, unvalidated'
         print(f'  {s:<18} {n:>5}  0x{theme["wall"][s]:03X}{mark}')
 
-    if theme.get('patch'):
-        print('\nfloor region slots:')
+    floor_cells = totals.get('FLOOR_CELLS', 0)
+    for which, key in enumerate(('patch', 'patch2')):
+        if not theme.get(key):
+            continue
+        print(f'\nfloor region layer {which} ({key}):')
         covered = 0
         for s in PATCH_SLOTS:
-            n = totals.get('PATCH_' + s, 0)
+            n = totals.get('PATCH%d_%s' % (which, s), 0)
             covered += n
             mark = '' if n else '   <-- never hit, unvalidated'
-            print(f'  {s:<18} {n:>5}  0x{theme["patch"][s]:03X}{mark}')
-        floor_cells = totals.get('FLOOR_CELLS', 0)
+            print(f'  {s:<18} {n:>5}  0x{theme[key][s]:03X}{mark}')
         if floor_cells:
             print(f'  {"":<18} {covered:>5}  of {floor_cells} floor blocks '
                   f'({100.0 * covered / floor_cells:.0f}%)')

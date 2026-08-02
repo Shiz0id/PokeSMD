@@ -17,10 +17,10 @@ boss's ace → heal at a rest stop → next dungeon. Losing wipes the run.
 
 - **13 dungeons × 10 floors = 130 floors.** Eight gym leaders, then Sidney,
   Phoebe, Glacia, Drake, Wallace.
-- **Five themes**: Petalburg Woods (dungeon 1, Roxanne), Granite Cave
+- **Six themes**: Petalburg Woods (dungeon 1, Roxanne), Granite Cave
   (dungeon 2, Brawly), New Mauville (dungeon 3, Wattson), Fiery Path
-  (dungeon 4, Flannery) and Mirage Tower (dungeon 5, Norman). They cycle past
-  that until more exist.
+  (dungeon 4, Flannery), Mirage Tower (dungeon 5, Norman) and the Jungle
+  (dungeon 6, Winona). They cycle past that until more exist.
 - Reachable from a new game, which is slimmed to name entry only.
 
 Everything lives in `src/rogue_dungeon.c` / `include/rogue_dungeon.h` plus
@@ -390,6 +390,32 @@ Choosing a generator:
   skip autotiling entirely.
 - Walls that are genuinely 1×1 → `DUNGEON_GEN_CAVE`.
 
+**Do not choose it by what the theme looks like.** The jungle is all trees and
+grass and still runs on `DUNGEON_GEN_CAVE`, because Fortree draws a *continuous*
+leaf mass that tiles 1×1 where Rustboro draws discrete 2×3 trees on a 2×2 grid.
+Prefer `DUNGEON_GEN_CAVE` when it fits: it is the only path the cosmetic passes
+run on, so a woods-generator theme gets no patches, skirts or decor at all.
+
+### Openness
+
+`roomCount`, `roomMin`, `roomMax` and `corridorWidth` let a theme carve more
+openly without a second generator. Measured over 2000 seeds each:
+
+| shape | coverage | rooms |
+|---|---|---|
+| cave, 8 rooms of 5–10, 1-wide | 24.2% (17–33) | 8.0 |
+| jungle, 12 rooms of 7–13, 3-wide | 42.8% (25–58) | 7.9 |
+
+**Room size alone is the wrong lever.** Bigger rooms simply stop fitting, so
+coverage plateaus near 35% while the room count collapses from 8 to 3 and the
+variance gets ugly (one sweep bottomed out at 11.8%). Room *count* and corridor
+*width* are what actually buy openness, and they keep the room count roughly
+where it was, which matters because trainers and the exit are placed per room.
+
+`verify_dungeon_gen.py` runs every shape in its `SHAPES` table, so a new one
+gets its reachability and out-of-bounds checks for free — add an entry when you
+add a theme that carves differently.
+
 **Check whether the tileset draws one-block-thick walls natively before assuming
 it needs composed metatiles.** The cave needed seven spliced metatiles because
 vanilla caves are never one thick. New Mauville needed none: it is a facility
@@ -497,14 +523,26 @@ It runs before the skirts, so a wall's own edge art still wins for a theme with
 both, and before the stairs are placed, so it cannot bury the exit. Collision
 and elevation come from the floor, so like decor it cannot change reachability.
 
-**Only two themes have a region set**, and this is worth checking before
-designing one: Fiery Path's floor variety is `0x310`/`0x311`, which are already
-decor, and New Mauville's apparent region was its existing skirt tiles. The
-woods has none at all — and it uses `DUNGEON_GEN_WOODS`, which returns before
-`ApplyWallAutotiling` and so never reaches any of these passes. What the woods
-actually wants is a **tall grass base row** (`0x1C6`/`0x1C7` over
-`0x1CE`/`0x1CF`), the same 2-wide unit idea as the long grass base it already
-draws.
+**A theme can have several layers**, painted in order so a later one wins. The
+jungle lays long grass in six blobs of radius 8 — big enough to swallow a
+clearing whole, which is the point, since long grass is its only encounter
+surface — and then punches ten small puddles through it, so water sits *in* the
+grass rather than under it. Each layer autotiles against its own geometry, so
+the grass underneath keeps correct edges where a puddle covers it. The layer
+index is folded into the blob hash salt, or the two layers would stamp
+identically.
+
+**Not every theme has a region set**, and it is worth checking before designing
+one. Fiery Path's floor variety is `0x310`/`0x311`, already decor; New
+Mauville's apparent region turned out to be its existing skirt tiles; the woods
+has none, and could not use one anyway because `DUNGEON_GEN_WOODS` returns
+before `ApplyWallAutotiling`.
+
+The jungle's puddles are worth copying elsewhere: they are `0x0C8`–`0x0DA` in
+the **primary** tileset, so they are available under *any* pair, and every piece
+is `MB_PUDDLE`, which carries no flags at all — walkable, **not surfable**, no
+encounters. The pond and ocean water in the same tileset are surfable and must
+never be painted, or the player can surf out of the floor.
 
 **All three passes are position-hashed, not drawn from the dungeon RNG.**
 `WriteFloorBlocks` can repaint a floor without `PrepareFloor` having run again,
@@ -552,7 +590,7 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
 ## 10. Known gaps
 
 1. Nothing happens after floor 130 — the boss table wraps to Roxanne.
-2. Five themes against thirteen dungeons, so they cycle past dungeon 5.
+2. Six themes against thirteen dungeons, so they cycle past dungeon 6.
 3. A full party silently declines a boss ace — no swap UI. Being unable to take
    a Champion's ace because of a spare Zubat is a bad moment.
 4. The rest stop has only a nurse. It reuses `LAYOUT_POKEMON_CENTER_1F` and is
@@ -562,3 +600,13 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    for it. Everything decorative it does have is inside `StampCell`. That is
    fine while the only variety is per-cell, but a woods theme wanting scattered
    props or ground patches would need the passes lifted out of the cave path.
+6. **The jungle has no rain.** Route 119 and 120 are rainy in vanilla and the
+   theme is built to be, but weather is per-map and all six themes share one
+   map — only `gMapHeader.mapLayout` is swapped, and `mapLayoutId` is left alone
+   deliberately because every dispatch keys on it. So per-theme weather needs a
+   different hook than the tileset swap uses, and how `gMapHeader.weather`
+   survives our warp path has not been checked yet.
+7. The jungle's four sliver slots are never exercised: 3-wide corridors do not
+   leave one-block-thick walls. They are filled with plain canopy, so the risk
+   is low, but they are unvalidated and would show up if `corridorWidth` ever
+   dropped back to 1.

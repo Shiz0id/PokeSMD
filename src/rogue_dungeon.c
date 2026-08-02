@@ -154,6 +154,127 @@ static const struct RogueDecor sFieryPathDecor[] =
     { FIERYPATH_METATILE_WALL_INTERIOR, FIERYPATH_METATILE_WALL_BOULDER },
 };
 
+// Pale sand pooling on the cave floor. Vanilla draws exactly this in Shoal
+// Cave, the Desert Underpass and Altering Cave; Granite Cave itself has no
+// floor variety at all, which is why our cave floors read so flat.
+static const struct RoguePatchLayer sCaveSandPatch[] =
+{
+    {
+        .tile =
+        {
+            [PATCH_NW]      = DUNGEON_METATILE_SAND_NW,
+            [PATCH_N]       = DUNGEON_METATILE_SAND_N,
+            [PATCH_NE]      = DUNGEON_METATILE_SAND_NE,
+            [PATCH_W]       = DUNGEON_METATILE_SAND_W,
+            [PATCH_MID]     = DUNGEON_METATILE_SAND_MID,
+            [PATCH_E]       = DUNGEON_METATILE_SAND_E,
+            [PATCH_SW]      = DUNGEON_METATILE_SAND_SW,
+            [PATCH_S]       = DUNGEON_METATILE_SAND_S,
+            [PATCH_SE]      = DUNGEON_METATILE_SAND_SE,
+            [PATCH_NW_WALL] = DUNGEON_METATILE_SAND_NW_WALL,
+            [PATCH_N_WALL]  = DUNGEON_METATILE_SAND_N_WALL,
+            [PATCH_NE_WALL] = DUNGEON_METATILE_SAND_NE_WALL,
+        },
+        .blobs = 8, .radius = 4,
+    },
+};
+
+// The same twelve ids in sandstone. Denser and larger than the cave's, because
+// in vanilla Mirage Tower the drift is the dominant floor treatment rather than
+// an occasional pool.
+static const struct RoguePatchLayer sMirageTowerDriftPatch[] =
+{
+    {
+        .tile =
+        {
+            [PATCH_NW]      = MIRAGETOWER_METATILE_DRIFT_NW,
+            [PATCH_N]       = MIRAGETOWER_METATILE_DRIFT_N,
+            [PATCH_NE]      = MIRAGETOWER_METATILE_DRIFT_NE,
+            [PATCH_W]       = MIRAGETOWER_METATILE_DRIFT_W,
+            [PATCH_MID]     = MIRAGETOWER_METATILE_DRIFT_MID,
+            [PATCH_E]       = MIRAGETOWER_METATILE_DRIFT_E,
+            [PATCH_SW]      = MIRAGETOWER_METATILE_DRIFT_SW,
+            [PATCH_S]       = MIRAGETOWER_METATILE_DRIFT_S,
+            [PATCH_SE]      = MIRAGETOWER_METATILE_DRIFT_SE,
+            [PATCH_NW_WALL] = MIRAGETOWER_METATILE_DRIFT_NW_WALL,
+            [PATCH_N_WALL]  = MIRAGETOWER_METATILE_DRIFT_N_WALL,
+            [PATCH_NE_WALL] = MIRAGETOWER_METATILE_DRIFT_NE_WALL,
+        },
+        .blobs = 11, .radius = 5,
+    },
+};
+
+// Route 119 and 120 residents, which is where the rain and the long grass are.
+// Nothing here overlaps the woods pool - the two are both green, so the wild
+// list is a large part of what tells them apart.
+static const u16 sJungleSpecies[] =
+{
+    SPECIES_ODDISH,   SPECIES_SURSKIT,    SPECIES_MARILL,     SPECIES_VOLBEAT,
+    SPECIES_ILLUMISE, SPECIES_ROSELIA,    SPECIES_SLAKOTH,    SPECIES_KECLEON,
+    SPECIES_GLOOM,    SPECIES_MASQUERAIN, SPECIES_AZUMARILL,  SPECIES_VIGOROTH,
+    SPECIES_TROPIUS,  SPECIES_ZANGOOSE,   SPECIES_SEVIPER,    SPECIES_ABSOL,
+};
+
+// Two layers, painted in order. Long grass goes down first and covers whole
+// clearings; puddles are punched through it afterwards, so water sits in the
+// grass rather than being hidden under it.
+//
+// Long grass has only one piece of edge art in the whole game - the south
+// fringe - so every other slot is the grass itself. Putting the fringe on the
+// region's own bottom row rather than the row below it costs one row of
+// encounters and saves a slot for "outside the region to the south".
+static const struct RoguePatchLayer sJunglePatches[] =
+{
+    {
+        .tile =
+        {
+            [PATCH_NW]      = JUNGLE_METATILE_LONG_GRASS,
+            [PATCH_N]       = JUNGLE_METATILE_LONG_GRASS,
+            [PATCH_NE]      = JUNGLE_METATILE_LONG_GRASS,
+            [PATCH_W]       = JUNGLE_METATILE_LONG_GRASS,
+            [PATCH_MID]     = JUNGLE_METATILE_LONG_GRASS,
+            [PATCH_E]       = JUNGLE_METATILE_LONG_GRASS,
+            [PATCH_SW]      = JUNGLE_METATILE_LONG_GRASS_S,
+            [PATCH_S]       = JUNGLE_METATILE_LONG_GRASS_S,
+            [PATCH_SE]      = JUNGLE_METATILE_LONG_GRASS_S,
+            [PATCH_NW_WALL] = JUNGLE_METATILE_LONG_GRASS,
+            [PATCH_N_WALL]  = JUNGLE_METATILE_LONG_GRASS,
+            [PATCH_NE_WALL] = JUNGLE_METATILE_LONG_GRASS,
+        },
+        // Few and large, so a clearing tends to be swallowed whole rather than
+        // speckled. This is the theme's only encounter surface.
+        .blobs = 6, .radius = 8,
+    },
+    {
+        .tile =
+        {
+            [PATCH_NW]      = JUNGLE_METATILE_PUDDLE_NW,
+            [PATCH_N]       = JUNGLE_METATILE_PUDDLE_N,
+            [PATCH_NE]      = JUNGLE_METATILE_PUDDLE_NE,
+            [PATCH_W]       = JUNGLE_METATILE_PUDDLE_W,
+            [PATCH_MID]     = JUNGLE_METATILE_PUDDLE_MID,
+            [PATCH_E]       = JUNGLE_METATILE_PUDDLE_E,
+            [PATCH_SW]      = JUNGLE_METATILE_PUDDLE_SW,
+            [PATCH_S]       = JUNGLE_METATILE_PUDDLE_S,
+            [PATCH_SE]      = JUNGLE_METATILE_PUDDLE_SE,
+            // No wall-adjacent variant exists, so the ordinary top edge serves.
+            [PATCH_NW_WALL] = JUNGLE_METATILE_PUDDLE_NW,
+            [PATCH_N_WALL]  = JUNGLE_METATILE_PUDDLE_N,
+            [PATCH_NE_WALL] = JUNGLE_METATILE_PUDDLE_NE,
+        },
+        // Many and small: puddles, not lakes.
+        .blobs = 10, .radius = 3,
+    },
+};
+
+// The canopy's two body variants and two base variants are interchangeable, so
+// decor is what scatters them. Rarity 2 gets close to vanilla's even 50/50 mix.
+static const struct RogueDecor sJungleDecor[] =
+{
+    { JUNGLE_METATILE_CANOPY,      JUNGLE_METATILE_CANOPY_ALT },
+    { JUNGLE_METATILE_CANOPY_BASE, JUNGLE_METATILE_CANOPY_BASE_ALT },
+};
+
 enum DungeonThemeId
 {
     DUNGEON_THEME_WOODS,
@@ -161,6 +282,7 @@ enum DungeonThemeId
     DUNGEON_THEME_NEWMAUVILLE,
     DUNGEON_THEME_FIERYPATH,
     DUNGEON_THEME_MIRAGETOWER,
+    DUNGEON_THEME_JUNGLE,
     DUNGEON_THEME_COUNT
 };
 
@@ -228,26 +350,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [WALL_SLIVER_HORZ_R]  = DUNGEON_METATILE_WALL_SLIVER_HORZ_R,
             [WALL_SLIVER_ISOLATED]= DUNGEON_METATILE_WALL_SLIVER_ISOLATED,
         },
-        // Pale sand pooling on the cave floor. Vanilla draws exactly this in
-        // Shoal Cave and the Desert Underpass; Granite Cave itself has no floor
-        // variety at all, which is why our cave floors read so flat.
-        .patch =
-        {
-            [PATCH_NW]      = DUNGEON_METATILE_SAND_NW,
-            [PATCH_N]       = DUNGEON_METATILE_SAND_N,
-            [PATCH_NE]      = DUNGEON_METATILE_SAND_NE,
-            [PATCH_W]       = DUNGEON_METATILE_SAND_W,
-            [PATCH_MID]     = DUNGEON_METATILE_SAND_MID,
-            [PATCH_E]       = DUNGEON_METATILE_SAND_E,
-            [PATCH_SW]      = DUNGEON_METATILE_SAND_SW,
-            [PATCH_S]       = DUNGEON_METATILE_SAND_S,
-            [PATCH_SE]      = DUNGEON_METATILE_SAND_SE,
-            [PATCH_NW_WALL] = DUNGEON_METATILE_SAND_NW_WALL,
-            [PATCH_N_WALL]  = DUNGEON_METATILE_SAND_N_WALL,
-            [PATCH_NE_WALL] = DUNGEON_METATILE_SAND_NE_WALL,
-        },
-        .patchBlobs = 8,
-        .patchRadius = 4,
+        .patches = sCaveSandPatch,
+        .patchCount = ARRAY_COUNT(sCaveSandPatch),
 
         .species = sCaveSpecies,
         .speciesCount = ARRAY_COUNT(sCaveSpecies),
@@ -386,26 +490,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [WALL_SLIVER_ISOLATED]= MIRAGETOWER_METATILE_SLIVER_ISOLATED,
         },
 
-        // The sand drift, the tower's signature. Denser and larger than the
-        // cave's, because in vanilla Mirage Tower the drift is the dominant
-        // floor treatment rather than an occasional pool.
-        .patch =
-        {
-            [PATCH_NW]      = MIRAGETOWER_METATILE_DRIFT_NW,
-            [PATCH_N]       = MIRAGETOWER_METATILE_DRIFT_N,
-            [PATCH_NE]      = MIRAGETOWER_METATILE_DRIFT_NE,
-            [PATCH_W]       = MIRAGETOWER_METATILE_DRIFT_W,
-            [PATCH_MID]     = MIRAGETOWER_METATILE_DRIFT_MID,
-            [PATCH_E]       = MIRAGETOWER_METATILE_DRIFT_E,
-            [PATCH_SW]      = MIRAGETOWER_METATILE_DRIFT_SW,
-            [PATCH_S]       = MIRAGETOWER_METATILE_DRIFT_S,
-            [PATCH_SE]      = MIRAGETOWER_METATILE_DRIFT_SE,
-            [PATCH_NW_WALL] = MIRAGETOWER_METATILE_DRIFT_NW_WALL,
-            [PATCH_N_WALL]  = MIRAGETOWER_METATILE_DRIFT_N_WALL,
-            [PATCH_NE_WALL] = MIRAGETOWER_METATILE_DRIFT_NE_WALL,
-        },
-        .patchBlobs = 11,
-        .patchRadius = 5,
+        .patches = sMirageTowerDriftPatch,
+        .patchCount = ARRAY_COUNT(sMirageTowerDriftPatch),
 
         // No skirts: this tileset's wall edges are opaque art rather than an
         // overlay that bleeds, exactly as in the cave, which has none either.
@@ -416,13 +502,72 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .species = sMirageTowerSpecies,
         .speciesCount = ARRAY_COUNT(sMirageTowerSpecies),
     },
+    [DUNGEON_THEME_JUNGLE] =
+    {
+        .layoutId = LAYOUT_ROGUE_DUNGEON_JUNGLE,
+        .generator = DUNGEON_GEN_CAVE,   // the canopy tiles 1x1, unlike the woods
+        .elevationFloor = DUNGEON_ELEVATION_FLOOR,
+        .elevationWall = DUNGEON_ELEVATION_WALL,
+
+        // Far more open than the cave: 12 rooms of 7-13 with 3-wide corridors
+        // measures 42.7% floor against the cave's 24.0%, and still averages
+        // 7.8 rooms so trainers and the exit stay well spread.
+        .roomCount = 12,
+        .roomMin = 7,
+        .roomMax = 13,
+        .corridorWidth = 3,
+
+        .floor = JUNGLE_METATILE_GRASS,
+        // Encounters come from the long grass layer, not the ground, the same
+        // way they do in the woods. Plain grass is MB_NORMAL and safe to cross.
+        .tallGrass = 0,
+        .longGrass = JUNGLE_METATILE_LONG_GRASS,
+        .stairsDown = JUNGLE_METATILE_STAIRS,
+        .stairsUp = JUNGLE_METATILE_STAIRS,
+        .wall =
+        {
+            // One edge case only. Every slot whose south neighbour is floor
+            // gets the base row; all the rest are just more canopy.
+            [WALL_FACE_LEFT]      = JUNGLE_METATILE_CANOPY_BASE,
+            [WALL_FACE_MID]       = JUNGLE_METATILE_CANOPY_BASE,
+            [WALL_FACE_RIGHT]     = JUNGLE_METATILE_CANOPY_BASE,
+            [WALL_SLIVER_HORZ]    = JUNGLE_METATILE_CANOPY_BASE,
+            [WALL_SLIVER_HORZ_L]  = JUNGLE_METATILE_CANOPY_BASE,
+            [WALL_SLIVER_HORZ_R]  = JUNGLE_METATILE_CANOPY_BASE,
+            [WALL_SLIVER_VERT_BOT]= JUNGLE_METATILE_CANOPY_BASE,
+            [WALL_SLIVER_ISOLATED]= JUNGLE_METATILE_CANOPY_BASE,
+
+            [WALL_INTERIOR_LEFT]  = JUNGLE_METATILE_CANOPY,
+            [WALL_INTERIOR_MID]   = JUNGLE_METATILE_CANOPY,
+            [WALL_INTERIOR_RIGHT] = JUNGLE_METATILE_CANOPY,
+            [WALL_NORTH_LEFT]     = JUNGLE_METATILE_CANOPY,
+            [WALL_NORTH_MID]      = JUNGLE_METATILE_CANOPY,
+            [WALL_NORTH_RIGHT]    = JUNGLE_METATILE_CANOPY,
+            [WALL_CORNER_NW]      = JUNGLE_METATILE_CANOPY,
+            [WALL_CORNER_NE]      = JUNGLE_METATILE_CANOPY,
+            [WALL_CORNER_SOUTH]   = JUNGLE_METATILE_CANOPY,
+            [WALL_SLIVER_VERT]    = JUNGLE_METATILE_CANOPY,
+            [WALL_SLIVER_VERT_TOP]= JUNGLE_METATILE_CANOPY,
+        },
+
+        .patches = sJunglePatches,
+        .patchCount = ARRAY_COUNT(sJunglePatches),
+
+        .decor = sJungleDecor,
+        .decorCount = ARRAY_COUNT(sJungleDecor),
+        .decorRarity = 2,   // texture scatter, not ornament
+
+        .species = sJungleSpecies,
+        .speciesCount = ARRAY_COUNT(sJungleSpecies),
+    },
 };
 
 // Which theme each dungeon uses, following the stock game: Petalburg Woods then
 // Roxanne, Granite Cave then Brawly, New Mauville then Wattson, Fiery Path then
 // Flannery, Mirage Tower then Norman - the Go-Goggles and the Route 111 desert
-// are what sit between Lavaridge and Petalburg. Beyond the fifth they cycle
-// until more themes exist.
+// are what sit between Lavaridge and Petalburg - and the jungle then Winona,
+// Route 119 and 120 being the rainy overgrown approach to Fortree. Beyond the
+// sixth they cycle until more themes exist.
 static const struct RogueDungeonTheme *ThemeForFloor(u16 floor)
 {
     u32 dungeon = DungeonIndexOf(floor);
@@ -863,10 +1008,12 @@ static u16 BlobHash(u16 seed, u32 index, u32 salt)
     return (u16)h;
 }
 
-static u32 BuildPatchBlobs(const struct RogueDungeonTheme *theme, u16 seed,
-                           struct PatchBlob *blobs)
+// The layer index is folded into the hash salt so two layers of a theme never
+// stamp the same blobs on top of each other.
+static u32 BuildPatchBlobs(const struct RoguePatchLayer *layer, u32 which,
+                           u16 seed, struct PatchBlob *blobs)
 {
-    u32 count = theme->patchBlobs;
+    u32 count = layer->blobs;
     u32 i;
 
     if (count > DUNGEON_MAX_PATCH_BLOBS)
@@ -874,15 +1021,15 @@ static u32 BuildPatchBlobs(const struct RogueDungeonTheme *theme, u16 seed,
 
     for (i = 0; i < count; i++)
     {
-        u16 a = BlobHash(seed, i, 0);
-        u16 b = BlobHash(seed, i, 1);
+        u16 a = BlobHash(seed, i, which * 2);
+        u16 b = BlobHash(seed, i, which * 2 + 1);
 
         blobs[i].cx = a % DUNGEON_WIDTH;
         blobs[i].cy = b % DUNGEON_HEIGHT;
         // Radius varies either side of the nominal so blobs do not all read as
         // the same stamp repeated.
-        blobs[i].rx = theme->patchRadius + ((a >> 8) % 3) - 1;
-        blobs[i].ry = theme->patchRadius + ((b >> 8) % 3) - 1;
+        blobs[i].rx = layer->radius + ((a >> 8) % 3) - 1;
+        blobs[i].ry = layer->radius + ((b >> 8) % 3) - 1;
     }
     return count;
 }
@@ -952,17 +1099,18 @@ static bool8 IsPatchCell(const u16 *map, const struct PatchBlob *blobs,
 // before the skirts, so a wall's own edge art still wins for a theme that has
 // both. Collision and elevation come from the floor, so this cannot change what
 // is reachable.
-static void ApplyFloorPatches(u16 *map, const struct RogueDungeonTheme *theme,
-                              u16 seed)
+static void ApplyPatchLayer(u16 *map, const struct RogueDungeonTheme *theme,
+                            const struct RoguePatchLayer *layer, u32 which,
+                            u16 seed)
 {
     struct PatchBlob blobs[DUNGEON_MAX_PATCH_BLOBS];
     u32 count;
     s32 x, y;
 
-    if (theme->patchBlobs == 0 || theme->patch[PATCH_MID] == 0)
+    if (layer->blobs == 0 || layer->tile[PATCH_MID] == 0)
         return;
 
-    count = BuildPatchBlobs(theme, seed, blobs);
+    count = BuildPatchBlobs(layer, which, seed, blobs);
 
     for (y = 0; y < DUNGEON_HEIGHT; y++)
     {
@@ -1009,11 +1157,22 @@ static void ApplyFloorPatches(u16 *map, const struct RogueDungeonTheme *theme,
                 slot = PATCH_MID;
             }
 
-            if (theme->patch[slot] != 0)
+            if (layer->tile[slot] != 0)
                 SetBlock(map, x, y,
-                         MakeBlock(theme->patch[slot], 0, theme->elevationFloor));
+                         MakeBlock(layer->tile[slot], 0, theme->elevationFloor));
         }
     }
+}
+
+static void ApplyFloorPatches(u16 *map, const struct RogueDungeonTheme *theme,
+                              u16 seed)
+{
+    u32 i;
+
+    // In order, so a later layer wins: the jungle lays long grass and then
+    // punches puddles through it.
+    for (i = 0; i < theme->patchCount; i++)
+        ApplyPatchLayer(map, theme, &theme->patches[i], i, seed);
 }
 
 // Swaps the occasional block for a decorated variant of the same metatile.
@@ -1207,22 +1366,41 @@ static bool8 RoomsOverlap(const struct DungeonRoom *a, const struct DungeonRoom 
           || a->y + a->h + 1 < b->y || b->y + b->h + 1 < a->y);
 }
 
+// A corridor is `corridorWidth` blocks across, centred on the path. Widening
+// it is the cheapest way to make a theme read as open: room size alone tops out
+// near 35% coverage because bigger rooms simply stop fitting, whereas 3-wide
+// corridors take the same rooms from 24% to 43%.
+//
+// SetBlock drops out-of-range writes, so a wide corridor near the edge is
+// clipped rather than wrapping, and IsWallAt still treats off-map as wall so
+// the outline closes.
+static void CarveCorridorBlock(u16 *map, const struct RogueDungeonTheme *theme,
+                               s32 x, s32 y, s32 width)
+{
+    s32 dx, dy, half = width / 2;
+
+    for (dy = -half; dy <= half; dy++)
+        for (dx = -half; dx <= half; dx++)
+            CarveFloor(map, theme, x + dx, y + dy);
+}
+
 static void CarveCorridor(u16 *map, const struct RogueDungeonTheme *theme,
                           s32 x0, s32 y0, s32 x1, s32 y1)
 {
+    s32 width = theme->corridorWidth ? theme->corridorWidth : 1;
     s32 x = x0, y = y0;
 
     while (x != x1)
     {
-        CarveFloor(map, theme, x, y);
+        CarveCorridorBlock(map, theme, x, y, width);
         x += (x1 > x) ? 1 : -1;
     }
     while (y != y1)
     {
-        CarveFloor(map, theme, x, y);
+        CarveCorridorBlock(map, theme, x, y, width);
         y += (y1 > y) ? 1 : -1;
     }
-    CarveFloor(map, theme, x, y);
+    CarveCorridorBlock(map, theme, x, y, width);
 }
 
 // One major battle per dungeon, in stock order: the eight gym leaders, then the
@@ -1483,7 +1661,22 @@ static void PrepareFloor(u16 seed)
     u32 gridH = DUNGEON_HEIGHT / unit;
     u32 rmin = (unit == 2) ? 3 : DUNGEON_ROOM_MIN;
     u32 rmax = (unit == 2) ? 5 : DUNGEON_ROOM_MAX;
+    u32 roomCap = theme->roomCount ? theme->roomCount : DUNGEON_ROOMS_DEFAULT;
+    u32 attempts;
     s32 i, attempt;
+
+    // A theme may ask to be more open than the cave. Woods keeps its own
+    // half-resolution sizing, which is already in cells rather than blocks.
+    if (unit == 1 && theme->roomMin != 0 && theme->roomMax != 0)
+    {
+        rmin = theme->roomMin;
+        rmax = theme->roomMax;
+    }
+    if (roomCap > DUNGEON_MAX_ROOMS)
+        roomCap = DUNGEON_MAX_ROOMS;
+    // Bigger rooms are rejected more often, so the budget scales with the cap
+    // rather than staying at the cave's 64.
+    attempts = roomCap * 8 + 32;
 
     // The themed layout is a tileset donor. gMapHeader is a RAM copy and
     // CopyMapTilesetsToVram reads mapLayout, and this runs before the map view
@@ -1505,7 +1698,7 @@ static void PrepareFloor(u16 seed)
 
     // Rejection-sample non-overlapping rooms. A fixed attempt budget keeps this
     // bounded; falling short of DUNGEON_MAX_ROOMS is fine.
-    for (attempt = 0; attempt < 64 && sRoomCount < DUNGEON_MAX_ROOMS; attempt++)
+    for (attempt = 0; attempt < (s32)attempts && sRoomCount < roomCap; attempt++)
     {
         struct DungeonRoom room;
         bool8 clear = TRUE;

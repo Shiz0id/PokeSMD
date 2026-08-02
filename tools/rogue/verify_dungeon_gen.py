@@ -10,7 +10,16 @@ from collections import deque
 
 W, H = 48, 48
 MAX_ROOMS, RMIN, RMAX = 8, 5, 10
+CORRIDOR = 1
 FLOOR, WALL = '.', '#'
+
+# A theme may carve more openly than the cave, and the invariants have to hold
+# for its shape too. Keyed to the roomCount/roomMin/roomMax/corridorWidth fields
+# of struct RogueDungeonTheme.
+SHAPES = {
+    'cave (default)': dict(rooms=8, rmin=5, rmax=10, corridor=1),
+    'jungle': dict(rooms=12, rmin=7, rmax=13, corridor=3),
+}
 
 
 def rooms_overlap(a, b):
@@ -31,8 +40,14 @@ def generate(rng):
             return
         grid[y][x] = FLOOR
 
+    def carve_wide(x, y):
+        half = CORRIDOR // 2
+        for dy in range(-half, half + 1):
+            for dx in range(-half, half + 1):
+                carve(x + dx, y + dy)
+
     rooms = []
-    for _ in range(64):
+    for _ in range(MAX_ROOMS * 8 + 32):
         if len(rooms) >= MAX_ROOMS:
             break
         w = RMIN + rng.randrange(RMAX - RMIN + 1)
@@ -53,10 +68,10 @@ def generate(rng):
         x1, y1 = rooms[i][0] + rooms[i][2] // 2, rooms[i][1] + rooms[i][3] // 2
         x, y = x0, y0
         while x != x1:
-            carve(x, y); x += 1 if x1 > x else -1
+            carve_wide(x, y); x += 1 if x1 > x else -1
         while y != y1:
-            carve(x, y); y += 1 if y1 > y else -1
-        carve(x, y)
+            carve_wide(x, y); y += 1 if y1 > y else -1
+        carve_wide(x, y)
 
     spawn = None
     if rooms:
@@ -91,7 +106,11 @@ def check(grid, rooms, spawn):
     return problems
 
 
-def main():
+def run_shape(name, shape):
+    global MAX_ROOMS, RMIN, RMAX, CORRIDOR
+    MAX_ROOMS, RMIN, RMAX, CORRIDOR = (
+        shape['rooms'], shape['rmin'], shape['rmax'], shape['corridor'])
+
     bad = 0
     room_counts, floor_fracs, total_oob = [], [], 0
     for seed in range(2000):
@@ -104,14 +123,24 @@ def main():
         if problems:
             bad += 1
             if bad <= 3:
-                print(f'seed {seed}: {problems}')
-    print(f'seeds tested        : 2000')
-    print(f'seeds with problems : {bad}')
-    print(f'out-of-bounds writes: {total_oob}')
-    print(f'rooms per floor     : min {min(room_counts)}, max {max(room_counts)}, '
+                print(f'  seed {seed}: {problems}')
+    print(f'== {name}  rooms<={MAX_ROOMS} size {RMIN}-{RMAX} corridor {CORRIDOR}')
+    print(f'  seeds tested        : 2000')
+    print(f'  seeds with problems : {bad}')
+    print(f'  out-of-bounds writes: {total_oob}')
+    print(f'  rooms per floor     : min {min(room_counts)}, max {max(room_counts)}, '
           f'avg {sum(room_counts)/len(room_counts):.1f}')
-    print(f'floor coverage      : min {min(floor_fracs):.1%}, max {max(floor_fracs):.1%}, '
+    print(f'  floor coverage      : min {min(floor_fracs):.1%}, max {max(floor_fracs):.1%}, '
           f'avg {sum(floor_fracs)/len(floor_fracs):.1%}')
+    return bad
+
+
+def main():
+    global MAX_ROOMS, RMIN, RMAX, CORRIDOR
+    for name, shape in SHAPES.items():
+        run_shape(name, shape)
+    # Back to the cave's shape so the sample floor below is the familiar one.
+    MAX_ROOMS, RMIN, RMAX, CORRIDOR = 8, 5, 10, 1
 
     print('\nsample floor (seed 7), @ = spawn:')
     grid, rooms, spawn, _ = generate(random.Random(7))

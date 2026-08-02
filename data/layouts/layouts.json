@@ -9373,6 +9373,16 @@
       "secondary_tileset": "gTileset_MirageTower",
       "border_filepath": "data/layouts/RogueDungeonMirageTower/border.bin",
       "blockdata_filepath": "data/layouts/RogueDungeonMirageTower/map.bin"
+    },
+    {
+      "id": "LAYOUT_ROGUE_DUNGEON_JUNGLE",
+      "name": "RogueDungeonJungle_Layout",
+      "width": 48,
+      "height": 48,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_Fortree",
+      "border_filepath": "data/layouts/RogueDungeonJungle/border.bin",
+      "blockdata_filepath": "data/layouts/RogueDungeonJungle/map.bin"
     }
   ]
 }

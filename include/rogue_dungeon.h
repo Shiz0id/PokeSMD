@@ -313,6 +313,51 @@
 // theme can never inherit another theme's metatile ids.
 #define WOODS_METATILE_STAIRS 0x35E
 
+// Jungle, under gTileset_General + gTileset_Fortree - Route 119, Route 120 and
+// Fortree City. Mined from the two routes.
+//
+// The canopy is why this theme is not a second woods. Rustboro draws discrete
+// 2x3 trees on a 2x2 grid, with gaps between them; Fortree draws a CONTINUOUS
+// leaf mass that tiles 1x1 in both directions. So the jungle runs on
+// DUNGEON_GEN_CAVE, which is also the path the cosmetic passes live on - the
+// woods generator returns before any of them.
+//
+// It needs no composed metatiles and almost no table, because the mass has
+// exactly ONE edge case: the row where floor sits to the south. Every other
+// neighbour combination is just more canopy. 0x0C6/0x0C7 and 0x016/0x017 are
+// interchangeable variants scattered for texture, not a 2-wide pair - checked
+// against x-parity across both routes and Fortree City and they come out 50/50.
+#define JUNGLE_METATILE_GRASS            0x001  // plain, no encounters
+#define JUNGLE_METATILE_CANOPY           0x0C6  // dense leaf mass, tiles 1x1
+#define JUNGLE_METATILE_CANOPY_ALT       0x0C7  // interchangeable variant
+#define JUNGLE_METATILE_CANOPY_BASE      0x017  // where floor sits to the south
+#define JUNGLE_METATILE_CANOPY_BASE_ALT  0x016
+
+// Long grass is the jungle's, not the woods'. 0x208 is the only
+// MB_LONG_GRASS_SOUTH_EDGE metatile in the game and it lives here; vanilla puts
+// long grass directly above it in 272 of 272 placements.
+#define JUNGLE_METATILE_LONG_GRASS       0x015  // MB_LONG_GRASS
+#define JUNGLE_METATILE_LONG_GRASS_S     0x208  // the fringe row, no encounters
+
+// Puddles, a 3x3 region autotile in the PRIMARY tileset at base 0x0C8 with a
+// stride of 8. Every piece is MB_PUDDLE, which is TILE_FLAG_UNUSED - walkable,
+// NOT surfable and carrying no encounters - so they are safe decoration. The
+// pond and ocean water in this tileset are surfable and must never be painted.
+#define JUNGLE_METATILE_PUDDLE_NW        0x0C8
+#define JUNGLE_METATILE_PUDDLE_N         0x0C9
+#define JUNGLE_METATILE_PUDDLE_NE        0x0CA
+#define JUNGLE_METATILE_PUDDLE_W         0x0D0
+#define JUNGLE_METATILE_PUDDLE_MID       0x0D1
+#define JUNGLE_METATILE_PUDDLE_E         0x0D2
+#define JUNGLE_METATILE_PUDDLE_SW        0x0D8
+#define JUNGLE_METATILE_PUDDLE_S         0x0D9
+#define JUNGLE_METATILE_PUDDLE_SE        0x0DA
+
+// Fortree's wooden ladder. The stairs hook matches on metatile id rather than
+// behaviour, so this only has to read as a way down - and a rope ladder through
+// the canopy is exactly right for the treehouse town's route.
+#define JUNGLE_METATILE_STAIRS           0x245
+
 // Woods uses the same two elevations as caves.
 #define DUNGEON_ELEVATION_FLOOR 3
 #define DUNGEON_ELEVATION_WALL  0
@@ -384,6 +429,17 @@ enum DungeonPatchSlot
 // is plenty to break up a 48x48 floor and keeps the pass cheap.
 #define DUNGEON_MAX_PATCH_BLOBS 12
 
+// One region laid over the floor. A theme can have several: the jungle draws
+// long grass and then punches puddles through it, so the later layer wins where
+// they overlap. Each layer autotiles against its OWN geometry, so a layer
+// covered by a later one still has correct edges underneath.
+struct RoguePatchLayer
+{
+    u16 tile[PATCH_SLOT_COUNT];
+    u8 blobs;    // ellipses stamped per floor, capped at DUNGEON_MAX_PATCH_BLOBS
+    u8 radius;   // nominal; each blob varies a little either way
+};
+
 // One cosmetic wall swap: wherever `base` was painted, `variant` may replace it.
 // Keyed on the painted metatile rather than on a wall slot, so a variant that
 // suits several slots needs only one entry, and a theme whose slots share a
@@ -416,6 +472,18 @@ struct RogueDungeonTheme
     u8 elevationFloor;
     u8 elevationWall;
 
+    // Shape of the carve, so a theme can be more open than the cave without a
+    // second generator. Zero means the cave's own defaults.
+    //
+    // Room SIZE alone cannot buy much openness: bigger rooms simply stop
+    // fitting, so coverage plateaus near 35% while the room count collapses
+    // from 8 to 3 and the variance gets ugly. Room COUNT and corridor WIDTH are
+    // the levers that work - 12 rooms of 7-13 with 3-wide corridors measures
+    // 42.7% average against the cave's 24.0%, and still averages 7.8 rooms.
+    u8 roomCount;       // cap, up to DUNGEON_MAX_ROOMS
+    u8 roomMin, roomMax;
+    u8 corridorWidth;   // odd, centred on the path; 0 or 1 is the cave's
+
     u16 floor;
     u16 tallGrass;   // 0 if the theme has none, in which case encounters fire
     u16 longGrass;   // anywhere rather than only in grass
@@ -444,12 +512,11 @@ struct RogueDungeonTheme
     u16 shadowCorner;  // floor with skirted wall both north and west, or only
                        // diagonally above-left
 
-    // Soft regions laid over the floor and autotiled at their edges. Runs
-    // before the skirts, so a wall's own edge art still wins where a theme has
-    // both. patchBlobs of 0 disables the pass.
-    u16 patch[PATCH_SLOT_COUNT];
-    u8 patchBlobs;     // ellipses stamped per floor, capped at the max above
-    u8 patchRadius;    // nominal radius; each blob varies a little either way
+    // Soft regions laid over the floor and autotiled at their edges, painted in
+    // order so a later layer wins. Runs before the skirts, so a wall's own edge
+    // art still beats all of them where a theme has both.
+    const struct RoguePatchLayer *patches;
+    u8 patchCount;
 
     // Cosmetic swaps applied to already-painted wall blocks. Collision is not
     // touched, so decoration can never affect connectivity.
@@ -489,7 +556,10 @@ struct RogueDungeonTheme
 #define DUNGEON_ARENA_WIDTH  15
 #define DUNGEON_ARENA_HEIGHT 13
 
-#define DUNGEON_MAX_ROOMS  8
+// The array bound. Themes ask for fewer through roomCount; only the jungle
+// wants more than the cave's eight, and the extra four rooms cost 16 bytes.
+#define DUNGEON_MAX_ROOMS 12
+#define DUNGEON_ROOMS_DEFAULT 8
 #define DUNGEON_ROOM_MIN   5
 #define DUNGEON_ROOM_MAX  10
 
