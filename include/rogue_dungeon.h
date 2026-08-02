@@ -114,12 +114,15 @@
 #define NEWMAUVILLE_METATILE_WALL_PILLAR_TOP 0x288
 #define NEWMAUVILLE_METATILE_WALL_PILLAR_BOT 0x298
 
-// Light falls from the top left, so a wall shades the floor below it and to its
-// right. Derived from NewMauville_Inside: floor with a wall to the north is
-// 0x22F 40% of the time, to the west 0x27D 67%, diagonally 0x275 40%.
-#define NEWMAUVILLE_METATILE_FLOOR_SHADOW_N  0x22F
-#define NEWMAUVILLE_METATILE_FLOOR_SHADOW_W  0x27D
-#define NEWMAUVILLE_METATILE_FLOOR_SHADOW_NW 0x275
+// Wall skirts: the wall's own edge art spilling into the adjacent floor tile,
+// keyed to the specific wall metatile. From NewMauville_Inside, split by
+// neighbour: floor under the band is 0x22F 34/37 (and 7/7 under the vent, a
+// band variant), under face-left 0x27F 10/11; floor east of 0x270 is 0x27D
+// 24/24, of 0x295 9/9, of 0x293 7/7.
+#define NEWMAUVILLE_METATILE_SKIRT_BAND_S   0x22F
+#define NEWMAUVILLE_METATILE_SKIRT_FACE_L_S 0x27F
+#define NEWMAUVILLE_METATILE_SKIRT_E        0x27D
+#define NEWMAUVILLE_METATILE_SKIRT_CORNER   0x275
 
 // Wall decoration. All are drop-in replacements for the wall band, so they keep
 // the collision they replace. Vanilla interleaves these along a wall run. The
@@ -153,10 +156,11 @@
 #define FIERYPATH_METATILE_WALL_CORNER_SW 0x27C
 #define FIERYPATH_METATILE_WALL_CORNER_NW 0x27E
 
-// The only shading this tileset has: a rubble streak on floor against a north
-// wall, used by vanilla for 11 of that tile's 13 appearances. The red rock is
-// matte, so there is no west shadow at all.
-#define FIERYPATH_METATILE_FLOOR_SHADOW_N 0x269
+// The south skirt of the 0x30C ridge - the ridge's bottom edge spilling into
+// the floor tile below it. Vanilla applies it 10/10 under 0x30C and never
+// under a face, which is why pooling all wall types once made it look like
+// one-in-five scatter.
+#define FIERYPATH_METATILE_RIDGE_SKIRT_S  0x269
 
 // Decoration: ember-glint floor variants and rocks embedded in the wall top.
 #define FIERYPATH_METATILE_FLOOR_SPARKLE_A 0x310
@@ -240,6 +244,16 @@ struct RogueDecor
     u16 variantEast;
 };
 
+// If the block north of a floor tile is `wall`, that floor becomes `south`;
+// if the block west of it is `wall`, it becomes `east`. Zero means this wall
+// has no skirt on that side.
+struct RogueSkirt
+{
+    u16 wall;
+    u16 south;
+    u16 east;
+};
+
 struct RogueDungeonTheme
 {
     u16 layoutId;
@@ -256,17 +270,14 @@ struct RogueDungeonTheme
     u16 wall[WALL_SLOT_COUNT];  // DUNGEON_GEN_CAVE only
     u16 stamp[STAMP_COUNT];     // DUNGEON_GEN_WOODS only
 
-    // Floor directly below or right of a wall is shaded, so a room reads as a
-    // room rather than a flat cutout. All three zero opts the theme out.
-    u16 shadowNorth;   // wall above
-    u16 shadowWest;    // wall to the left
-    u16 shadowCorner;  // both, or only diagonally above-left
-
-    // 0 paints every qualifying block - correct for a tileset whose art is a
-    // true directional shadow (New Mauville). N paints 1 in N, position-hashed
-    // - for a tileset whose "shadow" is really scattered rubble (Fiery Path),
-    // where a deterministic band reads as a second floor colour.
-    u8 shadowRarity;
+    // Wall skirts: the wall's own bottom or side edge, spilling into the floor
+    // tile next to it. Keyed to the SPECIFIC wall metatile, and deterministic -
+    // vanilla applies these at effectively 100% per wall type, and pooling
+    // across wall types is what once made them look probabilistic here.
+    const struct RogueSkirt *skirts;
+    u8 skirtCount;
+    u16 shadowCorner;  // floor with skirted wall both north and west, or only
+                       // diagonally above-left
 
     // Cosmetic swaps applied to already-painted wall blocks. Collision is not
     // touched, so decoration can never affect connectivity.

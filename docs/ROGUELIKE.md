@@ -355,16 +355,22 @@ it with a wall body puts a lit edge in the middle of a dark mass.
 Two more passes run at the end of `ApplyWallAutotiling`, both optional per theme
 and both leaving collision alone.
 
-**`ApplyFloorShading` is structure, not decoration.** Vanilla lights its maps
-from the top left, so a wall shades the floor below it and to its right. Without
-it a room is a flat cutout; with it the room reads as a room. It is
-deterministic — every floor block that qualifies gets it. Three fields:
-`shadowNorth`, `shadowWest`, `shadowCorner`; all zero opts out.
+**`ApplySkirts`: wall edges bleed into the floor, keyed by wall identity.**
+Vanilla draws a wall's bottom or side edge into the adjacent floor tile — a
+skirt. Which floor tile depends on the SPECIFIC wall metatile, and per wall
+type it is effectively 100% deterministic: New Mauville's floor under the band
+is `0x22F` 34/37, east of `0x270` is `0x27D` 24/24; Fiery Path's floor under
+the `0x30C` ridge is `0x269` 10/10 and *never* under a face. Per theme this is
+a `RogueSkirt` table: `{wall, south, east}`, plus one corner tile.
 
-Find the tiles by censusing floor blocks by which neighbours are solid, not by
-eye — the shading tile looks like an ordinary floor variant on a contact sheet.
-In New Mauville: floor with a wall north is `0x22F` 40% of the time, west
-`0x27D` 67%, diagonal `0x275` 40%.
+**Census by neighbour identity, never pooled.** Pooling all wall types together
+turns these deterministic rules into fake probabilities — 40–67% in New
+Mauville, 21% in Fiery Path — and that error shipped twice: first as a solid
+skirt band under every Fiery Path wall (read as a second floor colour), then as
+a randomly thinned one (still wrong — the tile is the ridge's own edge, and
+random placement floats fragments of wall in open floor). The query that
+settles it is "for floor with a wall north, split by the north metatile" — a
+three-line change to the census that turns 21% into 10/10.
 
 **`ApplyDecor` swaps the occasional block for a decorated variant.** Keyed on
 the *painted metatile*, not the wall slot, so one entry covers every slot

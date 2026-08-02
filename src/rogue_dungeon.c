@@ -87,6 +87,23 @@ static const u16 sNewMauvilleSpecies[] =
 // Drop-in swaps for the New Mauville wall band. Vanilla interleaves these along
 // a run, which is why the wall mining came back undecisive: the runners up were
 // never noise, they were this set.
+// Which floor tile each wall metatile bleeds into. Every entry is measured
+// from NewMauville_Inside, split by neighbour (see rogue_dungeon.h).
+static const struct RogueSkirt sNewMauvilleSkirts[] =
+{
+    { NEWMAUVILLE_METATILE_WALL_BAND,    NEWMAUVILLE_METATILE_SKIRT_BAND_S,   0 },
+    { NEWMAUVILLE_METATILE_WALL_FACE_L,  NEWMAUVILLE_METATILE_SKIRT_FACE_L_S, 0 },
+    { NEWMAUVILLE_METATILE_WALL_FACE_R,  NEWMAUVILLE_METATILE_SKIRT_BAND_S,
+                                         NEWMAUVILLE_METATILE_SKIRT_E },
+    { NEWMAUVILLE_METATILE_WALL_EAST,    0, NEWMAUVILLE_METATILE_SKIRT_E },
+    { NEWMAUVILLE_METATILE_WALL_NORTH_R, 0, NEWMAUVILLE_METATILE_SKIRT_E },
+};
+
+static const struct RogueSkirt sFieryPathSkirts[] =
+{
+    { FIERYPATH_METATILE_WALL_NORTH_MID, FIERYPATH_METATILE_RIDGE_SKIRT_S, 0 },
+};
+
 static const struct RogueDecor sNewMauvilleDecor[] =
 {
     { NEWMAUVILLE_METATILE_WALL_BAND, NEWMAUVILLE_METATILE_WALL_VENT },
@@ -221,9 +238,9 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [WALL_CORNER_NE]      = NEWMAUVILLE_METATILE_VOID,
             [WALL_CORNER_SOUTH]   = NEWMAUVILLE_METATILE_VOID,
         },
-        .shadowNorth  = NEWMAUVILLE_METATILE_FLOOR_SHADOW_N,
-        .shadowWest   = NEWMAUVILLE_METATILE_FLOOR_SHADOW_W,
-        .shadowCorner = NEWMAUVILLE_METATILE_FLOOR_SHADOW_NW,
+        .skirts = sNewMauvilleSkirts,
+        .skirtCount = ARRAY_COUNT(sNewMauvilleSkirts),
+        .shadowCorner = NEWMAUVILLE_METATILE_SKIRT_CORNER,
 
         // Sparse on purpose. Vanilla is dense because it is a designed
         // facility; a generated floor read for stairs and trainers wants the
@@ -269,10 +286,9 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [WALL_SLIVER_ISOLATED]= FIERYPATH_METATILE_SLIVER_ISOLATED,
         },
 
-        .shadowNorth  = FIERYPATH_METATILE_FLOOR_SHADOW_N,
-        .shadowWest   = 0,
+        .skirts = sFieryPathSkirts,
+        .skirtCount = ARRAY_COUNT(sFieryPathSkirts),
         .shadowCorner = 0,
-        .shadowRarity = 5,   // vanilla scatters it, roughly 1 in 5
 
         .decor = sFieryPathDecor,
         .decorCount = ARRAY_COUNT(sFieryPathDecor),
@@ -636,53 +652,56 @@ static u16 DecorHash(u16 seed, s32 x, s32 y)
     return (u16)h;
 }
 
-// Floor next to a wall picks up its shadow. With shadowRarity 0 every
-// qualifying block gets it - correct when the art is a true directional shadow.
-// A nonzero rarity thins it to scattered rubble; vanilla Fiery Path puts 0x269
-// under roughly 1 in 5 of its north-wall floor tiles, and painting it as a
-// solid band read as a second floor colour.
-static void ApplyFloorShading(u16 *map, const struct RogueDungeonTheme *theme,
-                              u16 seed)
+static u16 SkirtFor(const struct RogueDungeonTheme *theme, u16 wall,
+                    bool8 east)
+{
+    u32 i;
+
+    for (i = 0; i < theme->skirtCount; i++)
+    {
+        if (theme->skirts[i].wall == wall)
+            return east ? theme->skirts[i].east : theme->skirts[i].south;
+    }
+    return 0;
+}
+
+// Wall skirts: a wall's own bottom or side edge, drawn into the floor tile
+// next to it. Keyed to the SPECIFIC wall metatile, and deterministic - vanilla
+// applies these at effectively 100% per wall type. (Averaged across all wall
+// types they look probabilistic, which produced two wrong versions of this
+// pass: a solid band under every wall, then a randomly thinned one.)
+static void ApplySkirts(u16 *map, const struct RogueDungeonTheme *theme)
 {
     s32 x, y;
 
-    if (theme->shadowNorth == 0 && theme->shadowWest == 0
-     && theme->shadowCorner == 0)
+    if (theme->skirtCount == 0)
         return;
 
     for (y = 0; y < DUNGEON_HEIGHT; y++)
     {
         for (x = 0; x < DUNGEON_WIDTH; x++)
         {
-            bool8 north, west;
-            u16 metatile;
+            u16 south = 0, east = 0, metatile;
 
             if (IsWallAt(map, x, y))
                 continue;
 
-            north = IsWallAt(map, x, y - 1);
-            west  = IsWallAt(map, x - 1, y);
+            if (IsWallAt(map, x, y - 1))
+                south = SkirtFor(theme, GetBlockMetatile(map, x, y - 1), FALSE);
+            if (IsWallAt(map, x - 1, y))
+                east = SkirtFor(theme, GetBlockMetatile(map, x - 1, y), TRUE);
 
-            if (north && west)
-                metatile = theme->shadowCorner;
-            else if (north)
-                metatile = theme->shadowNorth;
-            else if (west)
-                metatile = theme->shadowWest;
-            else if (IsWallAt(map, x - 1, y - 1))
+            if (south && east)
+                metatile = theme->shadowCorner ? theme->shadowCorner : south;
+            else if (south)
+                metatile = south;
+            else if (east)
+                metatile = east;
+            else if (theme->shadowCorner && !IsWallAt(map, x, y - 1)
+                  && !IsWallAt(map, x - 1, y) && IsWallAt(map, x - 1, y - 1)
+                  && SkirtFor(theme, GetBlockMetatile(map, x - 1, y - 1), FALSE))
                 metatile = theme->shadowCorner;   // only the corner catches it
             else
-                continue;
-
-            // A theme may have art for only some directions - Fiery Path has a
-            // north shadow but nothing for west, because its light falls flat.
-            if (metatile == 0)
-                continue;
-
-            // Salted so thinning does not correlate with the decor pass, which
-            // hashes the same positions.
-            if (theme->shadowRarity != 0
-             && DecorHash(seed ^ 0x5AD0, x, y) % theme->shadowRarity != 0)
                 continue;
 
             SetBlock(map, x, y, MakeBlock(metatile, 0, theme->elevationFloor));
@@ -863,7 +882,7 @@ static void ApplyWallAutotiling(u16 *map, const struct RogueDungeonTheme *theme)
     // arena floors return early from WriteFloorBlocks, and this is the one
     // point every cave-generator path passes through. Running before the stairs
     // are placed also means neither can paint over them.
-    ApplyFloorShading(map, theme, VarGet(VAR_ROGUE_DUNGEON_SEED));
+    ApplySkirts(map, theme);
     ApplyDecor(map, theme, VarGet(VAR_ROGUE_DUNGEON_SEED));
 }
 

@@ -29,7 +29,9 @@ THEMES = {
     'newmauville': dict(
         primary='gTileset_General', secondary='gTileset_BikeShop',
         floor=0x210, stairs=0x0AF,
-        shadowN=0x22F, shadowW=0x27D, shadowNW=0x275,
+        skirts={0x227: (0x22F, 0), 0x294: (0x27F, 0), 0x293: (0x22F, 0x27D),
+                0x270: (0, 0x27D), 0x295: (0, 0x27D)},
+        shadow_corner=0x275,
         decor=[(0x227, 0x277, 0), (0x227, 0x2B4, 0), (0x227, 0x2A1, 0x2A2)],
         decor_rarity=12,
         wall={
@@ -46,7 +48,7 @@ THEMES = {
         primary='gTileset_General', secondary='gTileset_Lavaridge',
         floor=0x308, stairs=0x0A7,
         # Only a north shadow exists in this tileset; the red rock is matte.
-        shadowN=0x269, shadowW=0, shadowNW=0, shadow_rarity=5,
+        skirts={0x30C: (0x269, 0)},
         decor=[(0x308, 0x310, 0), (0x308, 0x311, 0),   # ember sparkle floors
                (0x271, 0x268, 0), (0x271, 0x26A, 0),   # embedded rocks
                (0x271, 0x30D, 0)],                     # boulder
@@ -169,27 +171,33 @@ def paint(solid, theme, seed=0):
             out[y][x] = wall[slot]
             used[slot] = used.get(slot, 0) + 1
 
-    # Walls cast onto the floor below and to the right of them, so a room reads
-    # as a room rather than a flat cutout. Deterministic, not decoration.
-    if theme.get('shadowN'):
+    # Wall skirts, exactly as ApplySkirts: keyed to the specific wall metatile
+    # north or west, deterministic.
+    if theme.get('skirts'):
+        sk = theme['skirts']
+        corner = theme.get('shadow_corner', 0)
+
+        def skirt(x, y, east):
+            if not is_wall(x, y):
+                return 0
+            entry = sk.get(out[y][x])
+            return entry[1 if east else 0] if entry else 0
+
         for y in range(H):
             for x in range(W):
                 if is_wall(x, y):
                     continue
-                n, w = is_wall(x, y - 1), is_wall(x - 1, y)
-                if n and w:
-                    m = theme['shadowNW']
-                elif n:
-                    m = theme['shadowN']
-                elif w:
-                    m = theme['shadowW']
-                elif is_wall(x - 1, y - 1):
-                    m = theme['shadowNW']
+                s_ = skirt(x, y - 1, False)
+                e_ = skirt(x - 1, y, True)
+                if s_ and e_:
+                    m = corner or s_
+                elif s_ or e_:
+                    m = s_ or e_
+                elif (corner and not is_wall(x, y - 1) and not is_wall(x - 1, y)
+                      and skirt(x - 1, y - 1, False)):
+                    m = corner
                 else:
                     m = 0
-                if m and theme.get('shadow_rarity'):
-                    if decor_hash(seed ^ 0x5AD0, x, y) % theme['shadow_rarity']:
-                        m = 0
                 if m:
                     out[y][x] = m
 
