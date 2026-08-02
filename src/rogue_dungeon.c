@@ -3,11 +3,33 @@
 #include "fieldmap.h"
 #include "random.h"
 #include "script.h"
+#include "wild_encounter.h"
 #include "constants/layouts.h"
 #include "constants/vars.h"
+#include "constants/wild_encounter.h"
 #include "rogue_dungeon.h"
 
 extern const u8 RogueDungeonFloor_EventScript_Stairs[];
+
+// Ordered weakest to strongest. A floor draws only from the prefix its depth
+// has unlocked, so early floors stay tame and later ones can roll evolved
+// forms. The static table in wild_encounters.json is a placeholder that this
+// replaces at runtime.
+static const u16 sDungeonSpeciesPool[] =
+{
+    SPECIES_ZUBAT,   SPECIES_WHISMUR,  SPECIES_GEODUDE,  SPECIES_MAKUHITA,
+    SPECIES_ARON,    SPECIES_NOSEPASS, SPECIES_SABLEYE,  SPECIES_MAWILE,
+    SPECIES_GOLBAT,  SPECIES_LOUDRED,  SPECIES_GRAVELER, SPECIES_LAIRON,
+    SPECIES_ONIX,    SPECIES_HARIYAMA, SPECIES_SHUCKLE,  SPECIES_CLAYDOL,
+};
+
+// Rebuilt whenever a floor is generated, from the same seeded RNG, so a given
+// floor always has the same encounter table.
+//
+// EWRAM_DATA explicitly: plain statics land in IWRAM, and IWRAM is by far the
+// scarcer region here (~4 KB free against ~35 KB of EWRAM).
+EWRAM_DATA static struct WildPokemon sDungeonWildMons[NUM_LAND_MONS_ENCOUNTER_SLOTS] = {0};
+EWRAM_DATA static struct WildPokemonInfo sDungeonWildInfo = {0};
 
 // Runtime dungeon floor generator.
 //
@@ -27,7 +49,7 @@ struct DungeonRoom
 // Local PRNG. Generation must not consume or perturb the global RNG - if it
 // did, the floor would depend on how many steps the player had taken, and the
 // same seed would stop reproducing the same floor.
-static u32 sDungeonRngState;
+EWRAM_DATA static u32 sDungeonRngState = 0;
 
 static void SeedDungeonRng(u16 seed)
 {
@@ -39,6 +61,44 @@ static u16 DungeonRandom(void)
 {
     sDungeonRngState = ISO_RANDOMIZE1(sDungeonRngState);
     return sDungeonRngState >> 16;
+}
+
+// Must be called from generation, after SeedDungeonRng, so the table is
+// reproducible for a given floor.
+static void BuildWildEncounterTable(u16 floor)
+{
+    u8 level = DUNGEON_ENCOUNTER_BASE_LEVEL + floor * DUNGEON_ENCOUNTER_LEVEL_STEP;
+    u8 tiers = DUNGEON_ENCOUNTER_STARTING_TIER + floor;
+    u32 i;
+
+    if (level > MAX_LEVEL - DUNGEON_ENCOUNTER_LEVEL_SPREAD)
+        level = MAX_LEVEL - DUNGEON_ENCOUNTER_LEVEL_SPREAD;
+    if (tiers > ARRAY_COUNT(sDungeonSpeciesPool))
+        tiers = ARRAY_COUNT(sDungeonSpeciesPool);
+
+    for (i = 0; i < NUM_LAND_MONS_ENCOUNTER_SLOTS; i++)
+    {
+        sDungeonWildMons[i].species = sDungeonSpeciesPool[DungeonRandom() % tiers];
+        sDungeonWildMons[i].minLevel = level;
+        sDungeonWildMons[i].maxLevel = level + DUNGEON_ENCOUNTER_LEVEL_SPREAD;
+    }
+
+    // encounterRate is read straight off the static table, not from here, so
+    // this value is only a sane fallback.
+    sDungeonWildInfo.encounterRate = 10;
+    sDungeonWildInfo.wildPokemon = sDungeonWildMons;
+}
+
+// Hooked into TryGenerateWildMon. Returning NULL leaves the caller on the
+// ordinary static table.
+const struct WildPokemonInfo *RogueDungeon_GetWildMonInfo(enum WildPokemonArea area)
+{
+    if (gMapHeader.mapLayoutId != LAYOUT_ROGUE_DUNGEON_FLOOR)
+        return NULL;
+    if (area != WILD_AREA_LAND)
+        return NULL;
+
+    return &sDungeonWildInfo;
 }
 
 static u16 MakeBlock(u16 metatile, u8 collision, u8 elevation)
@@ -256,6 +316,10 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
         gSaveBlock1Ptr->pos.x = rooms[0].x + rooms[0].w / 2;
         gSaveBlock1Ptr->pos.y = rooms[0].y + rooms[0].h / 2;
     }
+
+    // Last, so it does not shift the RNG sequence the layout depends on -
+    // adding this must not change the floors existing seeds produce.
+    BuildWildEncounterTable(VarGet(VAR_ROGUE_DUNGEON_FLOOR));
 }
 
 // Hooked into TryStartStepBasedScript. Returning TRUE means we consumed the

@@ -30,6 +30,7 @@
 #include "constants/items.h"
 #include "constants/layouts.h"
 #include "constants/weather.h"
+#include "rogue_dungeon.h"
 
 extern const u8 EventScript_SprayWoreOff[];
 
@@ -532,6 +533,13 @@ bool8 TryGenerateWildMon(const struct WildPokemonInfo *wildMonInfo, enum WildPok
 {
     u8 wildMonIndex = 0;
     u8 level;
+    const struct WildPokemonInfo *dungeonInfo = RogueDungeon_GetWildMonInfo(area);
+
+    // Procedural dungeon floors build their table in RAM, scaled by depth, so
+    // the static entry in wild_encounters.json is only a placeholder. Hooked
+    // here rather than at the call sites because every caller funnels through.
+    if (dungeonInfo != NULL)
+        wildMonInfo = dungeonInfo;
 
     switch (area)
     {

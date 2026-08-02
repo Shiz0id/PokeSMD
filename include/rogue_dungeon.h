@@ -61,7 +61,15 @@
 #define DUNGEON_ROOM_MIN   5
 #define DUNGEON_ROOM_MAX  10
 
+// Deeper floors unlock stronger species and raise levels. Tuning knobs kept
+// here so the curve is adjustable without reading the generator.
+#define DUNGEON_ENCOUNTER_BASE_LEVEL   4
+#define DUNGEON_ENCOUNTER_LEVEL_STEP   2
+#define DUNGEON_ENCOUNTER_LEVEL_SPREAD 2
+#define DUNGEON_ENCOUNTER_STARTING_TIER 4
+
 void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition);
 bool8 RogueDungeon_TryStartStairsScript(struct MapPosition *position);
+const struct WildPokemonInfo *RogueDungeon_GetWildMonInfo(enum WildPokemonArea area);
 
 #endif // GUARD_ROGUE_DUNGEON_H
