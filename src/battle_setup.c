@@ -1051,6 +1051,16 @@ void InitTrainerBattleParameter(void)
     sTrainerBattleEndScript = NULL;
 }
 
+// Where the script resumes after the battle. Normally set from the trainerbattle
+// command's inline data or the frontier facility dispatch; a runtime-chosen
+// opponent (the procedural dungeon) goes through neither, and without this the
+// gotopostbattlescript at the end of EventScript_TryDoNormalTrainerBattle would
+// jump through a stale pointer.
+void SetTrainerBattleEndScript(const u8 *script)
+{
+    sTrainerBattleEndScript = (u8 *)script;
+}
+
 void TrainerBattleLoadArgs(const u8 *data)
 {
     InitTrainerBattleParameter();

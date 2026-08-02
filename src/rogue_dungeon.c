@@ -6,14 +6,25 @@
 #include "string_util.h"
 #include "pokemon.h"
 #include "wild_encounter.h"
+#include "battle_setup.h"
+#include "event_object_movement.h"
 #include "constants/items.h"
 #include "constants/layouts.h"
 #include "constants/moves.h"
 #include "constants/vars.h"
 #include "constants/wild_encounter.h"
+#include "constants/event_objects.h"
+#include "constants/trainer_types.h"
+#include "constants/battle_setup.h"
+#include "constants/event_object_movement.h"
+#include "constants/rogue_dungeon_trainers.h"
 #include "rogue_dungeon.h"
 
 extern const u8 RogueDungeonFloor_EventScript_Stairs[];
+extern const u8 RogueDungeonFloor_EventScript_Trainer[];
+extern const u8 RogueDungeonFloor_EventScript_TrainerDone[];
+extern const u8 RogueDungeonFloor_Text_TrainerIntro[];
+extern const u8 RogueDungeonFloor_Text_TrainerDefeat[];
 
 // Ordered weakest to strongest. A floor draws only from the prefix its depth
 // has unlocked, so early floors stay tame and later ones can roll evolved
@@ -61,6 +72,13 @@ EWRAM_DATA static u8 sStairsX = 0;
 EWRAM_DATA static u8 sStairsY = 0;
 EWRAM_DATA static u16 sStairsMetatile = 0;
 EWRAM_DATA static bool8 sFloorPrepared = FALSE;
+
+// Trainers for this floor. Indexed by object event localId - 1, mirroring how
+// the Battle Pyramid maps a talked-to object back to its opponent.
+EWRAM_DATA static u16 sTrainerIds[DUNGEON_MAX_TRAINERS] = {0};
+EWRAM_DATA static u8 sTrainerX[DUNGEON_MAX_TRAINERS] = {0};
+EWRAM_DATA static u8 sTrainerY[DUNGEON_MAX_TRAINERS] = {0};
+EWRAM_DATA static u8 sTrainerCount = 0;
 
 // Local PRNG. Generation must not consume or perturb the global RNG - if it
 // did, the floor would depend on how many steps the player had taken, and the
@@ -371,6 +389,74 @@ static void CarveCorridor(u16 *map, s32 x0, s32 y0, s32 x1, s32 y1)
     CarveFloor(map, x, y);
 }
 
+// The table is sorted by average party level, so candidates for a target level
+// form a contiguous run. Widens the window until something matches rather than
+// failing - the low end of the table is thin, as the stock game has few
+// trainers below level 10.
+static u16 PickTrainerForLevel(u8 target)
+{
+    u32 i, first = 0, last = 0;
+    u32 window;
+
+    for (window = 3; window < 64; window += 4)
+    {
+        bool8 found = FALSE;
+
+        for (i = 0; i < ARRAY_COUNT(sRogueDungeonTrainers); i++)
+        {
+            u32 level = sRogueDungeonTrainers[i].avgLevel;
+
+            if (level + window >= target && level <= target + window)
+            {
+                if (!found)
+                {
+                    first = i;
+                    found = TRUE;
+                }
+                last = i;
+            }
+        }
+
+        if (found)
+            return sRogueDungeonTrainers[first + (DungeonRandom() % (last - first + 1))].trainerId;
+    }
+
+    return sRogueDungeonTrainers[0].trainerId;
+}
+
+// Trainers stand in rooms the player does not start in, so the first room stays
+// a safe landing spot.
+static void PlaceTrainers(u16 floor)
+{
+    u32 target = DUNGEON_ENCOUNTER_BASE_LEVEL
+               + ((u32)floor * DUNGEON_ENCOUNTER_LEVEL_NUM) / DUNGEON_ENCOUNTER_LEVEL_DEN;
+    u32 count = 1 + floor / DUNGEON_TRAINER_FLOORS_PER_EXTRA;
+    u32 i;
+
+    sTrainerCount = 0;
+
+    if (sRoomCount < 2)
+        return;
+    if (count > DUNGEON_MAX_TRAINERS)
+        count = DUNGEON_MAX_TRAINERS;
+
+    for (i = 0; i < count; i++)
+    {
+        u32 room = 1 + (DungeonRandom() % (sRoomCount - 1));
+        u8 x = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
+        u8 y = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
+
+        // Never on the exit, or the player cannot reach it without fighting.
+        if (x == sStairsX && y == sStairsY)
+            continue;
+
+        sTrainerX[sTrainerCount] = x;
+        sTrainerY[sTrainerCount] = y;
+        sTrainerIds[sTrainerCount] = PickTrainerForLevel(target);
+        sTrainerCount++;
+    }
+}
+
 // Everything a floor is, derived from its seed. Touches no map memory, so it
 // can run at object-event-template load time - which happens before the map is
 // generated, and is where trainers have to be placed.
@@ -422,6 +508,7 @@ static void PrepareFloor(u16 seed)
     }
 
     BuildWildEncounterTable(VarGet(VAR_ROGUE_DUNGEON_FLOOR));
+    PlaceTrainers(VarGet(VAR_ROGUE_DUNGEON_FLOOR));
     sFloorPrepared = TRUE;
 }
 
@@ -471,6 +558,77 @@ void RogueDungeon_PrepareNewFloor(void)
 
     VarSet(VAR_ROGUE_DUNGEON_SEED, seed);
     PrepareFloor(seed);
+}
+
+// Replaces LoadObjEventTemplatesFromHeader for dungeon floors, the same way the
+// Battle Pyramid and Trainer Hill do. The engine reads templates for the
+// current map from the save block but takes the COUNT from ROM, so map.json
+// declares DUNGEON_MAX_TRAINERS placeholders and we overwrite them here.
+void RogueDungeon_LoadObjectEventTemplates(void)
+{
+    struct ObjectEventTemplate *templates = gSaveBlock1Ptr->objectEventTemplates;
+    u32 i;
+
+    // This runs before the map is generated, so roll the floor now - trainer
+    // placement needs to see the rooms.
+    RogueDungeon_PrepareNewFloor();
+
+    // An object event whose flagId is set is not spawned. Kept set permanently
+    // so leftover placeholder slots stay invisible.
+    FlagSet(FLAG_ROGUE_OBJECT_UNUSED);
+
+    CpuFill32(0, templates, sizeof(gSaveBlock1Ptr->objectEventTemplates));
+
+    for (i = 0; i < DUNGEON_MAX_TRAINERS; i++)
+    {
+        templates[i].localId = i + 1;
+        templates[i].kind = OBJ_KIND_NORMAL;
+        templates[i].elevation = DUNGEON_ELEVATION_FLOOR;
+
+        if (i < sTrainerCount)
+        {
+            templates[i].graphicsId = OBJ_EVENT_GFX_HIKER;
+            templates[i].x = sTrainerX[i];
+            templates[i].y = sTrainerY[i];
+            templates[i].movementType = MOVEMENT_TYPE_FACE_DOWN;
+            templates[i].trainerType = TRAINER_TYPE_NORMAL;
+            templates[i].trainerRange_berryTreeId = DUNGEON_TRAINER_SIGHT_RANGE;
+            templates[i].script = RogueDungeonFloor_EventScript_Trainer;
+            templates[i].flagId = 0;
+        }
+        else
+        {
+            templates[i].flagId = FLAG_ROGUE_OBJECT_UNUSED;
+        }
+    }
+}
+
+// Called by the shared trainer script. The opponent is chosen per floor rather
+// than baked into a script, so the ordinary trainerbattle command cannot be
+// used - this configures the battle by hand and jumps to the shared tail.
+void RogueDungeon_SetUpTrainerBattle(void)
+{
+    u32 slot = gSpecialVar_LastTalked - 1;
+    u16 trainerId;
+
+    if (slot >= sTrainerCount)
+        slot = 0;
+    trainerId = sTrainerIds[slot];
+
+    // Stock trainer flags are permanent and we reuse stock trainers every run,
+    // so without clearing this the battle is skipped as already won.
+    FlagClear(TRAINER_FLAGS_START + trainerId);
+
+    InitTrainerBattleParameter();
+    TRAINER_BATTLE_PARAM.mode = TRAINER_BATTLE_SINGLE;
+    TRAINER_BATTLE_PARAM.playMusicA = TRUE;
+    TRAINER_BATTLE_PARAM.objEventLocalIdA = gSpecialVar_LastTalked;
+    TRAINER_BATTLE_PARAM.opponentA = trainerId;
+    TRAINER_BATTLE_PARAM.introTextA = (u8 *)RogueDungeonFloor_Text_TrainerIntro;
+    TRAINER_BATTLE_PARAM.defeatTextA = (u8 *)RogueDungeonFloor_Text_TrainerDefeat;
+
+    SetMapVarsToTrainerA();
+    SetTrainerBattleEndScript(RogueDungeonFloor_EventScript_TrainerDone);
 }
 
 void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)

@@ -120,5 +120,7 @@ const struct WildPokemonInfo *RogueDungeon_GetWildMonInfo(enum WildPokemonArea a
 void RogueDungeon_ApplyNewGameUnlocks(void);
 void RogueDungeon_GetFloorName(u8 *dest);
 void RogueDungeon_PrepareNewFloor(void);
+void RogueDungeon_LoadObjectEventTemplates(void);
+void RogueDungeon_SetUpTrainerBattle(void);
 
 #endif // GUARD_ROGUE_DUNGEON_H

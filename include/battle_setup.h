@@ -68,6 +68,7 @@ enum BattleTransition GetSpecialBattleTransition(enum BattleTransitionGroup id);
 void ChooseStarter(void);
 void ResetTrainerOpponentIds(void);
 void SetMapVarsToTrainerA(void);
+void SetTrainerBattleEndScript(const u8 *script);
 void SetMapVarsToTrainerB(void);
 const u8 *BattleSetup_ConfigureTrainerBattle(const u8 *data);
 const u8* BattleSetup_ConfigureFacilityTrainerBattle(u8 facility, const u8* scriptEndPtr);

@@ -1,5 +1,6 @@
 #include "global.h"
 #include "constants/rogue_dungeon.h"
+#include "rogue_dungeon.h"
 #include "overworld.h"
 #include "battle_pyramid.h"
 #include "battle_setup.h"
@@ -942,6 +943,8 @@ static void LoadMapFromWarp(bool32 a1)
     {
         if (gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR)
             LoadBattlePyramidObjectEventTemplates();
+        else if (gMapHeader.mapLayoutId == LAYOUT_ROGUE_DUNGEON_FLOOR)
+            RogueDungeon_LoadObjectEventTemplates();
         else if (InTrainerHill())
             LoadTrainerHillObjectEventTemplates();
         else

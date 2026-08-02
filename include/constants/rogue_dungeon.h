@@ -20,4 +20,15 @@
 // dungeon instead of the moving truck. Set to FALSE to get vanilla back.
 #define ROGUE_SLIM_NEW_GAME TRUE
 
+// Kept permanently set. An object event whose flagId is set is not spawned, so
+// this hides the placeholder slots map.json has to declare but a given floor
+// does not use.
+#define FLAG_ROGUE_OBJECT_UNUSED FLAG_UNUSED_0x919
+
+// map.json must declare exactly this many object events: the engine reads
+// templates from the save block but takes the count from ROM.
+#define DUNGEON_MAX_TRAINERS            4
+#define DUNGEON_TRAINER_FLOORS_PER_EXTRA 50
+#define DUNGEON_TRAINER_SIGHT_RANGE      4
+
 #endif // GUARD_CONSTANTS_ROGUE_DUNGEON_H

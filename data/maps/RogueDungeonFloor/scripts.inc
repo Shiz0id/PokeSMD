@@ -20,3 +20,22 @@ RogueDungeonFloor_EventScript_NextFloor::
 
 RogueDungeonFloor_Text_Stairs:
 	.string "Continue to the next floor?$"
+
+@ Shared by every generated trainer. The opponent is picked per floor, so the
+@ ordinary trainerbattle command cannot be used - it bakes the trainer id in at
+@ assembly time. The special configures the battle by hand and we jump to the
+@ shared trainer tail the engine already provides.
+RogueDungeonFloor_EventScript_Trainer::
+	special RogueDungeon_SetUpTrainerBattle
+	goto EventScript_TryDoNormalTrainerBattle
+
+@ Where SetTrainerBattleEndScript points, so gotopostbattlescript lands here.
+RogueDungeonFloor_EventScript_TrainerDone::
+	releaseall
+	end
+
+RogueDungeonFloor_Text_TrainerIntro::
+	.string "You there! Let us settle this here!$"
+
+RogueDungeonFloor_Text_TrainerDefeat::
+	.string "I could not keep up down here.$"
