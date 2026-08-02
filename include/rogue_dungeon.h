@@ -358,9 +358,59 @@
 // the canopy is exactly right for the treehouse town's route.
 #define JUNGLE_METATILE_STAIRS           0x245
 
+// gTileset_Mossdeep, the sea routes out of Lilycove that lead to Tate and
+// Liza's city. The first theme the player crosses SURFING rather than walking.
+//
+// That is not a special case in the generator, it is a property of the floor
+// metatile: MB_OCEAN_WATER carries TILE_FLAG_SURFABLE, and
+// GetAdjustedInitialTransitionFlags checks the behaviour under the player on
+// every warp arrival and answers a surfable one with a surf blob. No HM, no
+// party requirement, no badge - which is the only reason a water dungeon is not
+// a softlock waiting for a player with nothing that can Surf.
+//
+// So nothing walkable may ever be painted here. Step onto land and the player
+// dismounts, and getting back on water WOULD need the HM.
+#define OCEAN_METATILE_WATER             0x170  // MB_OCEAN_WATER, encounters
+
+// The way down is a deep-water dive spot, which is what the sea routes use.
+// Still surfable, so stepping on it does not dismount the player.
+#define OCEAN_METATILE_STAIRS            0x14E  // MB_DEEP_WATER
+
+// The rock mass, a 3x3 nine slice read off the sea routes as a grid. A
+// neighbour-mask census cannot recover it - pooled with island shores and the
+// map-edge barrier nothing beats 38% - but each piece alone is decisive.
+#define OCEAN_METATILE_ROCK_NW           0x338
+#define OCEAN_METATILE_ROCK_N            0x339
+#define OCEAN_METATILE_ROCK_NE           0x33A
+#define OCEAN_METATILE_ROCK_W            0x340
+#define OCEAN_METATILE_ROCK_MID          0x341
+#define OCEAN_METATILE_ROCK_E            0x342
+#define OCEAN_METATILE_ROCK_SW           0x348
+#define OCEAN_METATILE_ROCK_S            0x349
+#define OCEAN_METATILE_ROCK_SE           0x34A
+
+// Ours, appended after Mossdeep's 454 vanilla metatiles by
+// make_ocean_slivers.py. Vanilla's smallest sea rock is 2x2, and a carved floor
+// makes one-block walls constantly. All nine pieces above share one bottom
+// layer with every edge as a top-layer overlay, so each of these is four
+// quadrant copies rather than art.
+#define OCEAN_METATILE_SLIVER_VERT       0x3C6
+#define OCEAN_METATILE_SLIVER_HORZ       0x3C7
+#define OCEAN_METATILE_SLIVER_VERT_TOP   0x3C8
+#define OCEAN_METATILE_SLIVER_VERT_BOT   0x3C9
+#define OCEAN_METATILE_SLIVER_HORZ_L     0x3CA
+#define OCEAN_METATILE_SLIVER_HORZ_R     0x3CB
+#define OCEAN_METATILE_SLIVER_ISOLATED   0x3CC
+
+
 // Woods uses the same two elevations as caves.
 #define DUNGEON_ELEVATION_FLOOR 3
 #define DUNGEON_ELEVATION_WALL  0
+
+// Water is elevation 1, not 3. Every other theme walks at 3; vanilla puts deep
+// water at elevation 1 in 100% of its blocks and ocean water in 92%. Getting
+// this wrong is invisible in a diff and in a mock, so it is spelled out.
+#define DUNGEON_ELEVATION_WATER 1
 
 // A dungeon theme owns everything that varies between dungeons: which layout
 // supplies the tilesets, which generator shapes the floor, and which metatiles
@@ -384,7 +434,18 @@ enum DungeonWallSlot
     WALL_INTERIOR_LEFT, WALL_INTERIOR_MID, WALL_INTERIOR_RIGHT,
     WALL_FACE_LEFT,     WALL_FACE_MID,     WALL_FACE_RIGHT,
     WALL_NORTH_LEFT,    WALL_NORTH_MID,    WALL_NORTH_RIGHT,
-    WALL_CORNER_NW,     WALL_CORNER_NE,    WALL_CORNER_SOUTH,
+
+    // Every cardinal is wall, so only a diagonal can be open. NAMED FOR THE
+    // OPEN DIAGONAL, which is the only way to read them without getting it
+    // backwards - the old names described the wall's position instead, so
+    // WALL_CORNER_NW took the art a tileset calls its SOUTH-EAST corner and
+    // Fiery Path's table looks wrong until you know that.
+    //
+    // There are four cases and there used to be three: NW and NE shared one
+    // slot, so a tileset with distinct art for them could not say so. That is
+    // what left the ocean's cliffs notched.
+    WALL_CORNER_OPEN_SE, WALL_CORNER_OPEN_SW,
+    WALL_CORNER_OPEN_NW, WALL_CORNER_OPEN_NE,
     WALL_SLIVER_VERT,   WALL_SLIVER_HORZ,
     WALL_SLIVER_VERT_TOP, WALL_SLIVER_VERT_BOT,
     WALL_SLIVER_HORZ_L,   WALL_SLIVER_HORZ_R, WALL_SLIVER_ISOLATED,
@@ -523,6 +584,24 @@ struct RogueDungeonTheme
     const struct RogueDecor *decor;
     u8 decorCount;
     u8 decorRarity;    // 1 in N eligible blocks; 0 disables
+
+    // Ordinary trainers stand wherever the generator drops them, so their sprite
+    // has to suit the surface they are standing on - a hiker on the open sea
+    // reads as a bug. Two of them so a floor is not all one figure; zero for
+    // either leaves the default. Bosses and mini bosses carry their own sprites
+    // and ignore this.
+    u16 trainerGfx, trainerGfxAlt;
+
+    // Stand the arena's trainer on a solid block of its own. Set for themes
+    // whose floor is not something a person can stand on - the ocean would
+    // otherwise have Tate and Liza waiting in the middle of the sea.
+    //
+    // Nothing has to be drawn for it: the block goes down before the autotile
+    // pass, which sees one wall surrounded by floor and paints WALL_SLIVER_
+    // ISOLATED, already a lone rock. It also turns the arena trainer talk-only,
+    // because a boss that keeps its sight range steps off the platform to
+    // approach the player and spends the rest of the floor standing on water.
+    bool8 arenaPlatform;
 
     const u16 *species;
     u8 speciesCount;

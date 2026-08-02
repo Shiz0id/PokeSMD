@@ -273,6 +273,18 @@ static const u16 sJungleSpecies[] =
     SPECIES_TROPIUS,  SPECIES_ZANGOOSE,   SPECIES_SEVIPER,    SPECIES_ABSOL,
 };
 
+// The open sea. Everything here is what actually swims on Routes 124 to 126,
+// which is the stretch the player is crossing. Encounters fire on every block
+// rather than only in a grass layer, because MB_OCEAN_WATER carries the flag
+// itself - the same deal the cave gets.
+static const u16 sOceanSpecies[] =
+{
+    SPECIES_TENTACOOL,  SPECIES_MAGIKARP, SPECIES_WINGULL,  SPECIES_CARVANHA,
+    SPECIES_GOLDEEN,    SPECIES_HORSEA,   SPECIES_SPHEAL,   SPECIES_WAILMER,
+    SPECIES_TENTACRUEL, SPECIES_PELIPPER, SPECIES_SEAKING,  SPECIES_SEADRA,
+    SPECIES_SEALEO,     SPECIES_SHARPEDO, SPECIES_WAILORD,  SPECIES_KINGDRA,
+};
+
 // Two layers, painted in order. Long grass goes down first and covers whole
 // clearings; puddles are punched through it afterwards, so water sits in the
 // grass rather than being hidden under it.
@@ -341,6 +353,7 @@ enum DungeonThemeId
     DUNGEON_THEME_FIERYPATH,
     DUNGEON_THEME_MIRAGETOWER,
     DUNGEON_THEME_JUNGLE,
+    DUNGEON_THEME_OCEAN,
     DUNGEON_THEME_COUNT
 };
 
@@ -397,9 +410,10 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [WALL_NORTH_LEFT]     = DUNGEON_METATILE_WALL_NORTH_LEFT,
             [WALL_NORTH_MID]      = DUNGEON_METATILE_WALL_NORTH_MID,
             [WALL_NORTH_RIGHT]    = DUNGEON_METATILE_WALL_NORTH_RIGHT,
-            [WALL_CORNER_NW]      = DUNGEON_METATILE_WALL_CORNER_NW,
-            [WALL_CORNER_NE]      = DUNGEON_METATILE_WALL_CORNER_NE,
-            [WALL_CORNER_SOUTH]   = DUNGEON_METATILE_WALL_CORNER_SOUTH,
+            [WALL_CORNER_OPEN_SE] = DUNGEON_METATILE_WALL_CORNER_NW,
+            [WALL_CORNER_OPEN_SW] = DUNGEON_METATILE_WALL_CORNER_NE,
+            [WALL_CORNER_OPEN_NW] = DUNGEON_METATILE_WALL_CORNER_SOUTH,
+            [WALL_CORNER_OPEN_NE] = DUNGEON_METATILE_WALL_CORNER_SOUTH,
             [WALL_SLIVER_VERT]    = DUNGEON_METATILE_WALL_SLIVER_VERT,
             [WALL_SLIVER_HORZ]    = DUNGEON_METATILE_WALL_SLIVER_HORZ,
             [WALL_SLIVER_VERT_TOP]= DUNGEON_METATILE_WALL_SLIVER_VERT_TOP,
@@ -451,9 +465,10 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             // is visible - only the void reads correctly. Filling them with a
             // wall body puts a lit edge in the middle of a dark mass.
             [WALL_INTERIOR_MID]   = NEWMAUVILLE_METATILE_VOID,
-            [WALL_CORNER_NW]      = NEWMAUVILLE_METATILE_VOID,
-            [WALL_CORNER_NE]      = NEWMAUVILLE_METATILE_VOID,
-            [WALL_CORNER_SOUTH]   = NEWMAUVILLE_METATILE_VOID,
+            [WALL_CORNER_OPEN_SE] = NEWMAUVILLE_METATILE_VOID,
+            [WALL_CORNER_OPEN_SW] = NEWMAUVILLE_METATILE_VOID,
+            [WALL_CORNER_OPEN_NW] = NEWMAUVILLE_METATILE_VOID,
+            [WALL_CORNER_OPEN_NE] = NEWMAUVILLE_METATILE_VOID,
         },
         .skirts = sNewMauvilleSkirts,
         .skirtCount = ARRAY_COUNT(sNewMauvilleSkirts),
@@ -491,9 +506,10 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [WALL_NORTH_LEFT]     = FIERYPATH_METATILE_WALL_NORTH_L,
             [WALL_NORTH_MID]      = FIERYPATH_METATILE_WALL_NORTH_MID,
             [WALL_NORTH_RIGHT]    = FIERYPATH_METATILE_WALL_NORTH_R,
-            [WALL_CORNER_NW]      = FIERYPATH_METATILE_WALL_CORNER_SE,
-            [WALL_CORNER_NE]      = FIERYPATH_METATILE_WALL_CORNER_SW,
-            [WALL_CORNER_SOUTH]   = FIERYPATH_METATILE_WALL_CORNER_NW,
+            [WALL_CORNER_OPEN_SE] = FIERYPATH_METATILE_WALL_CORNER_SE,
+            [WALL_CORNER_OPEN_SW] = FIERYPATH_METATILE_WALL_CORNER_SW,
+            [WALL_CORNER_OPEN_NW] = FIERYPATH_METATILE_WALL_CORNER_NW,
+            [WALL_CORNER_OPEN_NE] = FIERYPATH_METATILE_WALL_CORNER_NW,
             [WALL_SLIVER_VERT]    = FIERYPATH_METATILE_SLIVER_VERT,
             [WALL_SLIVER_HORZ]    = FIERYPATH_METATILE_WALL_NORTH_MID,
             [WALL_SLIVER_VERT_TOP]= FIERYPATH_METATILE_SLIVER_VERT_TOP,
@@ -536,9 +552,10 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [WALL_NORTH_LEFT]     = MIRAGETOWER_METATILE_WALL_NORTH_L,
             [WALL_NORTH_MID]      = MIRAGETOWER_METATILE_WALL_NORTH_MID,
             [WALL_NORTH_RIGHT]    = MIRAGETOWER_METATILE_WALL_NORTH_R,
-            [WALL_CORNER_NW]      = MIRAGETOWER_METATILE_WALL_CORNER_NW,
-            [WALL_CORNER_NE]      = MIRAGETOWER_METATILE_WALL_CORNER_NE,
-            [WALL_CORNER_SOUTH]   = MIRAGETOWER_METATILE_WALL_CORNER_S,
+            [WALL_CORNER_OPEN_SE] = MIRAGETOWER_METATILE_WALL_CORNER_NW,
+            [WALL_CORNER_OPEN_SW] = MIRAGETOWER_METATILE_WALL_CORNER_NE,
+            [WALL_CORNER_OPEN_NW] = MIRAGETOWER_METATILE_WALL_CORNER_S,
+            [WALL_CORNER_OPEN_NE] = MIRAGETOWER_METATILE_WALL_CORNER_S,
             [WALL_SLIVER_VERT]    = MIRAGETOWER_METATILE_SLIVER_VERT,
             [WALL_SLIVER_HORZ]    = MIRAGETOWER_METATILE_SLIVER_HORZ,
             [WALL_SLIVER_VERT_TOP]= MIRAGETOWER_METATILE_SLIVER_VERT_TOP,
@@ -601,9 +618,10 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [WALL_NORTH_LEFT]     = JUNGLE_METATILE_CANOPY,
             [WALL_NORTH_MID]      = JUNGLE_METATILE_CANOPY,
             [WALL_NORTH_RIGHT]    = JUNGLE_METATILE_CANOPY,
-            [WALL_CORNER_NW]      = JUNGLE_METATILE_CANOPY,
-            [WALL_CORNER_NE]      = JUNGLE_METATILE_CANOPY,
-            [WALL_CORNER_SOUTH]   = JUNGLE_METATILE_CANOPY,
+            [WALL_CORNER_OPEN_SE] = JUNGLE_METATILE_CANOPY,
+            [WALL_CORNER_OPEN_SW] = JUNGLE_METATILE_CANOPY,
+            [WALL_CORNER_OPEN_NW] = JUNGLE_METATILE_CANOPY,
+            [WALL_CORNER_OPEN_NE] = JUNGLE_METATILE_CANOPY,
             [WALL_SLIVER_VERT]    = JUNGLE_METATILE_CANOPY,
             [WALL_SLIVER_VERT_TOP]= JUNGLE_METATILE_CANOPY,
         },
@@ -618,14 +636,91 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .species = sJungleSpecies,
         .speciesCount = ARRAY_COUNT(sJungleSpecies),
     },
+    [DUNGEON_THEME_OCEAN] =
+    {
+        .layoutId = LAYOUT_ROGUE_DUNGEON_OCEAN,
+        .generator = DUNGEON_GEN_CAVE,   // the rock nine slice tiles 1x1
+        // NOT DUNGEON_ELEVATION_FLOOR. Water is elevation 1 - see the note by
+        // the constant. The walls are ordinary rock and stay at 0.
+        .elevationFloor = DUNGEON_ELEVATION_WATER,
+        .elevationWall = DUNGEON_ELEVATION_WALL,
+
+        // The most open shape in the game - 49.3% water against the jungle's
+        // 42.8% - because it is the open sea, and at the jungle's 3-wide it
+        // read as a sand field with channels cut through it.
+        //
+        // The rooms are the jungle's size deliberately. Widening them to 9-15
+        // measured WORSE on both axes, 44.6% coverage with the room count
+        // collapsing from 7.9 to 5.7, which is the size-is-the-wrong-lever
+        // finding all over again. Corridor width alone buys the openness, and
+        // it leaves the room count alone - which matters, because trainers and
+        // the exit are placed per room.
+        .roomCount = 12,
+        .roomMin = 7,
+        .roomMax = 13,
+        .corridorWidth = 5,
+
+        // Surfable, and that is what puts the player on a surf blob when the
+        // floor loads. Encounters fire everywhere, so there is no grass layer.
+        .floor = OCEAN_METATILE_WATER,
+        .tallGrass = 0,
+        .longGrass = 0,
+        .stairsDown = OCEAN_METATILE_STAIRS,
+        .stairsUp = OCEAN_METATILE_STAIRS,
+        .wall =
+        {
+            [WALL_NORTH_LEFT]     = OCEAN_METATILE_ROCK_NW,
+            [WALL_NORTH_MID]      = OCEAN_METATILE_ROCK_N,
+            [WALL_NORTH_RIGHT]    = OCEAN_METATILE_ROCK_NE,
+            [WALL_INTERIOR_LEFT]  = OCEAN_METATILE_ROCK_W,
+            [WALL_INTERIOR_MID]   = OCEAN_METATILE_ROCK_MID,
+            [WALL_INTERIOR_RIGHT] = OCEAN_METATILE_ROCK_E,
+            [WALL_FACE_LEFT]      = OCEAN_METATILE_ROCK_SW,
+            [WALL_FACE_MID]       = OCEAN_METATILE_ROCK_S,
+            [WALL_FACE_RIGHT]     = OCEAN_METATILE_ROCK_SE,
+
+            // Plain rock, which is what VANILLA does at a concave corner -
+            // 0x2B4, the piece it uses at exactly these steps, renders as an
+            // ordinary rock texture. This tileset has no concave corner art
+            // because it never draws an irregular sea rock. Composing one from
+            // the convex corners puts a whole quadrant of water into a solid
+            // block, which reads as a hole punched in the cliff.
+            [WALL_CORNER_OPEN_SE] = OCEAN_METATILE_ROCK_MID,
+            [WALL_CORNER_OPEN_SW] = OCEAN_METATILE_ROCK_MID,
+            [WALL_CORNER_OPEN_NW] = OCEAN_METATILE_ROCK_MID,
+            [WALL_CORNER_OPEN_NE] = OCEAN_METATILE_ROCK_MID,
+
+            [WALL_SLIVER_VERT]    = OCEAN_METATILE_SLIVER_VERT,
+            [WALL_SLIVER_HORZ]    = OCEAN_METATILE_SLIVER_HORZ,
+            [WALL_SLIVER_VERT_TOP]= OCEAN_METATILE_SLIVER_VERT_TOP,
+            [WALL_SLIVER_VERT_BOT]= OCEAN_METATILE_SLIVER_VERT_BOT,
+            [WALL_SLIVER_HORZ_L]  = OCEAN_METATILE_SLIVER_HORZ_L,
+            [WALL_SLIVER_HORZ_R]  = OCEAN_METATILE_SLIVER_HORZ_R,
+            [WALL_SLIVER_ISOLATED]= OCEAN_METATILE_SLIVER_ISOLATED,
+        },
+
+        // Swimmers, because a trainer here is standing on open water. They swim
+        // toward the player when they spot one, which on Route 124 is exactly
+        // what a swimmer does.
+        .trainerGfx = OBJ_EVENT_GFX_SWIMMER_M,
+        .trainerGfxAlt = OBJ_EVENT_GFX_SWIMMER_F,
+
+        // Tate and Liza wait on a rock rather than in the water.
+        .arenaPlatform = TRUE,
+
+        .species = sOceanSpecies,
+        .speciesCount = ARRAY_COUNT(sOceanSpecies),
+    },
 };
 
 // Which theme each dungeon uses, following the stock game: Petalburg Woods then
 // Roxanne, Granite Cave then Brawly, New Mauville then Wattson, Fiery Path then
 // Flannery, Mirage Tower then Norman - the Go-Goggles and the Route 111 desert
 // are what sit between Lavaridge and Petalburg - and the jungle then Winona,
-// Route 119 and 120 being the rainy overgrown approach to Fortree. Beyond the
-// sixth they cycle until more themes exist.
+// Route 119 and 120 being the rainy overgrown approach to Fortree. Then the
+// open ocean and Tate and Liza, because Routes 124 to 126 out of Lilycove are
+// how the stock game reaches Mossdeep. Beyond the seventh they cycle until more
+// themes exist.
 static const struct RogueDungeonTheme *ThemeForFloor(u16 floor)
 {
     u32 dungeon = DungeonIndexOf(floor);
@@ -1458,16 +1553,23 @@ static void ApplyWallAutotiling(u16 *map, const struct RogueDungeonTheme *theme)
             {
                 // Every cardinal is wall, so only a diagonal can be open. These
                 // are the outer corners of a room; without them the outline
-                // notches at the corners.
-                metatile = theme->wall[WALL_CORNER_NW];
+                // notches at the corners. Slots are named for the OPEN diagonal.
+                metatile = theme->wall[WALL_CORNER_OPEN_SE];
             }
             else if (!IsWallAt(map, x - 1, y + 1))
             {
-                metatile = theme->wall[WALL_CORNER_NE];
+                metatile = theme->wall[WALL_CORNER_OPEN_SW];
             }
-            else if (!IsWallAt(map, x - 1, y - 1) || !IsWallAt(map, x + 1, y - 1))
+            else if (!IsWallAt(map, x - 1, y - 1))
             {
-                metatile = theme->wall[WALL_CORNER_SOUTH];
+                metatile = theme->wall[WALL_CORNER_OPEN_NW];
+            }
+            else if (!IsWallAt(map, x + 1, y - 1))
+            {
+                // Split from the case above. They shared a slot, which is fine
+                // while a tileset draws both the same and wrong the moment one
+                // has a distinct north-east corner.
+                metatile = theme->wall[WALL_CORNER_OPEN_NE];
             }
             else
             {
@@ -1801,9 +1903,10 @@ static u16 PickTrainerForLevel(u8 target)
 // a safe landing spot.
 static void PlaceTrainers(u16 floor)
 {
+    const struct RogueDungeonTheme *theme = ThemeForFloor(floor);
     u32 target = FloorTargetLevel(floor);
     u32 count = 1 + floor / DUNGEON_TRAINER_FLOORS_PER_EXTRA;
-    u16 trainerId;
+    u16 trainerId, gfx;
     u32 j;
     u32 i;
 
@@ -1840,7 +1943,11 @@ static void PlaceTrainers(u16 floor)
             continue;
 
         sTrainerIds[sTrainerCount] = trainerId;
-        sTrainerGfx[sTrainerCount] = OBJ_EVENT_GFX_HIKER;
+
+        // Alternate the two so a floor is not populated by one repeated figure.
+        gfx = (sTrainerCount & 1) && theme->trainerGfxAlt ? theme->trainerGfxAlt
+                                                          : theme->trainerGfx;
+        sTrainerGfx[sTrainerCount] = gfx ? gfx : OBJ_EVENT_GFX_HIKER;
         sTrainerCount++;
     }
 }
@@ -2167,6 +2274,13 @@ static void WriteFloorBlocks(u16 *backupMapData)
     // boss is beaten - see RogueDungeon_OnBossDefeated.
     if (RogueDungeon_IsBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
     {
+        // Before the autotile pass, not after: one wall block ringed by floor
+        // is exactly what WALL_SLIVER_ISOLATED draws, so the platform costs no
+        // art. The player never boards it - it is solid - so it cannot strand
+        // anyone by dismounting them on a theme they have to swim across.
+        if (theme->arenaPlatform && sTrainerCount != 0)
+            SetBlock(backupMapData, sTrainerX[0], sTrainerY[0], wallBlock);
+
         ApplyWallAutotiling(backupMapData, theme);
         return;
     }
@@ -2219,6 +2333,15 @@ void RogueDungeon_LoadObjectEventTemplates(void)
 {
     struct ObjectEventTemplate *templates = gSaveBlock1Ptr->objectEventTemplates;
     u32 i;
+    // Trainers stand on the floor, so they take the floor's elevation rather
+    // than a fixed one. The ocean walks at elevation 1 where every other theme
+    // walks at 3, and mismatched elevations do not collide - the player would
+    // have walked straight through every trainer on a water floor instead of
+    // being able to talk to one.
+    u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+    const struct RogueDungeonTheme *theme = ThemeForFloor(floor);
+    u8 elevation = theme->elevationFloor;
+    bool8 onPlatform = theme->arenaPlatform && RogueDungeon_IsBossFloor(floor);
 
     // This runs before the map is generated, so roll the floor now - trainer
     // placement needs to see the rooms.
@@ -2245,7 +2368,7 @@ void RogueDungeon_LoadObjectEventTemplates(void)
     {
         templates[i].localId = i + 1;
         templates[i].kind = OBJ_KIND_NORMAL;
-        templates[i].elevation = DUNGEON_ELEVATION_FLOOR;
+        templates[i].elevation = elevation;
 
         if (i < sTrainerCount)
         {
@@ -2253,7 +2376,10 @@ void RogueDungeon_LoadObjectEventTemplates(void)
             templates[i].x = sTrainerX[i];
             templates[i].y = sTrainerY[i];
             templates[i].movementType = MOVEMENT_TYPE_FACE_DOWN;
-            templates[i].trainerType = TRAINER_TYPE_NORMAL;
+            // A trainer standing on its own platform is talk-only: sight would
+            // walk it off the rock and leave it on the water for good.
+            templates[i].trainerType = onPlatform ? TRAINER_TYPE_NONE
+                                                  : TRAINER_TYPE_NORMAL;
             templates[i].trainerRange_berryTreeId = DUNGEON_TRAINER_SIGHT_RANGE;
             templates[i].script = RogueDungeonFloor_EventScript_Trainer;
             templates[i].flagId = 0;

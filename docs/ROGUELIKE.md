@@ -27,10 +27,13 @@ Losing wipes the run; so does winning, which is the point.
   The Elite Four come every five floors because a gauntlet is what they are.
   Giving each of them a mini boss as well would pad the endgame with grunts,
   and there is no stock trainer at that level to draw one from anyway.
-- **Six themes**: Petalburg Woods (dungeon 1, Roxanne), Granite Cave
+- **Seven themes**: Petalburg Woods (dungeon 1, Roxanne), Granite Cave
   (dungeon 2, Brawly), New Mauville (dungeon 3, Wattson), Fiery Path
-  (dungeon 4, Flannery), Mirage Tower (dungeon 5, Norman) and the Jungle
-  (dungeon 6, Winona). They cycle past that until more exist.
+  (dungeon 4, Flannery), Mirage Tower (dungeon 5, Norman), the Jungle
+  (dungeon 6, Winona) and the open Ocean (dungeon 7, Tate and Liza). They cycle
+  past that until more exist.
+- The ocean is the only theme the player crosses **surfing**, which is a
+  property of its floor metatile rather than a special case — see §7.
 - Reachable from a new game, which is slimmed to name entry only.
 
 Everything lives in `src/rogue_dungeon.c` / `include/rogue_dungeon.h` plus
@@ -335,6 +338,24 @@ varies wall art decoratively, so there is no rule to recover by counting.
 rendering generated output beside vanilla. That worked first time for both cave
 walls and trees.
 
+The ocean is the sharpest case of this. `derive_wall_table.py` over four
+Mossdeep sea routes put **nothing above 37.8%**, because the census pools three
+unrelated things — island shores, the map-edge water barrier, and the rocks.
+Dumping isolated solid components as a grid showed a clean 3×3 nine slice on
+sight:
+
+```
+338 339 33A
+340 341 342
+348 349 34A
+```
+
+Checking each id **alone** then confirms it: `0x339` faces north 79% of the
+time, `0x349` south 80%, `0x342` east 76%, and no two share a dominant mask.
+The corners sit lower (41–53%) only because they also appear in tighter two-wide
+rocks. So the same data that looked like noise is decisive once it is asked the
+right question — **the failure was the pooling, not the tileset.**
+
 ---
 
 ## 5. Composing metatiles without pixel art
@@ -462,6 +483,53 @@ leaf mass that tiles 1×1 where Rustboro draws discrete 2×3 trees on a 2×2 gri
 Prefer `DUNGEON_GEN_CAVE` when it fits: it is the only path the cosmetic passes
 run on, so a woods-generator theme gets no patches, skirts or decor at all.
 
+### A theme the player surfs across
+
+The ocean floor is `0x170`, `MB_OCEAN_WATER`. Nothing in the generator knows
+about surfing; it falls out of one engine check:
+
+```c
+// GetAdjustedInitialTransitionFlags, overworld.c
+else if (MetatileBehavior_IsSurfableWaterOrUnderwater(metatileBehavior) == TRUE)
+    return PLAYER_AVATAR_FLAG_SURFING;
+```
+
+The engine reads the behaviour **under the player's arrival tile on every warp**
+and answers a surfable one with a surf blob. **No HM, no party requirement, no
+badge** — which is the only reason a water dungeon is not a softlock waiting for
+a player whose team cannot Surf. It is how vanilla handles emerging from a dive.
+
+Two preconditions, both already true and both worth not breaking:
+`MAP_TYPE_UNDERGROUND` on the dungeon map (the check bails on `MAP_TYPE_INDOOR`
+and answers `UNDERWATER` differently), and `FLAG_SYS_CRUISE_MODE` clear.
+
+**Nothing walkable may ever be painted on such a floor.** Step onto land and the
+player dismounts, and getting back on water *would* need the HM. So the walls
+are solid rock, and the way down is `0x14E`, a deep-water dive spot, which is
+still surfable and so does not dismount anyone who stands on it.
+
+Three things followed that were not obvious:
+
+- **Water is elevation 1, not 3.** Every other theme walks at
+  `DUNGEON_ELEVATION_FLOOR` (3); vanilla puts deep water at elevation 1 in 100%
+  of its blocks and ocean water in 92%. Hence `DUNGEON_ELEVATION_WATER`.
+- **Object event templates had the floor's elevation hard-coded to 3.** Two
+  different non-zero elevations do not collide, so on a water floor the player
+  would have walked straight through every trainer instead of being able to talk
+  to one. Templates now take `theme->elevationFloor`. This is the same shape of
+  bug as `CarveFloor` naming `DUNGEON_METATILE_FLOOR` directly: a constant that
+  was right for every theme that existed when it was written.
+- **A trainer's sprite has to suit what it is standing on.** `theme->trainerGfx`
+  / `trainerGfxAlt` — swimmers here, alternating so a floor is not one repeated
+  figure. Vanilla Routes 124–126 use exactly `SWIMMER_M`/`SWIMMER_F`.
+
+`theme->arenaPlatform` stands the arena's trainer on a solid block of its own,
+so Tate and Liza are not waiting in the middle of the sea. It needs no art: the
+block goes down **before** the autotile pass, which sees one wall ringed by
+floor and paints `WALL_SLIVER_ISOLATED`, already a lone rock. It also turns that
+trainer talk-only, because a boss that keeps its sight range walks off the
+platform to approach and then spends the rest of the floor standing on water.
+
 ### Openness
 
 `roomCount`, `roomMin`, `roomMax` and `corridorWidth` let a theme carve more
@@ -471,12 +539,21 @@ openly without a second generator. Measured over 2000 seeds each:
 |---|---|---|
 | cave, 8 rooms of 5–10, 1-wide | 24.2% (17–33) | 8.0 |
 | jungle, 12 rooms of 7–13, 3-wide | 42.8% (25–58) | 7.9 |
+| ocean, 12 rooms of 7–13, 5-wide | 49.3% (29–68) | 7.9 |
 
 **Room size alone is the wrong lever.** Bigger rooms simply stop fitting, so
 coverage plateaus near 35% while the room count collapses from 8 to 3 and the
 variance gets ugly (one sweep bottomed out at 11.8%). Room *count* and corridor
 *width* are what actually buy openness, and they keep the room count roughly
 where it was, which matters because trainers and the exit are placed per room.
+
+**This was walked into a second time**, by the person who wrote the paragraph
+above, while tuning the ocean. Reaching for 9–15 rooms *and* 5-wide corridors
+measured **worse on both axes** than 7–13 at the same width — 44.6% coverage
+against 49.3%, with the room count collapsing from 7.9 to 5.7. Widening the
+corridor and leaving the rooms alone was strictly better. A sweep of 7–11 at
+7-wide goes further still, 58.2% and 9.1 rooms, but averages floors that are
+three-quarters open with a max of 77.9%, which stops reading as a dungeon.
 
 `verify_dungeon_gen.py` runs every shape in its `SHAPES` table, so a new one
 gets its reachability and out-of-bounds checks for free — add an entry when you
@@ -492,6 +569,40 @@ but nothing vertical exists. Its splices were much cleaner than the cave's,
 because every Lavaridge edge is a top-layer overlay over one shared bumpy base:
 each sliver is four quadrant copies, no hand-built entries
 (`make_fiery_slivers.py`).
+
+The ocean needed all seven — vanilla's smallest sea rock is 2×2 — and got them
+the same cheap way, because all nine of its nine-slice pieces share **one**
+bottom layer (`41C6 41C7 41C7 41C6`) with every edge a top-layer overlay laid
+out as a regular 6×6 tile grid (`make_ocean_slivers.py`). **Check the metatile
+entries before deciding a splice is hard**: the cave's was fiddly and needed
+hand-built entries, and both later tilesets turned out to be pure overlay work.
+
+**There are four diagonal corner cases and there used to be three slots.**
+`WALL_CORNER_SOUTH` fired on "NW *or* NE open", so a tileset with distinct art
+for the two could not say so. They are now four, named for the OPEN diagonal —
+the old names described the wall's own position, which is why `WALL_CORNER_NW`
+held the art Fiery Path calls its *south-east* corner and every table looked
+wrong until you knew that.
+
+**Concave corner art mostly does not exist, and that is not a gap to fill.**
+The ocean's corners are plain rock, and so are vanilla's: `0x2B4`, the piece
+Mossdeep uses at exactly these steps, renders as an ordinary rock texture, and
+`0x2A8`–`0x2BA` is a shaded outcrop set rather than corners. Vanilla has no
+concave corner because it never draws an irregular sea rock — across six sea
+routes the case occurs **7 to 21 times**. Composing one from the convex corners
+was tried and reverted: it drops a whole quadrant of water into a solid block,
+which reads as a hole punched in the cliff rather than a shoreline turning.
+`gTileset_General`'s cliff set does have all four (`0x07D` NW, `0x07B` NE,
+`0x089` SW, `0x074` SE, n≈365–392 each over 245 layouts), and it lives in the
+primary, so a theme that genuinely needs cliff corners should use that rather
+than splice them onto a small-rock set.
+
+Slivers matter more here than the count suggests. At 3-wide corridors the ocean
+hit 19 of them across two mock floors and they are far more visible against open
+water than against rock — bare interior art reads as a rendering fault, not as a
+reef. Four of the seven slots are still never hit by the mock, but
+`SLIVER_ISOLATED` is exercised in game regardless, because it is what the arena
+platform is made of.
 
 **Diff the candidate secondary against a tileset you have already done.** Some
 vanilla secondaries are pure art reskins of another — same metatile
@@ -663,7 +774,7 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
 
 ## 10. Known gaps
 
-1. Six themes against fourteen dungeons, so they cycle past dungeon 6. The five
+1. Seven themes against fourteen dungeons, so they cycle past dungeon 7. The five
    Elite Four dungeons are only five floors long, which makes the cycling more
    visible, not less — a theme now gets half as long to make an impression.
 2. Winning ends the run the same way losing does: the party and bag are wiped

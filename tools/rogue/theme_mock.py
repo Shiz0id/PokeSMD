@@ -22,7 +22,8 @@ W, H = 48, 48   # the real DUNGEON_WIDTH/HEIGHT, so blob positions and room
 SLOTS = ('INTERIOR_LEFT', 'INTERIOR_MID', 'INTERIOR_RIGHT',
          'FACE_LEFT', 'FACE_MID', 'FACE_RIGHT',
          'NORTH_LEFT', 'NORTH_MID', 'NORTH_RIGHT',
-         'CORNER_NW', 'CORNER_NE', 'CORNER_SOUTH',
+         'CORNER_OPEN_SE', 'CORNER_OPEN_SW',
+         'CORNER_OPEN_NW', 'CORNER_OPEN_NE',
          'SLIVER_VERT', 'SLIVER_HORZ', 'SLIVER_VERT_TOP', 'SLIVER_VERT_BOT',
          'SLIVER_HORZ_L', 'SLIVER_HORZ_R', 'SLIVER_ISOLATED')
 
@@ -42,7 +43,8 @@ THEMES = {
             'INTERIOR_LEFT': 0x272, 'INTERIOR_MID': 0x208, 'INTERIOR_RIGHT': 0x270,
             'FACE_LEFT': 0x294, 'FACE_MID': 0x227, 'FACE_RIGHT': 0x293,
             'NORTH_LEFT': 0x296, 'NORTH_MID': 0x227, 'NORTH_RIGHT': 0x295,
-            'CORNER_NW': 0x208, 'CORNER_NE': 0x208, 'CORNER_SOUTH': 0x208,
+            'CORNER_OPEN_SE': 0x208, 'CORNER_OPEN_SW': 0x208,
+            'CORNER_OPEN_NW': 0x208, 'CORNER_OPEN_NE': 0x208,
             'SLIVER_VERT': 0x290, 'SLIVER_HORZ': 0x227,
             'SLIVER_VERT_TOP': 0x288, 'SLIVER_VERT_BOT': 0x298,
             'SLIVER_HORZ_L': 0x227, 'SLIVER_HORZ_R': 0x227,
@@ -61,7 +63,8 @@ THEMES = {
             'INTERIOR_LEFT': 0x306, 'INTERIOR_MID': 0x271, 'INTERIOR_RIGHT': 0x307,
             'FACE_LEFT': 0x30E, 'FACE_MID': 0x274, 'FACE_RIGHT': 0x30F,
             'NORTH_LEFT': 0x30A, 'NORTH_MID': 0x30C, 'NORTH_RIGHT': 0x30B,
-            'CORNER_NW': 0x27B, 'CORNER_NE': 0x27C, 'CORNER_SOUTH': 0x27E,
+            'CORNER_OPEN_SE': 0x27B, 'CORNER_OPEN_SW': 0x27C,
+            'CORNER_OPEN_NW': 0x27E, 'CORNER_OPEN_NE': 0x27E,
             'SLIVER_VERT': 0x3B9, 'SLIVER_HORZ': 0x30C,
             'SLIVER_VERT_TOP': 0x3BA, 'SLIVER_VERT_BOT': 0x3BB,
             'SLIVER_HORZ_L': 0x3BC, 'SLIVER_HORZ_R': 0x3BD,
@@ -85,7 +88,8 @@ THEMES = {
             'INTERIOR_LEFT': 0x210, 'INTERIOR_MID': 0x211, 'INTERIOR_RIGHT': 0x212,
             'FACE_LEFT': 0x218, 'FACE_MID': 0x219, 'FACE_RIGHT': 0x21A,
             'NORTH_LEFT': 0x220, 'NORTH_MID': 0x209, 'NORTH_RIGHT': 0x222,
-            'CORNER_NW': 0x21B, 'CORNER_NE': 0x21C, 'CORNER_SOUTH': 0x223,
+            'CORNER_OPEN_SE': 0x21B, 'CORNER_OPEN_SW': 0x21C,
+            'CORNER_OPEN_NW': 0x223, 'CORNER_OPEN_NE': 0x223,
             'SLIVER_VERT': 0x39E, 'SLIVER_HORZ': 0x39F,
             'SLIVER_VERT_TOP': 0x3A0, 'SLIVER_VERT_BOT': 0x3A1,
             'SLIVER_HORZ_L': 0x3A2, 'SLIVER_HORZ_R': 0x3A3,
@@ -118,8 +122,40 @@ THEMES = {
             'INTERIOR_LEFT': 0x0C6, 'INTERIOR_MID': 0x0C6,
             'INTERIOR_RIGHT': 0x0C6, 'NORTH_LEFT': 0x0C6,
             'NORTH_MID': 0x0C6, 'NORTH_RIGHT': 0x0C6,
-            'CORNER_NW': 0x0C6, 'CORNER_NE': 0x0C6, 'CORNER_SOUTH': 0x0C6,
+            'CORNER_OPEN_SE': 0x0C6, 'CORNER_OPEN_SW': 0x0C6,
+            'CORNER_OPEN_NW': 0x0C6, 'CORNER_OPEN_NE': 0x0C6,
             'SLIVER_VERT': 0x0C6, 'SLIVER_VERT_TOP': 0x0C6,
+        }),
+    # The open ocean, and the first theme where the player is SURFING rather
+    # than walking. The floor is MB_OCEAN_WATER, which the engine notices under
+    # the player on arrival and answers with a surf blob - no HM, no party
+    # requirement. Its elevation must be 1, not the 3 every other theme uses.
+    #
+    # The wall mass is a 3x3 nine slice of rock, 0x338-0x34A, read off the
+    # Mossdeep sea routes as a grid. A neighbour-mask census could not find it:
+    # pooled with island shores and the map-edge barrier nothing beat 38%, but
+    # taken alone every one of the nine is decisive for its own position.
+    #
+    # Corridors are 3 wide, as in the jungle, so the sliver slots never fire -
+    # which is just as well, since this tileset has no one-block-thick rock.
+    'ocean': dict(
+        primary='gTileset_General', secondary='gTileset_Mossdeep',
+        floor=0x170, stairs=0x14E,      # 0x14E is deep water: a dive spot
+        rooms=12, room_min=7, room_max=13, corridor=5,
+        wall={
+            'NORTH_LEFT': 0x338, 'NORTH_MID': 0x339, 'NORTH_RIGHT': 0x33A,
+            'INTERIOR_LEFT': 0x340, 'INTERIOR_MID': 0x341, 'INTERIOR_RIGHT': 0x342,
+            'FACE_LEFT': 0x348, 'FACE_MID': 0x349, 'FACE_RIGHT': 0x34A,
+            # No diagonal corner art exists, so the rock interior stands in -
+            # the same answer New Mauville and the jungle give.
+            'CORNER_OPEN_SE': 0x341, 'CORNER_OPEN_SW': 0x341,
+            'CORNER_OPEN_NW': 0x341, 'CORNER_OPEN_NE': 0x341,
+            # Composed by make_ocean_slivers.py - vanilla's smallest sea rock is
+            # 2x2, and a carved floor makes thin walls constantly.
+            'SLIVER_VERT': 0x3C6, 'SLIVER_HORZ': 0x3C7,
+            'SLIVER_VERT_TOP': 0x3C8, 'SLIVER_VERT_BOT': 0x3C9,
+            'SLIVER_HORZ_L': 0x3CA, 'SLIVER_HORZ_R': 0x3CB,
+            'SLIVER_ISOLATED': 0x3CC,
         }),
     # gTileset_MirageTower is a pure art reskin of gTileset_Cave - 411 of 414
     # metatiles byte-identical, all attributes identical - so the wall table is
@@ -147,7 +183,8 @@ THEMES = {
             'INTERIOR_LEFT': 0x210, 'INTERIOR_MID': 0x211, 'INTERIOR_RIGHT': 0x212,
             'FACE_LEFT': 0x218, 'FACE_MID': 0x219, 'FACE_RIGHT': 0x21A,
             'NORTH_LEFT': 0x220, 'NORTH_MID': 0x209, 'NORTH_RIGHT': 0x222,
-            'CORNER_NW': 0x21B, 'CORNER_NE': 0x21C, 'CORNER_SOUTH': 0x223,
+            'CORNER_OPEN_SE': 0x21B, 'CORNER_OPEN_SW': 0x21C,
+            'CORNER_OPEN_NW': 0x223, 'CORNER_OPEN_NE': 0x223,
             'SLIVER_VERT': 0x39E, 'SLIVER_HORZ': 0x39F,
             'SLIVER_VERT_TOP': 0x3A0, 'SLIVER_VERT_BOT': 0x3A1,
             'SLIVER_HORZ_L': 0x3A2, 'SLIVER_HORZ_R': 0x3A3,
@@ -268,11 +305,13 @@ def paint(solid, theme, seed=0):
             elif e:
                 slot = 'INTERIOR_RIGHT'
             elif not is_wall(x + 1, y + 1):
-                slot = 'CORNER_NW'
+                slot = 'CORNER_OPEN_SE'
             elif not is_wall(x - 1, y + 1):
-                slot = 'CORNER_NE'
-            elif not is_wall(x - 1, y - 1) or not is_wall(x + 1, y - 1):
-                slot = 'CORNER_SOUTH'
+                slot = 'CORNER_OPEN_SW'
+            elif not is_wall(x - 1, y - 1):
+                slot = 'CORNER_OPEN_NW'
+            elif not is_wall(x + 1, y - 1):
+                slot = 'CORNER_OPEN_NE'
             else:
                 slot = 'INTERIOR_MID'
             out[y][x] = wall[slot]

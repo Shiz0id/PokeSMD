@@ -19,6 +19,18 @@ FLOOR, WALL = '.', '#'
 SHAPES = {
     'cave (default)': dict(rooms=8, rmin=5, rmax=10, corridor=1),
     'jungle': dict(rooms=12, rmin=7, rmax=13, corridor=3),
+    # The most open shape in the game, and worth its own row rather than
+    # trusting the jungle's: 5-wide corridors against rooms up to 15 is where a
+    # carve would start writing outside the grid if it were going to.
+    # The most open shape in the game, and worth its own row rather than
+    # trusting the jungle's: 5-wide corridors are where a carve would start
+    # writing outside the grid if it were going to.
+    #
+    # Same room sizes as the jungle on purpose. Widening them to 9-15 instead
+    # measured WORSE on both axes - 44.6% coverage against 49.3%, and the room
+    # count collapsed from 7.9 to 5.7 - which is the size-is-the-wrong-lever
+    # finding repeating exactly. Corridor width alone buys the openness.
+    'ocean': dict(rooms=12, rmin=7, rmax=13, corridor=5),
 }
 
 
