@@ -122,12 +122,13 @@
 #define NEWMAUVILLE_METATILE_FLOOR_SHADOW_NW 0x275
 
 // Wall decoration. All are drop-in replacements for the wall band, so they keep
-// the collision they replace. Vanilla interleaves these along a wall run.
-#define NEWMAUVILLE_METATILE_WALL_VENT       0x277
-#define NEWMAUVILLE_METATILE_WALL_CRATE      0x2C0
-#define NEWMAUVILLE_METATILE_WALL_CRATE_LOW  0x2B2
-#define NEWMAUVILLE_METATILE_WALL_COUNTER    0x2B4
-#define NEWMAUVILLE_METATILE_WALL_BOXES      0x2B3
+// the collision they replace. Vanilla interleaves these along a wall run. The
+// bookcase is a 2-wide unit; vanilla places its halves adjacent essentially
+// always (6 pairs, 1 stray in NewMauville_Inside).
+#define NEWMAUVILLE_METATILE_WALL_VENT        0x277
+#define NEWMAUVILLE_METATILE_WALL_COUNTER     0x2B4
+#define NEWMAUVILLE_METATILE_WALL_BOOKCASE_L  0x2A1
+#define NEWMAUVILLE_METATILE_WALL_BOOKCASE_R  0x2A2
 
 // The facility tileset has no stairs of its own, but 0x0AF lives in the primary
 // and so is available under any pair. Grey steps read as a service stairwell
@@ -183,10 +184,15 @@ enum DungeonStampCorner { STAMP_TL, STAMP_TR, STAMP_BL, STAMP_BR, STAMP_COUNT };
 // Keyed on the painted metatile rather than on a wall slot, so a variant that
 // suits several slots needs only one entry, and a theme whose slots share a
 // metatile cannot decorate one of them by accident.
+//
+// A nonzero variantEast makes the entry a 2-wide unit (a bookcase, a console):
+// it lands only where the block east is also `base`, and writes both halves.
+// Split art placed as a single would read as cut off at the frame edge.
 struct RogueDecor
 {
     u16 base;
     u16 variant;
+    u16 variantEast;
 };
 
 struct RogueDungeonTheme

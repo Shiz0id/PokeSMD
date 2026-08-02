@@ -30,7 +30,7 @@ THEMES = {
         primary='gTileset_General', secondary='gTileset_BikeShop',
         floor=0x210, stairs=0x0AF,
         shadowN=0x22F, shadowW=0x27D, shadowNW=0x275,
-        decor=[(0x227, v) for v in (0x277, 0x2C0, 0x2B2, 0x2B4, 0x2B3)],
+        decor=[(0x227, 0x277, 0), (0x227, 0x2B4, 0), (0x227, 0x2A1, 0x2A2)],
         decor_rarity=12,
         wall={
             'INTERIOR_LEFT': 0x272, 'INTERIOR_MID': 0x208, 'INTERIOR_RIGHT': 0x270,
@@ -176,9 +176,14 @@ def paint(solid, theme, seed=0):
                 hsh = decor_hash(seed, x, y)
                 if hsh % theme['decor_rarity']:
                     continue
-                hits = [v for b, v in theme['decor'] if b == out[y][x]]
+                hits = [(v, ve) for b, v, ve in theme['decor']
+                        if b == out[y][x]
+                        and (ve == 0 or (x + 1 < W and out[y][x + 1] == b))]
                 if hits:
-                    out[y][x] = hits[(hsh >> 8) % len(hits)]
+                    v, ve = hits[(hsh >> 8) % len(hits)]
+                    out[y][x] = v
+                    if ve:
+                        out[y][x + 1] = ve
     return out, used
 
 

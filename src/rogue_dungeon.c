@@ -90,10 +90,9 @@ static const u16 sNewMauvilleSpecies[] =
 static const struct RogueDecor sNewMauvilleDecor[] =
 {
     { NEWMAUVILLE_METATILE_WALL_BAND, NEWMAUVILLE_METATILE_WALL_VENT },
-    { NEWMAUVILLE_METATILE_WALL_BAND, NEWMAUVILLE_METATILE_WALL_CRATE },
-    { NEWMAUVILLE_METATILE_WALL_BAND, NEWMAUVILLE_METATILE_WALL_CRATE_LOW },
     { NEWMAUVILLE_METATILE_WALL_BAND, NEWMAUVILLE_METATILE_WALL_COUNTER },
-    { NEWMAUVILLE_METATILE_WALL_BAND, NEWMAUVILLE_METATILE_WALL_BOXES },
+    { NEWMAUVILLE_METATILE_WALL_BAND, NEWMAUVILLE_METATILE_WALL_BOOKCASE_L,
+                                      NEWMAUVILLE_METATILE_WALL_BOOKCASE_R },
 };
 
 enum DungeonThemeId
@@ -637,10 +636,18 @@ static void ApplyWallDecor(u16 *map, const struct RogueDungeonTheme *theme,
 
             metatile = GetBlockMetatile(map, x, y);
 
+            // A 2-wide unit needs the block east to still be undecorated base
+            // as well. Because this scans west to east, a placed unit turns
+            // both its blocks into non-base metatiles, so later rolls cannot
+            // land a second decoration on either half.
             for (i = 0; i < theme->decorCount; i++)
             {
-                if (theme->decor[i].base == metatile)
-                    matches++;
+                if (theme->decor[i].base != metatile)
+                    continue;
+                if (theme->decor[i].variantEast != 0
+                 && GetBlockMetatile(map, x + 1, y) != metatile)
+                    continue;
+                matches++;
             }
             if (matches == 0)
                 continue;
@@ -652,11 +659,18 @@ static void ApplyWallDecor(u16 *map, const struct RogueDungeonTheme *theme,
             {
                 if (theme->decor[i].base != metatile)
                     continue;
+                if (theme->decor[i].variantEast != 0
+                 && GetBlockMetatile(map, x + 1, y) != metatile)
+                    continue;
                 if (pick-- == 0)
                 {
                     SetBlock(map, x, y,
                              MakeBlock(theme->decor[i].variant, 1,
                                        theme->elevationWall));
+                    if (theme->decor[i].variantEast != 0)
+                        SetBlock(map, x + 1, y,
+                                 MakeBlock(theme->decor[i].variantEast, 1,
+                                           theme->elevationWall));
                     break;
                 }
             }
