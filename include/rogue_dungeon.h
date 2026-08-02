@@ -77,6 +77,24 @@
 #define WOODS_METATILE_TREE_BL    0x1DC
 #define WOODS_METATILE_TREE_BR    0x1DD
 
+// A tree is really 2 wide by 3 tall. The third row is the ground contact, used
+// only where a tree mass ends and open ground begins - across nine vanilla
+// General+Rustboro layouts, EVERY tree bottom row either has another tree below
+// it or sits at the map edge, so vanilla never leaves 0x1DC exposed. Ending a
+// mass on 0x1DC is what leaves the trunk tip dangling.
+#define WOODS_METATILE_TREE_BASE_L 0x1E4
+#define WOODS_METATILE_TREE_BASE_R 0x1E5
+
+// Where long grass meets open ground. Sits immediately after the long grass
+// itself in the tile grid, and shows blades meeting a dark base.
+#define WOODS_METATILE_LONG_GRASS_BASE_L 0x016
+#define WOODS_METATILE_LONG_GRASS_BASE_R 0x017
+
+// MB_LADDER, labelled CaveEntrance_Bottom. The cave stairs id means something
+// entirely different under the Rustboro secondary tileset - 0x214 there is a
+// grey stripe - so a theme cannot inherit the cave value.
+#define WOODS_METATILE_STAIRS 0x0A7
+
 // Woods uses the same two elevations as caves.
 #define DUNGEON_ELEVATION_FLOOR 3
 #define DUNGEON_ELEVATION_WALL  0

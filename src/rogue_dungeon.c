@@ -87,8 +87,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .floor = WOODS_METATILE_GRASS,
         .tallGrass = WOODS_METATILE_TALL_GRASS,
         .longGrass = WOODS_METATILE_LONG_GRASS,
-        .stairsDown = DUNGEON_METATILE_STAIRS_DOWN,
-        .stairsUp = DUNGEON_METATILE_STAIRS_UP,
+        .stairsDown = WOODS_METATILE_STAIRS,
+        .stairsUp = WOODS_METATILE_STAIRS,
         .stamp =
         {
             [STAMP_TL] = WOODS_METATILE_TREE_TL, [STAMP_TR] = WOODS_METATILE_TREE_TR,
@@ -190,6 +190,10 @@ EWRAM_DATA static u8 sGrassPatchY[DUNGEON_MAX_GRASS_PATCHES] = {0};
 EWRAM_DATA static u8 sGrassPatchRadius[DUNGEON_MAX_GRASS_PATCHES] = {0};
 EWRAM_DATA static bool8 sGrassPatchLong[DUNGEON_MAX_GRASS_PATCHES] = {0};
 EWRAM_DATA static u8 sGrassPatchCount = 0;
+
+// Cell openness for the woods painter. Held rather than stack-allocated because
+// 576 bytes is a lot of GBA stack.
+EWRAM_DATA static u8 sWoodsOpen[DUNGEON_CELLS_H][DUNGEON_CELLS_W] = {0};
 
 // Trainers for this floor. Indexed by object event localId - 1, mirroring how
 // the Battle Pyramid maps a talked-to object back to its opponent.
@@ -663,27 +667,45 @@ static void PrepareArenaFloor(u16 floor)
 {
     u32 within = DungeonFloorWithin(floor);
     u32 dungeon = DungeonIndexOf(floor);
-    u8 x0 = (DUNGEON_WIDTH - DUNGEON_ARENA_WIDTH) / 2;
-    u8 y0 = (DUNGEON_HEIGHT - DUNGEON_ARENA_HEIGHT) / 2;
+    const struct RogueDungeonTheme *theme = ThemeForFloor(floor);
+    u8 w = DUNGEON_ARENA_WIDTH;
+    u8 h = DUNGEON_ARENA_HEIGHT;
+    u8 x0, y0;
+
+    // A stamped theme paints in whole 2x2 cells, so its arena has to be even
+    // sized and even aligned or every stamp lands half off the room.
+    if (theme->generator == DUNGEON_GEN_WOODS)
+    {
+        w &= ~1;
+        h &= ~1;
+    }
+
+    x0 = (DUNGEON_WIDTH - w) / 2;
+    y0 = (DUNGEON_HEIGHT - h) / 2;
+    if (theme->generator == DUNGEON_GEN_WOODS)
+    {
+        x0 &= ~1;
+        y0 &= ~1;
+    }
 
     sRoomCount = 1;
     sRooms[0].x = x0;
     sRooms[0].y = y0;
-    sRooms[0].w = DUNGEON_ARENA_WIDTH;
-    sRooms[0].h = DUNGEON_ARENA_HEIGHT;
+    sRooms[0].w = w;
+    sRooms[0].h = h;
 
     // Player at the south end, boss at the north, so the two face off across
     // the arena. The boss is deliberately NOT in a chokepoint - a defeated
     // trainer object still blocks movement, and would wall the exit off.
-    sSpawnX = x0 + DUNGEON_ARENA_WIDTH / 2;
-    sSpawnY = y0 + DUNGEON_ARENA_HEIGHT - 2;
+    sSpawnX = x0 + w / 2;
+    sSpawnY = y0 + h - 2;
 
-    sStairsX = x0 + DUNGEON_ARENA_WIDTH / 2;
+    sStairsX = x0 + w / 2;
     sStairsY = y0 + 1;
-    sStairsMetatile = DUNGEON_METATILE_STAIRS_DOWN;
+    sStairsMetatile = theme->stairsDown;
 
     sTrainerCount = 1;
-    sTrainerX[0] = x0 + DUNGEON_ARENA_WIDTH / 2;
+    sTrainerX[0] = x0 + w / 2;
     sTrainerY[0] = y0 + 3;
 
     if (within == DUNGEON_BOSS_FLOOR)
@@ -883,8 +905,7 @@ static void PrepareFloor(u16 seed)
     {
         u8 room = (sRoomCount > 1) ? 1 + (DungeonRandom() % (sRoomCount - 1)) : 0;
 
-        sStairsMetatile = (DungeonRandom() & 1) ? DUNGEON_METATILE_STAIRS_DOWN
-                                                : DUNGEON_METATILE_STAIRS_UP;
+        sStairsMetatile = (DungeonRandom() & 1) ? theme->stairsDown : theme->stairsUp;
         sStairsX = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
         sStairsY = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
     }
@@ -926,23 +947,41 @@ static void PrepareFloor(u16 seed)
 // Stamps one 2x2 cell. Woods trees are 2x2 blocks on even coordinates, so the
 // generator works in whole cells and never needs an autotile pass.
 static void StampCell(u16 *map, s32 cx, s32 cy, const struct RogueDungeonTheme *theme,
-                      bool8 open, u16 floorMetatile)
+                      bool8 open, u16 floorMetatile, bool8 openBelow)
 {
     s32 x = cx * 2, y = cy * 2;
 
     if (open)
     {
+        u16 lower = floorMetatile;
+
+        // Long grass needs its base row where it meets open ground, or the
+        // blades are cut off flat.
+        if (floorMetatile == theme->longGrass && theme->longGrass != 0 && openBelow)
+        {
+            SetBlock(map, x,     y,     MakeBlock(floorMetatile, 0, theme->elevationFloor));
+            SetBlock(map, x + 1, y,     MakeBlock(floorMetatile, 0, theme->elevationFloor));
+            SetBlock(map, x,     y + 1, MakeBlock(WOODS_METATILE_LONG_GRASS_BASE_L, 0, theme->elevationFloor));
+            SetBlock(map, x + 1, y + 1, MakeBlock(WOODS_METATILE_LONG_GRASS_BASE_R, 0, theme->elevationFloor));
+            return;
+        }
+
         SetBlock(map, x,     y,     MakeBlock(floorMetatile, 0, theme->elevationFloor));
         SetBlock(map, x + 1, y,     MakeBlock(floorMetatile, 0, theme->elevationFloor));
-        SetBlock(map, x,     y + 1, MakeBlock(floorMetatile, 0, theme->elevationFloor));
-        SetBlock(map, x + 1, y + 1, MakeBlock(floorMetatile, 0, theme->elevationFloor));
+        SetBlock(map, x,     y + 1, MakeBlock(lower, 0, theme->elevationFloor));
+        SetBlock(map, x + 1, y + 1, MakeBlock(lower, 0, theme->elevationFloor));
     }
     else
     {
+        // Where a tree mass ends, its bottom row becomes the ground-contact row
+        // instead of the trunk row, which is what vanilla does everywhere.
+        u16 bl = openBelow ? WOODS_METATILE_TREE_BASE_L : theme->stamp[STAMP_BL];
+        u16 br = openBelow ? WOODS_METATILE_TREE_BASE_R : theme->stamp[STAMP_BR];
+
         SetBlock(map, x,     y,     MakeBlock(theme->stamp[STAMP_TL], 1, theme->elevationWall));
         SetBlock(map, x + 1, y,     MakeBlock(theme->stamp[STAMP_TR], 1, theme->elevationWall));
-        SetBlock(map, x,     y + 1, MakeBlock(theme->stamp[STAMP_BL], 1, theme->elevationWall));
-        SetBlock(map, x + 1, y + 1, MakeBlock(theme->stamp[STAMP_BR], 1, theme->elevationWall));
+        SetBlock(map, x,     y + 1, MakeBlock(bl, 1, theme->elevationWall));
+        SetBlock(map, x + 1, y + 1, MakeBlock(br, 1, theme->elevationWall));
     }
 }
 
@@ -968,27 +1007,27 @@ static u16 GrassAt(s32 cx, s32 cy, const struct RogueDungeonTheme *theme)
     return theme->floor;
 }
 
+static void OpenCell(s32 cx, s32 cy)
+{
+    if (cx >= 0 && cy >= 0 && cx < DUNGEON_CELLS_W && cy < DUNGEON_CELLS_H)
+        sWoodsOpen[cy][cx] = TRUE;
+}
+
+// Two passes: work out which cells are open, then paint. The second pass needs
+// to know whether the cell below is open, which decides whether a tree mass
+// ends here and whether long grass needs its base row.
 static void WriteWoodsBlocks(u16 *map, const struct RogueDungeonTheme *theme)
 {
     s32 cx, cy, i;
 
     for (cy = 0; cy < DUNGEON_CELLS_H; cy++)
         for (cx = 0; cx < DUNGEON_CELLS_W; cx++)
-            StampCell(map, cx, cy, theme, FALSE, theme->floor);
+            sWoodsOpen[cy][cx] = FALSE;
 
     for (i = 0; i < sRoomCount; i++)
-    {
         for (cy = 0; cy < sRooms[i].h / 2; cy++)
-        {
             for (cx = 0; cx < sRooms[i].w / 2; cx++)
-            {
-                s32 gx = sRooms[i].x / 2 + cx;
-                s32 gy = sRooms[i].y / 2 + cy;
-
-                StampCell(map, gx, gy, theme, TRUE, GrassAt(gx, gy, theme));
-            }
-        }
-    }
+                OpenCell(sRooms[i].x / 2 + cx, sRooms[i].y / 2 + cy);
 
     // Corridors, walked in cell space so they stay a whole stamp wide. Same
     // centre-to-centre chaining as the cave, which keeps every room connected.
@@ -1001,15 +1040,29 @@ static void WriteWoodsBlocks(u16 *map, const struct RogueDungeonTheme *theme)
 
         while (x0 != x1)
         {
-            StampCell(map, x0, y0, theme, TRUE, GrassAt(x0, y0, theme));
+            OpenCell(x0, y0);
             x0 += (x1 > x0) ? 1 : -1;
         }
         while (y0 != y1)
         {
-            StampCell(map, x0, y0, theme, TRUE, GrassAt(x0, y0, theme));
+            OpenCell(x0, y0);
             y0 += (y1 > y0) ? 1 : -1;
         }
-        StampCell(map, x0, y0, theme, TRUE, GrassAt(x0, y0, theme));
+        OpenCell(x0, y0);
+    }
+
+    for (cy = 0; cy < DUNGEON_CELLS_H; cy++)
+    {
+        for (cx = 0; cx < DUNGEON_CELLS_W; cx++)
+        {
+            bool8 open = sWoodsOpen[cy][cx];
+            // Off the bottom of the map counts as closed, so the edge does not
+            // sprout tree bases against nothing.
+            bool8 openBelow = (cy + 1 < DUNGEON_CELLS_H) ? sWoodsOpen[cy + 1][cx] : FALSE;
+
+            StampCell(map, cx, cy, theme, open,
+                      open ? GrassAt(cx, cy, theme) : theme->floor, openBelow);
+        }
     }
 }
 
@@ -1256,15 +1309,18 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
 // step, so nothing else gets a chance to run a script for it.
 bool8 RogueDungeon_TryStartStairsScript(struct MapPosition *position)
 {
+    const struct RogueDungeonTheme *theme;
     u16 metatile;
 
     if (gMapHeader.mapLayoutId != LAYOUT_ROGUE_DUNGEON_FLOOR)
         return FALSE;
 
+    theme = ThemeForFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR));
     metatile = MapGridGetMetatileIdAt(position->x, position->y);
 
-    if (metatile != DUNGEON_METATILE_STAIRS_DOWN
-     && metatile != DUNGEON_METATILE_STAIRS_UP)
+    // Per theme: a metatile id means different things under different secondary
+    // tilesets, so the cave stairs id cannot be reused for the woods.
+    if (metatile != theme->stairsDown && metatile != theme->stairsUp)
         return FALSE;
 
     ScriptContext_SetupScript(RogueDungeonFloor_EventScript_Stairs);
