@@ -50,6 +50,18 @@ struct DungeonRoom
     u8 x, y, w, h;
 };
 
+// The prepared floor. Held rather than recomputed because object-event
+// templates are loaded before the map is generated, so trainer placement and
+// block painting are two passes over the same seeded layout.
+//
+// Not saved: it is entirely derived from VAR_ROGUE_DUNGEON_SEED.
+EWRAM_DATA static struct DungeonRoom sRooms[DUNGEON_MAX_ROOMS] = {0};
+EWRAM_DATA static u8 sRoomCount = 0;
+EWRAM_DATA static u8 sStairsX = 0;
+EWRAM_DATA static u8 sStairsY = 0;
+EWRAM_DATA static u16 sStairsMetatile = 0;
+EWRAM_DATA static bool8 sFloorPrepared = FALSE;
+
 // Local PRNG. Generation must not consume or perturb the global RNG - if it
 // did, the floor would depend on how many steps the player had taken, and the
 // same seed would stop reproducing the same floor.
@@ -164,12 +176,17 @@ static void GiveStarterTeam(void)
 // reproducible for a given floor.
 static void BuildWildEncounterTable(u16 floor)
 {
-    u8 level = DUNGEON_ENCOUNTER_BASE_LEVEL + floor * DUNGEON_ENCOUNTER_LEVEL_STEP;
-    u8 tiers = DUNGEON_ENCOUNTER_STARTING_TIER + floor;
+    u32 scaled = DUNGEON_ENCOUNTER_BASE_LEVEL
+               + ((u32)floor * DUNGEON_ENCOUNTER_LEVEL_NUM) / DUNGEON_ENCOUNTER_LEVEL_DEN;
+    u32 tiers = DUNGEON_ENCOUNTER_STARTING_TIER + floor / DUNGEON_ENCOUNTER_TIER_FLOORS;
+    u8 level;
     u32 i;
 
-    if (level > MAX_LEVEL - DUNGEON_ENCOUNTER_LEVEL_SPREAD)
-        level = MAX_LEVEL - DUNGEON_ENCOUNTER_LEVEL_SPREAD;
+    // Clamp before narrowing to u8, or a deep enough floor wraps.
+    if (scaled > MAX_LEVEL - DUNGEON_ENCOUNTER_LEVEL_SPREAD)
+        scaled = MAX_LEVEL - DUNGEON_ENCOUNTER_LEVEL_SPREAD;
+    level = scaled;
+
     if (tiers > ARRAY_COUNT(sDungeonSpeciesPool))
         tiers = ARRAY_COUNT(sDungeonSpeciesPool);
 
@@ -354,43 +371,19 @@ static void CarveCorridor(u16 *map, s32 x0, s32 y0, s32 x1, s32 y1)
     CarveFloor(map, x, y);
 }
 
-void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
+// Everything a floor is, derived from its seed. Touches no map memory, so it
+// can run at object-event-template load time - which happens before the map is
+// generated, and is where trainers have to be placed.
+static void PrepareFloor(u16 seed)
 {
-    struct DungeonRoom rooms[DUNGEON_MAX_ROOMS];
-    u8 roomCount = 0;
-    // Placeholder art; ApplyWallAutotiling picks the real metatile at the end.
-    // Only the collision bit matters during carving.
-    u16 wallBlock = MakeBlock(DUNGEON_METATILE_WALL_INTERIOR_MID, 1, DUNGEON_ELEVATION_WALL);
-    s32 x, y, i, attempt;
-    u16 seed;
-
-    // setPlayerPosition distinguishes the two callers. FALSE is LoadMapFromWarp
-    // - the player is entering, so roll a new floor. TRUE is CB2_ContinueSavedGame
-    // - reuse the stored seed so a reload reproduces the floor the player saved
-    // on, rather than dropping them inside solid rock.
-    if (setPlayerPosition == FALSE)
-    {
-        seed = Random();
-        VarSet(VAR_ROGUE_DUNGEON_SEED, seed);
-    }
-    else
-    {
-        seed = VarGet(VAR_ROGUE_DUNGEON_SEED);
-    }
+    s32 i, attempt;
 
     SeedDungeonRng(seed);
-
-    gBackupMapLayout.map = backupMapData;
-    gBackupMapLayout.width = DUNGEON_WIDTH + MAP_OFFSET_W;
-    gBackupMapLayout.height = DUNGEON_HEIGHT + MAP_OFFSET_H;
-
-    for (y = 0; y < DUNGEON_HEIGHT; y++)
-        for (x = 0; x < DUNGEON_WIDTH; x++)
-            SetBlock(backupMapData, x, y, wallBlock);
+    sRoomCount = 0;
 
     // Rejection-sample non-overlapping rooms. A fixed attempt budget keeps this
     // bounded; falling short of DUNGEON_MAX_ROOMS is fine.
-    for (attempt = 0; attempt < 64 && roomCount < DUNGEON_MAX_ROOMS; attempt++)
+    for (attempt = 0; attempt < 64 && sRoomCount < DUNGEON_MAX_ROOMS; attempt++)
     {
         struct DungeonRoom room;
         bool8 clear = TRUE;
@@ -400,9 +393,9 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
         room.x = 1 + (DungeonRandom() % (DUNGEON_WIDTH  - room.w - 2));
         room.y = 1 + (DungeonRandom() % (DUNGEON_HEIGHT - room.h - 2));
 
-        for (i = 0; i < roomCount; i++)
+        for (i = 0; i < sRoomCount; i++)
         {
-            if (RoomsOverlap(&room, &rooms[i]))
+            if (RoomsOverlap(&room, &sRooms[i]))
             {
                 clear = FALSE;
                 break;
@@ -410,60 +403,124 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
         }
 
         if (clear)
-            rooms[roomCount++] = room;
+            sRooms[sRoomCount++] = room;
     }
 
-    for (i = 0; i < roomCount; i++)
+    // Exactly one exit per floor, in a room the player does not start in, so
+    // reaching it means traversing the floor. Rooms are always connected.
+    //
+    // Each draw is its own statement: as function arguments the order of
+    // evaluation would be unspecified, and the layout would depend on it.
+    if (sRoomCount != 0)
     {
-        for (y = 0; y < rooms[i].h; y++)
-            for (x = 0; x < rooms[i].w; x++)
-                CarveFloor(backupMapData, rooms[i].x + x, rooms[i].y + y);
+        u8 room = (sRoomCount > 1) ? 1 + (DungeonRandom() % (sRoomCount - 1)) : 0;
+
+        sStairsMetatile = (DungeonRandom() & 1) ? DUNGEON_METATILE_STAIRS_DOWN
+                                                : DUNGEON_METATILE_STAIRS_UP;
+        sStairsX = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
+        sStairsY = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
+    }
+
+    BuildWildEncounterTable(VarGet(VAR_ROGUE_DUNGEON_FLOOR));
+    sFloorPrepared = TRUE;
+}
+
+// Paints the prepared floor into the map buffer. PrepareFloor must have run.
+static void WriteFloorBlocks(u16 *backupMapData)
+{
+    // Placeholder art; ApplyWallAutotiling picks the real metatile at the end.
+    // Only the collision bit matters during carving.
+    u16 wallBlock = MakeBlock(DUNGEON_METATILE_WALL_INTERIOR_MID, 1, DUNGEON_ELEVATION_WALL);
+    s32 x, y, i;
+
+    gBackupMapLayout.map = backupMapData;
+    gBackupMapLayout.width = DUNGEON_WIDTH + MAP_OFFSET_W;
+    gBackupMapLayout.height = DUNGEON_HEIGHT + MAP_OFFSET_H;
+
+    for (y = 0; y < DUNGEON_HEIGHT; y++)
+        for (x = 0; x < DUNGEON_WIDTH; x++)
+            SetBlock(backupMapData, x, y, wallBlock);
+
+    for (i = 0; i < sRoomCount; i++)
+    {
+        for (y = 0; y < sRooms[i].h; y++)
+            for (x = 0; x < sRooms[i].w; x++)
+                CarveFloor(backupMapData, sRooms[i].x + x, sRooms[i].y + y);
     }
 
     // Chain the rooms centre-to-centre so the floor is always fully connected.
-    for (i = 1; i < roomCount; i++)
+    for (i = 1; i < sRoomCount; i++)
     {
         CarveCorridor(backupMapData,
-                      rooms[i - 1].x + rooms[i - 1].w / 2,
-                      rooms[i - 1].y + rooms[i - 1].h / 2,
-                      rooms[i].x + rooms[i].w / 2,
-                      rooms[i].y + rooms[i].h / 2);
+                      sRooms[i - 1].x + sRooms[i - 1].w / 2,
+                      sRooms[i - 1].y + sRooms[i - 1].h / 2,
+                      sRooms[i].x + sRooms[i].w / 2,
+                      sRooms[i].y + sRooms[i].h / 2);
     }
 
-    // Exactly one exit per floor. Placed in a room the player does not start
-    // in, so reaching it means actually traversing the floor. Rooms are always
-    // connected, so it is always reachable.
-    if (roomCount != 0)
+    if (sRoomCount != 0)
+        SetBlock(backupMapData, sStairsX, sStairsY,
+                 MakeBlock(sStairsMetatile, 0, DUNGEON_ELEVATION_FLOOR));
+}
+
+// Called from the object-event template loader, which runs before the map is
+// generated. Rolls the floor early so trainer placement can see the rooms.
+void RogueDungeon_PrepareNewFloor(void)
+{
+    u16 seed = Random();
+
+    VarSet(VAR_ROGUE_DUNGEON_SEED, seed);
+    PrepareFloor(seed);
+}
+
+void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
+{
+    // Normally RogueDungeon_PrepareNewFloor has already run from the template
+    // loader. That loader can be skipped, and never runs on load-from-save, so
+    // fall back to preparing here.
+    //
+    // setPlayerPosition distinguishes the callers. FALSE is LoadMapFromWarp -
+    // the player is entering, so roll a new floor. TRUE is CB2_ContinueSavedGame
+    // - reuse the stored seed so a reload reproduces the floor the player saved
+    // on, rather than dropping them inside solid rock.
+    if (!sFloorPrepared)
     {
-        u8 room = (roomCount > 1) ? 1 + (DungeonRandom() % (roomCount - 1)) : 0;
-        u16 stairs = (DungeonRandom() & 1) ? DUNGEON_METATILE_STAIRS_DOWN
-                                           : DUNGEON_METATILE_STAIRS_UP;
+        u16 seed;
 
-        SetBlock(backupMapData,
-                 rooms[room].x + (DungeonRandom() % rooms[room].w),
-                 rooms[room].y + (DungeonRandom() % rooms[room].h),
-                 MakeBlock(stairs, 0, DUNGEON_ELEVATION_FLOOR));
+        if (setPlayerPosition == FALSE)
+        {
+            seed = Random();
+            VarSet(VAR_ROGUE_DUNGEON_SEED, seed);
+        }
+        else
+        {
+            seed = VarGet(VAR_ROGUE_DUNGEON_SEED);
+        }
+
+        PrepareFloor(seed);
     }
+
+    WriteFloorBlocks(backupMapData);
 
     // Runs last, but only rewrites blocks whose collision bit is set, so the
     // stairs tile is left alone.
     ApplyWallAutotiling(backupMapData);
 
-    if (setPlayerPosition == FALSE && roomCount != 0)
+    if (setPlayerPosition == FALSE && sRoomCount != 0)
     {
-        gSaveBlock1Ptr->pos.x = rooms[0].x + rooms[0].w / 2;
-        gSaveBlock1Ptr->pos.y = rooms[0].y + rooms[0].h / 2;
+        gSaveBlock1Ptr->pos.x = sRooms[0].x + sRooms[0].w / 2;
+        gSaveBlock1Ptr->pos.y = sRooms[0].y + sRooms[0].h / 2;
     }
-
-    // Last, so they do not shift the RNG sequence the layout depends on -
-    // adding these must not change the floors existing seeds produce.
-    BuildWildEncounterTable(VarGet(VAR_ROGUE_DUNGEON_FLOOR));
 
     if (setPlayerPosition == FALSE && !FlagGet(FLAG_ROGUE_STARTER_GIVEN))
     {
         FlagSet(FLAG_ROGUE_STARTER_GIVEN);
         GiveStarterTeam();
     }
+
+    // Consumed. The next map load must prepare afresh, or it would repaint this
+    // floor instead of generating the next one.
+    sFloorPrepared = FALSE;
 }
 
 // Hooked into TryStartStepBasedScript. Returning TRUE means we consumed the

@@ -91,17 +91,34 @@
 #define DUNGEON_ROOM_MIN   5
 #define DUNGEON_ROOM_MAX  10
 
-// Deeper floors unlock stronger species and raise levels. Tuning knobs kept
-// here so the curve is adjustable without reading the generator.
-#define DUNGEON_ENCOUNTER_BASE_LEVEL   4
-#define DUNGEON_ENCOUNTER_LEVEL_STEP   2
+// A run mirrors the stock game: 20 floors per dungeon, a mini boss halfway and
+// a gym leader at the end, eight dungeons deep.
+#define DUNGEON_FLOORS_PER_DUNGEON 20
+#define DUNGEON_MINIBOSS_FLOOR      9  // 0-based within the dungeon, so the 10th
+#define DUNGEON_BOSS_FLOOR         19  // the 20th
+
+#define DungeonIndexOf(floor)    ((floor) / DUNGEON_FLOORS_PER_DUNGEON)
+#define DungeonFloorWithin(floor) ((floor) % DUNGEON_FLOORS_PER_DUNGEON)
+
+// Levels are fitted to the stock gym leaders over 8 dungeons: floor 20 lands
+// just under Roxanne (12-15), floor 160 just over Juan (41-46). Expressed as a
+// ratio rather than a per-floor step because a whole level per floor is far too
+// steep across 160 floors.
+#define DUNGEON_ENCOUNTER_BASE_LEVEL   5
+#define DUNGEON_ENCOUNTER_LEVEL_NUM   26  // levels gained per 100 floors
+#define DUNGEON_ENCOUNTER_LEVEL_DEN  100
 #define DUNGEON_ENCOUNTER_LEVEL_SPREAD 2
+
+// One more species unlocked every this many floors, so the pool opens up over
+// roughly the first two dungeons.
 #define DUNGEON_ENCOUNTER_STARTING_TIER 4
+#define DUNGEON_ENCOUNTER_TIER_FLOORS   4
 
 void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition);
 bool8 RogueDungeon_TryStartStairsScript(struct MapPosition *position);
 const struct WildPokemonInfo *RogueDungeon_GetWildMonInfo(enum WildPokemonArea area);
 void RogueDungeon_ApplyNewGameUnlocks(void);
 void RogueDungeon_GetFloorName(u8 *dest);
+void RogueDungeon_PrepareNewFloor(void);
 
 #endif // GUARD_ROGUE_DUNGEON_H
