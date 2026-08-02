@@ -563,26 +563,52 @@ struct RogueDungeonTheme
 #define DUNGEON_ROOM_MIN   5
 #define DUNGEON_ROOM_MAX  10
 
-// A run mirrors the stock game: 10 floors per dungeon, a mini boss halfway and
-// a major battle at the end. Eight gym dungeons, then the Elite Four and the
-// Champion, so thirteen dungeons and 130 floors in total.
-#define DUNGEON_FLOORS_PER_DUNGEON 10
-#define DUNGEON_MINIBOSS_FLOOR      4  // 0-based within the dungeon, so the 5th
-#define DUNGEON_BOSS_FLOOR          9  // the 10th
+// A run mirrors the stock game, but its dungeons are not all the same length,
+// so the floor-to-dungeon mapping is a table walk rather than a division:
+//
+//   dungeons 0-7   ten floors, mini boss at the 5th, gym leader at the 10th
+//                  -> floors 1-80
+//   dungeons 8-12  five floors, an Elite Four member at the 5th, NO mini boss
+//                  -> floors 81-105
+//   dungeon  13    ten floors, the rival at the 5th, Steven at the 10th
+//                  -> floors 106-115, and the run ends there
+//
+// The Elite Four sit five floors apart because a gauntlet is what they are.
+// Giving each of them a mini boss as well would pad the endgame out with
+// grunts, and there is nobody left at that level to draw one from anyway.
+#define DUNGEON_LONG_FLOORS    10
+#define DUNGEON_SHORT_FLOORS    5
+#define DUNGEON_MINIBOSS_FLOOR  4  // 0-based within the dungeon, so the 5th
 
+// A dungeon's boss always stands on its last floor, whatever its length, so
+// there is no DUNGEON_BOSS_FLOOR any more - ask DungeonLengthOf.
 #define DUNGEON_GYM_DUNGEONS 8
-#define DUNGEON_GYM_FLOORS   (DUNGEON_GYM_DUNGEONS * DUNGEON_FLOORS_PER_DUNGEON)
+#define DUNGEON_E4_DUNGEONS  5
+#define DUNGEON_COUNT       (DUNGEON_GYM_DUNGEONS + DUNGEON_E4_DUNGEONS + 1)
 
-#define DungeonIndexOf(floor)    ((floor) / DUNGEON_FLOORS_PER_DUNGEON)
-#define DungeonFloorWithin(floor) ((floor) % DUNGEON_FLOORS_PER_DUNGEON)
+#define DUNGEON_GYM_FLOORS   (DUNGEON_GYM_DUNGEONS * DUNGEON_LONG_FLOORS)
+#define DUNGEON_E4_FLOORS    (DUNGEON_E4_DUNGEONS * DUNGEON_SHORT_FLOORS)
+#define DUNGEON_E4_END_FLOOR (DUNGEON_GYM_FLOORS + DUNGEON_E4_FLOORS)
+#define DUNGEON_TOTAL_FLOORS (DUNGEON_E4_END_FLOOR + DUNGEON_LONG_FLOORS)
 
-// Levels are fitted to the stock bosses. The rate slows after the gym stretch
-// because the stock game does the same: eight gyms span levels 15 to 46, but
-// the Elite Four and Champion only span 46 to 58. A single rate cannot fit both
-// - it would put floor 130 at level 71 against a Champion in the mid fifties.
+// Levels are fitted to the stock bosses, and the stock bosses climb at three
+// different rates, so the curve does too.
+//
+// Eight gyms span levels 13 to 43 over eighty floors. The Elite Four span 47 to
+// 56 over twenty-five, so that stretch has to climb about twice as fast per
+// floor as it used to, now that it is half as long.
+//
+// Then Steven. TRAINER_STEVEN is Emerald's post-game superboss at levels 75-78,
+// not a champion - Emerald's champion is Wallace at 55-58, and Steven's same six
+// Pokemon are levels 55-58 in Ruby and Sapphire, where he holds the title.
+// Reaching him from Wallace in ten floors therefore cannot be gentle: the final
+// dungeon climbs three times as fast as the gym stretch and still leaves him
+// standing five levels above it, the widest boss-over-curve gap in the run.
+// FINAL_NUM is the knob if that proves too much in play.
 #define DUNGEON_ENCOUNTER_BASE_LEVEL   5
 #define DUNGEON_ENCOUNTER_LEVEL_NUM   51  // levels gained per 100 floors
-#define DUNGEON_ENCOUNTER_LATE_NUM    24  // per hundred, past the gym stretch
+#define DUNGEON_ENCOUNTER_E4_NUM      48  // per hundred, through the Elite Four
+#define DUNGEON_ENCOUNTER_FINAL_NUM  160  // per hundred, the climb to Steven
 #define DUNGEON_ENCOUNTER_LEVEL_DEN  100
 #define DUNGEON_ENCOUNTER_LEVEL_SPREAD 2
 
@@ -611,10 +637,13 @@ void RogueDungeon_GiveBossAce(void);
 // nothing checks the prototype. A void special here silently hands the script
 // whatever is left in r0, which is the return address. Keep these returning u16.
 u16 RogueDungeon_IsDungeonEndFloor(void);
+u16 RogueDungeon_IsRunCompleteFloor(void);
 u16 RogueDungeon_PrepareBossAceOffer(void);
 u16 RogueDungeon_GiveBossTM(void);
 bool8 RogueDungeon_IsGeneratedTrainer(void);
 bool8 RogueDungeon_HasTrainerBeenBeaten(u8 objectEventId);
 bool8 RogueDungeon_IsBossFloor(u16 floor);
+
+void RogueDungeon_ResetRun(void);
 
 #endif // GUARD_ROGUE_DUNGEON_H

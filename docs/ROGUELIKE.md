@@ -11,13 +11,22 @@ cost real time to find.
 
 ## 1. Current state
 
-**The run loop is complete.** Pick two starters → descend → catch and build a
-team → mini boss every 5 floors → gym leader every 10 → take their TM and
-optionally adopt their ace → heal at a rest stop → next dungeon. Losing wipes
-the run.
+**The run loop is complete, start to finish.** Pick two starters → descend →
+catch and build a team → mini boss → gym leader → take their TM and optionally
+adopt their ace → heal at a rest stop → next dungeon → Elite Four → Steven.
+Losing wipes the run; so does winning, which is the point.
 
-- **13 dungeons × 10 floors = 130 floors.** Eight gym leaders, then Sidney,
-  Phoebe, Glacia, Drake, Wallace.
+- **115 floors across 14 dungeons**, and they are not all the same length:
+
+  | dungeons | floors each | boss | mini boss | run floors |
+  |---|---|---|---|---|
+  | 0–7, the gyms | 10 | Roxanne … Juan | yes, at the 5th | 1–80 |
+  | 8–12, the Elite Four | 5 | Sidney … Wallace | **none** | 81–105 |
+  | 13, the finale | 10 | Steven | the rival, at 110 | 106–115 |
+
+  The Elite Four come every five floors because a gauntlet is what they are.
+  Giving each of them a mini boss as well would pad the endgame with grunts,
+  and there is no stock trainer at that level to draw one from anyway.
 - **Six themes**: Petalburg Woods (dungeon 1, Roxanne), Granite Cave
   (dungeon 2, Brawly), New Mauville (dungeon 3, Wattson), Fiery Path
   (dungeon 4, Flannery), Mirage Tower (dungeon 5, Norman) and the Jungle
@@ -53,6 +62,40 @@ The only saved state is the seed, the floor counter, and the run state.
 
 Generation uses a **local LCG** built on `ISO_RANDOMIZE1`, never the global RNG
 — sharing it would make layouts depend on the player's step count.
+
+### The level curve has three stages, because the stock bosses do
+
+Bosses are stock trainers fought with their **stock parties, unscaled**. So the
+encounter curve is fitted to them, not the other way round, and the convention
+is that a late boss's party average lands on the curve while an early one sits a
+few levels over it.
+
+One rate cannot fit the run, and neither can two:
+
+| stage | floors | per floor | why |
+|---|---|---|---|
+| gyms | 1–81 | 0.51 | eight leaders spanning levels 13 to 43 |
+| Elite Four | 82–105 | 0.48 | 47 to 56, but now over 25 floors, not 50 |
+| finale | 106–115 | **1.60** | Wallace 56 → Steven 76 in ten floors |
+
+The last one is the interesting one. `TRAINER_STEVEN` is Emerald's *post-game
+superboss* at levels 75–78, not a champion — Emerald's champion is Wallace at
+55–58, and Steven's same six Pokémon are levels 55–58 in Ruby and Sapphire where
+he holds the title. Emerald reuses that party at +20. Putting him ten floors
+after Wallace therefore inherits a gap vanilla spreads across an entire post
+game, and the final dungeon has to climb three times as fast as the gym stretch
+to get anywhere near it. It still leaves him **+5.3 over the curve**, the widest
+boss-over-curve gap in the run — deliberately, but `DUNGEON_ENCOUNTER_FINAL_NUM`
+is the knob if play says otherwise.
+
+`verify_run_structure.py` prints the whole table and reads the party levels out
+of `trainers.party`, so swapping a boss for one at a different level fails the
+check rather than silently bending the curve.
+
+The floor 110 rival is invented (`TRAINER_ROGUE_RIVAL`) for the same reason in
+reverse: the stock game's last rival battle is **level 32**, seventy floors out
+of date. There are nine spare trainer ids before the defeat flags overflow; this
+takes one.
 
 ### Themes
 
@@ -612,8 +655,13 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
 
 ## 10. Known gaps
 
-1. Nothing happens after floor 130 — the boss table wraps to Roxanne.
-2. Six themes against thirteen dungeons, so they cycle past dungeon 6.
+1. Six themes against fourteen dungeons, so they cycle past dungeon 6. The five
+   Elite Four dungeons are only five floors long, which makes the cycling more
+   visible, not less — a theme now gets half as long to make an impression.
+2. Winning ends the run the same way losing does: the party and bag are wiped
+   and the player is back on floor 1. Nothing is carried forward and nothing
+   records that it happened, so there is no reason to have won rather than
+   stopped. A completion counter is the obvious next thing.
 3. A full party still loses the boss ace — there is no swap UI. It now says so
    instead of declining in silence, but being unable to take a Champion's ace
    because of a spare Zubat is still a bad moment.

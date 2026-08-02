@@ -646,3 +646,5 @@ gSpecials::
 	def_special RogueDungeon_PrepareBossAceOffer
 	def_special RogueDungeon_GiveBossAce
 	def_special RogueDungeon_GiveBossTM
+	def_special RogueDungeon_IsRunCompleteFloor
+	def_special RogueDungeon_ResetRun

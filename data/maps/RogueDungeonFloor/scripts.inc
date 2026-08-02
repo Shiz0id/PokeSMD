@@ -105,11 +105,26 @@ RogueDungeonFloor_EventScript_BossAceNoRoom::
 
 @ Never behind the reward flag. This is the only way off an arena floor, so it
 @ has to work on a re-talk too - otherwise a player who saved here is stuck.
+@
+@ Run complete is asked FIRST, because Steven's floor is also the last floor of
+@ its dungeon and would otherwise warp to a rest stop that has nothing after it.
 RogueDungeonFloor_EventScript_BossExit::
+	specialvar VAR_RESULT, RogueDungeon_IsRunCompleteFloor
+	goto_if_eq VAR_RESULT, TRUE, RogueDungeonFloor_EventScript_RunComplete
 	specialvar VAR_RESULT, RogueDungeon_IsDungeonEndFloor
 	goto_if_eq VAR_RESULT, TRUE, RogueDungeonFloor_EventScript_ToRestStop
 	msgbox RogueDungeonFloor_Text_BossCleared, MSGBOX_DEFAULT
 	releaseall
+	end
+
+@ The end of the run. Wipes back to floor one needing starters, the same reset a
+@ whiteout performs, and warps there - so this is reachable on a re-talk without
+@ harm, since the warp leaves the arena either way.
+RogueDungeonFloor_EventScript_RunComplete::
+	msgbox RogueDungeonFloor_Text_RunComplete, MSGBOX_DEFAULT
+	special RogueDungeon_ResetRun
+	warp MAP_ROGUE_DUNGEON_FLOOR
+	waitstate
 	end
 
 @ Beating the gym leader ends the dungeon. The floor counter advances here, so
@@ -130,6 +145,13 @@ RogueDungeonFloor_Text_BossCleared:
 RogueDungeonFloor_Text_GymCleared:
 	.string "The Gym Leader is beaten!\p"
 	.string "Time to rest before going deeper…$"
+
+RogueDungeonFloor_Text_RunComplete:
+	.string "STEVEN is beaten!\p"
+	.string "115 floors, and nothing left below.\p"
+	.string "The run is complete!\p"
+	.string "…and somewhere far above, another\n"
+	.string "descent is already beginning.$"
 
 RogueDungeonFloor_Text_TrainerDefeat::
 	.string "I could not keep up down here.$"

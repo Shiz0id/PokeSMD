@@ -35,9 +35,59 @@ extern const u8 RogueDungeonFloor_Text_TrainerDefeat[];
 
 static u16 PickTrainerForLevel(u8 target);
 
-// Target level for a floor. The rate slows past the gym stretch because the
-// stock game does: eight gyms span levels 15 to 46, but the Elite Four and
-// Champion only span 46 to 58. One rate cannot fit both.
+// How long each dungeon is. The Elite Four's five are half length, which is what
+// makes them come every five floors with no mini boss between - see the run
+// shape in rogue_dungeon.h. A floor past the last one clamps to the final
+// dungeon rather than wrapping: the run ends at DUNGEON_TOTAL_FLOORS, so a floor
+// beyond it means something upstream failed to reset the run, and pretending we
+// are back at Roxanne would hide that.
+static u32 DungeonLengthOf(u32 dungeon)
+{
+    if (dungeon < DUNGEON_GYM_DUNGEONS)
+        return DUNGEON_LONG_FLOORS;
+    if (dungeon < DUNGEON_GYM_DUNGEONS + DUNGEON_E4_DUNGEONS)
+        return DUNGEON_SHORT_FLOORS;
+    return DUNGEON_LONG_FLOORS;
+}
+
+static u32 DungeonIndexOf(u16 floor)
+{
+    if (floor < DUNGEON_GYM_FLOORS)
+        return floor / DUNGEON_LONG_FLOORS;
+    if (floor < DUNGEON_E4_END_FLOOR)
+        return DUNGEON_GYM_DUNGEONS
+             + (floor - DUNGEON_GYM_FLOORS) / DUNGEON_SHORT_FLOORS;
+    return DUNGEON_COUNT - 1;
+}
+
+static u32 DungeonFloorWithin(u16 floor)
+{
+    if (floor < DUNGEON_GYM_FLOORS)
+        return floor % DUNGEON_LONG_FLOORS;
+    if (floor < DUNGEON_E4_END_FLOOR)
+        return (floor - DUNGEON_GYM_FLOORS) % DUNGEON_SHORT_FLOORS;
+    return floor - DUNGEON_E4_END_FLOOR;
+}
+
+// The boss stands on the last floor of its dungeon, whichever length that is.
+static bool8 IsDungeonBossFloor(u16 floor)
+{
+    return DungeonFloorWithin(floor)
+        == DungeonLengthOf(DungeonIndexOf(floor)) - 1;
+}
+
+// Only a full-length dungeon has a mini boss. In a five-floor Elite Four
+// dungeon the fifth floor is the boss's own, so the length test is what stops
+// Sidney sharing his arena with a grunt.
+static bool8 IsMiniBossFloor(u16 floor)
+{
+    return DungeonLengthOf(DungeonIndexOf(floor)) == DUNGEON_LONG_FLOORS
+        && DungeonFloorWithin(floor) == DUNGEON_MINIBOSS_FLOOR;
+}
+
+// Target level for a floor, in three stages because the stock bosses climb in
+// three stages. The reasoning, and why the last one is so steep, is in
+// rogue_dungeon.h next to the constants.
 static u32 FloorTargetLevel(u16 floor)
 {
     u32 level = DUNGEON_ENCOUNTER_BASE_LEVEL;
@@ -48,7 +98,15 @@ static u32 FloorTargetLevel(u16 floor)
 
     level += ((u32)DUNGEON_GYM_FLOORS * DUNGEON_ENCOUNTER_LEVEL_NUM)
            / DUNGEON_ENCOUNTER_LEVEL_DEN;
-    level += ((u32)(floor - DUNGEON_GYM_FLOORS) * DUNGEON_ENCOUNTER_LATE_NUM)
+
+    if (floor < DUNGEON_E4_END_FLOOR)
+        return level + ((u32)(floor - DUNGEON_GYM_FLOORS)
+                        * DUNGEON_ENCOUNTER_E4_NUM)
+                     / DUNGEON_ENCOUNTER_LEVEL_DEN;
+
+    level += ((u32)DUNGEON_E4_FLOORS * DUNGEON_ENCOUNTER_E4_NUM)
+           / DUNGEON_ENCOUNTER_LEVEL_DEN;
+    level += ((u32)(floor - DUNGEON_E4_END_FLOOR) * DUNGEON_ENCOUNTER_FINAL_NUM)
            / DUNGEON_ENCOUNTER_LEVEL_DEN;
     return level;
 }
@@ -759,7 +817,13 @@ u16 RogueDungeon_PrepareBossAceOffer(void)
     // Only a gym leader's ace is on offer. Mini bosses run the same post-battle
     // script - RogueDungeon_IsBossFloor covers both - and an Aqua grunt handing
     // over its Poochyena was never the intent.
-    if (DungeonFloorWithin(VarGet(VAR_ROGUE_DUNGEON_FLOOR)) != DUNGEON_BOSS_FLOOR)
+    if (!IsDungeonBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
+        return ROGUE_ACE_NONE;
+
+    // Nor Steven's. The run resets the moment the player walks away from him, so
+    // handing over a Metagross here would announce a prize and take it back in
+    // the same breath.
+    if (RogueDungeon_IsRunCompleteFloor())
         return ROGUE_ACE_NONE;
 
     if (sTrainerCount == 0 || size == 0 || party == NULL)
@@ -818,11 +882,12 @@ void RogueDungeon_GiveBossAce(void)
 // A loss ends the run. Rather than the vanilla respawn at the last Pokemon
 // Center, the floor counter and party are wiped and the run state is set back
 // to needing starters, so the next dungeon entry starts over from the top.
-bool8 RogueDungeon_TryHandleWhiteOut(void)
+// Wipes the run back to its starting state without moving the player. Shared by
+// the whiteout path and by finishing the run, which differ only in how they say
+// so and in how they get back to floor one - a loss is handled from C and warps
+// itself, a win is handled from the boss script and uses the warp command.
+void RogueDungeon_ResetRun(void)
 {
-    if (gMapHeader.mapLayoutId != LAYOUT_ROGUE_DUNGEON_FLOOR)
-        return FALSE;
-
     VarSet(VAR_ROGUE_DUNGEON_FLOOR, 0);
     VarSet(VAR_ROGUE_RUN_STATE, ROGUE_RUN_NEEDS_STARTERS);
     ZeroPlayerPartyMons();
@@ -831,6 +896,14 @@ bool8 RogueDungeon_TryHandleWhiteOut(void)
     // Otherwise the run-start item grant stacks with whatever survived the last
     // run, and a few losses leave the player with hundreds of balls.
     ClearBag();
+}
+
+bool8 RogueDungeon_TryHandleWhiteOut(void)
+{
+    if (gMapHeader.mapLayoutId != LAYOUT_ROGUE_DUNGEON_FLOOR)
+        return FALSE;
+
+    RogueDungeon_ResetRun();
 
     // Back to the first floor, where the frame table will ask for starters.
     SetWarpDestination(MAP_GROUP(MAP_ROGUE_DUNGEON_FLOOR),
@@ -1432,14 +1505,19 @@ static void CarveCorridor(u16 *map, const struct RogueDungeonTheme *theme,
     CarveCorridorBlock(map, theme, x, y, width);
 }
 
-// One major battle per dungeon, in stock order: the eight gym leaders, then the
-// Elite Four and the Champion. The _1 variants are the base gym battles rather
-// than the rematch tiers; the Elite Four have no such variants.
+// One major battle per dungeon, in stock order: the eight gym leaders, the Elite
+// Four, the Champion, and then Steven to finish the run. The _1 variants are the
+// base gym battles rather than the rematch tiers; the rest have no such variants.
+//
+// TRAINER_STEVEN is Emerald's Meteor Falls superboss at levels 75-78, twenty
+// above Wallace. That gap is deliberate - it is the whole point of the last ten
+// floors - and the encounter curve climbs to meet it. See the curve constants.
 static const u16 sDungeonBosses[] =
 {
     TRAINER_ROXANNE_1, TRAINER_BRAWLY_1, TRAINER_WATTSON_1, TRAINER_FLANNERY_1,
     TRAINER_NORMAN_1,  TRAINER_WINONA_1, TRAINER_TATE_AND_LIZA_1, TRAINER_JUAN_1,
     TRAINER_SIDNEY, TRAINER_PHOEBE, TRAINER_GLACIA, TRAINER_DRAKE, TRAINER_WALLACE,
+    TRAINER_STEVEN,
 };
 
 // Parallel to sDungeonBosses, so the boss looks like who it is.
@@ -1450,6 +1528,7 @@ static const u16 sDungeonBossGfx[] =
     OBJ_EVENT_GFX_TATE, OBJ_EVENT_GFX_JUAN,
     OBJ_EVENT_GFX_SIDNEY, OBJ_EVENT_GFX_PHOEBE, OBJ_EVENT_GFX_GLACIA,
     OBJ_EVENT_GFX_DRAKE, OBJ_EVENT_GFX_WALLACE,
+    OBJ_EVENT_GFX_STEVEN,
 };
 
 // Parallel to sDungeonBosses. The eight gym entries are exactly what each leader
@@ -1466,6 +1545,7 @@ static const u16 sDungeonBossTMs[] =
     ITEM_TM_FACADE,    ITEM_TM_AERIAL_ACE,  ITEM_TM_CALM_MIND,  ITEM_TM_WATER_PULSE,
     ITEM_TM_TAUNT,     ITEM_TM_SHADOW_BALL, ITEM_TM_BLIZZARD,   ITEM_TM_DRAGON_CLAW,
     ITEM_TM_HYPER_BEAM,
+    ITEM_NONE,  // Steven: the run ends on his floor and the bag is wiped with it
 };
 
 // Mini bosses are picked by level from sRogueDungeonMiniBosses, not from a
@@ -1515,16 +1595,13 @@ static u16 PickMiniBossForLevel(u8 target, u16 *gfxId)
 
 bool8 RogueDungeon_IsBossFloor(u16 floor)
 {
-    u32 within = DungeonFloorWithin(floor);
-
-    return within == DUNGEON_MINIBOSS_FLOOR || within == DUNGEON_BOSS_FLOOR;
+    return IsMiniBossFloor(floor) || IsDungeonBossFloor(floor);
 }
 
 // Boss floors skip rooms and corridors entirely: a single centred arena, the
 // boss standing in the open, and no exit at all until it is beaten.
 static void PrepareArenaFloor(u16 floor)
 {
-    u32 within = DungeonFloorWithin(floor);
     u32 dungeon = DungeonIndexOf(floor);
     const struct RogueDungeonTheme *theme = ThemeForFloor(floor);
     u8 w = DUNGEON_ARENA_WIDTH;
@@ -1567,25 +1644,29 @@ static void PrepareArenaFloor(u16 floor)
     sTrainerX[0] = x0 + w / 2;
     sTrainerY[0] = y0 + 3;
 
-    if (within == DUNGEON_BOSS_FLOOR)
+    if (IsDungeonBossFloor(floor))
     {
         sTrainerIds[0] = sDungeonBosses[dungeon % ARRAY_COUNT(sDungeonBosses)];
         sTrainerGfx[0] = sDungeonBossGfx[dungeon % ARRAY_COUNT(sDungeonBossGfx)];
     }
-    else if (dungeon < DUNGEON_GYM_DUNGEONS)
+    else if (dungeon == DUNGEON_COUNT - 1)
     {
-        // The table carries its own sprite, so a female grunt looks female and
-        // a leader looks like the leader rather than like one of their grunts.
-        sTrainerIds[0] = PickMiniBossForLevel(
-            FloorTargetLevel(floor) + DUNGEON_MINIBOSS_LEVEL_BONUS,
-            &sTrainerGfx[0]);
+        // The last dungeon's mini boss is the rival, fixed rather than picked by
+        // level: no stock trainer comes close to floor 110, and the run should
+        // not spend its second-to-last arena on an anonymous hiker.
+        sTrainerIds[0] = TRAINER_ROGUE_RIVAL;
+        sTrainerGfx[0] = OBJ_EVENT_GFX_MAY_NORMAL;
     }
     else
     {
-        // Past the gyms a team grunt would be twenty levels underlevelled, so
-        // the mini boss becomes a strong ordinary trainer instead.
-        sTrainerIds[0] = PickTrainerForLevel(FloorTargetLevel(floor) + 2);
-        sTrainerGfx[0] = OBJ_EVENT_GFX_HIKER;
+        // Only gym dungeons reach here: the Elite Four's are five floors long,
+        // so their fifth floor is the boss's own and they have no mini boss slot
+        // at all. The table carries its own sprite, so a female grunt looks
+        // female and a leader looks like the leader rather than one of their
+        // grunts.
+        sTrainerIds[0] = PickMiniBossForLevel(
+            FloorTargetLevel(floor) + DUNGEON_MINIBOSS_LEVEL_BONUS,
+            &sTrainerGfx[0]);
     }
 }
 
@@ -1598,7 +1679,17 @@ static void PrepareArenaFloor(u16 floor)
 // left the player sealed in an arena that by design has no stairs.
 u16 RogueDungeon_IsDungeonEndFloor(void)
 {
-    return DungeonFloorWithin(VarGet(VAR_ROGUE_DUNGEON_FLOOR)) == DUNGEON_BOSS_FLOOR;
+    return IsDungeonBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR));
+}
+
+// specialvar target. Steven is the end of the run, so his arena neither opens an
+// exit nor warps to a rest stop - there is nothing after it.
+//
+// The script asks this BEFORE RogueDungeon_IsDungeonEndFloor, which also answers
+// TRUE here: the last floor of the last dungeon is both.
+u16 RogueDungeon_IsRunCompleteFloor(void)
+{
+    return VarGet(VAR_ROGUE_DUNGEON_FLOOR) >= DUNGEON_TOTAL_FLOORS - 1;
 }
 
 // specialvar target. Hands over the gym leader's TM, the way the stock game
@@ -1610,7 +1701,7 @@ u16 RogueDungeon_GiveBossTM(void)
     u32 dungeon = DungeonIndexOf(VarGet(VAR_ROGUE_DUNGEON_FLOOR));
     u16 item;
 
-    if (DungeonFloorWithin(VarGet(VAR_ROGUE_DUNGEON_FLOOR)) != DUNGEON_BOSS_FLOOR)
+    if (!IsDungeonBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
         return FALSE;
 
     item = sDungeonBossTMs[dungeon % ARRAY_COUNT(sDungeonBossTMs)];
@@ -1628,9 +1719,10 @@ u16 RogueDungeon_GiveBossTM(void)
 // which is what forces the fight - there is no other way off an arena floor.
 void RogueDungeon_OnBossDefeated(void)
 {
-    // Gym floors warp to the rest stop instead of opening an exit, so drawing
-    // one here would give the player a way to skip the heal.
-    if (DungeonFloorWithin(VarGet(VAR_ROGUE_DUNGEON_FLOOR)) == DUNGEON_BOSS_FLOOR)
+    // A dungeon's last floor warps to the rest stop instead of opening an exit,
+    // so drawing one here would give the player a way to skip the heal. Steven's
+    // floor ends the run outright and needs an exit even less.
+    if (IsDungeonBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
         return;
 
     MapGridSetMetatileEntryAt(sStairsX + MAP_OFFSET, sStairsY + MAP_OFFSET,
