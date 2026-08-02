@@ -528,6 +528,8 @@ static void PlaceTrainers(u16 floor)
     u32 target = DUNGEON_ENCOUNTER_BASE_LEVEL
                + ((u32)floor * DUNGEON_ENCOUNTER_LEVEL_NUM) / DUNGEON_ENCOUNTER_LEVEL_DEN;
     u32 count = 1 + floor / DUNGEON_TRAINER_FLOORS_PER_EXTRA;
+    u16 trainerId;
+    u32 j;
     u32 i;
 
     sTrainerCount = 0;
@@ -549,7 +551,20 @@ static void PlaceTrainers(u16 floor)
 
         sTrainerX[sTrainerCount] = x;
         sTrainerY[sTrainerCount] = y;
-        sTrainerIds[sTrainerCount] = PickTrainerForLevel(target);
+        // Distinct ids only. The defeat flag is derived from the trainer id, so
+        // two slots sharing one would both be marked beaten by a single fight,
+        // leaving a trainer standing that refuses to battle.
+        trainerId = PickTrainerForLevel(target);
+
+        for (j = 0; j < sTrainerCount; j++)
+        {
+            if (sTrainerIds[j] == trainerId)
+                break;
+        }
+        if (j != sTrainerCount)
+            continue;
+
+        sTrainerIds[sTrainerCount] = trainerId;
         sTrainerGfx[sTrainerCount] = OBJ_EVENT_GFX_HIKER;
         sTrainerCount++;
     }
@@ -699,6 +714,17 @@ void RogueDungeon_LoadObjectEventTemplates(void)
     // so leftover placeholder slots stay invisible.
     FlagSet(FLAG_ROGUE_OBJECT_UNUSED);
 
+    // Stock trainer defeat flags are permanent, and we reuse stock trainers
+    // every floor, so a trainer beaten earlier in the run would otherwise be
+    // skipped as already won.
+    //
+    // Cleared HERE, once per floor, and deliberately not at battle setup: the
+    // battle script checks this flag immediately after running that special, so
+    // clearing it there means a defeated trainer is never recognised as such
+    // and rematches forever.
+    for (i = 0; i < sTrainerCount; i++)
+        FlagClear(TRAINER_FLAGS_START + sTrainerIds[i]);
+
     CpuFill32(0, templates, sizeof(gSaveBlock1Ptr->objectEventTemplates));
 
     for (i = 0; i < DUNGEON_MAX_TRAINERS; i++)
@@ -736,10 +762,6 @@ void RogueDungeon_SetUpTrainerBattle(void)
     if (slot >= sTrainerCount)
         slot = 0;
     trainerId = sTrainerIds[slot];
-
-    // Stock trainer flags are permanent and we reuse stock trainers every run,
-    // so without clearing this the battle is skipped as already won.
-    FlagClear(TRAINER_FLAGS_START + trainerId);
 
     InitTrainerBattleParameter();
     TRAINER_BATTLE_PARAM.mode = TRAINER_BATTLE_SINGLE;
