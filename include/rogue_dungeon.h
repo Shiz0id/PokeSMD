@@ -96,20 +96,25 @@
 #define DUNGEON_ROOM_MAX  10
 
 // A run mirrors the stock game: 10 floors per dungeon, a mini boss halfway and
-// a gym leader at the end, eight dungeons deep, so 80 floors in total.
+// a major battle at the end. Eight gym dungeons, then the Elite Four and the
+// Champion, so thirteen dungeons and 130 floors in total.
 #define DUNGEON_FLOORS_PER_DUNGEON 10
 #define DUNGEON_MINIBOSS_FLOOR      4  // 0-based within the dungeon, so the 5th
 #define DUNGEON_BOSS_FLOOR          9  // the 10th
 
+#define DUNGEON_GYM_DUNGEONS 8
+#define DUNGEON_GYM_FLOORS   (DUNGEON_GYM_DUNGEONS * DUNGEON_FLOORS_PER_DUNGEON)
+
 #define DungeonIndexOf(floor)    ((floor) / DUNGEON_FLOORS_PER_DUNGEON)
 #define DungeonFloorWithin(floor) ((floor) % DUNGEON_FLOORS_PER_DUNGEON)
 
-// Levels are fitted to the stock gym leaders over 8 dungeons: floor 10 lands
-// just under Roxanne (12-15), floor 80 just over Juan (41-46). Expressed as a
-// ratio rather than a per-floor step because a whole level per floor is far too
-// steep even across 80 floors.
+// Levels are fitted to the stock bosses. The rate slows after the gym stretch
+// because the stock game does the same: eight gyms span levels 15 to 46, but
+// the Elite Four and Champion only span 46 to 58. A single rate cannot fit both
+// - it would put floor 130 at level 71 against a Champion in the mid fifties.
 #define DUNGEON_ENCOUNTER_BASE_LEVEL   5
 #define DUNGEON_ENCOUNTER_LEVEL_NUM   51  // levels gained per 100 floors
+#define DUNGEON_ENCOUNTER_LATE_NUM    24  // per hundred, past the gym stretch
 #define DUNGEON_ENCOUNTER_LEVEL_DEN  100
 #define DUNGEON_ENCOUNTER_LEVEL_SPREAD 2
 
@@ -129,7 +134,7 @@ void RogueDungeon_PrepareNewFloor(void);
 void RogueDungeon_LoadObjectEventTemplates(void);
 void RogueDungeon_SetUpTrainerBattle(void);
 void RogueDungeon_OnBossDefeated(void);
-void RogueDungeon_IsGymFloor(void);
+void RogueDungeon_IsDungeonEndFloor(void);
 bool8 RogueDungeon_IsBossFloor(u16 floor);
 
 #endif // GUARD_ROGUE_DUNGEON_H

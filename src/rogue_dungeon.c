@@ -28,6 +28,26 @@ extern const u8 RogueDungeonFloor_EventScript_BossDone[];
 extern const u8 RogueDungeonFloor_Text_TrainerIntro[];
 extern const u8 RogueDungeonFloor_Text_TrainerDefeat[];
 
+static u16 PickTrainerForLevel(u8 target);
+
+// Target level for a floor. The rate slows past the gym stretch because the
+// stock game does: eight gyms span levels 15 to 46, but the Elite Four and
+// Champion only span 46 to 58. One rate cannot fit both.
+static u32 FloorTargetLevel(u16 floor)
+{
+    u32 level = DUNGEON_ENCOUNTER_BASE_LEVEL;
+
+    if (floor <= DUNGEON_GYM_FLOORS)
+        return level + ((u32)floor * DUNGEON_ENCOUNTER_LEVEL_NUM)
+                     / DUNGEON_ENCOUNTER_LEVEL_DEN;
+
+    level += ((u32)DUNGEON_GYM_FLOORS * DUNGEON_ENCOUNTER_LEVEL_NUM)
+           / DUNGEON_ENCOUNTER_LEVEL_DEN;
+    level += ((u32)(floor - DUNGEON_GYM_FLOORS) * DUNGEON_ENCOUNTER_LATE_NUM)
+           / DUNGEON_ENCOUNTER_LEVEL_DEN;
+    return level;
+}
+
 // Ordered weakest to strongest. A floor draws from a window of this list that
 // slides with depth, so early floors stay tame, later ones roll evolved forms,
 // and the weakest species retire instead of lingering forever. The static table
@@ -199,8 +219,7 @@ static void GiveStarterTeam(void)
 // reproducible for a given floor.
 static void BuildWildEncounterTable(u16 floor)
 {
-    u32 scaled = DUNGEON_ENCOUNTER_BASE_LEVEL
-               + ((u32)floor * DUNGEON_ENCOUNTER_LEVEL_NUM) / DUNGEON_ENCOUNTER_LEVEL_DEN;
+    u32 scaled = FloorTargetLevel(floor);
     u32 tiers = DUNGEON_ENCOUNTER_STARTING_TIER + floor / DUNGEON_ENCOUNTER_TIER_FLOORS;
     u32 bottom, width, rotation;
     u8 level;
@@ -404,21 +423,24 @@ static void CarveCorridor(u16 *map, s32 x0, s32 y0, s32 x1, s32 y1)
     CarveFloor(map, x, y);
 }
 
-// Boss floors. One gym leader per dungeon, in stock order, so a run reads as
-// Petalburg Woods then Roxanne, Granite Cave then Brawly, and so on. The _1
-// variants are the base gym battles rather than the rematch tiers.
-static const u16 sGymLeaders[] =
+// One major battle per dungeon, in stock order: the eight gym leaders, then the
+// Elite Four and the Champion. The _1 variants are the base gym battles rather
+// than the rematch tiers; the Elite Four have no such variants.
+static const u16 sDungeonBosses[] =
 {
     TRAINER_ROXANNE_1, TRAINER_BRAWLY_1, TRAINER_WATTSON_1, TRAINER_FLANNERY_1,
     TRAINER_NORMAN_1,  TRAINER_WINONA_1, TRAINER_TATE_AND_LIZA_1, TRAINER_JUAN_1,
+    TRAINER_SIDNEY, TRAINER_PHOEBE, TRAINER_GLACIA, TRAINER_DRAKE, TRAINER_WALLACE,
 };
 
-// Parallel to sGymLeaders, so the boss looks like who it is.
-static const u16 sGymLeaderGfx[] =
+// Parallel to sDungeonBosses, so the boss looks like who it is.
+static const u16 sDungeonBossGfx[] =
 {
     OBJ_EVENT_GFX_ROXANNE, OBJ_EVENT_GFX_BRAWLY, OBJ_EVENT_GFX_WATTSON,
     OBJ_EVENT_GFX_FLANNERY, OBJ_EVENT_GFX_NORMAN, OBJ_EVENT_GFX_WINONA,
     OBJ_EVENT_GFX_TATE, OBJ_EVENT_GFX_JUAN,
+    OBJ_EVENT_GFX_SIDNEY, OBJ_EVENT_GFX_PHOEBE, OBJ_EVENT_GFX_GLACIA,
+    OBJ_EVENT_GFX_DRAKE, OBJ_EVENT_GFX_WALLACE,
 };
 
 // Mini bosses. Team Aqua and Magma grunts, chosen from the seed.
@@ -467,19 +489,26 @@ static void PrepareArenaFloor(u16 floor)
 
     if (within == DUNGEON_BOSS_FLOOR)
     {
-        sTrainerIds[0] = sGymLeaders[dungeon % ARRAY_COUNT(sGymLeaders)];
-        sTrainerGfx[0] = sGymLeaderGfx[dungeon % ARRAY_COUNT(sGymLeaderGfx)];
+        sTrainerIds[0] = sDungeonBosses[dungeon % ARRAY_COUNT(sDungeonBosses)];
+        sTrainerGfx[0] = sDungeonBossGfx[dungeon % ARRAY_COUNT(sDungeonBossGfx)];
     }
-    else
+    else if (dungeon < DUNGEON_GYM_DUNGEONS)
     {
         sTrainerIds[0] = sMiniBosses[DungeonRandom() % ARRAY_COUNT(sMiniBosses)];
         sTrainerGfx[0] = OBJ_EVENT_GFX_AQUA_MEMBER_M;
     }
+    else
+    {
+        // Past the gyms a team grunt would be twenty levels underlevelled, so
+        // the mini boss becomes a strong ordinary trainer instead.
+        sTrainerIds[0] = PickTrainerForLevel(FloorTargetLevel(floor) + 2);
+        sTrainerGfx[0] = OBJ_EVENT_GFX_HIKER;
+    }
 }
 
-// specialvar target. A gym floor ends the dungeon, so the player goes to the
-// rest stop to heal rather than straight down another set of stairs.
-void RogueDungeon_IsGymFloor(void)
+// specialvar target. The last floor of a dungeon sends the player to the rest
+// stop to heal rather than straight down another set of stairs.
+void RogueDungeon_IsDungeonEndFloor(void)
 {
     gSpecialVar_Result =
         DungeonFloorWithin(VarGet(VAR_ROGUE_DUNGEON_FLOOR)) == DUNGEON_BOSS_FLOOR;
@@ -538,8 +567,7 @@ static u16 PickTrainerForLevel(u8 target)
 // a safe landing spot.
 static void PlaceTrainers(u16 floor)
 {
-    u32 target = DUNGEON_ENCOUNTER_BASE_LEVEL
-               + ((u32)floor * DUNGEON_ENCOUNTER_LEVEL_NUM) / DUNGEON_ENCOUNTER_LEVEL_DEN;
+    u32 target = FloorTargetLevel(floor);
     u32 count = 1 + floor / DUNGEON_TRAINER_FLOORS_PER_EXTRA;
     u16 trainerId;
     u32 j;

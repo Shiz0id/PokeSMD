@@ -641,4 +641,4 @@ gSpecials::
 	def_special CheckAddCoins
 	def_special RogueDungeon_SetUpTrainerBattle
 	def_special RogueDungeon_OnBossDefeated
-	def_special RogueDungeon_IsGymFloor
+	def_special RogueDungeon_IsDungeonEndFloor

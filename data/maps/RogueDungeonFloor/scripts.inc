@@ -38,7 +38,7 @@ RogueDungeonFloor_EventScript_TrainerDone::
 @ since an arena has no other way out.
 RogueDungeonFloor_EventScript_BossDone::
 	special RogueDungeon_OnBossDefeated
-	specialvar VAR_RESULT, RogueDungeon_IsGymFloor
+	specialvar VAR_RESULT, RogueDungeon_IsDungeonEndFloor
 	goto_if_eq VAR_RESULT, TRUE, RogueDungeonFloor_EventScript_ToRestStop
 	msgbox RogueDungeonFloor_Text_BossCleared, MSGBOX_DEFAULT
 	releaseall
