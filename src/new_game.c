@@ -1,5 +1,6 @@
 #include "global.h"
 #include "constants/rogue_dungeon.h"
+#include "rogue_dungeon.h"
 #include "clock.h"
 #include "new_game.h"
 #include "random.h"
@@ -245,6 +246,10 @@ void NewGameInitData(void)
     ResetItemFlags();
     ResetDexNav();
     ClearFollowerNPCData();
+
+    // Last, because InitEventData above clears every flag.
+    if (ROGUE_SLIM_NEW_GAME)
+        RogueDungeon_ApplyNewGameUnlocks();
 }
 
 static void ResetMiniGamesRecords(void)

@@ -66,6 +66,30 @@ static u16 DungeonRandom(void)
     return sDungeonRngState >> 16;
 }
 
+// Called at the end of NewGameInitData, which must come after InitEventData -
+// that clears every flag, so setting these earlier would be undone.
+//
+// A run starts with the progression gates already open: there is no overworld
+// to earn them in, and without badges high-level Pokemon can disobey.
+void RogueDungeon_ApplyNewGameUnlocks(void)
+{
+    u32 flag;
+
+    // Contiguous in the system flag block.
+    for (flag = FLAG_BADGE01_GET; flag <= FLAG_BADGE08_GET; flag++)
+        FlagSet(flag);
+
+    FlagSet(FLAG_SYS_POKEMON_GET);  // party entry in the start menu
+    FlagSet(FLAG_SYS_POKEDEX_GET);  // dex entry in the start menu
+
+    // Not just FLAG_SYS_NATIONAL_DEX - the dex also checks a magic value and
+    // VAR_NATIONAL_DEX, and IsNationalPokedexEnabled requires all three.
+    EnableNationalPokedex();
+
+    FlagSet(FLAG_SYS_B_DASH);             // running actually works
+    FlagSet(FLAG_RECEIVED_RUNNING_SHOES); // event bookkeeping to match
+}
+
 // Placeholder starting party so the dungeon is testable before run structure
 // exists. Steven's Meteor Falls team, copied from TRAINER_STEVEN in
 // src/data/trainers.party.

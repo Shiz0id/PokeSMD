@@ -1,6 +1,10 @@
 #ifndef GUARD_ROGUE_DUNGEON_H
 #define GUARD_ROGUE_DUNGEON_H
 
+// Self-contained: the prototypes below name enum WildPokemonArea, so this must
+// not rely on the includer having pulled it in first.
+#include "wild_encounter.h"
+
 // Metatile ids for the General + Cave tileset pair, derived by mining all 62
 // vanilla General+Cave layouts rather than picked by eye.
 //
@@ -71,5 +75,6 @@
 void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition);
 bool8 RogueDungeon_TryStartStairsScript(struct MapPosition *position);
 const struct WildPokemonInfo *RogueDungeon_GetWildMonInfo(enum WildPokemonArea area);
+void RogueDungeon_ApplyNewGameUnlocks(void);
 
 #endif // GUARD_ROGUE_DUNGEON_H
