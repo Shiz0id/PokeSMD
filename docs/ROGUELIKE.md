@@ -317,35 +317,13 @@ walls are genuinely 1×1.
 
 ## 8. Tooling
 
-Python. Windows has Pillow; WSL does not, and `python3-venv` is not installed,
-so anything that touches an image has to run from Windows against the repo over
+All of it lives in **`tools/rogue/`** — see `tools/rogue/README.md` for the
+per-script table and which ones write checked-in files.
+
+Windows has Pillow; WSL does not, and `python3-venv` is not installed, so
+anything that touches an image has to run from Windows against the repo over
 UNC (`//wsl.localhost/Ubuntu/home/p50/decomps/pokeemerald-expansion`). Scripts
 resolve the repo from their own location, so they run from either side.
-
-**In the repo, under `tools/rogue/`** — these generate checked-in files, so they
-have to live with what they generate:
-
-| script | purpose |
-|---|---|
-| `gen_trainer_table.py` | depth-indexed trainer + mini-boss tables |
-| `make_woods_stairs.py` | draws the grassy stairs into the Rustboro tileset |
-
-**Still only in the session scratchpad**, which is a temp directory — moving
-them is worth doing before the next asset change:
-
-| script | purpose |
-|---|---|
-| `tileset_resolve.py` | `gTileset_*` → real asset paths |
-| `tileset_atlas.py` | render metatiles; build labelled contact sheets |
-| `build_all_atlases.py` | atlas + JSON index for all 137 tileset pairs |
-| `compose_metatiles.py` / `append_metatiles.py` | splice and append the cave slivers |
-| `gen_starters.py` | starter table and its script text |
-| `ram_budget.py` | attribute EWRAM/IWRAM to source files |
-| `verify_*.py`, `woods_prototype.py` | host-side invariant checks and previews |
-
-The cave sliver metatiles (0x39E–0x3A4) are appended to a **checked-in vanilla
-file** by tooling that only exists in that temp directory. The result survives
-in `metatiles.bin`; the ability to regenerate or extend it does not.
 
 **Never guess tileset paths from the symbol name.** FRLG secondaries carry an
 `_frlg` directory suffix the symbol lacks, acronyms and digits split
@@ -381,4 +359,3 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    a Champion's ace because of a spare Zubat is a bad moment.
 4. The rest stop has only a nurse. It reuses `LAYOUT_POKEMON_CENTER_1F` and is
    ready for a mart and game corner.
-5. Most of the tooling still lives in a temp directory (see §8).
