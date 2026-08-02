@@ -223,6 +223,24 @@ Vanilla never leaves `0x1DC` exposed; doing so dangles the trunk in mid air.
 Grass: `0x001` plain (no encounters), `0x00D` tall, `0x015` long, with
 `0x016/0x017` as the long grass base row.
 
+A tree also has a **fourth row above it**. Vanilla draws the crown poking up
+into the block above the canopy, composited over whatever is already there:
+`0x1CE/0x1CF` over plain grass, `0x1C6/0x1C7` over tall grass. Across all nine
+General+Rustboro layouts, of the ~215 blocks sitting directly above a canopy
+that are not part of a tree themselves, 201 are these four. Long grass has no
+variant and is left alone.
+
+Behaviour is preserved exactly — `0x1CE/0x1CF` are `MB_NORMAL` like plain grass,
+`0x1C6/0x1C7` are `MB_TALL_GRASS` like tall grass — so the swap cannot move
+where encounters fire.
+
+**This was nearly mis-implemented as a grass base row.** On a contact sheet
+`0x1C6`/`0x1CE` read as grass with a sprout at the bottom, which looks exactly
+like the bottom edge of a grass patch. The census said otherwise: they sit above
+`0x1D4/0x1D5` 139 times and the "sprout" is the top of the tree. **Ask what a
+candidate metatile sits next to before deciding what it is** — the picture alone
+supported the wrong answer.
+
 **Grass-only encounters needed no code.** `MB_NORMAL` carries no encounter flag;
 `MB_TALL_GRASS` and `MB_LONG_GRASS` do. Choosing the metatiles was the whole
 implementation. Caves keep `MB_CAVE` and encounter everywhere.
@@ -525,9 +543,8 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    a Champion's ace because of a spare Zubat is a bad moment.
 4. The rest stop has only a nurse. It reuses `LAYOUT_POKEMON_CENTER_1F` and is
    ready for a mart and game corner.
-5. The woods still has no tall grass base row, so a patch of tall grass ends
-   flat where it meets open ground. `0x1C6`/`0x1C7` over `0x1CE`/`0x1CF` is the
-   2-wide unit vanilla uses, the same idea as the long grass base already
-   drawn — and it is the only one of these floor treatments the woods can take,
-   because `DUNGEON_GEN_WOODS` returns before `ApplyWallAutotiling` and so
-   reaches none of the patch, skirt or decor passes.
+5. The woods still gets none of the cosmetic passes — `DUNGEON_GEN_WOODS`
+   returns before `ApplyWallAutotiling`, so patches, skirts and decor never run
+   for it. Everything decorative it does have is inside `StampCell`. That is
+   fine while the only variety is per-cell, but a woods theme wanting scattered
+   props or ground patches would need the passes lifted out of the cave path.

@@ -17,6 +17,10 @@ GRASS = 0x001                          # plain, no encounters
 TALL = 0x00D                           # MB_TALL_GRASS
 LONG = 0x015                           # MB_LONG_GRASS, the Route 119 kind
 TREE = (0x1D4, 0x1D5, 0x1DC, 0x1DD)   # TL, TR, BL, BR
+TREE_BASE = (0x1E4, 0x1E5)             # ground contact, where a mass ends
+LONG_BASE = (0x016, 0x017)             # long grass meeting open ground
+ABOVE_TREE = (0x1CE, 0x1CF)            # a tree's crown over plain grass
+ABOVE_TREE_TALL = (0x1C6, 0x1C7)       # ... and over tall grass
 
 CELL_PLAIN, CELL_TALL, CELL_LONG, CELL_TREE = 0, 1, 2, 3
 CELL_METATILE = {CELL_PLAIN: GRASS, CELL_TALL: TALL, CELL_LONG: LONG}
@@ -101,16 +105,38 @@ def render(open_, grass, scale=2):
     for cy in range(CELLS_H):
         for cx in range(CELLS_W):
             px, py = cx * 32, cy * 32
+            below_open = open_[cy + 1][cx] if cy + 1 < CELLS_H else False
+            # Distinct from `not below_open`, which is also true off the bottom
+            # edge, where there is no tree to draw the crown of.
+            tree_below = cy + 1 < CELLS_H and not open_[cy + 1][cx]
+
             if open_[cy][cx]:
                 mid = CELL_METATILE[grass[cy][cx]]
-                for dy in range(2):
-                    for dx in range(2):
-                        im.paste(tile(mid), (px + dx * 16, py + dy * 16))
+                lower_l = lower_r = mid
+
+                # A tree's crown pokes up into the block above its canopy. Long
+                # grass has no vanilla variant, so it falls through untouched.
+                if tree_below and grass[cy][cx] == CELL_TALL:
+                    lower_l, lower_r = ABOVE_TREE_TALL
+                elif tree_below and grass[cy][cx] == CELL_PLAIN:
+                    lower_l, lower_r = ABOVE_TREE
+                # Long grass needs its base row where it meets open ground, or
+                # the blades are cut off flat.
+                elif grass[cy][cx] == CELL_LONG and below_open:
+                    lower_l, lower_r = LONG_BASE
+
+                im.paste(tile(mid), (px, py))
+                im.paste(tile(mid), (px + 16, py))
+                im.paste(tile(lower_l), (px, py + 16))
+                im.paste(tile(lower_r), (px + 16, py + 16))
             else:
+                # Where a tree mass ends, the bottom row is ground contact
+                # rather than the trunk, which vanilla never leaves exposed.
+                bl, br = TREE_BASE if below_open else (TREE[2], TREE[3])
                 im.paste(tile(TREE[0]), (px, py))
                 im.paste(tile(TREE[1]), (px + 16, py))
-                im.paste(tile(TREE[2]), (px, py + 16))
-                im.paste(tile(TREE[3]), (px + 16, py + 16))
+                im.paste(tile(bl), (px, py + 16))
+                im.paste(tile(br), (px + 16, py + 16))
     return im.resize((im.width * scale, im.height * scale), Image.NEAREST) if scale != 1 else im
 
 

@@ -112,6 +112,23 @@
 #define WOODS_METATILE_LONG_GRASS_BASE_L 0x016
 #define WOODS_METATILE_LONG_GRASS_BASE_R 0x017
 
+// The top of a tree, drawn into the block ABOVE its canopy row - the crown
+// poking up out of whatever is already there. Which variant depends on that
+// block, so there is one pair for plain grass and one for tall grass.
+//
+// Measured across all nine General+Rustboro layouts: of the ~215 blocks that
+// sit directly above a canopy without being part of a tree themselves, 201 are
+// these four (0x1CE/0x1CF over plain grass, 0x1C6/0x1C7 over tall grass). The
+// remaining strays belong to features we do not generate.
+//
+// Behaviour is preserved exactly - 0x1CE/0x1CF are MB_NORMAL like plain grass,
+// 0x1C6/0x1C7 are MB_TALL_GRASS like tall grass - so this cannot change where
+// encounters fire. Long grass has no vanilla variant and is left alone.
+#define WOODS_METATILE_ABOVE_TREE_L      0x1CE
+#define WOODS_METATILE_ABOVE_TREE_R      0x1CF
+#define WOODS_METATILE_ABOVE_TREE_TALL_L 0x1C6
+#define WOODS_METATILE_ABOVE_TREE_TALL_R 0x1C7
+
 // New Mauville, under gTileset_General + gTileset_BikeShop. Mined from
 // NewMauville_Inside_Layout with tools/rogue/derive_wall_table.py and read off
 // the layout directly; validated with tools/rogue/theme_mock.py.
@@ -395,6 +412,14 @@ struct RogueDungeonTheme
     u16 longGrass;   // anywhere rather than only in grass
     u16 longGrassBaseL;  // where long grass meets open ground below it, or the
     u16 longGrassBaseR;  // blades are cut off flat
+
+    // DUNGEON_GEN_WOODS: the block directly above a tree canopy, where vanilla
+    // draws the tree's crown poking up. One pair for plain floor and one for
+    // tall grass, because the crown is composited over what is already there.
+    // Zero leaves the block alone, which is what long grass gets.
+    u16 aboveTreeFloorL, aboveTreeFloorR;
+    u16 aboveTreeGrassL, aboveTreeGrassR;
+
     u16 stairsDown;
     u16 stairsUp;
 

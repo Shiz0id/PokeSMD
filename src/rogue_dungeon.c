@@ -177,6 +177,10 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .longGrass = WOODS_METATILE_LONG_GRASS,
         .longGrassBaseL = WOODS_METATILE_LONG_GRASS_BASE_L,
         .longGrassBaseR = WOODS_METATILE_LONG_GRASS_BASE_R,
+        .aboveTreeFloorL = WOODS_METATILE_ABOVE_TREE_L,
+        .aboveTreeFloorR = WOODS_METATILE_ABOVE_TREE_R,
+        .aboveTreeGrassL = WOODS_METATILE_ABOVE_TREE_TALL_L,
+        .aboveTreeGrassR = WOODS_METATILE_ABOVE_TREE_TALL_R,
         .stairsDown = WOODS_METATILE_STAIRS,
         .stairsUp = WOODS_METATILE_STAIRS,
         .stamp =
@@ -1576,13 +1580,42 @@ static void PrepareFloor(u16 seed)
 // Stamps one 2x2 cell. Woods trees are 2x2 blocks on even coordinates, so the
 // generator works in whole cells and never needs an autotile pass.
 static void StampCell(u16 *map, s32 cx, s32 cy, const struct RogueDungeonTheme *theme,
-                      bool8 open, u16 floorMetatile, bool8 openBelow)
+                      bool8 open, u16 floorMetatile, bool8 openBelow,
+                      bool8 treeBelow)
 {
     s32 x = cx * 2, y = cy * 2;
 
     if (open)
     {
         u16 lower = floorMetatile;
+
+        // A tree's crown pokes up into the block above its canopy. Which
+        // variant depends on what that block already is, and long grass has no
+        // vanilla variant, so it falls through and is left alone.
+        if (treeBelow)
+        {
+            u16 leftTop = 0, rightTop = 0;
+
+            if (floorMetatile == theme->tallGrass && theme->tallGrass != 0)
+            {
+                leftTop = theme->aboveTreeGrassL;
+                rightTop = theme->aboveTreeGrassR;
+            }
+            else if (floorMetatile == theme->floor)
+            {
+                leftTop = theme->aboveTreeFloorL;
+                rightTop = theme->aboveTreeFloorR;
+            }
+
+            if (leftTop != 0 && rightTop != 0)
+            {
+                SetBlock(map, x,     y,     MakeBlock(floorMetatile, 0, theme->elevationFloor));
+                SetBlock(map, x + 1, y,     MakeBlock(floorMetatile, 0, theme->elevationFloor));
+                SetBlock(map, x,     y + 1, MakeBlock(leftTop, 0, theme->elevationFloor));
+                SetBlock(map, x + 1, y + 1, MakeBlock(rightTop, 0, theme->elevationFloor));
+                return;
+            }
+        }
 
         // Long grass needs its base row where it meets open ground, or the
         // blades are cut off flat.
@@ -1688,9 +1721,13 @@ static void WriteWoodsBlocks(u16 *map, const struct RogueDungeonTheme *theme)
             // Off the bottom of the map counts as closed, so the edge does not
             // sprout tree bases against nothing.
             bool8 openBelow = (cy + 1 < DUNGEON_CELLS_H) ? sWoodsOpen[cy + 1][cx] : FALSE;
+            // Distinct from !openBelow, which is also true off the bottom edge:
+            // there is no tree down there to draw the crown of.
+            bool8 treeBelow = (cy + 1 < DUNGEON_CELLS_H) && !sWoodsOpen[cy + 1][cx];
 
             StampCell(map, cx, cy, theme, open,
-                      open ? GrassAt(cx, cy, theme) : theme->floor, openBelow);
+                      open ? GrassAt(cx, cy, theme) : theme->floor,
+                      openBelow, treeBelow);
         }
     }
 }
