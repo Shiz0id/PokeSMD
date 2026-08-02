@@ -28,7 +28,7 @@
 // map.json must declare exactly this many object events: the engine reads
 // templates from the save block but takes the count from ROM.
 #define DUNGEON_MAX_TRAINERS            4
-#define DUNGEON_TRAINER_FLOORS_PER_EXTRA 50
+#define DUNGEON_TRAINER_FLOORS_PER_EXTRA 25
 #define DUNGEON_TRAINER_SIGHT_RANGE      4
 
 #endif // GUARD_CONSTANTS_ROGUE_DUNGEON_H

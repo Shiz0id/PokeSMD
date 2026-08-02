@@ -93,9 +93,9 @@
 
 // A run mirrors the stock game: 20 floors per dungeon, a mini boss halfway and
 // a gym leader at the end, eight dungeons deep.
-#define DUNGEON_FLOORS_PER_DUNGEON 20
-#define DUNGEON_MINIBOSS_FLOOR      9  // 0-based within the dungeon, so the 10th
-#define DUNGEON_BOSS_FLOOR         19  // the 20th
+#define DUNGEON_FLOORS_PER_DUNGEON 10
+#define DUNGEON_MINIBOSS_FLOOR      4  // 0-based within the dungeon, so the 5th
+#define DUNGEON_BOSS_FLOOR          9  // the 10th
 
 #define DungeonIndexOf(floor)    ((floor) / DUNGEON_FLOORS_PER_DUNGEON)
 #define DungeonFloorWithin(floor) ((floor) % DUNGEON_FLOORS_PER_DUNGEON)
@@ -105,14 +105,16 @@
 // ratio rather than a per-floor step because a whole level per floor is far too
 // steep across 160 floors.
 #define DUNGEON_ENCOUNTER_BASE_LEVEL   5
-#define DUNGEON_ENCOUNTER_LEVEL_NUM   26  // levels gained per 100 floors
+#define DUNGEON_ENCOUNTER_LEVEL_NUM   51  // levels gained per 100 floors
 #define DUNGEON_ENCOUNTER_LEVEL_DEN  100
 #define DUNGEON_ENCOUNTER_LEVEL_SPREAD 2
 
-// One more species unlocked every this many floors, so the pool opens up over
-// roughly the first two dungeons.
-#define DUNGEON_ENCOUNTER_STARTING_TIER 4
-#define DUNGEON_ENCOUNTER_TIER_FLOORS   4
+// The species pool is a window that SLIDES with depth rather than a prefix that
+// only grows. A prefix keeps the weakest species in play forever, which is why
+// Zubat was everywhere; with a window they retire as stronger ones unlock.
+#define DUNGEON_ENCOUNTER_STARTING_TIER 6
+#define DUNGEON_ENCOUNTER_TIER_FLOORS   3
+#define DUNGEON_ENCOUNTER_WINDOW        8
 
 void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition);
 bool8 RogueDungeon_TryStartStairsScript(struct MapPosition *position);

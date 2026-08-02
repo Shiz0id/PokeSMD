@@ -26,10 +26,10 @@ extern const u8 RogueDungeonFloor_EventScript_TrainerDone[];
 extern const u8 RogueDungeonFloor_Text_TrainerIntro[];
 extern const u8 RogueDungeonFloor_Text_TrainerDefeat[];
 
-// Ordered weakest to strongest. A floor draws only from the prefix its depth
-// has unlocked, so early floors stay tame and later ones can roll evolved
-// forms. The static table in wild_encounters.json is a placeholder that this
-// replaces at runtime.
+// Ordered weakest to strongest. A floor draws from a window of this list that
+// slides with depth, so early floors stay tame, later ones roll evolved forms,
+// and the weakest species retire instead of lingering forever. The static table
+// in wild_encounters.json is a placeholder that this replaces at runtime.
 static const u16 sDungeonSpeciesPool[] =
 {
     SPECIES_ZUBAT,   SPECIES_WHISMUR,  SPECIES_GEODUDE,  SPECIES_MAKUHITA,
@@ -197,6 +197,7 @@ static void BuildWildEncounterTable(u16 floor)
     u32 scaled = DUNGEON_ENCOUNTER_BASE_LEVEL
                + ((u32)floor * DUNGEON_ENCOUNTER_LEVEL_NUM) / DUNGEON_ENCOUNTER_LEVEL_DEN;
     u32 tiers = DUNGEON_ENCOUNTER_STARTING_TIER + floor / DUNGEON_ENCOUNTER_TIER_FLOORS;
+    u32 bottom, width, rotation;
     u8 level;
     u32 i;
 
@@ -208,9 +209,18 @@ static void BuildWildEncounterTable(u16 floor)
     if (tiers > ARRAY_COUNT(sDungeonSpeciesPool))
         tiers = ARRAY_COUNT(sDungeonSpeciesPool);
 
+    // Window rather than prefix, so the weakest species retire with depth.
+    bottom = (tiers > DUNGEON_ENCOUNTER_WINDOW) ? tiers - DUNGEON_ENCOUNTER_WINDOW : 0;
+    width = tiers - bottom;
+    rotation = DungeonRandom() % width;
+
+    // Dealt round-robin, not drawn independently per slot. Encounter slot
+    // weights are steeply uneven (20/20/10/10/...), so independent draws let one
+    // species take both 20% slots and dominate the floor. The rotation varies
+    // which species lands in the common slots from floor to floor.
     for (i = 0; i < NUM_LAND_MONS_ENCOUNTER_SLOTS; i++)
     {
-        sDungeonWildMons[i].species = sDungeonSpeciesPool[DungeonRandom() % tiers];
+        sDungeonWildMons[i].species = sDungeonSpeciesPool[bottom + (i + rotation) % width];
         sDungeonWildMons[i].minLevel = level;
         sDungeonWildMons[i].maxLevel = level + DUNGEON_ENCOUNTER_LEVEL_SPREAD;
     }
