@@ -1,0 +1,348 @@
+# Procedural roguelike — implementation notes
+
+A Mystery-Dungeon-style roguelike built on pokeemerald-expansion. Floors are
+generated at runtime; the run mirrors the stock game's progression.
+
+Everything here was established by reading the engine or mining vanilla data.
+Where a number appears, it was measured. Where something is called a trap, it
+cost real time to find.
+
+---
+
+## 1. Current state
+
+**The run loop is complete.** Pick two starters → descend → catch and build a
+team → mini boss every 5 floors → gym leader every 10 → optionally adopt the
+boss's ace → heal at a rest stop → next dungeon. Losing wipes the run.
+
+- **13 dungeons × 10 floors = 130 floors.** Eight gym leaders, then Sidney,
+  Phoebe, Glacia, Drake, Wallace.
+- **Two themes**: Petalburg Woods (dungeon 1, Roxanne) and Granite Cave
+  (dungeon 2, Brawly). They alternate past that until more exist.
+- Reachable from a new game, which is slimmed to name entry only.
+
+Everything lives in `src/rogue_dungeon.c` / `include/rogue_dungeon.h` plus
+hooks in a handful of engine files. `git log origin/master..HEAD` is the story
+in order.
+
+---
+
+## 2. Architecture
+
+### The two-phase generator
+
+Object event templates are loaded **before** the map is generated, so trainer
+placement cannot see the rooms unless generation is split:
+
+- `PrepareFloor(seed)` — derives rooms, exit, trainers, encounters, grass from
+  the seed. Touches no map memory, so it can run at template-load time.
+- `WriteFloorBlocks()` — paints the prepared floor into `sBackupMapData`.
+
+`RogueDungeon_PrepareNewFloor()` is the entry point for the template loader.
+The generator falls back to preparing the floor itself, because that loader can
+be skipped and never runs on load-from-save.
+
+### A floor costs 2 bytes
+
+Floors are regenerated from `VAR_ROGUE_DUNGEON_SEED`, never stored. Room
+layout, exit position, trainer identities and encounter tables are all derived.
+The only saved state is the seed, the floor counter, and the run state.
+
+Generation uses a **local LCG** built on `ISO_RANDOMIZE1`, never the global RNG
+— sharing it would make layouts depend on the player's step count.
+
+### Themes
+
+`struct RogueDungeonTheme` owns everything that varies between dungeons: layout
+donor, generator kind, metatile tables, species pool. **Adding a theme should be
+a table entry, not a generator edit.**
+
+Two generators exist:
+- `DUNGEON_GEN_CAVE` — 1×1 carve, then a nine-case wall autotile
+- `DUNGEON_GEN_WOODS` — 2×2 stamps on a half-resolution 24×24 grid, no
+  autotiling at all
+
+---
+
+## 3. Engine integration — the traps
+
+### Trainer scripts: the engine assumes inline battle data in THREE places
+
+This cost four commits. A generated trainer picks its opponent at runtime, so
+its script has no inline `trainerbattle` data. The engine parses trainer scripts
+as battle data in three separate places, and **the frontier facilities have an
+explicit branch at all three** — that was the map the whole time.
+
+| site | what it reads | our branch |
+|---|---|---|
+| `ConfigureAndSetUpOneTrainerBattle` | script bytes as `TrainerBattleParameter` | `RogueDungeon_IsGeneratedTrainer()` |
+| `GetTrainerFlagFromScriptPointer` (sight check) | opponent id from script | `RogueDungeon_HasTrainerBeenBeaten()` |
+| double-battle mode check in `trainer_see.c` | battle mode from script | skipped for generated trainers |
+
+**If you add anything else that picks an opponent at runtime, grep for the
+facility branches first.**
+
+### Two different post-battle pointers
+
+- Winning leaves via `gotobeatenscript` → `TRAINER_BATTLE_PARAM.battleScriptRetAddrA`
+- Talking to an already-beaten trainer leaves via `gotopostbattlescript` →
+  `sTrainerBattleEndScript`
+
+Leaving `battleScriptRetAddrA` NULL makes the engine fall through to
+`EventScript_TryGetTrainerScript`, which loops straight back into
+`gotobeatenscript` — an infinite script loop that never releases player control.
+Set **both**.
+
+### Stock trainer defeat flags are permanent
+
+We reuse the stock game's 709 trainers every floor, and their defeat flags were
+designed for a game where you fight each trainer once ever. Clear them **once
+per floor at template-load time**. Clearing at battle setup does not work: the
+battle script checks the flag immediately after running that special, so the
+trainer never registers as beaten and rematches forever.
+
+Also keep trainer ids **distinct within a floor** — the flag is derived from the
+id, so two slots sharing one leaves a trainer that refuses to battle.
+
+### Tilesets can be swapped at runtime
+
+`gMapHeader` is EWRAM (a RAM copy) and `CopyMapTilesetsToVram` reads
+`gMapHeader.mapLayout`. Our generator runs at state 0 of `LoadMapFromWarp` while
+`InitMapView()` uploads tilesets later, so:
+
+```c
+gMapHeader.mapLayout = GetMapLayout(theme->layoutId);
+```
+
+**Never patch `mapLayoutId`** — every dispatch in the project keys on it. The
+themed layout is a tileset donor only; no map points at it.
+
+### Metatile ids are tileset-pair specific
+
+`0x214` is a ladder under `gTileset_Cave` and a grey stripe under
+`gTileset_Rustboro`. **Nothing with a metatile id can be shared between themes.**
+This shipped as a visible bug (grey stairs in the woods).
+
+### Object events
+
+- The engine reads templates for the current map from the **save block**, but
+  takes the **count** from ROM. So `map.json` must declare
+  `DUNGEON_MAX_TRAINERS` placeholders.
+- An object event with a **set** `flagId` does not spawn. That is how unused
+  placeholder slots are hidden.
+- **A defeated trainer object still blocks movement.** A boss standing in a
+  doorway would wall the exit off permanently — which is why arenas have no exit
+  at all until the boss falls, rather than a guarded chokepoint.
+
+### Map data plumbing (adding a map)
+
+1. `data/layouts/<Name>/{map.bin,border.bin}` + entry in `layouts.json`
+2. `data/maps/<Name>/map.json` + entry in `map_groups.json`
+3. `data/maps/<Name>/scripts.inc` with `<Name>_MapScripts::` / `.byte 0`
+4. **An `.include` for it in `data/event_scripts.s`**
+5. Two dispatch branches in `src/overworld.c` (map-load *and* load-from-save)
+
+**Trap:** `data/event_scripts.s` has an `.if IS_FRLG` block around roughly lines
+603–1051. Appending an include after the *last map in the file* puts it inside
+that block, where it is silently never assembled for an Emerald build. The
+symptom is an unchanged `undefined reference to <Name>_MapScripts` even though
+the include is visibly present.
+
+---
+
+## 4. Map format
+
+`map.bin` is a flat little-endian `u16` array, row-major, `width * height`.
+Bits 0-9 metatile, 10-11 collision, 12-15 elevation. No header, no compression.
+
+Validated by round-tripping all 785 vanilla layouts: 765 byte-identical, 20 with
+exactly one extra trailing block (19 named `LAYOUT_UNUSED_*`) — a benign vanilla
+quirk, the game reads `width*height` and ignores the tail.
+
+- **Collision is binary in practice.** Only 0 and 1 appear anywhere in vanilla.
+- **Elevation**: 0 = transition/any, 3 = standard ground, 1 = water, 4+ raised,
+  15 multi-level. Caves and woods use only `{0, 3}`.
+- **Size ceiling**: `(w+15)*(h+14) <= MAX_MAP_DATA_SIZE (10240)`. All 785 vanilla
+  layouts satisfy it; the largest reaches 91.8%.
+- **`sBackupMapData` already exists in EWRAM**, so generating into it costs no
+  extra memory.
+
+### Cave wall autotiling (`gTileset_General` + `gTileset_Cave`)
+
+Resolve in this order — the south face wins because it is most visible:
+
+| case | left | middle | right |
+|---|---|---|---|
+| 1-thick horizontal | — | `0x39F` | — |
+| floor **south** (visible face) | `0x218` | `0x219` | `0x21A` |
+| floor **north** (room bottom) | `0x220` | `0x209` | `0x222` |
+| 1-thick vertical | — | `0x39E` | — |
+| vertical edges | `0x210` | `0x211` | `0x212` |
+| outer corners (diagonal open) | `0x21B` SE | `0x21C` SW | `0x223` NW/NE |
+| interior | — | `0x211` | — |
+
+Floor is `0x201` (`MB_CAVE`, so encounters work). `0x39E`–`0x3A4` are **ours** —
+see §5.
+
+**Do not omit the north edge.** Vanilla uses `0x211` for both floor and wall
+bulk, so a missing boundary is *invisible*, not merely plain, and rooms stop
+reading as enclosed. Legibility in vanilla comes entirely from a continuous
+outline, never from floor/rock contrast.
+
+### Woods (`gTileset_General` + `gTileset_Rustboro`)
+
+Trees are **2 wide × 3 tall** blocks on even coordinates (95% x-aligned, 99%
+y-aligned in vanilla). Rows: `0x1D4/0x1D5` canopy, `0x1DC/0x1DD` trunk,
+`0x1E4/0x1E5` ground contact — the third row used **only where a mass ends**.
+Vanilla never leaves `0x1DC` exposed; doing so dangles the trunk in mid air.
+
+Grass: `0x001` plain (no encounters), `0x00D` tall, `0x015` long, with
+`0x016/0x017` as the long grass base row.
+
+**Grass-only encounters needed no code.** `MB_NORMAL` carries no encounter flag;
+`MB_TALL_GRASS` and `MB_LONG_GRASS` do. Choosing the metatiles was the whole
+implementation. Caves keep `MB_CAVE` and encounter everywhere.
+
+### Statistical mining does not recover autotile rules
+
+Deriving a neighbour-bitmask → metatile table across 47 cave layouts gave a top
+choice that wins only **26.5%** of the time (30.8% with diagonals). Vanilla
+varies wall art decoratively, so there is no rule to recover by counting.
+
+**Read real examples out of a vanilla layout instead**, then validate by
+rendering generated output beside vanilla. That worked first time for both cave
+walls and trees.
+
+---
+
+## 5. Composing metatiles without pixel art
+
+A metatile is only **8 references to existing 8×8 tiles** (4 bottom layer, 4
+top; each `u16` is tile bits 0-9, xflip 10, yflip 11, palette 12-15). New
+metatiles can therefore be *spliced* from halves of existing ones.
+
+We appended `0x39E`–`0x3A4` to `gTileset_Cave` for one-block-thick walls, which
+vanilla has no art for (its cave walls are always 2+ thick). The vertical sliver
+is the west half of `0x210` joined to the east half of `0x212`; the vertical top
+cap keeps that base and overlays both north corners, exploiting the fact that
+`0x220`/`0x222` are top-layer overlays rather than standalone art.
+
+Scripts: `compose_metatiles.py` + `append_metatiles.py` (idempotent — it trims a
+previous append before rewriting).
+
+**This edits vanilla asset files** (`data/tilesets/secondary/cave/*.bin`), so
+pulling upstream changes to that tileset needs care: take upstream's file, re-run
+the script.
+
+**Limits:** `gTileset_General` is full (512/512). `gTileset_Cave` and
+`gTileset_Rustboro` have ~90 and ~160 free slots. Compositing only works when
+the source tiles have transparency — the cave-mouth metatile is opaque across
+the full 16×16, so a "grassy stairs" needs genuinely new 8×8 art.
+
+---
+
+## 6. Constraints
+
+### RAM is the ceiling, not ROM
+
+A stock expansion build already uses **86% of both EWRAM and IWRAM** before we
+add anything. ROM is not scarce (~6.5 MB free of 32 MB).
+
+EWRAM, 226 KB used, where it goes:
+
+| bytes | object |
+|---|---|
+| 115,968 | `malloc.o` — `gHeap`, one fixed `EWRAM_DATA` array, `HEAP_SIZE 0x1C500` |
+| 55,308 | `load_save.o` — SaveBlock buffers |
+| 20,524 | `fieldmap.o` — `sBackupMapData`, the map grid |
+
+**~84% is three fixed buffers.** Deleting stock content does not shrink them.
+
+- **Cutting content frees ROM, not RAM.** Making the Birch intro unreachable
+  freed 6,504 bytes of ROM automatically via `--gc-sections`, and moved EWRAM
+  and IWRAM by exactly zero.
+- **If EWRAM gets tight, tune `HEAP_SIZE` first** — 51% of all EWRAM in one
+  constant. A roguelike that never opens contests or the frontier may not need
+  vanilla's heap. Heap exhaustion fails at *runtime*, so this needs play-testing.
+- **Mark every new static `EWRAM_DATA`.** Plain statics land in IWRAM, which has
+  roughly 4 KB free against 35 KB of EWRAM. Watch the linker's IWRAM line on
+  every build.
+
+---
+
+## 7. Adding a theme
+
+The goal is 10+ more themes to reach the Champion. The process:
+
+1. Find a vanilla map using the tileset pair you want (`layouts.json`).
+2. Mine its metatiles — most common passable / impassable, and edge cases —
+   using the scratchpad scripts as templates. **Read examples, do not mine
+   statistically.**
+3. Render candidates with the atlas tooling and *look at them* before choosing.
+4. Add a donor layout to `layouts.json` (48×48, the tileset pair, dummy
+   `map.bin`). No map needs to point at it.
+5. Add a `RogueDungeonTheme` entry: layout id, generator, metatiles, species
+   pool.
+6. Add the theme to `sDungeonThemes` and extend `ThemeForFloor`.
+
+If the theme's walls are 2×2-aligned blocks (trees, rocks), use
+`DUNGEON_GEN_WOODS` and skip autotiling entirely. Only use `DUNGEON_GEN_CAVE` if
+walls are genuinely 1×1.
+
+---
+
+## 8. Tooling
+
+Python, run from the session scratchpad against the repo over UNC
+(`//wsl.localhost/Ubuntu/home/p50/decomps/pokeemerald-expansion`). Windows has
+Pillow; WSL does not, and `python3-venv` is not installed.
+
+| script | purpose |
+|---|---|
+| `tileset_resolve.py` | `gTileset_*` → real asset paths |
+| `tileset_atlas.py` | render metatiles; build labelled contact sheets |
+| `build_all_atlases.py` | atlas + JSON index for all 137 tileset pairs |
+| `compose_metatiles.py` / `append_metatiles.py` | splice and append new metatiles |
+| `gen_trainer_table.py` | depth-indexed trainer + mini-boss tables |
+| `gen_starters.py` | starter table and its script text |
+| `ram_budget.py` | attribute EWRAM/IWRAM to source files |
+| `verify_*.py`, `woods_prototype.py` | host-side invariant checks and previews |
+
+**Never guess tileset paths from the symbol name.** FRLG secondaries carry an
+`_frlg` directory suffix the symbol lacks, acronyms and digits split
+unpredictably, and **7 tilesets share assets across directories** (`SilphCo`
+takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
+`headers.h`, `graphics.h`, `metatiles.h` **and `src/graphics.c`** —
+`gTilesetTiles_General` is declared in the last one.
+
+---
+
+## 9. Process notes
+
+- **Prototype in Python and render it before writing C.** The woods generator,
+  every autotile table, and both metatile splices were validated visually first.
+  This caught several wrong readings cheaply.
+- **Verify invariants host-side over thousands of seeds** — connectivity,
+  reachability, no out-of-bounds writes, determinism. Cheaper than emulator
+  testing and catches different bugs.
+- **Measure per-instance, not in aggregate.** An encounter-distribution check
+  averaged over 3000 floors showed no problem; the bug was *per-floor* variance
+  (one species taking up to 85% of a single floor's slots).
+- Long shell heredocs break on apostrophes in prose. Write patch scripts to a
+  file, or use the editing tools directly.
+- `Path.write_text` on Windows emits CRLF into repo files. Pass `newline='\n'`.
+
+---
+
+## 10. Known gaps
+
+1. Nothing happens after floor 130 — the boss table wraps to Roxanne.
+2. Only two themes, so they alternate past dungeon 2.
+3. A full party silently declines a boss ace — no swap UI. Being unable to take
+   a Champion's ace because of a spare Zubat is a bad moment.
+4. The rest stop has only a nurse. It reuses `LAYOUT_POKEMON_CENTER_1F` and is
+   ready for a mart and game corner.
+5. The last gym dungeon's mini boss is underlevelled — stock Team Aqua/Magma
+   trainers cap at level 38 against a target of 45.
+6. Woods stairs use vanilla cave-mouth art rather than a custom grassy opening,
+   which needs new 8×8 tiles.
