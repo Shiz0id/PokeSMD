@@ -1,5 +1,26 @@
+@ Defines RogueDungeonFloor_EventScript_PickStarter and the option text.
+	.include "data/maps/RogueDungeonFloor/starters.inc"
+
 RogueDungeonFloor_MapScripts::
+	map_script MAP_SCRIPT_ON_FRAME_TABLE, RogueDungeonFloor_OnFrame
 	.byte 0
+
+RogueDungeonFloor_OnFrame:
+	map_script_2 VAR_ROGUE_RUN_STATE, ROGUE_RUN_NEEDS_STARTERS, RogueDungeonFloor_EventScript_ChooseStarters
+	.2byte 0
+
+@ A run begins with two starters rather than a handed-out team. Triggered by
+@ the frame table whenever the run state says the party has not been picked -
+@ which is true on a new game and again after a whiteout.
+RogueDungeonFloor_EventScript_ChooseStarters::
+	lockall
+	msgbox RogueDungeonFloor_Text_PickFirst, MSGBOX_DEFAULT
+	call RogueDungeonFloor_EventScript_PickStarter
+	msgbox RogueDungeonFloor_Text_PickSecond, MSGBOX_DEFAULT
+	call RogueDungeonFloor_EventScript_PickStarter
+	setvar VAR_ROGUE_RUN_STATE, ROGUE_RUN_ACTIVE
+	releaseall
+	end
 
 @ Started from C by RogueDungeon_TryStartStairsScript when the player steps
 @ onto the generated exit. Warping to this same map re-enters LoadMapFromWarp,
@@ -65,3 +86,10 @@ RogueDungeonFloor_Text_GymCleared:
 
 RogueDungeonFloor_Text_TrainerDefeat::
 	.string "I could not keep up down here.$"
+
+RogueDungeonFloor_Text_PickFirst:
+	.string "Choose the partner who will begin\n"
+	.string "this descent with you.$"
+
+RogueDungeonFloor_Text_PickSecond:
+	.string "And one more to stand beside them.$"

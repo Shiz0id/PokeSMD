@@ -395,6 +395,10 @@ static void (*const sMovementStatusHandler[])(struct LinkPlayerObjectEvent *, st
 void DoWhiteOut(void)
 {
     RunScriptImmediately(EventScript_WhiteOut);
+    // A loss inside the dungeon ends the run rather than respawning at a
+    // Pokemon Center, so the rest of this does not apply.
+    if (RogueDungeon_TryHandleWhiteOut())
+        return;
     HealPlayerParty();
     Overworld_ResetStateAfterWhiteOut();
     SetWarpDestinationToLastHealLocation();

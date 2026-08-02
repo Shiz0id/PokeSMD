@@ -642,3 +642,4 @@ gSpecials::
 	def_special RogueDungeon_SetUpTrainerBattle
 	def_special RogueDungeon_OnBossDefeated
 	def_special RogueDungeon_IsDungeonEndFloor
+	def_special RogueDungeon_GiveChosenStarter

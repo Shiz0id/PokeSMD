@@ -9,6 +9,7 @@
 #include "battle_setup.h"
 #include "event_object_movement.h"
 #include "field_camera.h"
+#include "overworld.h"
 #include "constants/items.h"
 #include "constants/layouts.h"
 #include "constants/moves.h"
@@ -19,6 +20,7 @@
 #include "constants/battle_setup.h"
 #include "constants/event_object_movement.h"
 #include "constants/rogue_dungeon_trainers.h"
+#include "constants/rogue_dungeon_starters.h"
 #include "rogue_dungeon.h"
 
 extern const u8 RogueDungeonFloor_EventScript_Stairs[];
@@ -160,59 +162,55 @@ void RogueDungeon_ApplyNewGameUnlocks(void)
     FlagSet(FLAG_RECEIVED_RUNNING_SHOES); // event bookkeeping to match
 }
 
-// Placeholder starting party so the dungeon is testable before run structure
-// exists. Steven's Meteor Falls team, copied from TRAINER_STEVEN in
-// src/data/trainers.party.
-struct DungeonStarterMon
+// A run begins with two starters the player picks, not a handed-out team. The
+// multichoice returns an index into sRogueDungeonStarters.
+void RogueDungeon_GiveChosenStarter(void)
 {
-    u16 species;
-    u8 level;
-    u16 item;
-    u16 moves[MAX_MON_MOVES];
-};
+    u32 index = gSpecialVar_Result;
+    u32 slot = CalculatePlayerPartyCount();
+    struct Pokemon *mon;
+    u32 i;
 
-static const struct DungeonStarterMon sStarterTeam[] =
-{
-    { SPECIES_SKARMORY,  77, ITEM_NONE,
-      { MOVE_TOXIC, MOVE_AERIAL_ACE, MOVE_SPIKES, MOVE_STEEL_WING } },
-    { SPECIES_CLAYDOL,   75, ITEM_NONE,
-      { MOVE_REFLECT, MOVE_LIGHT_SCREEN, MOVE_ANCIENT_POWER, MOVE_EARTHQUAKE } },
-    { SPECIES_AGGRON,    76, ITEM_NONE,
-      { MOVE_THUNDER, MOVE_EARTHQUAKE, MOVE_SOLAR_BEAM, MOVE_DRAGON_CLAW } },
-    { SPECIES_CRADILY,   76, ITEM_NONE,
-      { MOVE_GIGA_DRAIN, MOVE_ANCIENT_POWER, MOVE_INGRAIN, MOVE_CONFUSE_RAY } },
-    { SPECIES_ARMALDO,   76, ITEM_NONE,
-      { MOVE_WATER_PULSE, MOVE_ANCIENT_POWER, MOVE_AERIAL_ACE, MOVE_SLASH } },
-    { SPECIES_METAGROSS, 78, ITEM_SITRUS_BERRY,
-      { MOVE_EARTHQUAKE, MOVE_PSYCHIC, MOVE_METEOR_MASH, MOVE_SHADOW_BALL } },
-};
+    if (index >= ARRAY_COUNT(sRogueDungeonStarters) || slot >= PARTY_SIZE)
+        return;
 
-// Replaces the party outright. Guarded by FLAG_ROGUE_STARTER_GIVEN so it
-// happens once rather than wiping progress on every entry.
-static void GiveStarterTeam(void)
-{
-    u32 i, j;
+    mon = &gParties[B_TRAINER_PLAYER][slot];
+    CreateRandomMonWithIVs(mon, sRogueDungeonStarters[index].species,
+                           DUNGEON_STARTER_LEVEL, MAX_PER_STAT_IVS);
 
-    ZeroPlayerPartyMons();
-
-    for (i = 0; i < ARRAY_COUNT(sStarterTeam); i++)
+    // Into the first free slot rather than slot 0, so the level-up moves the
+    // species already knows are kept alongside the elemental attack.
+    for (i = 0; i < MAX_MON_MOVES; i++)
     {
-        struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][i];
-        u16 item = sStarterTeam[i].item;
-
-        CreateRandomMonWithIVs(mon, sStarterTeam[i].species, sStarterTeam[i].level,
-                               MAX_PER_STAT_IVS);
-
-        for (j = 0; j < MAX_MON_MOVES; j++)
-            SetMonMoveSlot(mon, sStarterTeam[i].moves[j], j);
-
-        if (item != ITEM_NONE)
-            SetMonData(mon, MON_DATA_HELD_ITEM, &item);
-
-        CalculateMonStats(mon);
+        if (GetMonData(mon, MON_DATA_MOVE1 + i, NULL) == MOVE_NONE)
+            break;
     }
+    if (i == MAX_MON_MOVES)
+        i = MAX_MON_MOVES - 1;
 
+    SetMonMoveSlot(mon, sRogueDungeonStarters[index].move, i);
+    CalculateMonStats(mon);
     CalculatePlayerPartyCount();
+}
+
+// A loss ends the run. Rather than the vanilla respawn at the last Pokemon
+// Center, the floor counter and party are wiped and the run state is set back
+// to needing starters, so the next dungeon entry starts over from the top.
+bool8 RogueDungeon_TryHandleWhiteOut(void)
+{
+    if (gMapHeader.mapLayoutId != LAYOUT_ROGUE_DUNGEON_FLOOR)
+        return FALSE;
+
+    VarSet(VAR_ROGUE_DUNGEON_FLOOR, 0);
+    VarSet(VAR_ROGUE_RUN_STATE, ROGUE_RUN_NEEDS_STARTERS);
+    ZeroPlayerPartyMons();
+    CalculatePlayerPartyCount();
+
+    // Back to the first floor, where the frame table will ask for starters.
+    SetWarpDestination(MAP_GROUP(MAP_ROGUE_DUNGEON_FLOOR),
+                       MAP_NUM(MAP_ROGUE_DUNGEON_FLOOR), WARP_ID_NONE, -1, -1);
+    WarpIntoMap();
+    return TRUE;
 }
 
 // Must be called from generation, after SeedDungeonRng, so the table is
@@ -856,12 +854,6 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
     {
         gSaveBlock1Ptr->pos.x = sSpawnX;
         gSaveBlock1Ptr->pos.y = sSpawnY;
-    }
-
-    if (setPlayerPosition == FALSE && !FlagGet(FLAG_ROGUE_STARTER_GIVEN))
-    {
-        FlagSet(FLAG_ROGUE_STARTER_GIVEN);
-        GiveStarterTeam();
     }
 
     // Consumed. The next map load must prepare afresh, or it would repaint this
