@@ -2,8 +2,12 @@
 #include "event_data.h"
 #include "fieldmap.h"
 #include "random.h"
+#include "script.h"
+#include "constants/layouts.h"
 #include "constants/vars.h"
 #include "rogue_dungeon.h"
+
+extern const u8 RogueDungeonFloor_EventScript_Stairs[];
 
 // Runtime dungeon floor generator.
 //
@@ -202,6 +206,23 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
                       rooms[i].y + rooms[i].h / 2);
     }
 
+    // Exactly one exit per floor. Placed in a room the player does not start
+    // in, so reaching it means actually traversing the floor. Rooms are always
+    // connected, so it is always reachable.
+    if (roomCount != 0)
+    {
+        u8 room = (roomCount > 1) ? 1 + (DungeonRandom() % (roomCount - 1)) : 0;
+        u16 stairs = (DungeonRandom() & 1) ? DUNGEON_METATILE_STAIRS_DOWN
+                                           : DUNGEON_METATILE_STAIRS_UP;
+
+        SetBlock(backupMapData,
+                 rooms[room].x + (DungeonRandom() % rooms[room].w),
+                 rooms[room].y + (DungeonRandom() % rooms[room].h),
+                 MakeBlock(stairs, 0, DUNGEON_ELEVATION_FLOOR));
+    }
+
+    // Runs last, but only rewrites blocks whose collision bit is set, so the
+    // stairs tile is left alone.
     ApplyWallAutotiling(backupMapData);
 
     if (setPlayerPosition == FALSE && roomCount != 0)
@@ -209,4 +230,23 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
         gSaveBlock1Ptr->pos.x = rooms[0].x + rooms[0].w / 2;
         gSaveBlock1Ptr->pos.y = rooms[0].y + rooms[0].h / 2;
     }
+}
+
+// Hooked into TryStartStepBasedScript. Returning TRUE means we consumed the
+// step, so nothing else gets a chance to run a script for it.
+bool8 RogueDungeon_TryStartStairsScript(struct MapPosition *position)
+{
+    u16 metatile;
+
+    if (gMapHeader.mapLayoutId != LAYOUT_ROGUE_DUNGEON_FLOOR)
+        return FALSE;
+
+    metatile = MapGridGetMetatileIdAt(position->x, position->y);
+
+    if (metatile != DUNGEON_METATILE_STAIRS_DOWN
+     && metatile != DUNGEON_METATILE_STAIRS_UP)
+        return FALSE;
+
+    ScriptContext_SetupScript(RogueDungeonFloor_EventScript_Stairs);
+    return TRUE;
 }

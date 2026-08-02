@@ -44,6 +44,7 @@
 #include "constants/metatile_behaviors.h"
 #include "constants/songs.h"
 #include "constants/trainer_hill.h"
+#include "rogue_dungeon.h"
 
 static EWRAM_DATA u8 sWildEncounterImmunitySteps = 0;
 static EWRAM_DATA u16 sPrevMetatileBehavior = 0;
@@ -686,6 +687,8 @@ static bool32 TrySetupDiveEmergeScript(void)
 
 bool8 TryStartStepBasedScript(struct MapPosition *position, u16 metatileBehavior, enum Direction direction)
 {
+    if (RogueDungeon_TryStartStairsScript(position) == TRUE)
+        return TRUE;
     if (TryStartCoordEventScript(position) == TRUE)
         return TRUE;
     if (TryStartWarpEventScript(position, metatileBehavior) == TRUE)

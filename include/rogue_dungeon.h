@@ -30,10 +30,22 @@
 #define DUNGEON_ELEVATION_FLOOR 3
 #define DUNGEON_ELEVATION_WALL  0
 
-// The floor is regenerated from this seed rather than stored, so a whole floor
-// costs 2 bytes of save data. Claiming a spare var keeps the SaveBlock layout
-// untouched, which matters because changing it invalidates existing saves.
-#define VAR_ROGUE_DUNGEON_SEED VAR_UNUSED_0x40FE
+// Each floor has exactly one exit, placed at a seed-derived position. Because
+// generation is deterministic the stairs position needs no save data at all -
+// it is recomputed whenever the floor is.
+//
+// 0x214 is MB_LADDER, the dark opening in the cave floor. 0x23E is a wooden
+// ladder. Both simply advance a floor; the direction is cosmetic variety.
+//
+// The hook matches on metatile id rather than behaviour, so it cannot be
+// confused by an unrelated tile that happens to share a behaviour.
+#define DUNGEON_METATILE_STAIRS_DOWN 0x214
+#define DUNGEON_METATILE_STAIRS_UP   0x23E
+
+// The floor is regenerated from its seed rather than stored, so a whole floor
+// costs 2 bytes of save data. Var aliases live in the constants header because
+// the map scripts need them too.
+#include "constants/rogue_dungeon.h"
 
 #define DUNGEON_WIDTH  48
 #define DUNGEON_HEIGHT 48
@@ -43,5 +55,6 @@
 #define DUNGEON_ROOM_MAX  10
 
 void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition);
+bool8 RogueDungeon_TryStartStairsScript(struct MapPosition *position);
 
 #endif // GUARD_ROGUE_DUNGEON_H
