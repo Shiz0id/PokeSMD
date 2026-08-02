@@ -3,6 +3,12 @@ Generate the starter selection data: a C table and the matching script text.
 
 27 starters, Gen 1 through 9, each with the elemental attack of its type so a
 pick is immediately usable rather than four turns of Tackle.
+
+That move is a FALLBACK, not something forced into the moveset. Under Gen 9
+learnsets at DUNGEON_STARTER_LEVEL, 21 of the 27 already know it from levelling,
+so RogueDungeon_GiveChosenStarter skips it when it is already there and never
+displaces an existing move to add it. Run check_starter_moves.py after changing
+the starter level or P_LVL_UP_LEARNSETS.
 """
 from pathlib import Path
 

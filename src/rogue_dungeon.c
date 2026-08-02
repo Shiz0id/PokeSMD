@@ -704,17 +704,34 @@ void RogueDungeon_GiveChosenStarter(void)
     CreateRandomMonWithIVs(mon, sRogueDungeonStarters[index].species,
                            DUNGEON_STARTER_LEVEL, MAX_PER_STAT_IVS);
 
-    // Into the first free slot rather than slot 0, so the level-up moves the
-    // species already knows are kept alongside the elemental attack.
+    // The elemental attack is a FALLBACK, not a guarantee to be forced in. With
+    // Gen 9 learnsets at level 10, 21 of the 27 starters already know it, and
+    // adding it again both wasted a slot and - once all four were full, which
+    // the clamp below used to paper over - overwrote a real move with a
+    // duplicate. Squirtle lost Rapid Spin for a second Water Gun.
+    //
+    // So: skip it if the species already knows it, and never displace an
+    // existing move to make room. Every starter reaches level 10 with a
+    // damaging move of its own type under these learnsets, so nothing is left
+    // unable to fight.
     for (i = 0; i < MAX_MON_MOVES; i++)
     {
-        if (GetMonData(mon, MON_DATA_MOVE1 + i, NULL) == MOVE_NONE)
+        if (GetMonData(mon, MON_DATA_MOVE1 + i, NULL)
+            == sRogueDungeonStarters[index].move)
             break;
     }
     if (i == MAX_MON_MOVES)
-        i = MAX_MON_MOVES - 1;
+    {
+        for (i = 0; i < MAX_MON_MOVES; i++)
+        {
+            if (GetMonData(mon, MON_DATA_MOVE1 + i, NULL) == MOVE_NONE)
+            {
+                SetMonMoveSlot(mon, sRogueDungeonStarters[index].move, i);
+                break;
+            }
+        }
+    }
 
-    SetMonMoveSlot(mon, sRogueDungeonStarters[index].move, i);
     CalculateMonStats(mon);
     CalculatePlayerPartyCount();
 }

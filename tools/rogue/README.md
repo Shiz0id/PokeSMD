@@ -72,6 +72,7 @@ tools it turns on:
 | `verify_seeding.py` | determinism, and that floors do not correlate |
 | `validate_maps.py` | the map.bin codec against vanilla layouts |
 | `check_encounter_flags.py` | every theme can spawn a wild Pokemon under its **own** tileset, and no `*_METATILE_*` constant is named inside a function |
+| `check_starter_moves.py` | what each starter actually holds at `DUNGEON_STARTER_LEVEL`, and that none ends up with only status moves |
 | `woods_prototype.py` | renders generated woods floors; mirrors `StampCell`, including the tree base row, the long grass base and the crown above a canopy |
 
 Host-side verification over thousands of seeds is much cheaper than emulator
