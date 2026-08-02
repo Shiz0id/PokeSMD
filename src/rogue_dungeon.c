@@ -82,24 +82,50 @@ static void ApplyWallAutotiling(u16 *map)
     {
         for (x = 0; x < DUNGEON_WIDTH; x++)
         {
-            bool8 isFace;
+            bool8 openNorth, openSouth, openWest, openEast;
             u16 metatile;
 
             if (!IsWallAt(map, x, y))
                 continue;
 
-            // a wall with floor directly below it is the face the player sees
-            isFace = !IsWallAt(map, x, y + 1);
+            openNorth = !IsWallAt(map, x, y - 1);
+            openSouth = !IsWallAt(map, x, y + 1);
+            openWest  = !IsWallAt(map, x - 1, y);
+            openEast  = !IsWallAt(map, x + 1, y);
 
-            if (!IsWallAt(map, x - 1, y))
-                metatile = isFace ? DUNGEON_METATILE_WALL_FACE_LEFT
-                                  : DUNGEON_METATILE_WALL_INTERIOR_LEFT;
-            else if (!IsWallAt(map, x + 1, y))
-                metatile = isFace ? DUNGEON_METATILE_WALL_FACE_RIGHT
-                                  : DUNGEON_METATILE_WALL_INTERIOR_RIGHT;
+            if (openSouth)
+            {
+                // Floor below, so this is the wall face the camera sees. Takes
+                // priority over every other edge - it is the most visible one.
+                if (openWest)
+                    metatile = DUNGEON_METATILE_WALL_FACE_LEFT;
+                else if (openEast)
+                    metatile = DUNGEON_METATILE_WALL_FACE_RIGHT;
+                else
+                    metatile = DUNGEON_METATILE_WALL_FACE_MID;
+            }
+            else if (openNorth)
+            {
+                // Floor above - the bottom boundary of a room.
+                if (openWest)
+                    metatile = DUNGEON_METATILE_WALL_NORTH_LEFT;
+                else if (openEast)
+                    metatile = DUNGEON_METATILE_WALL_NORTH_RIGHT;
+                else
+                    metatile = DUNGEON_METATILE_WALL_NORTH_MID;
+            }
+            else if (openWest)
+            {
+                metatile = DUNGEON_METATILE_WALL_INTERIOR_LEFT;
+            }
+            else if (openEast)
+            {
+                metatile = DUNGEON_METATILE_WALL_INTERIOR_RIGHT;
+            }
             else
-                metatile = isFace ? DUNGEON_METATILE_WALL_FACE_MID
-                                  : DUNGEON_METATILE_WALL_INTERIOR_MID;
+            {
+                metatile = DUNGEON_METATILE_WALL_INTERIOR_MID;
+            }
 
             SetBlock(map, x, y, MakeBlock(metatile, 1, DUNGEON_ELEVATION_WALL));
         }

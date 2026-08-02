@@ -26,6 +26,13 @@
 #define DUNGEON_METATILE_WALL_FACE_MID        0x219
 #define DUNGEON_METATILE_WALL_FACE_RIGHT      0x21A
 
+// North-facing edge - wall with floor ABOVE it, i.e. the bottom boundary of a
+// room. Without these the outline breaks and rooms stop reading as enclosed,
+// because the interior fill is near-identical to the floor.
+#define DUNGEON_METATILE_WALL_NORTH_LEFT      0x220
+#define DUNGEON_METATILE_WALL_NORTH_MID       0x209
+#define DUNGEON_METATILE_WALL_NORTH_RIGHT     0x222
+
 // Caves only ever use elevations 0 and 3 in vanilla.
 #define DUNGEON_ELEVATION_FLOOR 3
 #define DUNGEON_ELEVATION_WALL  0
