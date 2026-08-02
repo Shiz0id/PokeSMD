@@ -90,6 +90,35 @@
 #define WOODS_METATILE_LONG_GRASS_BASE_L 0x016
 #define WOODS_METATILE_LONG_GRASS_BASE_R 0x017
 
+// New Mauville, under gTileset_General + gTileset_BikeShop. Mined from
+// NewMauville_Inside_Layout with tools/rogue/derive_wall_table.py and read off
+// the layout directly; validated with tools/rogue/theme_mock.py.
+//
+// Unlike the cave, this tileset draws one-block-thick walls natively - 0x227
+// for a horizontal run and 0x290 for a vertical one are what vanilla uses when
+// floor sits on both sides. So this theme needs no composed metatiles.
+//
+// The wall art is all drawn against black, so the mass interior has to be the
+// void (0x208) rather than a filled block. 0x21F looks like a wall body but is
+// a cap: stacked vertically it tiles into stripes.
+#define NEWMAUVILLE_METATILE_FLOOR           0x210
+#define NEWMAUVILLE_METATILE_VOID            0x208  // wall mass interior
+#define NEWMAUVILLE_METATILE_WALL_BAND       0x227  // floor to north OR south
+#define NEWMAUVILLE_METATILE_WALL_WEST       0x272  // floor to the west
+#define NEWMAUVILLE_METATILE_WALL_EAST       0x270  // floor to the east
+#define NEWMAUVILLE_METATILE_WALL_FACE_L     0x294  // floor south and west
+#define NEWMAUVILLE_METATILE_WALL_FACE_R     0x293  // floor south and east
+#define NEWMAUVILLE_METATILE_WALL_NORTH_L    0x296  // floor north and west
+#define NEWMAUVILLE_METATILE_WALL_NORTH_R    0x295  // floor north and east
+#define NEWMAUVILLE_METATILE_WALL_PILLAR     0x290  // one-wide vertical run
+#define NEWMAUVILLE_METATILE_WALL_PILLAR_TOP 0x288
+#define NEWMAUVILLE_METATILE_WALL_PILLAR_BOT 0x298
+
+// The facility tileset has no stairs of its own, but 0x0AF lives in the primary
+// and so is available under any pair. Grey steps read as a service stairwell
+// here, where the same art would be a grey stripe in the woods.
+#define NEWMAUVILLE_METATILE_STAIRS          0x0AF
+
 // Composed by tools/rogue/make_woods_stairs.py and appended to the Rustboro
 // secondary tileset: earth steps in a grass-cornered opening.
 //

@@ -17,8 +17,9 @@ boss's ace → heal at a rest stop → next dungeon. Losing wipes the run.
 
 - **13 dungeons × 10 floors = 130 floors.** Eight gym leaders, then Sidney,
   Phoebe, Glacia, Drake, Wallace.
-- **Two themes**: Petalburg Woods (dungeon 1, Roxanne) and Granite Cave
-  (dungeon 2, Brawly). They alternate past that until more exist.
+- **Three themes**: Petalburg Woods (dungeon 1, Roxanne), Granite Cave
+  (dungeon 2, Brawly) and New Mauville (dungeon 3, Wattson). They cycle past
+  that until more exist.
 - Reachable from a new game, which is slimmed to name entry only.
 
 Everything lives in `src/rogue_dungeon.c` / `include/rogue_dungeon.h` plus
@@ -296,22 +297,53 @@ EWRAM, 226 KB used, where it goes:
 
 ## 7. Adding a theme
 
-The goal is 10+ more themes to reach the Champion. The process:
+The goal is 10+ more themes to reach the Champion. New Mauville was the first
+one added after the abstraction existed, and it needed **no generator changes
+and no engine changes** — a table entry, a donor layout, and a species pool.
 
-1. Find a vanilla map using the tileset pair you want (`layouts.json`).
-2. Mine its metatiles — most common passable / impassable, and edge cases —
-   using the scratchpad scripts as templates. **Read examples, do not mine
-   statistically.**
-3. Render candidates with the atlas tooling and *look at them* before choosing.
-4. Add a donor layout to `layouts.json` (48×48, the tileset pair, dummy
-   `map.bin`). No map needs to point at it.
-5. Add a `RogueDungeonTheme` entry: layout id, generator, metatiles, species
-   pool.
-6. Add the theme to `sDungeonThemes` and extend `ThemeForFloor`.
+The process, with the tool for each step:
 
-If the theme's walls are 2×2-aligned blocks (trees, rocks), use
-`DUNGEON_GEN_WOODS` and skip autotiling entirely. Only use `DUNGEON_GEN_CAVE` if
-walls are genuinely 1×1.
+1. **Find a vanilla map** using the tileset pair you want, in `layouts.json`.
+   Search by map name, not tileset name: New Mauville's interior runs on
+   `gTileset_BikeShop`, which no one would guess.
+2. **Render the whole layout** — `render_layout.py <Layout>`. It also censuses
+   which metatiles appear, split by collision, which immediately gives you the
+   floor and the wall mass.
+3. **Read the metatile ids off the layout as a grid**, not statistically.
+   `derive_wall_table.py` tallies which metatile vanilla uses per open-neighbour
+   mask and reports how decisive each is; treat anything under ~80% as a hint,
+   not an answer. On New Mauville almost every mask came back undecisive because
+   vanilla's walls are covered in decorations — the grid dump settled it in one
+   look.
+4. **Render candidates** — `sheet.py <primary> <secondary> <ids...>` — and
+   *look* at them. `0x21F` reads as a wall body on a contact sheet and is
+   actually a cap; it stripes when stacked.
+5. **Mock the whole table before writing any C** — `theme_mock.py <name>`. It
+   transcribes `PaintWalls()` exactly, so a wrong slot is obvious on sight and
+   invisible in a diff. It also reports which slots were never hit, so you know
+   what is still unvalidated.
+6. **Add the donor layout** — `add_theme_layout.py <ID> <Name> <primary>
+   <secondary>`. 48×48, dummy blocks. No map points at it; only the tileset
+   pair matters, because the generator swaps `gMapHeader.mapLayout` and leaves
+   `mapLayoutId` alone.
+7. **Add the `RogueDungeonTheme` entry** and extend `enum DungeonThemeId`.
+   `ThemeForFloor` is a modulo, so nothing else needs touching.
+
+Choosing a generator:
+
+- Walls that are 2×2-aligned blocks (trees, rocks) → `DUNGEON_GEN_WOODS`, and
+  skip autotiling entirely.
+- Walls that are genuinely 1×1 → `DUNGEON_GEN_CAVE`.
+
+**Check whether the tileset draws one-block-thick walls natively before assuming
+it needs composed metatiles.** The cave needed seven spliced metatiles because
+vanilla caves are never one thick. New Mauville needed none: it is a facility
+full of thin partitions, so `0x227` and `0x290` already exist for exactly the
+sliver cases.
+
+**Check what the wall art is drawn against.** New Mauville's edge pieces are all
+lit strips over black, so the mass interior has to be the void metatile. Filling
+it with a wall body puts a lit edge in the middle of a dark mass.
 
 ---
 

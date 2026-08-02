@@ -45,9 +45,20 @@ tilesets means taking upstream's file and re-running the script, not merging.
 | `tileset_resolve.py` | `gTileset_*` → real asset paths. Never guess these; see `docs/ROGUELIKE.md` §8 |
 | `tileset_atlas.py` | render metatiles, build labelled contact sheets |
 | `build_all_atlases.py` | atlas + JSON index for all 137 tileset pairs |
-| `derive_wall_autotile.py` | mine a wall autotile table out of vanilla layouts |
+| `render_layout.py` | render a whole vanilla layout, and census its metatiles by collision |
+| `sheet.py` | render a chosen list of metatiles, big and labelled |
+| `derive_wall_table.py` | tally which metatile vanilla uses per open-neighbour mask, with confidence |
+| `derive_wall_autotile.py` | the earlier cave-only version, keyed on wall neighbours |
 | `tree_edges.py`, `woods_details.py` | how vanilla ends a tree mass and a grass patch |
 | `wall_autotile_4bit.json` | the derived cave wall table |
+
+**Adding a theme.** `docs/ROGUELIKE.md` §7 is the full recipe; these are the two
+tools it turns on:
+
+| script | purpose |
+|---|---|
+| `theme_mock.py` | render a candidate theme table through a transcription of `PaintWalls()`, before writing any C |
+| `add_theme_layout.py` | create the donor layout and append it to `layouts.json` |
 
 **Verification — run these after touching the generator.**
 

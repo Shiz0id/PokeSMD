@@ -74,7 +74,23 @@ static const u16 sWoodsSpecies[] =
     SPECIES_NUZLEAF, SPECIES_LOMBRE,    SPECIES_SWELLOW,   SPECIES_BRELOOM,
 };
 
-enum DungeonThemeId { DUNGEON_THEME_WOODS, DUNGEON_THEME_CAVE, DUNGEON_THEME_COUNT };
+// New Mauville runs on generators, so the pool is electric with the steel and
+// magnet types the facility already houses.
+static const u16 sNewMauvilleSpecies[] =
+{
+    SPECIES_MAGNEMITE, SPECIES_VOLTORB,  SPECIES_PIKACHU,   SPECIES_ELECTRIKE,
+    SPECIES_PLUSLE,    SPECIES_MINUN,    SPECIES_CHINCHOU,  SPECIES_MAREEP,
+    SPECIES_MAGNETON,  SPECIES_ELECTRODE, SPECIES_FLAAFFY,  SPECIES_LANTURN,
+    SPECIES_MANECTRIC, SPECIES_RAICHU,   SPECIES_ELECTABUZZ, SPECIES_AMPHAROS,
+};
+
+enum DungeonThemeId
+{
+    DUNGEON_THEME_WOODS,
+    DUNGEON_THEME_CAVE,
+    DUNGEON_THEME_NEWMAUVILLE,
+    DUNGEON_THEME_COUNT
+};
 
 static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
 {
@@ -133,11 +149,55 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .species = sCaveSpecies,
         .speciesCount = ARRAY_COUNT(sCaveSpecies),
     },
+    [DUNGEON_THEME_NEWMAUVILLE] =
+    {
+        .layoutId = LAYOUT_ROGUE_DUNGEON_NEWMAUVILLE,
+        .generator = DUNGEON_GEN_CAVE,
+        .elevationFloor = DUNGEON_ELEVATION_FLOOR,
+        .elevationWall = DUNGEON_ELEVATION_WALL,
+        .floor = NEWMAUVILLE_METATILE_FLOOR,
+        .tallGrass = 0,   // a facility has no grass; encounters fire anywhere
+        .longGrass = 0,
+        .stairsDown = NEWMAUVILLE_METATILE_STAIRS,
+        .stairsUp = NEWMAUVILLE_METATILE_STAIRS,
+        .wall =
+        {
+            // The band serves both faces: a flat partition looks the same from
+            // either side, which is how vanilla uses it.
+            [WALL_FACE_MID]       = NEWMAUVILLE_METATILE_WALL_BAND,
+            [WALL_NORTH_MID]      = NEWMAUVILLE_METATILE_WALL_BAND,
+            [WALL_SLIVER_HORZ]    = NEWMAUVILLE_METATILE_WALL_BAND,
+            [WALL_SLIVER_HORZ_L]  = NEWMAUVILLE_METATILE_WALL_BAND,
+            [WALL_SLIVER_HORZ_R]  = NEWMAUVILLE_METATILE_WALL_BAND,
+
+            [WALL_INTERIOR_LEFT]  = NEWMAUVILLE_METATILE_WALL_WEST,
+            [WALL_INTERIOR_RIGHT] = NEWMAUVILLE_METATILE_WALL_EAST,
+            [WALL_FACE_LEFT]      = NEWMAUVILLE_METATILE_WALL_FACE_L,
+            [WALL_FACE_RIGHT]     = NEWMAUVILLE_METATILE_WALL_FACE_R,
+            [WALL_NORTH_LEFT]     = NEWMAUVILLE_METATILE_WALL_NORTH_L,
+            [WALL_NORTH_RIGHT]    = NEWMAUVILLE_METATILE_WALL_NORTH_R,
+
+            [WALL_SLIVER_VERT]    = NEWMAUVILLE_METATILE_WALL_PILLAR,
+            [WALL_SLIVER_VERT_TOP]= NEWMAUVILLE_METATILE_WALL_PILLAR_TOP,
+            [WALL_SLIVER_VERT_BOT]= NEWMAUVILLE_METATILE_WALL_PILLAR_BOT,
+            [WALL_SLIVER_ISOLATED]= NEWMAUVILLE_METATILE_WALL_PILLAR,
+
+            // Every cardinal is wall in these cases, so nothing of the wall art
+            // is visible - only the void reads correctly. Filling them with a
+            // wall body puts a lit edge in the middle of a dark mass.
+            [WALL_INTERIOR_MID]   = NEWMAUVILLE_METATILE_VOID,
+            [WALL_CORNER_NW]      = NEWMAUVILLE_METATILE_VOID,
+            [WALL_CORNER_NE]      = NEWMAUVILLE_METATILE_VOID,
+            [WALL_CORNER_SOUTH]   = NEWMAUVILLE_METATILE_VOID,
+        },
+        .species = sNewMauvilleSpecies,
+        .speciesCount = ARRAY_COUNT(sNewMauvilleSpecies),
+    },
 };
 
 // Which theme each dungeon uses, following the stock game: Petalburg Woods then
-// Roxanne, Granite Cave then Brawly. Beyond the second the two alternate until
-// more themes exist.
+// Roxanne, Granite Cave then Brawly, New Mauville then Wattson. Beyond the
+// third they cycle until more themes exist.
 static const struct RogueDungeonTheme *ThemeForFloor(u16 floor)
 {
     u32 dungeon = DungeonIndexOf(floor);
