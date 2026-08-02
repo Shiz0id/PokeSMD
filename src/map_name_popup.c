@@ -1,4 +1,6 @@
 #include "global.h"
+#include "rogue_dungeon.h"
+#include "constants/layouts.h"
 #include "battle_pyramid.h"
 #include "bg.h"
 #include "event_data.h"
@@ -593,6 +595,12 @@ static void ShowMapNamePopUpWindow(void)
             mapDisplayHeaderSource = sBattlePyramid_MapHeaderStrings[gSaveBlock2Ptr->frontier.curChallengeBattleNum];
         }
         StringCopy(withoutPrefixPtr, mapDisplayHeaderSource);
+    }
+    else if (gMapHeader.mapLayoutId == LAYOUT_ROGUE_DUNGEON_FLOOR)
+    {
+        // The region map section would just say GRANITE CAVE on every floor.
+        withoutPrefixPtr = &(mapDisplayHeader[MAP_POPUP_PREFIX_BUFFER_LENGTH]);
+        RogueDungeon_GetFloorName(withoutPrefixPtr);
     }
     else
     {

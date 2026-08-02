@@ -37,6 +37,15 @@
 #define DUNGEON_METATILE_WALL_NORTH_MID       0x209
 #define DUNGEON_METATILE_WALL_NORTH_RIGHT     0x222
 
+// Outer corners: every cardinal neighbour is wall but a diagonal is floor.
+// Without these a room's top corners fall through to interior fill and the
+// outline shows a notch. Named for the room corner they sit at, so
+// _CORNER_NW is the block diagonally up-left of a room's top-left floor tile
+// and therefore has its SOUTH-EAST diagonal open.
+#define DUNGEON_METATILE_WALL_CORNER_NW       0x21B  // open SE diagonal
+#define DUNGEON_METATILE_WALL_CORNER_NE       0x21C  // open SW diagonal
+#define DUNGEON_METATILE_WALL_CORNER_SOUTH    0x223  // open NW or NE diagonal
+
 // Caves only ever use elevations 0 and 3 in vanilla.
 #define DUNGEON_ELEVATION_FLOOR 3
 #define DUNGEON_ELEVATION_WALL  0
@@ -76,5 +85,6 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition);
 bool8 RogueDungeon_TryStartStairsScript(struct MapPosition *position);
 const struct WildPokemonInfo *RogueDungeon_GetWildMonInfo(enum WildPokemonArea area);
 void RogueDungeon_ApplyNewGameUnlocks(void);
+void RogueDungeon_GetFloorName(u8 *dest);
 
 #endif // GUARD_ROGUE_DUNGEON_H

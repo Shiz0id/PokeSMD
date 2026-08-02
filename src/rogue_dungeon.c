@@ -3,6 +3,7 @@
 #include "fieldmap.h"
 #include "random.h"
 #include "script.h"
+#include "string_util.h"
 #include "pokemon.h"
 #include "wild_encounter.h"
 #include "constants/items.h"
@@ -64,6 +65,20 @@ static u16 DungeonRandom(void)
 {
     sDungeonRngState = ISO_RANDOMIZE1(sDungeonRngState);
     return sDungeonRngState >> 16;
+}
+
+static const u8 sText_DungeonFloorPrefix[] = _("DUNGEON B");
+static const u8 sText_DungeonFloorSuffix[] = _("F");
+
+// Fills the map name popup. The floor counter is 0-based; the player sees 1F
+// on the first floor.
+void RogueDungeon_GetFloorName(u8 *dest)
+{
+    u8 *ptr = StringCopy(dest, sText_DungeonFloorPrefix);
+
+    ptr = ConvertIntToDecimalStringN(ptr, VarGet(VAR_ROGUE_DUNGEON_FLOOR) + 1,
+                                     STR_CONV_MODE_LEFT_ALIGN, 4);
+    StringCopy(ptr, sText_DungeonFloorSuffix);
 }
 
 // Called at the end of NewGameInitData, which must come after InitEventData -
@@ -263,6 +278,21 @@ static void ApplyWallAutotiling(u16 *map)
             else if (openEast)
             {
                 metatile = DUNGEON_METATILE_WALL_INTERIOR_RIGHT;
+            }
+            else if (!IsWallAt(map, x + 1, y + 1))
+            {
+                // Every cardinal is wall, so only a diagonal can be open. These
+                // are the outer corners of a room; without them the outline
+                // notches at the corners.
+                metatile = DUNGEON_METATILE_WALL_CORNER_NW;
+            }
+            else if (!IsWallAt(map, x - 1, y + 1))
+            {
+                metatile = DUNGEON_METATILE_WALL_CORNER_NE;
+            }
+            else if (!IsWallAt(map, x - 1, y - 1) || !IsWallAt(map, x + 1, y - 1))
+            {
+                metatile = DUNGEON_METATILE_WALL_CORNER_SOUTH;
             }
             else
             {
