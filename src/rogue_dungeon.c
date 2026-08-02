@@ -12,6 +12,7 @@
 #include "overworld.h"
 #include "item.h"
 #include "data.h"
+#include "trainer_see.h"
 #include "constants/items.h"
 #include "constants/layouts.h"
 #include "constants/moves.h"
@@ -866,6 +867,13 @@ void RogueDungeon_LoadObjectEventTemplates(void)
 // Called by the shared trainer script. The opponent is chosen per floor rather
 // than baked into a script, so the ordinary trainerbattle command cannot be
 // used - this configures the battle by hand and jumps to the shared tail.
+// TRUE while standing on a generated floor, where trainer scripts carry no
+// inline trainerbattle data.
+bool8 RogueDungeon_IsGeneratedTrainer(void)
+{
+    return gMapHeader.mapLayoutId == LAYOUT_ROGUE_DUNGEON_FLOOR;
+}
+
 void RogueDungeon_SetUpTrainerBattle(void)
 {
     u32 slot = gSpecialVar_LastTalked - 1;
@@ -874,6 +882,19 @@ void RogueDungeon_SetUpTrainerBattle(void)
     if (slot >= sTrainerCount)
         slot = 0;
     trainerId = sTrainerIds[slot];
+
+    // Mirrors BattleSetup_ConfigureFacilityTrainerBattle: when two trainers
+    // spot the player at once this runs twice, and the second call must fill
+    // slot B without wiping slot A.
+    if (gApproachingTrainerId != 0)
+    {
+        TRAINER_BATTLE_PARAM.playMusicB = TRUE;
+        TRAINER_BATTLE_PARAM.objEventLocalIdB = gSpecialVar_LastTalked;
+        TRAINER_BATTLE_PARAM.opponentB = trainerId;
+        TRAINER_BATTLE_PARAM.introTextB = (u8 *)RogueDungeonFloor_Text_TrainerIntro;
+        TRAINER_BATTLE_PARAM.defeatTextB = (u8 *)RogueDungeonFloor_Text_TrainerDefeat;
+        return;
+    }
 
     InitTrainerBattleParameter();
     TRAINER_BATTLE_PARAM.mode = TRAINER_BATTLE_SINGLE;

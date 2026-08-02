@@ -1,3 +1,4 @@
+#include "rogue_dungeon.h"
 #include "global.h"
 #include "battle.h"
 #include "load_save.h"
@@ -1209,8 +1210,22 @@ void ConfigureAndSetUpOneTrainerBattle(u8 trainerObjEventId, const u8 *trainerSc
 {
     gSelectedObjectEvent = trainerObjEventId;
     gSpecialVar_LastTalked = gObjectEvents[trainerObjEventId].localId;
-    TrainerBattleLoadArgs(trainerScript + 1);
-    BattleSetup_ConfigureTrainerBattle(trainerScript + 1);
+
+    // A generated dungeon trainer picks its opponent at runtime, so its script
+    // holds no inline trainerbattle data. Parsing it as battle args would copy
+    // script bytes into the battle parameter struct and the approach would
+    // never resolve, leaving the trainer spotting the player forever.
+    if (RogueDungeon_IsGeneratedTrainer())
+    {
+        ResetTrainerOpponentIds();
+        RogueDungeon_SetUpTrainerBattle();
+    }
+    else
+    {
+        TrainerBattleLoadArgs(trainerScript + 1);
+        BattleSetup_ConfigureTrainerBattle(trainerScript + 1);
+    }
+
     ScriptContext_SetupScript(EventScript_StartTrainerApproach);
     LockPlayerFieldControls();
 }
@@ -1219,6 +1234,14 @@ void ConfigureTwoTrainersBattle(u8 trainerObjEventId, const u8 *trainerScript)
 {
     gSelectedObjectEvent = trainerObjEventId;
     gSpecialVar_LastTalked = gObjectEvents[trainerObjEventId].localId;
+
+    // Same reasoning as above; RogueDungeon_SetUpTrainerBattle fills slot A or
+    // B depending on gApproachingTrainerId.
+    if (RogueDungeon_IsGeneratedTrainer())
+    {
+        RogueDungeon_SetUpTrainerBattle();
+        return;
+    }
 
     if (gApproachingTrainerId == 0)
         TrainerBattleLoadArgs(trainerScript + 1);

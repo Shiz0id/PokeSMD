@@ -139,6 +139,7 @@ void RogueDungeon_GiveChosenStarter(void);
 bool8 RogueDungeon_TryHandleWhiteOut(void);
 void RogueDungeon_PrepareBossAceOffer(void);
 void RogueDungeon_GiveBossAce(void);
+bool8 RogueDungeon_IsGeneratedTrainer(void);
 bool8 RogueDungeon_IsBossFloor(u16 floor);
 
 #endif // GUARD_ROGUE_DUNGEON_H
