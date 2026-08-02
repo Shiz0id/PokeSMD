@@ -477,10 +477,23 @@ static void PrepareArenaFloor(u16 floor)
     }
 }
 
+// specialvar target. A gym floor ends the dungeon, so the player goes to the
+// rest stop to heal rather than straight down another set of stairs.
+void RogueDungeon_IsGymFloor(void)
+{
+    gSpecialVar_Result =
+        DungeonFloorWithin(VarGet(VAR_ROGUE_DUNGEON_FLOOR)) == DUNGEON_BOSS_FLOOR;
+}
+
 // Called from the boss post-battle script. The exit does not exist until now,
 // which is what forces the fight - there is no other way off an arena floor.
 void RogueDungeon_OnBossDefeated(void)
 {
+    // Gym floors warp to the rest stop instead of opening an exit, so drawing
+    // one here would give the player a way to skip the heal.
+    if (DungeonFloorWithin(VarGet(VAR_ROGUE_DUNGEON_FLOOR)) == DUNGEON_BOSS_FLOOR)
+        return;
+
     MapGridSetMetatileEntryAt(sStairsX + MAP_OFFSET, sStairsY + MAP_OFFSET,
                               MakeBlock(sStairsMetatile, 0, DUNGEON_ELEVATION_FLOOR));
     DrawWholeMapView();

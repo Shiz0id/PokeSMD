@@ -95,8 +95,8 @@
 #define DUNGEON_ROOM_MIN   5
 #define DUNGEON_ROOM_MAX  10
 
-// A run mirrors the stock game: 20 floors per dungeon, a mini boss halfway and
-// a gym leader at the end, eight dungeons deep.
+// A run mirrors the stock game: 10 floors per dungeon, a mini boss halfway and
+// a gym leader at the end, eight dungeons deep, so 80 floors in total.
 #define DUNGEON_FLOORS_PER_DUNGEON 10
 #define DUNGEON_MINIBOSS_FLOOR      4  // 0-based within the dungeon, so the 5th
 #define DUNGEON_BOSS_FLOOR          9  // the 10th
@@ -104,10 +104,10 @@
 #define DungeonIndexOf(floor)    ((floor) / DUNGEON_FLOORS_PER_DUNGEON)
 #define DungeonFloorWithin(floor) ((floor) % DUNGEON_FLOORS_PER_DUNGEON)
 
-// Levels are fitted to the stock gym leaders over 8 dungeons: floor 20 lands
-// just under Roxanne (12-15), floor 160 just over Juan (41-46). Expressed as a
+// Levels are fitted to the stock gym leaders over 8 dungeons: floor 10 lands
+// just under Roxanne (12-15), floor 80 just over Juan (41-46). Expressed as a
 // ratio rather than a per-floor step because a whole level per floor is far too
-// steep across 160 floors.
+// steep even across 80 floors.
 #define DUNGEON_ENCOUNTER_BASE_LEVEL   5
 #define DUNGEON_ENCOUNTER_LEVEL_NUM   51  // levels gained per 100 floors
 #define DUNGEON_ENCOUNTER_LEVEL_DEN  100
@@ -129,6 +129,7 @@ void RogueDungeon_PrepareNewFloor(void);
 void RogueDungeon_LoadObjectEventTemplates(void);
 void RogueDungeon_SetUpTrainerBattle(void);
 void RogueDungeon_OnBossDefeated(void);
+void RogueDungeon_IsGymFloor(void);
 bool8 RogueDungeon_IsBossFloor(u16 floor);
 
 #endif // GUARD_ROGUE_DUNGEON_H

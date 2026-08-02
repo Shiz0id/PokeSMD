@@ -603,6 +603,7 @@ gStdScripts_End::
 
 @ Roguelike maps
 	.include "data/maps/RogueDungeonFloor/scripts.inc"
+	.include "data/maps/RogueRestStop/scripts.inc"
 
 .if IS_FRLG
 
