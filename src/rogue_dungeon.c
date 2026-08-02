@@ -53,17 +53,97 @@ static u32 FloorTargetLevel(u16 floor)
     return level;
 }
 
-// Ordered weakest to strongest. A floor draws from a window of this list that
-// slides with depth, so early floors stay tame, later ones roll evolved forms,
-// and the weakest species retire instead of lingering forever. The static table
-// in wild_encounters.json is a placeholder that this replaces at runtime.
-static const u16 sDungeonSpeciesPool[] =
+// Per-theme species pools, ordered weakest to strongest. A floor draws from a
+// window of its theme pool that slides with depth, so early floors stay tame,
+// later ones roll evolved forms, and the weakest species retire instead of
+// lingering forever. The static table in wild_encounters.json is a placeholder
+// that this replaces at runtime.
+static const u16 sCaveSpecies[] =
 {
     SPECIES_ZUBAT,   SPECIES_WHISMUR,  SPECIES_GEODUDE,  SPECIES_MAKUHITA,
     SPECIES_ARON,    SPECIES_NOSEPASS, SPECIES_SABLEYE,  SPECIES_MAWILE,
     SPECIES_GOLBAT,  SPECIES_LOUDRED,  SPECIES_GRAVELER, SPECIES_LAIRON,
     SPECIES_ONIX,    SPECIES_HARIYAMA, SPECIES_SHUCKLE,  SPECIES_CLAYDOL,
 };
+
+static const u16 sWoodsSpecies[] =
+{
+    SPECIES_WURMPLE, SPECIES_ZIGZAGOON, SPECIES_POOCHYENA, SPECIES_SEEDOT,
+    SPECIES_LOTAD,   SPECIES_TAILLOW,   SPECIES_SILCOON,   SPECIES_CASCOON,
+    SPECIES_SHROOMISH, SPECIES_NINCADA, SPECIES_BEAUTIFLY, SPECIES_DUSTOX,
+    SPECIES_NUZLEAF, SPECIES_LOMBRE,    SPECIES_SWELLOW,   SPECIES_BRELOOM,
+};
+
+enum DungeonThemeId { DUNGEON_THEME_WOODS, DUNGEON_THEME_CAVE, DUNGEON_THEME_COUNT };
+
+static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
+{
+    [DUNGEON_THEME_WOODS] =
+    {
+        .layoutId = LAYOUT_ROGUE_DUNGEON_WOODS,
+        .generator = DUNGEON_GEN_WOODS,
+        .elevationFloor = DUNGEON_ELEVATION_FLOOR,
+        .elevationWall = DUNGEON_ELEVATION_WALL,
+        .floor = WOODS_METATILE_GRASS,
+        .tallGrass = WOODS_METATILE_TALL_GRASS,
+        .longGrass = WOODS_METATILE_LONG_GRASS,
+        .stairsDown = DUNGEON_METATILE_STAIRS_DOWN,
+        .stairsUp = DUNGEON_METATILE_STAIRS_UP,
+        .stamp =
+        {
+            [STAMP_TL] = WOODS_METATILE_TREE_TL, [STAMP_TR] = WOODS_METATILE_TREE_TR,
+            [STAMP_BL] = WOODS_METATILE_TREE_BL, [STAMP_BR] = WOODS_METATILE_TREE_BR,
+        },
+        .species = sWoodsSpecies,
+        .speciesCount = ARRAY_COUNT(sWoodsSpecies),
+    },
+    [DUNGEON_THEME_CAVE] =
+    {
+        .layoutId = LAYOUT_ROGUE_DUNGEON_FLOOR,
+        .generator = DUNGEON_GEN_CAVE,
+        .elevationFloor = DUNGEON_ELEVATION_FLOOR,
+        .elevationWall = DUNGEON_ELEVATION_WALL,
+        .floor = DUNGEON_METATILE_FLOOR,
+        .tallGrass = 0,   // caves have no grass; encounters fire anywhere
+        .longGrass = 0,
+        .stairsDown = DUNGEON_METATILE_STAIRS_DOWN,
+        .stairsUp = DUNGEON_METATILE_STAIRS_UP,
+        .wall =
+        {
+            [WALL_INTERIOR_LEFT]  = DUNGEON_METATILE_WALL_INTERIOR_LEFT,
+            [WALL_INTERIOR_MID]   = DUNGEON_METATILE_WALL_INTERIOR_MID,
+            [WALL_INTERIOR_RIGHT] = DUNGEON_METATILE_WALL_INTERIOR_RIGHT,
+            [WALL_FACE_LEFT]      = DUNGEON_METATILE_WALL_FACE_LEFT,
+            [WALL_FACE_MID]       = DUNGEON_METATILE_WALL_FACE_MID,
+            [WALL_FACE_RIGHT]     = DUNGEON_METATILE_WALL_FACE_RIGHT,
+            [WALL_NORTH_LEFT]     = DUNGEON_METATILE_WALL_NORTH_LEFT,
+            [WALL_NORTH_MID]      = DUNGEON_METATILE_WALL_NORTH_MID,
+            [WALL_NORTH_RIGHT]    = DUNGEON_METATILE_WALL_NORTH_RIGHT,
+            [WALL_CORNER_NW]      = DUNGEON_METATILE_WALL_CORNER_NW,
+            [WALL_CORNER_NE]      = DUNGEON_METATILE_WALL_CORNER_NE,
+            [WALL_CORNER_SOUTH]   = DUNGEON_METATILE_WALL_CORNER_SOUTH,
+            [WALL_SLIVER_VERT]    = DUNGEON_METATILE_WALL_SLIVER_VERT,
+            [WALL_SLIVER_HORZ]    = DUNGEON_METATILE_WALL_SLIVER_HORZ,
+            [WALL_SLIVER_VERT_TOP]= DUNGEON_METATILE_WALL_SLIVER_VERT_TOP,
+            [WALL_SLIVER_VERT_BOT]= DUNGEON_METATILE_WALL_SLIVER_VERT_BOT,
+            [WALL_SLIVER_HORZ_L]  = DUNGEON_METATILE_WALL_SLIVER_HORZ_L,
+            [WALL_SLIVER_HORZ_R]  = DUNGEON_METATILE_WALL_SLIVER_HORZ_R,
+            [WALL_SLIVER_ISOLATED]= DUNGEON_METATILE_WALL_SLIVER_ISOLATED,
+        },
+        .species = sCaveSpecies,
+        .speciesCount = ARRAY_COUNT(sCaveSpecies),
+    },
+};
+
+// Which theme each dungeon uses, following the stock game: Petalburg Woods then
+// Roxanne, Granite Cave then Brawly. Beyond the second the two alternate until
+// more themes exist.
+static const struct RogueDungeonTheme *ThemeForFloor(u16 floor)
+{
+    u32 dungeon = DungeonIndexOf(floor);
+
+    return &sDungeonThemes[dungeon % DUNGEON_THEME_COUNT];
+}
 
 // Rebuilt whenever a floor is generated, from the same seeded RNG, so a given
 // floor always has the same encounter table.
@@ -101,6 +181,15 @@ EWRAM_DATA static u16 sStairsMetatile = 0;
 EWRAM_DATA static u8 sSpawnX = 0;
 EWRAM_DATA static u8 sSpawnY = 0;
 EWRAM_DATA static bool8 sFloorPrepared = FALSE;
+
+// Grass blobs, in cell coordinates. Stored as centres and radii rather than a
+// grid, which is a handful of bytes instead of a 576-cell map.
+#define DUNGEON_MAX_GRASS_PATCHES 12
+EWRAM_DATA static u8 sGrassPatchX[DUNGEON_MAX_GRASS_PATCHES] = {0};
+EWRAM_DATA static u8 sGrassPatchY[DUNGEON_MAX_GRASS_PATCHES] = {0};
+EWRAM_DATA static u8 sGrassPatchRadius[DUNGEON_MAX_GRASS_PATCHES] = {0};
+EWRAM_DATA static bool8 sGrassPatchLong[DUNGEON_MAX_GRASS_PATCHES] = {0};
+EWRAM_DATA static u8 sGrassPatchCount = 0;
 
 // Trainers for this floor. Indexed by object event localId - 1, mirroring how
 // the Battle Pyramid maps a talked-to object back to its opponent.
@@ -291,6 +380,7 @@ bool8 RogueDungeon_TryHandleWhiteOut(void)
 // reproducible for a given floor.
 static void BuildWildEncounterTable(u16 floor)
 {
+    const struct RogueDungeonTheme *theme = ThemeForFloor(floor);
     u32 scaled = FloorTargetLevel(floor);
     u32 tiers = DUNGEON_ENCOUNTER_STARTING_TIER + floor / DUNGEON_ENCOUNTER_TIER_FLOORS;
     u32 bottom, width, rotation;
@@ -302,8 +392,8 @@ static void BuildWildEncounterTable(u16 floor)
         scaled = MAX_LEVEL - DUNGEON_ENCOUNTER_LEVEL_SPREAD;
     level = scaled;
 
-    if (tiers > ARRAY_COUNT(sDungeonSpeciesPool))
-        tiers = ARRAY_COUNT(sDungeonSpeciesPool);
+    if (tiers > theme->speciesCount)
+        tiers = theme->speciesCount;
 
     // Window rather than prefix, so the weakest species retire with depth.
     bottom = (tiers > DUNGEON_ENCOUNTER_WINDOW) ? tiers - DUNGEON_ENCOUNTER_WINDOW : 0;
@@ -316,7 +406,7 @@ static void BuildWildEncounterTable(u16 floor)
     // which species lands in the common slots from floor to floor.
     for (i = 0; i < NUM_LAND_MONS_ENCOUNTER_SLOTS; i++)
     {
-        sDungeonWildMons[i].species = sDungeonSpeciesPool[bottom + (i + rotation) % width];
+        sDungeonWildMons[i].species = theme->species[bottom + (i + rotation) % width];
         sDungeonWildMons[i].minLevel = level;
         sDungeonWildMons[i].maxLevel = level + DUNGEON_ENCOUNTER_LEVEL_SPREAD;
     }
@@ -372,7 +462,7 @@ static bool8 IsWallAt(const u16 *map, s32 x, s32 y)
 
 // Second pass over the carved grid, choosing each wall's art from its
 // neighbours. Must run after all carving is done.
-static void ApplyWallAutotiling(u16 *map)
+static void ApplyWallAutotiling(u16 *map, const struct RogueDungeonTheme *theme)
 {
     s32 x, y;
 
@@ -397,76 +487,76 @@ static void ApplyWallAutotiling(u16 *map)
             // that edge. An end of a run is a sliver with a third side open.
             if (openNorth && openSouth && openWest && openEast)
             {
-                metatile = DUNGEON_METATILE_WALL_SLIVER_ISOLATED;
+                metatile = theme->wall[WALL_SLIVER_ISOLATED];
             }
             else if (openNorth && openSouth)
             {
                 if (openWest)
-                    metatile = DUNGEON_METATILE_WALL_SLIVER_HORZ_L;
+                    metatile = theme->wall[WALL_SLIVER_HORZ_L];
                 else if (openEast)
-                    metatile = DUNGEON_METATILE_WALL_SLIVER_HORZ_R;
+                    metatile = theme->wall[WALL_SLIVER_HORZ_R];
                 else
-                    metatile = DUNGEON_METATILE_WALL_SLIVER_HORZ;
+                    metatile = theme->wall[WALL_SLIVER_HORZ];
             }
             else if (openWest && openEast)
             {
                 if (openNorth)
-                    metatile = DUNGEON_METATILE_WALL_SLIVER_VERT_TOP;
+                    metatile = theme->wall[WALL_SLIVER_VERT_TOP];
                 else if (openSouth)
-                    metatile = DUNGEON_METATILE_WALL_SLIVER_VERT_BOT;
+                    metatile = theme->wall[WALL_SLIVER_VERT_BOT];
                 else
-                    metatile = DUNGEON_METATILE_WALL_SLIVER_VERT;
+                    metatile = theme->wall[WALL_SLIVER_VERT];
             }
             else if (openSouth)
             {
                 // Floor below, so this is the wall face the camera sees. Takes
                 // priority over every other edge - it is the most visible one.
                 if (openWest)
-                    metatile = DUNGEON_METATILE_WALL_FACE_LEFT;
+                    metatile = theme->wall[WALL_FACE_LEFT];
                 else if (openEast)
-                    metatile = DUNGEON_METATILE_WALL_FACE_RIGHT;
+                    metatile = theme->wall[WALL_FACE_RIGHT];
                 else
-                    metatile = DUNGEON_METATILE_WALL_FACE_MID;
+                    metatile = theme->wall[WALL_FACE_MID];
             }
             else if (openNorth)
             {
                 // Floor above - the bottom boundary of a room.
                 if (openWest)
-                    metatile = DUNGEON_METATILE_WALL_NORTH_LEFT;
+                    metatile = theme->wall[WALL_NORTH_LEFT];
                 else if (openEast)
-                    metatile = DUNGEON_METATILE_WALL_NORTH_RIGHT;
+                    metatile = theme->wall[WALL_NORTH_RIGHT];
                 else
-                    metatile = DUNGEON_METATILE_WALL_NORTH_MID;
+                    metatile = theme->wall[WALL_NORTH_MID];
             }
             else if (openWest)
             {
-                metatile = DUNGEON_METATILE_WALL_INTERIOR_LEFT;
+                metatile = theme->wall[WALL_INTERIOR_LEFT];
             }
             else if (openEast)
             {
-                metatile = DUNGEON_METATILE_WALL_INTERIOR_RIGHT;
+                metatile = theme->wall[WALL_INTERIOR_RIGHT];
             }
             else if (!IsWallAt(map, x + 1, y + 1))
             {
                 // Every cardinal is wall, so only a diagonal can be open. These
                 // are the outer corners of a room; without them the outline
                 // notches at the corners.
-                metatile = DUNGEON_METATILE_WALL_CORNER_NW;
+                metatile = theme->wall[WALL_CORNER_NW];
             }
             else if (!IsWallAt(map, x - 1, y + 1))
             {
-                metatile = DUNGEON_METATILE_WALL_CORNER_NE;
+                metatile = theme->wall[WALL_CORNER_NE];
             }
             else if (!IsWallAt(map, x - 1, y - 1) || !IsWallAt(map, x + 1, y - 1))
             {
-                metatile = DUNGEON_METATILE_WALL_CORNER_SOUTH;
+                metatile = theme->wall[WALL_CORNER_SOUTH];
             }
             else
             {
-                metatile = DUNGEON_METATILE_WALL_INTERIOR_MID;
+                metatile = theme->wall[WALL_INTERIOR_MID];
             }
 
-            SetBlock(map, x, y, MakeBlock(metatile, 1, DUNGEON_ELEVATION_WALL));
+            SetBlock(map, x, y, MakeBlock(metatile, 1, theme->elevationWall));
         }
     }
 }
@@ -730,7 +820,19 @@ static void PlaceTrainers(u16 floor)
 static void PrepareFloor(u16 seed)
 {
     u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+    const struct RogueDungeonTheme *theme = ThemeForFloor(floor);
+    u32 unit = (theme->generator == DUNGEON_GEN_WOODS) ? 2 : 1;
+    u32 gridW = DUNGEON_WIDTH / unit;
+    u32 gridH = DUNGEON_HEIGHT / unit;
+    u32 rmin = (unit == 2) ? 3 : DUNGEON_ROOM_MIN;
+    u32 rmax = (unit == 2) ? 5 : DUNGEON_ROOM_MAX;
     s32 i, attempt;
+
+    // The themed layout is a tileset donor. gMapHeader is a RAM copy and
+    // CopyMapTilesetsToVram reads mapLayout, and this runs before the map view
+    // initialises, so this is what swaps the dungeon between cave and woods.
+    // mapLayoutId is deliberately left alone - every dispatch keys on it.
+    gMapHeader.mapLayout = GetMapLayout(theme->layoutId);
 
     SeedDungeonRng(seed);
     sRoomCount = 0;
@@ -751,10 +853,13 @@ static void PrepareFloor(u16 seed)
         struct DungeonRoom room;
         bool8 clear = TRUE;
 
-        room.w = DUNGEON_ROOM_MIN + (DungeonRandom() % (DUNGEON_ROOM_MAX - DUNGEON_ROOM_MIN + 1));
-        room.h = DUNGEON_ROOM_MIN + (DungeonRandom() % (DUNGEON_ROOM_MAX - DUNGEON_ROOM_MIN + 1));
-        room.x = 1 + (DungeonRandom() % (DUNGEON_WIDTH  - room.w - 2));
-        room.y = 1 + (DungeonRandom() % (DUNGEON_HEIGHT - room.h - 2));
+        // Woods generates in whole 2x2 cells, so rooms come out even-aligned
+        // and a tree stamp is never split. Everything downstream still works in
+        // metatile space.
+        room.w = (rmin + (DungeonRandom() % (rmax - rmin + 1))) * unit;
+        room.h = (rmin + (DungeonRandom() % (rmax - rmin + 1))) * unit;
+        room.x = (1 + (DungeonRandom() % (gridW - room.w / unit - 2))) * unit;
+        room.y = (1 + (DungeonRandom() % (gridH - room.h / unit - 2))) * unit;
 
         for (i = 0; i < sRoomCount; i++)
         {
@@ -790,22 +895,146 @@ static void PrepareFloor(u16 seed)
         sSpawnY = sRooms[0].y + sRooms[0].h / 2;
     }
 
+    // Grass blobs, only for themes that have grass. Placed inside rooms so they
+    // never land in a tree.
+    sGrassPatchCount = 0;
+    if (theme->tallGrass != 0)
+    {
+        for (i = 0; i < sRoomCount && sGrassPatchCount < DUNGEON_MAX_GRASS_PATCHES; i++)
+        {
+            u32 patches = DungeonRandom() % 3;   // 0-2 per clearing
+
+            while (patches-- && sGrassPatchCount < DUNGEON_MAX_GRASS_PATCHES)
+            {
+                sGrassPatchLong[sGrassPatchCount] =
+                    (theme->longGrass != 0) && (DungeonRandom() % 4 == 0);
+                sGrassPatchX[sGrassPatchCount] =
+                    (sRooms[i].x + (DungeonRandom() % sRooms[i].w)) / 2;
+                sGrassPatchY[sGrassPatchCount] =
+                    (sRooms[i].y + (DungeonRandom() % sRooms[i].h)) / 2;
+                sGrassPatchRadius[sGrassPatchCount] = 1 + (DungeonRandom() % 2);
+                sGrassPatchCount++;
+            }
+        }
+    }
+
     BuildWildEncounterTable(floor);
     PlaceTrainers(floor);
     sFloorPrepared = TRUE;
 }
 
+// Stamps one 2x2 cell. Woods trees are 2x2 blocks on even coordinates, so the
+// generator works in whole cells and never needs an autotile pass.
+static void StampCell(u16 *map, s32 cx, s32 cy, const struct RogueDungeonTheme *theme,
+                      bool8 open, u16 floorMetatile)
+{
+    s32 x = cx * 2, y = cy * 2;
+
+    if (open)
+    {
+        SetBlock(map, x,     y,     MakeBlock(floorMetatile, 0, theme->elevationFloor));
+        SetBlock(map, x + 1, y,     MakeBlock(floorMetatile, 0, theme->elevationFloor));
+        SetBlock(map, x,     y + 1, MakeBlock(floorMetatile, 0, theme->elevationFloor));
+        SetBlock(map, x + 1, y + 1, MakeBlock(floorMetatile, 0, theme->elevationFloor));
+    }
+    else
+    {
+        SetBlock(map, x,     y,     MakeBlock(theme->stamp[STAMP_TL], 1, theme->elevationWall));
+        SetBlock(map, x + 1, y,     MakeBlock(theme->stamp[STAMP_TR], 1, theme->elevationWall));
+        SetBlock(map, x,     y + 1, MakeBlock(theme->stamp[STAMP_BL], 1, theme->elevationWall));
+        SetBlock(map, x + 1, y + 1, MakeBlock(theme->stamp[STAMP_BR], 1, theme->elevationWall));
+    }
+}
+
+// Grass only grows where the floor is already open, and in blobs rather than
+// per-cell noise - scattered single cells read as static, blobs read as
+// undergrowth.
+static u16 GrassAt(s32 cx, s32 cy, const struct RogueDungeonTheme *theme)
+{
+    u32 i;
+
+    for (i = 0; i < sGrassPatchCount; i++)
+    {
+        s32 dx = cx - sGrassPatchX[i];
+        s32 dy = cy - sGrassPatchY[i];
+
+        if (dx < 0) dx = -dx;
+        if (dy < 0) dy = -dy;
+
+        if (dx + dy <= sGrassPatchRadius[i])
+            return sGrassPatchLong[i] ? theme->longGrass : theme->tallGrass;
+    }
+
+    return theme->floor;
+}
+
+static void WriteWoodsBlocks(u16 *map, const struct RogueDungeonTheme *theme)
+{
+    s32 cx, cy, i;
+
+    for (cy = 0; cy < DUNGEON_CELLS_H; cy++)
+        for (cx = 0; cx < DUNGEON_CELLS_W; cx++)
+            StampCell(map, cx, cy, theme, FALSE, theme->floor);
+
+    for (i = 0; i < sRoomCount; i++)
+    {
+        for (cy = 0; cy < sRooms[i].h / 2; cy++)
+        {
+            for (cx = 0; cx < sRooms[i].w / 2; cx++)
+            {
+                s32 gx = sRooms[i].x / 2 + cx;
+                s32 gy = sRooms[i].y / 2 + cy;
+
+                StampCell(map, gx, gy, theme, TRUE, GrassAt(gx, gy, theme));
+            }
+        }
+    }
+
+    // Corridors, walked in cell space so they stay a whole stamp wide. Same
+    // centre-to-centre chaining as the cave, which keeps every room connected.
+    for (i = 1; i < sRoomCount; i++)
+    {
+        s32 x0 = (sRooms[i - 1].x + sRooms[i - 1].w / 2) / 2;
+        s32 y0 = (sRooms[i - 1].y + sRooms[i - 1].h / 2) / 2;
+        s32 x1 = (sRooms[i].x + sRooms[i].w / 2) / 2;
+        s32 y1 = (sRooms[i].y + sRooms[i].h / 2) / 2;
+
+        while (x0 != x1)
+        {
+            StampCell(map, x0, y0, theme, TRUE, GrassAt(x0, y0, theme));
+            x0 += (x1 > x0) ? 1 : -1;
+        }
+        while (y0 != y1)
+        {
+            StampCell(map, x0, y0, theme, TRUE, GrassAt(x0, y0, theme));
+            y0 += (y1 > y0) ? 1 : -1;
+        }
+        StampCell(map, x0, y0, theme, TRUE, GrassAt(x0, y0, theme));
+    }
+}
+
 // Paints the prepared floor into the map buffer. PrepareFloor must have run.
 static void WriteFloorBlocks(u16 *backupMapData)
 {
+    const struct RogueDungeonTheme *theme = ThemeForFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR));
     // Placeholder art; ApplyWallAutotiling picks the real metatile at the end.
     // Only the collision bit matters during carving.
-    u16 wallBlock = MakeBlock(DUNGEON_METATILE_WALL_INTERIOR_MID, 1, DUNGEON_ELEVATION_WALL);
+    u16 wallBlock = MakeBlock(theme->wall[WALL_INTERIOR_MID], 1, theme->elevationWall);
     s32 x, y, i;
 
     gBackupMapLayout.map = backupMapData;
     gBackupMapLayout.width = DUNGEON_WIDTH + MAP_OFFSET_W;
     gBackupMapLayout.height = DUNGEON_HEIGHT + MAP_OFFSET_H;
+
+    // Woods stamps whole 2x2 cells and needs no autotile pass at all.
+    if (theme->generator == DUNGEON_GEN_WOODS)
+    {
+        WriteWoodsBlocks(backupMapData, theme);
+        if (sRoomCount != 0 && !RogueDungeon_IsBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
+            SetBlock(backupMapData, sStairsX, sStairsY,
+                     MakeBlock(sStairsMetatile, 0, theme->elevationFloor));
+        return;
+    }
 
     for (y = 0; y < DUNGEON_HEIGHT; y++)
         for (x = 0; x < DUNGEON_WIDTH; x++)
@@ -822,7 +1051,7 @@ static void WriteFloorBlocks(u16 *backupMapData)
     // boss is beaten - see RogueDungeon_OnBossDefeated.
     if (RogueDungeon_IsBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
     {
-        ApplyWallAutotiling(backupMapData);
+        ApplyWallAutotiling(backupMapData, theme);
         return;
     }
 
@@ -836,9 +1065,13 @@ static void WriteFloorBlocks(u16 *backupMapData)
                       sRooms[i].y + sRooms[i].h / 2);
     }
 
+    // Runs last, but only rewrites blocks whose collision bit is set, so the
+    // stairs tile placed below is left alone.
+    ApplyWallAutotiling(backupMapData, theme);
+
     if (sRoomCount != 0)
         SetBlock(backupMapData, sStairsX, sStairsY,
-                 MakeBlock(sStairsMetatile, 0, DUNGEON_ELEVATION_FLOOR));
+                 MakeBlock(sStairsMetatile, 0, theme->elevationFloor));
 }
 
 // Called from the object-event template loader, which runs before the map is
@@ -1007,10 +1240,6 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
     }
 
     WriteFloorBlocks(backupMapData);
-
-    // Runs last, but only rewrites blocks whose collision bit is set, so the
-    // stairs tile is left alone.
-    ApplyWallAutotiling(backupMapData);
 
     if (setPlayerPosition == FALSE && sRoomCount != 0)
     {

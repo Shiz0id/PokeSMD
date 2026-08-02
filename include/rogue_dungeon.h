@@ -63,9 +63,78 @@
 #define DUNGEON_METATILE_WALL_SLIVER_HORZ_R   0x3A3  // + floor east
 #define DUNGEON_METATILE_WALL_SLIVER_ISOLATED 0x3A4  // floor on all four sides
 
-// Caves only ever use elevations 0 and 3 in vanilla.
+// Petalburg Woods: gTileset_General + gTileset_Rustboro. Mined from
+// LAYOUT_PETALBURG_WOODS the same way the cave values were.
+//
+// Trees are 2x2 blocks on even coordinates - 95% x-aligned and 99% y-aligned in
+// vanilla - which is why the woods generator works on a half-resolution grid
+// and needs no autotiling at all.
+#define WOODS_METATILE_GRASS      0x001  // plain, no encounters
+#define WOODS_METATILE_TALL_GRASS 0x00D  // MB_TALL_GRASS
+#define WOODS_METATILE_LONG_GRASS 0x015  // MB_LONG_GRASS, the Route 119 kind
+#define WOODS_METATILE_TREE_TL    0x1D4
+#define WOODS_METATILE_TREE_TR    0x1D5
+#define WOODS_METATILE_TREE_BL    0x1DC
+#define WOODS_METATILE_TREE_BR    0x1DD
+
+// Woods uses the same two elevations as caves.
 #define DUNGEON_ELEVATION_FLOOR 3
 #define DUNGEON_ELEVATION_WALL  0
+
+// A dungeon theme owns everything that varies between dungeons: which layout
+// supplies the tilesets, which generator shapes the floor, and which metatiles
+// it paints with. Adding a theme should mean adding a table entry rather than
+// editing the generator.
+//
+// The themed layout is a tileset donor only - no map points at it. gMapHeader
+// is a RAM copy and CopyMapTilesetsToVram reads gMapHeader.mapLayout, so
+// pointing that at another layout before the map view initialises swaps the
+// tilesets. Only mapLayout is patched, never mapLayoutId, so every dispatch
+// that keys on the id keeps working.
+enum DungeonGenerator
+{
+    DUNGEON_GEN_CAVE,   // 1x1 carve, then a nine-case wall autotile
+    DUNGEON_GEN_WOODS,  // 2x2 stamps on a half-resolution grid
+};
+
+// Slots in a theme wall table, in the order the autotile rule tests them.
+enum DungeonWallSlot
+{
+    WALL_INTERIOR_LEFT, WALL_INTERIOR_MID, WALL_INTERIOR_RIGHT,
+    WALL_FACE_LEFT,     WALL_FACE_MID,     WALL_FACE_RIGHT,
+    WALL_NORTH_LEFT,    WALL_NORTH_MID,    WALL_NORTH_RIGHT,
+    WALL_CORNER_NW,     WALL_CORNER_NE,    WALL_CORNER_SOUTH,
+    WALL_SLIVER_VERT,   WALL_SLIVER_HORZ,
+    WALL_SLIVER_VERT_TOP, WALL_SLIVER_VERT_BOT,
+    WALL_SLIVER_HORZ_L,   WALL_SLIVER_HORZ_R, WALL_SLIVER_ISOLATED,
+    WALL_SLOT_COUNT,
+};
+
+enum DungeonStampCorner { STAMP_TL, STAMP_TR, STAMP_BL, STAMP_BR, STAMP_COUNT };
+
+struct RogueDungeonTheme
+{
+    u16 layoutId;
+    u8 generator;
+    u8 elevationFloor;
+    u8 elevationWall;
+
+    u16 floor;
+    u16 tallGrass;   // 0 if the theme has none, in which case encounters fire
+    u16 longGrass;   // anywhere rather than only in grass
+    u16 stairsDown;
+    u16 stairsUp;
+
+    u16 wall[WALL_SLOT_COUNT];  // DUNGEON_GEN_CAVE only
+    u16 stamp[STAMP_COUNT];     // DUNGEON_GEN_WOODS only
+
+    const u16 *species;
+    u8 speciesCount;
+};
+
+// Half-resolution grid for DUNGEON_GEN_WOODS, so a cell is one 2x2 stamp.
+#define DUNGEON_CELLS_W (DUNGEON_WIDTH / 2)
+#define DUNGEON_CELLS_H (DUNGEON_HEIGHT / 2)
 
 // Each floor has exactly one exit, placed at a seed-derived position. Because
 // generation is deterministic the stairs position needs no save data at all -

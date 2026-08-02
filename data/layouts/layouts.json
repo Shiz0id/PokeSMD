@@ -9333,6 +9333,16 @@
       "secondary_tileset": "gTileset_Cave",
       "border_filepath": "data/layouts/RogueDungeonFloor/border.bin",
       "blockdata_filepath": "data/layouts/RogueDungeonFloor/map.bin"
+    },
+    {
+      "id": "LAYOUT_ROGUE_DUNGEON_WOODS",
+      "name": "RogueDungeonWoods_Layout",
+      "width": 48,
+      "height": 48,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_Rustboro",
+      "border_filepath": "data/layouts/RogueDungeonWoods/border.bin",
+      "blockdata_filepath": "data/layouts/RogueDungeonWoods/map.bin"
     }
   ]
 }
