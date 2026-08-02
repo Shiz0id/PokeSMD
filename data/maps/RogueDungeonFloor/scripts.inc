@@ -34,8 +34,19 @@ RogueDungeonFloor_EventScript_TrainerDone::
 	releaseall
 	end
 
+@ Boss floors have no exit until the boss falls - that is what forces the fight,
+@ since an arena has no other way out.
+RogueDungeonFloor_EventScript_BossDone::
+	special RogueDungeon_OnBossDefeated
+	msgbox RogueDungeonFloor_Text_BossCleared, MSGBOX_DEFAULT
+	releaseall
+	end
+
 RogueDungeonFloor_Text_TrainerIntro::
 	.string "You there! Let us settle this here!$"
+
+RogueDungeonFloor_Text_BossCleared:
+	.string "The way onward has opened!$"
 
 RogueDungeonFloor_Text_TrainerDefeat::
 	.string "I could not keep up down here.$"

@@ -8,6 +8,7 @@
 #include "wild_encounter.h"
 #include "battle_setup.h"
 #include "event_object_movement.h"
+#include "field_camera.h"
 #include "constants/items.h"
 #include "constants/layouts.h"
 #include "constants/moves.h"
@@ -23,6 +24,7 @@
 extern const u8 RogueDungeonFloor_EventScript_Stairs[];
 extern const u8 RogueDungeonFloor_EventScript_Trainer[];
 extern const u8 RogueDungeonFloor_EventScript_TrainerDone[];
+extern const u8 RogueDungeonFloor_EventScript_BossDone[];
 extern const u8 RogueDungeonFloor_Text_TrainerIntro[];
 extern const u8 RogueDungeonFloor_Text_TrainerDefeat[];
 
@@ -71,6 +73,8 @@ EWRAM_DATA static u8 sRoomCount = 0;
 EWRAM_DATA static u8 sStairsX = 0;
 EWRAM_DATA static u8 sStairsY = 0;
 EWRAM_DATA static u16 sStairsMetatile = 0;
+EWRAM_DATA static u8 sSpawnX = 0;
+EWRAM_DATA static u8 sSpawnY = 0;
 EWRAM_DATA static bool8 sFloorPrepared = FALSE;
 
 // Trainers for this floor. Indexed by object event localId - 1, mirroring how
@@ -78,6 +82,7 @@ EWRAM_DATA static bool8 sFloorPrepared = FALSE;
 EWRAM_DATA static u16 sTrainerIds[DUNGEON_MAX_TRAINERS] = {0};
 EWRAM_DATA static u8 sTrainerX[DUNGEON_MAX_TRAINERS] = {0};
 EWRAM_DATA static u8 sTrainerY[DUNGEON_MAX_TRAINERS] = {0};
+EWRAM_DATA static u16 sTrainerGfx[DUNGEON_MAX_TRAINERS] = {0};
 EWRAM_DATA static u8 sTrainerCount = 0;
 
 // Local PRNG. Generation must not consume or perturb the global RNG - if it
@@ -399,6 +404,88 @@ static void CarveCorridor(u16 *map, s32 x0, s32 y0, s32 x1, s32 y1)
     CarveFloor(map, x, y);
 }
 
+// Boss floors. One gym leader per dungeon, in stock order, so a run reads as
+// Petalburg Woods then Roxanne, Granite Cave then Brawly, and so on. The _1
+// variants are the base gym battles rather than the rematch tiers.
+static const u16 sGymLeaders[] =
+{
+    TRAINER_ROXANNE_1, TRAINER_BRAWLY_1, TRAINER_WATTSON_1, TRAINER_FLANNERY_1,
+    TRAINER_NORMAN_1,  TRAINER_WINONA_1, TRAINER_TATE_AND_LIZA_1, TRAINER_JUAN_1,
+};
+
+// Parallel to sGymLeaders, so the boss looks like who it is.
+static const u16 sGymLeaderGfx[] =
+{
+    OBJ_EVENT_GFX_ROXANNE, OBJ_EVENT_GFX_BRAWLY, OBJ_EVENT_GFX_WATTSON,
+    OBJ_EVENT_GFX_FLANNERY, OBJ_EVENT_GFX_NORMAN, OBJ_EVENT_GFX_WINONA,
+    OBJ_EVENT_GFX_TATE, OBJ_EVENT_GFX_JUAN,
+};
+
+// Mini bosses. Team Aqua and Magma grunts, chosen from the seed.
+static const u16 sMiniBosses[] =
+{
+    TRAINER_GRUNT_AQUA_HIDEOUT_1, TRAINER_GRUNT_AQUA_HIDEOUT_2,
+    TRAINER_GRUNT_AQUA_HIDEOUT_3, TRAINER_GRUNT_AQUA_HIDEOUT_4,
+    TRAINER_GRUNT_SEAFLOOR_CAVERN_1, TRAINER_GRUNT_SEAFLOOR_CAVERN_2,
+};
+
+bool8 RogueDungeon_IsBossFloor(u16 floor)
+{
+    u32 within = DungeonFloorWithin(floor);
+
+    return within == DUNGEON_MINIBOSS_FLOOR || within == DUNGEON_BOSS_FLOOR;
+}
+
+// Boss floors skip rooms and corridors entirely: a single centred arena, the
+// boss standing in the open, and no exit at all until it is beaten.
+static void PrepareArenaFloor(u16 floor)
+{
+    u32 within = DungeonFloorWithin(floor);
+    u32 dungeon = DungeonIndexOf(floor);
+    u8 x0 = (DUNGEON_WIDTH - DUNGEON_ARENA_WIDTH) / 2;
+    u8 y0 = (DUNGEON_HEIGHT - DUNGEON_ARENA_HEIGHT) / 2;
+
+    sRoomCount = 1;
+    sRooms[0].x = x0;
+    sRooms[0].y = y0;
+    sRooms[0].w = DUNGEON_ARENA_WIDTH;
+    sRooms[0].h = DUNGEON_ARENA_HEIGHT;
+
+    // Player at the south end, boss at the north, so the two face off across
+    // the arena. The boss is deliberately NOT in a chokepoint - a defeated
+    // trainer object still blocks movement, and would wall the exit off.
+    sSpawnX = x0 + DUNGEON_ARENA_WIDTH / 2;
+    sSpawnY = y0 + DUNGEON_ARENA_HEIGHT - 2;
+
+    sStairsX = x0 + DUNGEON_ARENA_WIDTH / 2;
+    sStairsY = y0 + 1;
+    sStairsMetatile = DUNGEON_METATILE_STAIRS_DOWN;
+
+    sTrainerCount = 1;
+    sTrainerX[0] = x0 + DUNGEON_ARENA_WIDTH / 2;
+    sTrainerY[0] = y0 + 3;
+
+    if (within == DUNGEON_BOSS_FLOOR)
+    {
+        sTrainerIds[0] = sGymLeaders[dungeon % ARRAY_COUNT(sGymLeaders)];
+        sTrainerGfx[0] = sGymLeaderGfx[dungeon % ARRAY_COUNT(sGymLeaderGfx)];
+    }
+    else
+    {
+        sTrainerIds[0] = sMiniBosses[DungeonRandom() % ARRAY_COUNT(sMiniBosses)];
+        sTrainerGfx[0] = OBJ_EVENT_GFX_AQUA_MEMBER_M;
+    }
+}
+
+// Called from the boss post-battle script. The exit does not exist until now,
+// which is what forces the fight - there is no other way off an arena floor.
+void RogueDungeon_OnBossDefeated(void)
+{
+    MapGridSetMetatileEntryAt(sStairsX + MAP_OFFSET, sStairsY + MAP_OFFSET,
+                              MakeBlock(sStairsMetatile, 0, DUNGEON_ELEVATION_FLOOR));
+    DrawWholeMapView();
+}
+
 // The table is sorted by average party level, so candidates for a target level
 // form a contiguous run. Widens the window until something matches rather than
 // failing - the low end of the table is thin, as the stock game has few
@@ -463,6 +550,7 @@ static void PlaceTrainers(u16 floor)
         sTrainerX[sTrainerCount] = x;
         sTrainerY[sTrainerCount] = y;
         sTrainerIds[sTrainerCount] = PickTrainerForLevel(target);
+        sTrainerGfx[sTrainerCount] = OBJ_EVENT_GFX_HIKER;
         sTrainerCount++;
     }
 }
@@ -472,10 +560,20 @@ static void PlaceTrainers(u16 floor)
 // generated, and is where trainers have to be placed.
 static void PrepareFloor(u16 seed)
 {
+    u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
     s32 i, attempt;
 
     SeedDungeonRng(seed);
     sRoomCount = 0;
+    sTrainerCount = 0;
+
+    if (RogueDungeon_IsBossFloor(floor))
+    {
+        PrepareArenaFloor(floor);
+        BuildWildEncounterTable(floor);
+        sFloorPrepared = TRUE;
+        return;
+    }
 
     // Rejection-sample non-overlapping rooms. A fixed attempt budget keeps this
     // bounded; falling short of DUNGEON_MAX_ROOMS is fine.
@@ -517,8 +615,14 @@ static void PrepareFloor(u16 seed)
         sStairsY = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
     }
 
-    BuildWildEncounterTable(VarGet(VAR_ROGUE_DUNGEON_FLOOR));
-    PlaceTrainers(VarGet(VAR_ROGUE_DUNGEON_FLOOR));
+    if (sRoomCount != 0)
+    {
+        sSpawnX = sRooms[0].x + sRooms[0].w / 2;
+        sSpawnY = sRooms[0].y + sRooms[0].h / 2;
+    }
+
+    BuildWildEncounterTable(floor);
+    PlaceTrainers(floor);
     sFloorPrepared = TRUE;
 }
 
@@ -543,6 +647,14 @@ static void WriteFloorBlocks(u16 *backupMapData)
         for (y = 0; y < sRooms[i].h; y++)
             for (x = 0; x < sRooms[i].w; x++)
                 CarveFloor(backupMapData, sRooms[i].x + x, sRooms[i].y + y);
+    }
+
+    // An arena floor is the single room, and its exit is not drawn until the
+    // boss is beaten - see RogueDungeon_OnBossDefeated.
+    if (RogueDungeon_IsBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
+    {
+        ApplyWallAutotiling(backupMapData);
+        return;
     }
 
     // Chain the rooms centre-to-centre so the floor is always fully connected.
@@ -597,7 +709,7 @@ void RogueDungeon_LoadObjectEventTemplates(void)
 
         if (i < sTrainerCount)
         {
-            templates[i].graphicsId = OBJ_EVENT_GFX_HIKER;
+            templates[i].graphicsId = sTrainerGfx[i];
             templates[i].x = sTrainerX[i];
             templates[i].y = sTrainerY[i];
             templates[i].movementType = MOVEMENT_TYPE_FACE_DOWN;
@@ -638,7 +750,10 @@ void RogueDungeon_SetUpTrainerBattle(void)
     TRAINER_BATTLE_PARAM.defeatTextA = (u8 *)RogueDungeonFloor_Text_TrainerDefeat;
 
     SetMapVarsToTrainerA();
-    SetTrainerBattleEndScript(RogueDungeonFloor_EventScript_TrainerDone);
+    if (RogueDungeon_IsBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
+        SetTrainerBattleEndScript(RogueDungeonFloor_EventScript_BossDone);
+    else
+        SetTrainerBattleEndScript(RogueDungeonFloor_EventScript_TrainerDone);
 }
 
 void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
@@ -676,8 +791,8 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
 
     if (setPlayerPosition == FALSE && sRoomCount != 0)
     {
-        gSaveBlock1Ptr->pos.x = sRooms[0].x + sRooms[0].w / 2;
-        gSaveBlock1Ptr->pos.y = sRooms[0].y + sRooms[0].h / 2;
+        gSaveBlock1Ptr->pos.x = sSpawnX;
+        gSaveBlock1Ptr->pos.y = sSpawnY;
     }
 
     if (setPlayerPosition == FALSE && !FlagGet(FLAG_ROGUE_STARTER_GIVEN))

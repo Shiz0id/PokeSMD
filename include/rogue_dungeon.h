@@ -87,6 +87,10 @@
 #define DUNGEON_WIDTH  48
 #define DUNGEON_HEIGHT 48
 
+// Boss floors are a single centred arena rather than rooms and corridors.
+#define DUNGEON_ARENA_WIDTH  15
+#define DUNGEON_ARENA_HEIGHT 13
+
 #define DUNGEON_MAX_ROOMS  8
 #define DUNGEON_ROOM_MIN   5
 #define DUNGEON_ROOM_MAX  10
@@ -124,5 +128,7 @@ void RogueDungeon_GetFloorName(u8 *dest);
 void RogueDungeon_PrepareNewFloor(void);
 void RogueDungeon_LoadObjectEventTemplates(void);
 void RogueDungeon_SetUpTrainerBattle(void);
+void RogueDungeon_OnBossDefeated(void);
+bool8 RogueDungeon_IsBossFloor(u16 floor);
 
 #endif // GUARD_ROGUE_DUNGEON_H
