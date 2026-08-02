@@ -727,4 +727,79 @@ static const struct RogueDungeonTrainer sRogueDungeonTrainers[] =
     { TRAINER_NICOLAS_5, 49 },  // Dragon Tamer, 3 mons
 };
 
+// Mini bosses: Team Aqua and Magma, sorted by average party level.
+// Picked by depth like the ordinary table, because using a fixed list
+// meant a floor-5 mini boss could be a mid-game grunt with a level 31
+// Zubat. 59 entries, levels 9-38.
+
+struct RogueDungeonMiniBoss
+{
+    u16 trainerId;
+    u8 avgLevel;
+    u8 isMagma;
+};
+
+static const struct RogueDungeonMiniBoss sRogueDungeonMiniBosses[] =
+{
+    { TRAINER_GRUNT_PETALBURG_WOODS, 9, FALSE },              // Team Aqua
+    { TRAINER_GRUNT_RUSTURF_TUNNEL, 11, FALSE },              // Team Aqua
+    { TRAINER_GRUNT_MUSEUM_2, 14, FALSE },                    // Team Aqua
+    { TRAINER_GRUNT_MUSEUM_1, 15, FALSE },                    // Team Aqua
+    { TRAINER_GRUNT_MT_CHIMNEY_1, 20, TRUE },                 // Team Magma
+    { TRAINER_GRUNT_MT_CHIMNEY_2, 20, TRUE },                 // Team Magma
+    { TRAINER_TABITHA_MT_CHIMNEY, 20, TRUE },                 // Magma Admin
+    { TRAINER_GRUNT_JAGGED_PASS, 22, TRUE },                  // Team Magma
+    { TRAINER_GRUNT_WEATHER_INST_3, 26, FALSE },              // Team Aqua
+    { TRAINER_GRUNT_WEATHER_INST_1, 27, FALSE },              // Team Aqua
+    { TRAINER_GRUNT_WEATHER_INST_2, 27, FALSE },              // Team Aqua
+    { TRAINER_GRUNT_WEATHER_INST_5, 27, FALSE },              // Team Aqua
+    { TRAINER_GRUNT_MAGMA_HIDEOUT_4, 28, TRUE },              // Team Magma
+    { TRAINER_GRUNT_MAGMA_HIDEOUT_5, 28, TRUE },              // Team Magma
+    { TRAINER_GRUNT_SPACE_CENTER_2, 28, TRUE },               // Team Magma
+    { TRAINER_GRUNT_WEATHER_INST_4, 28, FALSE },              // Team Aqua
+    { TRAINER_SHELLY_WEATHER_INSTITUTE, 28, FALSE },          // Aqua Admin
+    { TRAINER_GRUNT_MAGMA_HIDEOUT_1, 29, TRUE },              // Team Magma
+    { TRAINER_GRUNT_MAGMA_HIDEOUT_10, 29, TRUE },             // Team Magma
+    { TRAINER_GRUNT_MAGMA_HIDEOUT_11, 29, TRUE },             // Team Magma
+    { TRAINER_GRUNT_MAGMA_HIDEOUT_12, 29, TRUE },             // Team Magma
+    { TRAINER_GRUNT_MAGMA_HIDEOUT_13, 29, TRUE },             // Team Magma
+    { TRAINER_GRUNT_MAGMA_HIDEOUT_14, 29, TRUE },             // Team Magma
+    { TRAINER_GRUNT_MAGMA_HIDEOUT_15, 29, TRUE },             // Team Magma
+    { TRAINER_GRUNT_MAGMA_HIDEOUT_16, 29, TRUE },             // Team Magma
+    { TRAINER_GRUNT_MAGMA_HIDEOUT_2, 29, TRUE },              // Team Magma
+    { TRAINER_GRUNT_MAGMA_HIDEOUT_3, 29, TRUE },              // Team Magma
+    { TRAINER_GRUNT_MAGMA_HIDEOUT_6, 29, TRUE },              // Team Magma
+    { TRAINER_GRUNT_MAGMA_HIDEOUT_7, 29, TRUE },              // Team Magma
+    { TRAINER_GRUNT_MAGMA_HIDEOUT_8, 29, TRUE },              // Team Magma
+    { TRAINER_GRUNT_MAGMA_HIDEOUT_9, 29, TRUE },              // Team Magma
+    { TRAINER_TABITHA_MAGMA_HIDEOUT, 29, TRUE },              // Magma Admin
+    { TRAINER_GRUNT_MT_PYRE_3, 30, FALSE },                   // Team Aqua
+    { TRAINER_GRUNT_MT_PYRE_4, 30, FALSE },                   // Team Aqua
+    { TRAINER_GRUNT_AQUA_HIDEOUT_2, 31, FALSE },              // Team Aqua
+    { TRAINER_GRUNT_AQUA_HIDEOUT_7, 31, FALSE },              // Team Aqua
+    { TRAINER_GRUNT_SPACE_CENTER_3, 31, TRUE },               // Team Magma
+    { TRAINER_GRUNT_UNUSED, 31, TRUE },                       // Team Magma
+    { TRAINER_GRUNT_AQUA_HIDEOUT_1, 32, FALSE },              // Team Aqua
+    { TRAINER_GRUNT_AQUA_HIDEOUT_3, 32, FALSE },              // Team Aqua
+    { TRAINER_GRUNT_AQUA_HIDEOUT_4, 32, FALSE },              // Team Aqua
+    { TRAINER_GRUNT_AQUA_HIDEOUT_5, 32, FALSE },              // Team Aqua
+    { TRAINER_GRUNT_AQUA_HIDEOUT_6, 32, FALSE },              // Team Aqua
+    { TRAINER_GRUNT_AQUA_HIDEOUT_8, 32, FALSE },              // Team Aqua
+    { TRAINER_GRUNT_MT_PYRE_1, 32, FALSE },                   // Team Aqua
+    { TRAINER_GRUNT_MT_PYRE_2, 32, FALSE },                   // Team Aqua
+    { TRAINER_GRUNT_SPACE_CENTER_1, 32, TRUE },               // Team Magma
+    { TRAINER_GRUNT_SPACE_CENTER_4, 32, TRUE },               // Team Magma
+    { TRAINER_GRUNT_SPACE_CENTER_5, 32, TRUE },               // Team Magma
+    { TRAINER_GRUNT_SPACE_CENTER_6, 32, TRUE },               // Team Magma
+    { TRAINER_GRUNT_SPACE_CENTER_7, 32, TRUE },               // Team Magma
+    { TRAINER_MATT, 34, FALSE },                              // Aqua Admin
+    { TRAINER_GRUNT_SEAFLOOR_CAVERN_5, 35, FALSE },           // Team Aqua
+    { TRAINER_GRUNT_SEAFLOOR_CAVERN_1, 36, FALSE },           // Team Aqua
+    { TRAINER_GRUNT_SEAFLOOR_CAVERN_2, 36, FALSE },           // Team Aqua
+    { TRAINER_GRUNT_SEAFLOOR_CAVERN_3, 36, FALSE },           // Team Aqua
+    { TRAINER_GRUNT_SEAFLOOR_CAVERN_4, 36, FALSE },           // Team Aqua
+    { TRAINER_SHELLY_SEAFLOOR_CAVERN, 37, FALSE },            // Aqua Admin
+    { TRAINER_TABITHA_MOSSDEEP, 38, TRUE },                   // Magma Admin
+};
+
 #endif // GUARD_CONSTANTS_ROGUE_DUNGEON_TRAINERS_H

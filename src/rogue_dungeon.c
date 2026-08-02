@@ -515,13 +515,50 @@ static const u16 sDungeonBossGfx[] =
     OBJ_EVENT_GFX_DRAKE, OBJ_EVENT_GFX_WALLACE,
 };
 
-// Mini bosses. Team Aqua and Magma grunts, chosen from the seed.
-static const u16 sMiniBosses[] =
+// Mini bosses are picked by level from sRogueDungeonMiniBosses, not from a
+// fixed list. A fixed list meant the floor-5 mini boss was whatever grunt
+// happened to be in it - which was an Aqua Hideout one, so a level 31 Zubat
+// against a player still around level 10.
+//
+// Slightly above the floor target, since it is still a boss.
+#define DUNGEON_MINIBOSS_LEVEL_BONUS 3
+
+static u16 PickMiniBossForLevel(u8 target, bool8 *isMagma)
 {
-    TRAINER_GRUNT_AQUA_HIDEOUT_1, TRAINER_GRUNT_AQUA_HIDEOUT_2,
-    TRAINER_GRUNT_AQUA_HIDEOUT_3, TRAINER_GRUNT_AQUA_HIDEOUT_4,
-    TRAINER_GRUNT_SEAFLOOR_CAVERN_1, TRAINER_GRUNT_SEAFLOOR_CAVERN_2,
-};
+    u32 i, first = 0, last = 0;
+    u32 window;
+
+    for (window = 3; window < 64; window += 4)
+    {
+        bool8 found = FALSE;
+
+        for (i = 0; i < ARRAY_COUNT(sRogueDungeonMiniBosses); i++)
+        {
+            u32 level = sRogueDungeonMiniBosses[i].avgLevel;
+
+            if (level + window >= target && level <= target + window)
+            {
+                if (!found)
+                {
+                    first = i;
+                    found = TRUE;
+                }
+                last = i;
+            }
+        }
+
+        if (found)
+        {
+            u32 pick = first + (DungeonRandom() % (last - first + 1));
+
+            *isMagma = sRogueDungeonMiniBosses[pick].isMagma;
+            return sRogueDungeonMiniBosses[pick].trainerId;
+        }
+    }
+
+    *isMagma = sRogueDungeonMiniBosses[0].isMagma;
+    return sRogueDungeonMiniBosses[0].trainerId;
+}
 
 bool8 RogueDungeon_IsBossFloor(u16 floor)
 {
@@ -566,8 +603,12 @@ static void PrepareArenaFloor(u16 floor)
     }
     else if (dungeon < DUNGEON_GYM_DUNGEONS)
     {
-        sTrainerIds[0] = sMiniBosses[DungeonRandom() % ARRAY_COUNT(sMiniBosses)];
-        sTrainerGfx[0] = OBJ_EVENT_GFX_AQUA_MEMBER_M;
+        bool8 isMagma = FALSE;
+
+        sTrainerIds[0] = PickMiniBossForLevel(
+            FloorTargetLevel(floor) + DUNGEON_MINIBOSS_LEVEL_BONUS, &isMagma);
+        sTrainerGfx[0] = isMagma ? OBJ_EVENT_GFX_MAGMA_MEMBER_M
+                                 : OBJ_EVENT_GFX_AQUA_MEMBER_M;
     }
     else
     {
