@@ -30,6 +30,11 @@
 #define DUNGEON_ELEVATION_FLOOR 3
 #define DUNGEON_ELEVATION_WALL  0
 
+// The floor is regenerated from this seed rather than stored, so a whole floor
+// costs 2 bytes of save data. Claiming a spare var keeps the SaveBlock layout
+// untouched, which matters because changing it invalidates existing saves.
+#define VAR_ROGUE_DUNGEON_SEED VAR_UNUSED_0x40FE
+
 #define DUNGEON_WIDTH  48
 #define DUNGEON_HEIGHT 48
 

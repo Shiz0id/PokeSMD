@@ -1,6 +1,8 @@
 #include "global.h"
+#include "event_data.h"
 #include "fieldmap.h"
 #include "random.h"
+#include "constants/vars.h"
 #include "rogue_dungeon.h"
 
 // Runtime dungeon floor generator.
@@ -17,6 +19,23 @@ struct DungeonRoom
 {
     u8 x, y, w, h;
 };
+
+// Local PRNG. Generation must not consume or perturb the global RNG - if it
+// did, the floor would depend on how many steps the player had taken, and the
+// same seed would stop reproducing the same floor.
+static u32 sDungeonRngState;
+
+static void SeedDungeonRng(u16 seed)
+{
+    sDungeonRngState = ISO_RANDOMIZE1(seed);
+}
+
+// High bits only; the low bits of an LCG have short periods.
+static u16 DungeonRandom(void)
+{
+    sDungeonRngState = ISO_RANDOMIZE1(sDungeonRngState);
+    return sDungeonRngState >> 16;
+}
 
 static u16 MakeBlock(u16 metatile, u8 collision, u8 elevation)
 {
@@ -115,6 +134,23 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
     // Only the collision bit matters during carving.
     u16 wallBlock = MakeBlock(DUNGEON_METATILE_WALL_INTERIOR_MID, 1, DUNGEON_ELEVATION_WALL);
     s32 x, y, i, attempt;
+    u16 seed;
+
+    // setPlayerPosition distinguishes the two callers. FALSE is LoadMapFromWarp
+    // - the player is entering, so roll a new floor. TRUE is CB2_ContinueSavedGame
+    // - reuse the stored seed so a reload reproduces the floor the player saved
+    // on, rather than dropping them inside solid rock.
+    if (setPlayerPosition == FALSE)
+    {
+        seed = Random();
+        VarSet(VAR_ROGUE_DUNGEON_SEED, seed);
+    }
+    else
+    {
+        seed = VarGet(VAR_ROGUE_DUNGEON_SEED);
+    }
+
+    SeedDungeonRng(seed);
 
     gBackupMapLayout.map = backupMapData;
     gBackupMapLayout.width = DUNGEON_WIDTH + MAP_OFFSET_W;
@@ -131,10 +167,10 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
         struct DungeonRoom room;
         bool8 clear = TRUE;
 
-        room.w = DUNGEON_ROOM_MIN + (Random() % (DUNGEON_ROOM_MAX - DUNGEON_ROOM_MIN + 1));
-        room.h = DUNGEON_ROOM_MIN + (Random() % (DUNGEON_ROOM_MAX - DUNGEON_ROOM_MIN + 1));
-        room.x = 1 + (Random() % (DUNGEON_WIDTH  - room.w - 2));
-        room.y = 1 + (Random() % (DUNGEON_HEIGHT - room.h - 2));
+        room.w = DUNGEON_ROOM_MIN + (DungeonRandom() % (DUNGEON_ROOM_MAX - DUNGEON_ROOM_MIN + 1));
+        room.h = DUNGEON_ROOM_MIN + (DungeonRandom() % (DUNGEON_ROOM_MAX - DUNGEON_ROOM_MIN + 1));
+        room.x = 1 + (DungeonRandom() % (DUNGEON_WIDTH  - room.w - 2));
+        room.y = 1 + (DungeonRandom() % (DUNGEON_HEIGHT - room.h - 2));
 
         for (i = 0; i < roomCount; i++)
         {
