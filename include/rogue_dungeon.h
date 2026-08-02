@@ -93,7 +93,21 @@
 // and needs no autotiling at all.
 #define WOODS_METATILE_GRASS      0x001  // plain, no encounters
 #define WOODS_METATILE_TALL_GRASS 0x00D  // MB_TALL_GRASS
-#define WOODS_METATILE_LONG_GRASS 0x015  // MB_LONG_GRASS, the Route 119 kind
+
+// The woods has no long grass. It once did, ended with 0x016/0x017 - but those
+// are SOLID in all 691 of their vanilla placements across every General+Rustboro
+// and General+Fortree layout, always sitting under the leafy canopy
+// 0x0C6/0x0C7 with plain grass below. They are a canopy base row, and drawing
+// them passable put a walkable hedge fragment under every long grass patch.
+//
+// The reasoning that produced it is worth remembering: they sit immediately
+// after 0x015 in the metatile grid. That is adjacency, not evidence, and it is
+// the same mistake that nearly made the tree crown a grass base row.
+//
+// There is no correct replacement here: gTileset_General contains no
+// MB_LONG_GRASS_SOUTH_EDGE metatile at all. The one that exists, 0x208, is in
+// gTileset_Fortree, so long grass belongs to the jungle - which is also where
+// vanilla puts it, Petalburg Woods having none.
 #define WOODS_METATILE_TREE_TL    0x1D4
 #define WOODS_METATILE_TREE_TR    0x1D5
 #define WOODS_METATILE_TREE_BL    0x1DC
@@ -106,11 +120,6 @@
 // mass on 0x1DC is what leaves the trunk tip dangling.
 #define WOODS_METATILE_TREE_BASE_L 0x1E4
 #define WOODS_METATILE_TREE_BASE_R 0x1E5
-
-// Where long grass meets open ground. Sits immediately after the long grass
-// itself in the tile grid, and shows blades meeting a dark base.
-#define WOODS_METATILE_LONG_GRASS_BASE_L 0x016
-#define WOODS_METATILE_LONG_GRASS_BASE_R 0x017
 
 // The top of a tree, drawn into the block ABOVE its canopy row - the crown
 // poking up out of whatever is already there. Which variant depends on that

@@ -174,9 +174,11 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .elevationWall = DUNGEON_ELEVATION_WALL,
         .floor = WOODS_METATILE_GRASS,
         .tallGrass = WOODS_METATILE_TALL_GRASS,
-        .longGrass = WOODS_METATILE_LONG_GRASS,
-        .longGrassBaseL = WOODS_METATILE_LONG_GRASS_BASE_L,
-        .longGrassBaseR = WOODS_METATILE_LONG_GRASS_BASE_R,
+        // No long grass. Vanilla Petalburg Woods has none - it is the Route 119
+        // kind - and gTileset_General has no MB_LONG_GRASS_SOUTH_EDGE metatile
+        // at all, so under Rustboro there is nothing correct to end a patch
+        // with. It belongs to the jungle, which has 0x208.
+        .longGrass = 0,
         .aboveTreeFloorL = WOODS_METATILE_ABOVE_TREE_L,
         .aboveTreeFloorR = WOODS_METATILE_ABOVE_TREE_R,
         .aboveTreeGrassL = WOODS_METATILE_ABOVE_TREE_TALL_L,
@@ -1560,8 +1562,13 @@ static void PrepareFloor(u16 seed)
 
             while (patches-- && sGrassPatchCount < DUNGEON_MAX_GRASS_PATCHES)
             {
+                // The draw happens whether or not the theme has long grass, so
+                // that a theme losing it does not shift the RNG stream and
+                // silently relay out every floor. && would short-circuit.
+                bool8 wantLong = (DungeonRandom() % 4 == 0);
+
                 sGrassPatchLong[sGrassPatchCount] =
-                    (theme->longGrass != 0) && (DungeonRandom() % 4 == 0);
+                    (theme->longGrass != 0) && wantLong;
                 sGrassPatchX[sGrassPatchCount] =
                     (sRooms[i].x + (DungeonRandom() % sRooms[i].w)) / 2;
                 sGrassPatchY[sGrassPatchCount] =

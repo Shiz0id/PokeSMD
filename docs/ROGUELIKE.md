@@ -220,8 +220,22 @@ y-aligned in vanilla). Rows: `0x1D4/0x1D5` canopy, `0x1DC/0x1DD` trunk,
 `0x1E4/0x1E5` ground contact — the third row used **only where a mass ends**.
 Vanilla never leaves `0x1DC` exposed; doing so dangles the trunk in mid air.
 
-Grass: `0x001` plain (no encounters), `0x00D` tall, `0x015` long, with
-`0x016/0x017` as the long grass base row.
+Grass: `0x001` plain (no encounters) and `0x00D` tall. **No long grass** —
+vanilla Petalburg Woods has none, it being the Route 119 kind.
+
+It briefly had some, ended with `0x016/0x017`, and that was wrong twice over.
+Those two are **solid in all 691 of their vanilla placements** across every
+General+Rustboro and General+Fortree layout, always under the leafy canopy
+`0x0C6/0x0C7` with plain grass below: they are a canopy base row, so drawing
+them passable put a walkable hedge fragment under every long grass patch. And
+there is no correct replacement, because **`gTileset_General` contains no
+`MB_LONG_GRASS_SOUTH_EDGE` metatile at all** — the only one, `0x208`, is in
+`gTileset_Fortree`. Long grass therefore belongs to the jungle.
+
+The reasoning that produced the bug is the thing to remember: `0x016/0x017` sit
+immediately after `0x015` in the metatile grid. **Adjacency in the grid is not
+evidence.** It is the same mistake that nearly turned the tree crown into a
+grass base row.
 
 A tree also has a **fourth row above it**. Vanilla draws the crown poking up
 into the block above the canopy, composited over whatever is already there:

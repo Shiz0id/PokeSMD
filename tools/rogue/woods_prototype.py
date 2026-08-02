@@ -15,10 +15,11 @@ from verify_seeding import DungeonRng
 # metatile ids, from mining LAYOUT_PETALBURG_WOODS
 GRASS = 0x001                          # plain, no encounters
 TALL = 0x00D                           # MB_TALL_GRASS
-LONG = 0x015                           # MB_LONG_GRASS, the Route 119 kind
+HAS_LONG = False                       # the woods theme has no long grass
+LONG = 0x015                           # MB_LONG_GRASS, kept for the RNG draw
 TREE = (0x1D4, 0x1D5, 0x1DC, 0x1DD)   # TL, TR, BL, BR
 TREE_BASE = (0x1E4, 0x1E5)             # ground contact, where a mass ends
-LONG_BASE = (0x016, 0x017)             # long grass meeting open ground
+LONG_BASE = (0x016, 0x017)             # NOT a long grass base - see the header
 ABOVE_TREE = (0x1CE, 0x1CF)            # a tree's crown over plain grass
 ABOVE_TREE_TALL = (0x1C6, 0x1C7)       # ... and over tall grass
 
@@ -80,7 +81,10 @@ def generate(seed):
     grass = [[CELL_PLAIN] * CELLS_W for _ in range(CELLS_H)]
     for (rx, ry, rw, rh) in rooms:
         for _ in range(rng.next() % 3):          # 0-2 patches per clearing
-            kind = CELL_LONG if rng.next() % 4 == 0 else CELL_TALL
+            # The draw happens either way, matching the C: a theme without long
+            # grass must not shift the RNG stream and relay out every floor.
+            want_long = rng.next() % 4 == 0
+            kind = CELL_LONG if (HAS_LONG and want_long) else CELL_TALL
             cx = rx + rng.next() % rw
             cy = ry + rng.next() % rh
             rad = 1 + rng.next() % 2
