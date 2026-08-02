@@ -250,7 +250,14 @@ static void ApplyWallAutotiling(u16 *map)
             openWest  = !IsWallAt(map, x - 1, y);
             openEast  = !IsWallAt(map, x + 1, y);
 
-            if (openSouth)
+            if (openNorth && openSouth)
+            {
+                // One block thick top to bottom. Must precede the face case,
+                // which would otherwise match on openSouth alone and shade only
+                // the lower edge.
+                metatile = DUNGEON_METATILE_WALL_SLIVER_HORZ;
+            }
+            else if (openSouth)
             {
                 // Floor below, so this is the wall face the camera sees. Takes
                 // priority over every other edge - it is the most visible one.
@@ -270,6 +277,12 @@ static void ApplyWallAutotiling(u16 *map)
                     metatile = DUNGEON_METATILE_WALL_NORTH_RIGHT;
                 else
                     metatile = DUNGEON_METATILE_WALL_NORTH_MID;
+            }
+            else if (openWest && openEast)
+            {
+                // One block thick left to right. Placed after the north/south
+                // cases so a column still gets a proper cap at each end.
+                metatile = DUNGEON_METATILE_WALL_SLIVER_VERT;
             }
             else if (openWest)
             {

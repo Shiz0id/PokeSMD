@@ -46,6 +46,15 @@
 #define DUNGEON_METATILE_WALL_CORNER_NE       0x21C  // open SW diagonal
 #define DUNGEON_METATILE_WALL_CORNER_SOUTH    0x223  // open NW or NE diagonal
 
+// One-block-thick walls, which vanilla has no art for - its cave walls are
+// always at least two thick. Appended to the Cave secondary tileset rather
+// than drawn: a metatile is only 8 references to existing 8x8 tiles, so these
+// splice the west-facing half of 0x210 to the east-facing half of 0x212, and
+// the rock top of 0x209 to the wall face of 0x219. See
+// scratchpad/compose_metatiles.py.
+#define DUNGEON_METATILE_WALL_SLIVER_VERT     0x39E  // floor to both west and east
+#define DUNGEON_METATILE_WALL_SLIVER_HORZ     0x39F  // floor to both north and south
+
 // Caves only ever use elevations 0 and 3 in vanilla.
 #define DUNGEON_ELEVATION_FLOOR 3
 #define DUNGEON_ELEVATION_WALL  0
