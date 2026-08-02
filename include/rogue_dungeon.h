@@ -63,6 +63,28 @@
 #define DUNGEON_METATILE_WALL_SLIVER_HORZ_R   0x3A3  // + floor east
 #define DUNGEON_METATILE_WALL_SLIVER_ISOLATED 0x3A4  // floor on all four sides
 
+// Pale sand lying on the cave floor, as a 3x3 region autotile. Vanilla uses it
+// for Shoal Cave's tidal beach, the Desert Underpass and Altering Cave - four
+// General+Cave layouts in all - so it is the tileset's own idea of a floor
+// patch rather than something invented here. All twelve are MB_CAVE, like the
+// floor, so encounters are unaffected.
+//
+// The _WALL row is the top edge where a wall sits above instead of floor: the
+// wall's base is baked into the art, which is why it cannot be shared with the
+// plain top edge.
+#define DUNGEON_METATILE_SAND_NW      0x298
+#define DUNGEON_METATILE_SAND_N       0x299
+#define DUNGEON_METATILE_SAND_NE      0x29A
+#define DUNGEON_METATILE_SAND_W       0x2A0
+#define DUNGEON_METATILE_SAND_MID     0x2A1
+#define DUNGEON_METATILE_SAND_E       0x2A2
+#define DUNGEON_METATILE_SAND_SW      0x2A8
+#define DUNGEON_METATILE_SAND_S       0x2A9
+#define DUNGEON_METATILE_SAND_SE      0x2AA
+#define DUNGEON_METATILE_SAND_NW_WALL 0x29B
+#define DUNGEON_METATILE_SAND_N_WALL  0x29C
+#define DUNGEON_METATILE_SAND_NE_WALL 0x29D
+
 // Petalburg Woods: gTileset_General + gTileset_Rustboro. Mined from
 // LAYOUT_PETALBURG_WOODS the same way the cave values were.
 //
@@ -228,6 +250,23 @@
 #define MIRAGETOWER_METATILE_SLIVER_HORZ_R   0x3A3
 #define MIRAGETOWER_METATILE_SLIVER_ISOLATED 0x3A4
 
+// The sand drift, the tower's signature floor feature and the one thing that
+// stops this theme reading as a Granite Cave recolour. Spelled out separately
+// from DUNGEON_METATILE_SAND_* even though the ids match, for the same reason
+// the slivers are: the equality is a property of the reskin, not a guarantee.
+#define MIRAGETOWER_METATILE_DRIFT_NW      0x298
+#define MIRAGETOWER_METATILE_DRIFT_N       0x299
+#define MIRAGETOWER_METATILE_DRIFT_NE      0x29A
+#define MIRAGETOWER_METATILE_DRIFT_W       0x2A0
+#define MIRAGETOWER_METATILE_DRIFT_MID     0x2A1
+#define MIRAGETOWER_METATILE_DRIFT_E       0x2A2
+#define MIRAGETOWER_METATILE_DRIFT_SW      0x2A8
+#define MIRAGETOWER_METATILE_DRIFT_S       0x2A9
+#define MIRAGETOWER_METATILE_DRIFT_SE      0x2AA
+#define MIRAGETOWER_METATILE_DRIFT_NW_WALL 0x29B
+#define MIRAGETOWER_METATILE_DRIFT_N_WALL  0x29C
+#define MIRAGETOWER_METATILE_DRIFT_NE_WALL 0x29D
+
 // Rocks embedded in the sand mass. Drop-in swaps for the wall interior, so they
 // keep the collision they replace.
 #define MIRAGETOWER_METATILE_ROCKS_A        0x202  // a pair of boulders
@@ -293,6 +332,32 @@ enum DungeonStampCorner
     STAMP_COUNT,
 };
 
+// A soft region lying ON the floor - Mirage Tower's sand drifts, and the same
+// sand in the cave, where vanilla uses it for Shoal Cave's beach and the Desert
+// Underpass. Unlike RogueDecor, which swaps one block for another, this is a
+// REGION autotile: a cell's art depends on which sides the region continues
+// into, so the blob gets rounded edges instead of a hard rectangle.
+//
+// The fourth row is the top edge where a WALL sits above rather than plain
+// floor. Vanilla bakes the wall's own base into those pieces, so they are a
+// skirt and a region edge at once - 0x29B-0x29D against 0x298-0x29A.
+//
+// Every piece keeps the floor's own collision and elevation, and in both themes
+// every piece carries MB_CAVE like the floor does, so neither movement nor
+// encounters change. This pass can no more affect reachability than ApplyDecor.
+enum DungeonPatchSlot
+{
+    PATCH_NW,      PATCH_N,      PATCH_NE,
+    PATCH_W,       PATCH_MID,    PATCH_E,
+    PATCH_SW,      PATCH_S,      PATCH_SE,
+    PATCH_NW_WALL, PATCH_N_WALL, PATCH_NE_WALL,
+    PATCH_SLOT_COUNT,
+};
+
+// Blobs are stamped as ellipses from a seed-derived centre and radius. A dozen
+// is plenty to break up a 48x48 floor and keeps the pass cheap.
+#define DUNGEON_MAX_PATCH_BLOBS 12
+
 // One cosmetic wall swap: wherever `base` was painted, `variant` may replace it.
 // Keyed on the painted metatile rather than on a wall slot, so a variant that
 // suits several slots needs only one entry, and a theme whose slots share a
@@ -344,6 +409,13 @@ struct RogueDungeonTheme
     u8 skirtCount;
     u16 shadowCorner;  // floor with skirted wall both north and west, or only
                        // diagonally above-left
+
+    // Soft regions laid over the floor and autotiled at their edges. Runs
+    // before the skirts, so a wall's own edge art still wins where a theme has
+    // both. patchBlobs of 0 disables the pass.
+    u16 patch[PATCH_SLOT_COUNT];
+    u8 patchBlobs;     // ellipses stamped per floor, capped at the max above
+    u8 patchRadius;    // nominal radius; each blob varies a little either way
 
     // Cosmetic swaps applied to already-painted wall blocks. Collision is not
     // touched, so decoration can never affect connectivity.

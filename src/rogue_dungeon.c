@@ -222,6 +222,27 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [WALL_SLIVER_HORZ_R]  = DUNGEON_METATILE_WALL_SLIVER_HORZ_R,
             [WALL_SLIVER_ISOLATED]= DUNGEON_METATILE_WALL_SLIVER_ISOLATED,
         },
+        // Pale sand pooling on the cave floor. Vanilla draws exactly this in
+        // Shoal Cave and the Desert Underpass; Granite Cave itself has no floor
+        // variety at all, which is why our cave floors read so flat.
+        .patch =
+        {
+            [PATCH_NW]      = DUNGEON_METATILE_SAND_NW,
+            [PATCH_N]       = DUNGEON_METATILE_SAND_N,
+            [PATCH_NE]      = DUNGEON_METATILE_SAND_NE,
+            [PATCH_W]       = DUNGEON_METATILE_SAND_W,
+            [PATCH_MID]     = DUNGEON_METATILE_SAND_MID,
+            [PATCH_E]       = DUNGEON_METATILE_SAND_E,
+            [PATCH_SW]      = DUNGEON_METATILE_SAND_SW,
+            [PATCH_S]       = DUNGEON_METATILE_SAND_S,
+            [PATCH_SE]      = DUNGEON_METATILE_SAND_SE,
+            [PATCH_NW_WALL] = DUNGEON_METATILE_SAND_NW_WALL,
+            [PATCH_N_WALL]  = DUNGEON_METATILE_SAND_N_WALL,
+            [PATCH_NE_WALL] = DUNGEON_METATILE_SAND_NE_WALL,
+        },
+        .patchBlobs = 8,
+        .patchRadius = 4,
+
         .species = sCaveSpecies,
         .speciesCount = ARRAY_COUNT(sCaveSpecies),
     },
@@ -358,6 +379,27 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [WALL_SLIVER_HORZ_R]  = MIRAGETOWER_METATILE_SLIVER_HORZ_R,
             [WALL_SLIVER_ISOLATED]= MIRAGETOWER_METATILE_SLIVER_ISOLATED,
         },
+
+        // The sand drift, the tower's signature. Denser and larger than the
+        // cave's, because in vanilla Mirage Tower the drift is the dominant
+        // floor treatment rather than an occasional pool.
+        .patch =
+        {
+            [PATCH_NW]      = MIRAGETOWER_METATILE_DRIFT_NW,
+            [PATCH_N]       = MIRAGETOWER_METATILE_DRIFT_N,
+            [PATCH_NE]      = MIRAGETOWER_METATILE_DRIFT_NE,
+            [PATCH_W]       = MIRAGETOWER_METATILE_DRIFT_W,
+            [PATCH_MID]     = MIRAGETOWER_METATILE_DRIFT_MID,
+            [PATCH_E]       = MIRAGETOWER_METATILE_DRIFT_E,
+            [PATCH_SW]      = MIRAGETOWER_METATILE_DRIFT_SW,
+            [PATCH_S]       = MIRAGETOWER_METATILE_DRIFT_S,
+            [PATCH_SE]      = MIRAGETOWER_METATILE_DRIFT_SE,
+            [PATCH_NW_WALL] = MIRAGETOWER_METATILE_DRIFT_NW_WALL,
+            [PATCH_N_WALL]  = MIRAGETOWER_METATILE_DRIFT_N_WALL,
+            [PATCH_NE_WALL] = MIRAGETOWER_METATILE_DRIFT_NE_WALL,
+        },
+        .patchBlobs = 11,
+        .patchRadius = 5,
 
         // No skirts: this tileset's wall edges are opaque art rather than an
         // overlay that bleeds, exactly as in the cave, which has none either.
@@ -790,6 +832,184 @@ static void ApplySkirts(u16 *map, const struct RogueDungeonTheme *theme)
     }
 }
 
+// One soft region stamped on the floor. Ellipses rather than per-cell noise:
+// scattered single cells read as static, and the region art is drawn with
+// rounded corners, so it wants shapes that are actually round.
+struct PatchBlob
+{
+    s16 cx, cy;
+    u8 rx, ry;
+};
+
+// Derived from the seed alone, never from the dungeon RNG, for the same reason
+// the decor hash is: WriteFloorBlocks can repaint a floor without PrepareFloor
+// having run, so consuming RNG here would make a floor redraw itself
+// differently depending on how the player arrived.
+static u16 BlobHash(u16 seed, u32 index, u32 salt)
+{
+    u32 h = (u32)seed * 2654435761u;
+
+    h ^= (index + 1) * 2654435769u;
+    h ^= (salt + 1) * 2246822519u;
+    h ^= h >> 13;
+    h *= 2654435761u;
+    h ^= h >> 15;
+    return (u16)h;
+}
+
+static u32 BuildPatchBlobs(const struct RogueDungeonTheme *theme, u16 seed,
+                           struct PatchBlob *blobs)
+{
+    u32 count = theme->patchBlobs;
+    u32 i;
+
+    if (count > DUNGEON_MAX_PATCH_BLOBS)
+        count = DUNGEON_MAX_PATCH_BLOBS;
+
+    for (i = 0; i < count; i++)
+    {
+        u16 a = BlobHash(seed, i, 0);
+        u16 b = BlobHash(seed, i, 1);
+
+        blobs[i].cx = a % DUNGEON_WIDTH;
+        blobs[i].cy = b % DUNGEON_HEIGHT;
+        // Radius varies either side of the nominal so blobs do not all read as
+        // the same stamp repeated.
+        blobs[i].rx = theme->patchRadius + ((a >> 8) % 3) - 1;
+        blobs[i].ry = theme->patchRadius + ((b >> 8) % 3) - 1;
+    }
+    return count;
+}
+
+// Raw membership: geometry AND not-wall, deliberately nothing else. It must not
+// depend on what this pass has already written, or a cell painted earlier would
+// stop reading as part of the region and its neighbour would draw an edge
+// against the middle of the blob.
+static bool8 InPatchBlob(const u16 *map, const struct PatchBlob *blobs,
+                         u32 count, s32 x, s32 y)
+{
+    u32 i;
+
+    if (x < 0 || y < 0 || x >= DUNGEON_WIDTH || y >= DUNGEON_HEIGHT)
+        return FALSE;
+    if (IsWallAt(map, x, y))
+        return FALSE;
+
+    for (i = 0; i < count; i++)
+    {
+        s32 dx = x - blobs[i].cx;
+        s32 dy = y - blobs[i].cy;
+        u32 rx = blobs[i].rx;
+        u32 ry = blobs[i].ry;
+
+        // Cheap rejects before the multiplies - this runs for every floor cell
+        // and its four neighbours.
+        if (dx < 0)
+            dx = -dx;
+        if (dy < 0)
+            dy = -dy;
+        if ((u32)dx > rx || (u32)dy > ry)
+            continue;
+
+        if ((u32)(dx * dx) * ry * ry + (u32)(dy * dy) * rx * rx <= rx * rx * ry * ry)
+            return TRUE;
+    }
+    return FALSE;
+}
+
+// Membership proper, which is the raw blob eroded by one. Where a blob only
+// clips the corner of a room, or crosses a corridor at a single cell, the raw
+// shape leaves one- and two-block specks that read as a stray tile of the wrong
+// colour rather than as a drift. Requiring two neighbours removes those and
+// leaves the shape of anything larger untouched.
+//
+// Still a pure function of geometry, so it gives the same answer for a cell
+// whether it is asked about itself or as somebody's neighbour. That is the
+// whole reason the erosion tests the RAW shape rather than the eroded one.
+static bool8 IsPatchCell(const u16 *map, const struct PatchBlob *blobs,
+                         u32 count, s32 x, s32 y)
+{
+    u32 neighbours;
+
+    if (!InPatchBlob(map, blobs, count, x, y))
+        return FALSE;
+
+    neighbours = InPatchBlob(map, blobs, count, x, y - 1)
+               + InPatchBlob(map, blobs, count, x, y + 1)
+               + InPatchBlob(map, blobs, count, x - 1, y)
+               + InPatchBlob(map, blobs, count, x + 1, y);
+    return neighbours >= 2;
+}
+
+// Lays the theme's floor region over the carved floor and autotiles its edges.
+// Runs after the walls are painted, so the wall/floor split is final, and
+// before the skirts, so a wall's own edge art still wins for a theme that has
+// both. Collision and elevation come from the floor, so this cannot change what
+// is reachable.
+static void ApplyFloorPatches(u16 *map, const struct RogueDungeonTheme *theme,
+                              u16 seed)
+{
+    struct PatchBlob blobs[DUNGEON_MAX_PATCH_BLOBS];
+    u32 count;
+    s32 x, y;
+
+    if (theme->patchBlobs == 0 || theme->patch[PATCH_MID] == 0)
+        return;
+
+    count = BuildPatchBlobs(theme, seed, blobs);
+
+    for (y = 0; y < DUNGEON_HEIGHT; y++)
+    {
+        for (x = 0; x < DUNGEON_WIDTH; x++)
+        {
+            bool8 openNorth, openSouth, openWest, openEast;
+            enum DungeonPatchSlot slot;
+
+            // Most of a floor is wall, so reject those before any blob maths.
+            if (IsWallAt(map, x, y))
+                continue;
+            if (!IsPatchCell(map, blobs, count, x, y))
+                continue;
+
+            openNorth = !IsPatchCell(map, blobs, count, x, y - 1);
+            openSouth = !IsPatchCell(map, blobs, count, x, y + 1);
+            openWest  = !IsPatchCell(map, blobs, count, x - 1, y);
+            openEast  = !IsPatchCell(map, blobs, count, x + 1, y);
+
+            if (openNorth)
+            {
+                // A wall above means the wall's base is baked into the art, so
+                // these are a different row rather than the same one shaded.
+                if (IsWallAt(map, x, y - 1))
+                    slot = openWest ? PATCH_NW_WALL
+                         : openEast ? PATCH_NE_WALL : PATCH_N_WALL;
+                else
+                    slot = openWest ? PATCH_NW : openEast ? PATCH_NE : PATCH_N;
+            }
+            else if (openSouth)
+            {
+                slot = openWest ? PATCH_SW : openEast ? PATCH_SE : PATCH_S;
+            }
+            else if (openWest)
+            {
+                slot = PATCH_W;
+            }
+            else if (openEast)
+            {
+                slot = PATCH_E;
+            }
+            else
+            {
+                slot = PATCH_MID;
+            }
+
+            if (theme->patch[slot] != 0)
+                SetBlock(map, x, y,
+                         MakeBlock(theme->patch[slot], 0, theme->elevationFloor));
+        }
+    }
+}
+
 // Swaps the occasional block for a decorated variant of the same metatile.
 // The block's collision and elevation are copied over unchanged, so a wall
 // variant stays wall and a floor variant (Fiery Path's ember sparkles) stays
@@ -959,10 +1179,16 @@ static void ApplyWallAutotiling(u16 *map, const struct RogueDungeonTheme *theme)
         }
     }
 
-    // Both are cosmetic and both belong here rather than at the call sites:
+    // All three are cosmetic and belong here rather than at the call sites:
     // arena floors return early from WriteFloorBlocks, and this is the one
     // point every cave-generator path passes through. Running before the stairs
-    // are placed also means neither can paint over them.
+    // are placed also means none of them can paint over the exit.
+    //
+    // Order matters. Patches lay the floor region down first, then a wall's own
+    // skirt paints over it where a theme has both, then decor swaps individual
+    // blocks. Decor keys on the painted metatile, so it sees patch tiles as
+    // their own thing and will not put a floor variant on a sand drift.
+    ApplyFloorPatches(map, theme, VarGet(VAR_ROGUE_DUNGEON_SEED));
     ApplySkirts(map, theme);
     ApplyDecor(map, theme, VarGet(VAR_ROGUE_DUNGEON_SEED));
 }

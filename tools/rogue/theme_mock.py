@@ -25,6 +25,9 @@ SLOTS = ('INTERIOR_LEFT', 'INTERIOR_MID', 'INTERIOR_RIGHT',
          'SLIVER_VERT', 'SLIVER_HORZ', 'SLIVER_VERT_TOP', 'SLIVER_VERT_BOT',
          'SLIVER_HORZ_L', 'SLIVER_HORZ_R', 'SLIVER_ISOLATED')
 
+PATCH_SLOTS = ('NW', 'N', 'NE', 'W', 'MID', 'E', 'SW', 'S', 'SE',
+               'NW_WALL', 'N_WALL', 'NE_WALL')
+
 THEMES = {
     'newmauville': dict(
         primary='gTileset_General', secondary='gTileset_BikeShop',
@@ -70,6 +73,13 @@ THEMES = {
     'cave': dict(
         primary='gTileset_General', secondary='gTileset_Cave',
         floor=0x201, stairs=0x214,
+        # Pale sand pooling on the floor, as vanilla draws it in Shoal Cave and
+        # the Desert Underpass. The _WALL row has the wall's base baked in.
+        patch={'NW': 0x298, 'N': 0x299, 'NE': 0x29A,
+               'W': 0x2A0, 'MID': 0x2A1, 'E': 0x2A2,
+               'SW': 0x2A8, 'S': 0x2A9, 'SE': 0x2AA,
+               'NW_WALL': 0x29B, 'N_WALL': 0x29C, 'NE_WALL': 0x29D},
+        patch_blobs=8, patch_radius=4,
         wall={
             'INTERIOR_LEFT': 0x210, 'INTERIOR_MID': 0x211, 'INTERIOR_RIGHT': 0x212,
             'FACE_LEFT': 0x218, 'FACE_MID': 0x219, 'FACE_RIGHT': 0x21A,
@@ -95,6 +105,13 @@ THEMES = {
         # and cannot be expressed as a single- or double-wide swap.
         decor=[(0x211, 0x202, 0), (0x211, 0x203, 0), (0x211, 0x229, 0)],
         decor_rarity=14,
+        # The sand drift - denser and larger than the cave's, because in vanilla
+        # Mirage Tower it is the dominant floor treatment rather than a pool.
+        patch={'NW': 0x298, 'N': 0x299, 'NE': 0x29A,
+               'W': 0x2A0, 'MID': 0x2A1, 'E': 0x2A2,
+               'SW': 0x2A8, 'S': 0x2A9, 'SE': 0x2AA,
+               'NW_WALL': 0x29B, 'N_WALL': 0x29C, 'NE_WALL': 0x29D},
+        patch_blobs=11, patch_radius=5,
         wall={
             'INTERIOR_LEFT': 0x210, 'INTERIOR_MID': 0x211, 'INTERIOR_RIGHT': 0x212,
             'FACE_LEFT': 0x218, 'FACE_MID': 0x219, 'FACE_RIGHT': 0x21A,
@@ -146,6 +163,18 @@ def carve(seed):
         for y in range(min(ay, by), max(ay, by) + 1):
             solid[y][bx] = False
     return solid, rooms
+
+
+def blob_hash(seed, index, salt):
+    """The same hash as BlobHash() in src/rogue_dungeon.c."""
+    M = 0xFFFFFFFF
+    h = (seed * 2654435761) & M
+    h ^= ((index + 1) * 2654435769) & M
+    h ^= ((salt + 1) * 2246822519) & M
+    h ^= h >> 13
+    h = (h * 2654435761) & M
+    h ^= h >> 15
+    return h & 0xFFFF
 
 
 def decor_hash(seed, x, y):
@@ -200,6 +229,70 @@ def paint(solid, theme, seed=0):
             out[y][x] = wall[slot]
             used[slot] = used.get(slot, 0) + 1
 
+    # Floor regions, exactly as ApplyFloorPatches. Runs before the skirts so a
+    # wall's own edge art still wins for a theme that has both.
+    #
+    # The mock grid is 40x32 against the game's 48x48, so blob POSITIONS differ
+    # from what the same seed produces in game. The shapes and the edge choices
+    # do not, which is what this is for.
+    if theme.get('patch') and theme.get('patch_blobs'):
+        p = theme['patch']
+        radius = theme.get('patch_radius', 4)
+        blobs = []
+        for i in range(min(theme['patch_blobs'], 12)):
+            a, b = blob_hash(seed, i, 0), blob_hash(seed, i, 1)
+            blobs.append((a % W, b % H,
+                          radius + ((a >> 8) % 3) - 1,
+                          radius + ((b >> 8) % 3) - 1))
+
+        def in_blob(x, y):
+            """Raw membership, as InPatchBlob."""
+            if not (0 <= x < W and 0 <= y < H) or is_wall(x, y):
+                return False
+            for cx, cy, rx, ry in blobs:
+                dx, dy = abs(x - cx), abs(y - cy)
+                if dx > rx or dy > ry:
+                    continue
+                if dx * dx * ry * ry + dy * dy * rx * rx <= rx * rx * ry * ry:
+                    return True
+            return False
+
+        def in_patch(x, y):
+            """The raw blob eroded by one, as IsPatchCell - drops the one- and
+            two-block specks left where a blob only clips a room."""
+            if not in_blob(x, y):
+                return False
+            return (in_blob(x, y - 1) + in_blob(x, y + 1)
+                    + in_blob(x - 1, y) + in_blob(x + 1, y)) >= 2
+
+        for y in range(H):
+            for x in range(W):
+                if is_wall(x, y):
+                    continue
+                used['FLOOR_CELLS'] = used.get('FLOOR_CELLS', 0) + 1
+                if not in_patch(x, y):
+                    continue
+                n, s = not in_patch(x, y - 1), not in_patch(x, y + 1)
+                w, e = not in_patch(x - 1, y), not in_patch(x + 1, y)
+                if n:
+                    # A wall above bakes its own base into the art, so those are
+                    # a separate row rather than the same one shaded.
+                    if is_wall(x, y - 1):
+                        slot = 'NW_WALL' if w else 'NE_WALL' if e else 'N_WALL'
+                    else:
+                        slot = 'NW' if w else 'NE' if e else 'N'
+                elif s:
+                    slot = 'SW' if w else 'SE' if e else 'S'
+                elif w:
+                    slot = 'W'
+                elif e:
+                    slot = 'E'
+                else:
+                    slot = 'MID'
+                if p.get(slot):
+                    out[y][x] = p[slot]
+                    used['PATCH_' + slot] = used.get('PATCH_' + slot, 0) + 1
+
     # Wall skirts, exactly as ApplySkirts: keyed to the specific wall metatile
     # north or west, deterministic.
     if theme.get('skirts'):
@@ -230,12 +323,13 @@ def paint(solid, theme, seed=0):
                 if m:
                     out[y][x] = m
 
-    # Cosmetic wall swaps, position-hashed exactly as ApplyWallDecor does.
+    # Cosmetic swaps, position-hashed exactly as ApplyDecor does. NOT limited to
+    # wall cells - it keys on the painted metatile, so a floor base like Fiery
+    # Path's ember sparkles is as valid as a wall one. This used to skip
+    # non-wall cells and so could never show a floor variant.
     if theme.get('decor') and theme.get('decor_rarity'):
         for y in range(H):
             for x in range(W):
-                if not is_wall(x, y):
-                    continue
                 hsh = decor_hash(seed, x, y)
                 if hsh % theme['decor_rarity']:
                     continue
@@ -290,6 +384,19 @@ def main(name):
         n = totals.get(s, 0)
         mark = '' if n else '   <-- never hit, unvalidated'
         print(f'  {s:<18} {n:>5}  0x{theme["wall"][s]:03X}{mark}')
+
+    if theme.get('patch'):
+        print('\nfloor region slots:')
+        covered = 0
+        for s in PATCH_SLOTS:
+            n = totals.get('PATCH_' + s, 0)
+            covered += n
+            mark = '' if n else '   <-- never hit, unvalidated'
+            print(f'  {s:<18} {n:>5}  0x{theme["patch"][s]:03X}{mark}')
+        floor_cells = totals.get('FLOOR_CELLS', 0)
+        if floor_cells:
+            print(f'  {"":<18} {covered:>5}  of {floor_cells} floor blocks '
+                  f'({100.0 * covered / floor_cells:.0f}%)')
 
 
 if __name__ == '__main__':

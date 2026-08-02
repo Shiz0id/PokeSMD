@@ -60,9 +60,10 @@ donor, generator kind, metatile tables, species pool. **Adding a theme should be
 a table entry, not a generator edit.**
 
 Two generators exist:
-- `DUNGEON_GEN_CAVE` — 1×1 carve, then a nine-case wall autotile
+- `DUNGEON_GEN_CAVE` — 1×1 carve, then a nine-case wall autotile, then three
+  cosmetic passes: floor patches, wall skirts, block decor
 - `DUNGEON_GEN_WOODS` — 2×2 stamps on a half-resolution 24×24 grid, no
-  autotiling at all
+  autotiling at all, and none of the cosmetic passes
 
 ---
 
@@ -439,7 +440,41 @@ reports the runners-up per slot, and on a decorated vanilla map those runners-up
 *are* the decoration set — the same data that makes the wall table look
 undecisive.
 
-**Both passes are position-hashed, not drawn from the dungeon RNG.**
+**`ApplyFloorPatches` lays a soft region ON the floor and autotiles its edges.**
+Unlike decor, which swaps one block for another, this is a *region* autotile: a
+cell's art depends on which sides the region continues into, so a blob gets
+rounded edges rather than a hard rectangle. Mirage Tower's sand drift and the
+cave's sand pools are the same twelve metatiles.
+
+Three things make it work:
+
+- **Membership is a pure function of geometry** — inside an ellipse, and not a
+  wall. It must not depend on what the pass has already painted, or a cell
+  written earlier stops reading as part of the region and its neighbour draws an
+  edge through the middle of the blob.
+- **Eroded by one.** The raw ellipse leaves one- and two-block specks wherever a
+  blob merely clips a room, and a lone tile of a second colour reads as a
+  mistake rather than a drift. Requiring two of the four neighbours to be in the
+  raw shape removes them and leaves anything larger untouched. The erosion tests
+  the *raw* shape, not the eroded one, so it stays pure.
+- **A fourth row for "wall above".** Vanilla bakes the wall's own base into the
+  region's top edge where a wall sits above it (`0x29B`–`0x29D` against
+  `0x298`–`0x29A`), so those are separate slots, not the same art shaded.
+
+It runs before the skirts, so a wall's own edge art still wins for a theme with
+both, and before the stairs are placed, so it cannot bury the exit. Collision
+and elevation come from the floor, so like decor it cannot change reachability.
+
+**Only two themes have a region set**, and this is worth checking before
+designing one: Fiery Path's floor variety is `0x310`/`0x311`, which are already
+decor, and New Mauville's apparent region was its existing skirt tiles. The
+woods has none at all — and it uses `DUNGEON_GEN_WOODS`, which returns before
+`ApplyWallAutotiling` and so never reaches any of these passes. What the woods
+actually wants is a **tall grass base row** (`0x1C6`/`0x1C7` over
+`0x1CE`/`0x1CF`), the same 2-wide unit idea as the long grass base it already
+draws.
+
+**All three passes are position-hashed, not drawn from the dungeon RNG.**
 `WriteFloorBlocks` can repaint a floor without `PrepareFloor` having run again,
 so consuming RNG there would leave the state dependent on how the player arrived
 and a floor would redecorate itself on re-entry.
@@ -490,11 +525,9 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    a Champion's ace because of a spare Zubat is a bad moment.
 4. The rest stop has only a nurse. It reuses `LAYOUT_POKEMON_CENTER_1F` and is
    ready for a mart and game corner.
-5. Mirage Tower has no floor decoration, so its rooms are large flat expanses of
-   sand. The tileset's only floor variety is a pale sand drift drawn as a **3×3
-   region autotile** (`0x298`–`0x2AA`, all `MB_CAVE`), which neither
-   `RogueDecor` (1- or 2-wide swaps) nor `RogueSkirt` (south/east only) can
-   express. It wants a position-hashed blob pass — the same shape as
-   `GrassAt`'s blobs in the woods, but autotiled on exit. That pass is what
-   would stop this theme reading as a Granite Cave recolour, and it would give
-   the woods a way to draw grass patches with proper edges too.
+5. The woods still has no tall grass base row, so a patch of tall grass ends
+   flat where it meets open ground. `0x1C6`/`0x1C7` over `0x1CE`/`0x1CF` is the
+   2-wide unit vanilla uses, the same idea as the long grass base already
+   drawn — and it is the only one of these floor treatments the woods can take,
+   because `DUNGEON_GEN_WOODS` returns before `ApplyWallAutotiling` and so
+   reaches none of the patch, skirt or decor passes.
