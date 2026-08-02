@@ -1,4 +1,5 @@
 #include "global.h"
+#include "constants/rogue_dungeon.h"
 #include "clock.h"
 #include "new_game.h"
 #include "random.h"
@@ -135,6 +136,16 @@ static void ClearFrontierRecord(void)
 
 static void WarpToTruck(void)
 {
+    if (ROGUE_SLIM_NEW_GAME)
+    {
+        // A run starts in the dungeon. CB2_NewGame overrides gFieldCallback to
+        // skip the truck sequence to match.
+        SetWarpDestination(MAP_GROUP(MAP_ROGUE_DUNGEON_FLOOR),
+                           MAP_NUM(MAP_ROGUE_DUNGEON_FLOOR), WARP_ID_NONE, -1, -1);
+        WarpIntoMap();
+        return;
+    }
+
     if (IS_FRLG)
         SetWarpDestination(MAP_GROUP(MAP_PALLET_TOWN_PLAYERS_HOUSE_2F), MAP_NUM(MAP_PALLET_TOWN_PLAYERS_HOUSE_2F), WARP_ID_NONE, 6, 6);
     else

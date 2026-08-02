@@ -1,4 +1,5 @@
 #include "global.h"
+#include "constants/rogue_dungeon.h"
 #include "trainer_pokemon_sprites.h"
 #include "bg.h"
 #include "constants/rgb.h"
@@ -192,6 +193,8 @@ static void Task_HandleMainMenuInput(u8);
 static void Task_HandleMainMenuAPressed(u8);
 static void Task_HandleMainMenuBPressed(u8);
 static void Task_NewGameBirchSpeech_Init(u8);
+void CB2_RogueSlimNewGame(void);
+static void CB2_RogueSlimNewGame_AfterNaming(void);
 static void Task_DisplayMainMenuInvalidActionError(u8);
 static void AddBirchSpeechObjects(u8);
 static void Task_NewGameBirchSpeech_WaitToShowBirch(u8);
@@ -1091,6 +1094,14 @@ static void Task_HandleMainMenuAPressed(u8 taskId)
 
             gPlttBufferUnfaded[0] = RGB_BLACK;
             gPlttBufferFaded[0] = RGB_BLACK;
+            if (ROGUE_SLIM_NEW_GAME)
+            {
+                // Straight to name entry - no Birch speech, no gender select.
+                DestroyTask(taskId);
+                FreeAllWindowBuffers();
+                SetMainCallback2(CB2_RogueSlimNewGame);
+                return;
+            }
             gTasks[taskId].func = Task_NewGameBirchSpeech_Init;
             break;
         case ACTION_CONTINUE:
@@ -1293,6 +1304,21 @@ static void HighlightSelectedMainMenuItem(enum PartyMenuType menuType, u8 select
 #define tLotadSpriteId data[9]
 #define tBrendanSpriteId data[10]
 #define tMaySpriteId data[11]
+
+static void CB2_RogueSlimNewGame_AfterNaming(void)
+{
+    // CB2_NewGame runs NewGameInitData, which clears SaveBlock1 but leaves
+    // playerName in SaveBlock2 alone - the same ordering the Birch path relies
+    // on, so naming first is safe.
+    SetMainCallback2(CB2_NewGame);
+}
+
+void CB2_RogueSlimNewGame(void)
+{
+    DoNamingScreen(NAMING_SCREEN_PLAYER, gSaveBlock2Ptr->playerName,
+                   gSaveBlock2Ptr->playerGender, 0, 0,
+                   CB2_RogueSlimNewGame_AfterNaming);
+}
 
 static void Task_NewGameBirchSpeech_Init(u8 taskId)
 {

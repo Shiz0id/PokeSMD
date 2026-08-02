@@ -16,4 +16,8 @@
 // overnight, which would silently re-grant the team.
 #define FLAG_ROGUE_STARTER_GIVEN FLAG_UNUSED_0x918
 
+// Replaces the Birch intro with name entry alone and starts the player in the
+// dungeon instead of the moving truck. Set to FALSE to get vanilla back.
+#define ROGUE_SLIM_NEW_GAME TRUE
+
 #endif // GUARD_CONSTANTS_ROGUE_DUNGEON_H
