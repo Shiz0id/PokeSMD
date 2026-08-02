@@ -617,7 +617,7 @@ static const u16 sDungeonBossGfx[] =
 // Slightly above the floor target, since it is still a boss.
 #define DUNGEON_MINIBOSS_LEVEL_BONUS 3
 
-static u16 PickMiniBossForLevel(u8 target, bool8 *isMagma)
+static u16 PickMiniBossForLevel(u8 target, u16 *gfxId)
 {
     u32 i, first = 0, last = 0;
     u32 window;
@@ -645,12 +645,12 @@ static u16 PickMiniBossForLevel(u8 target, bool8 *isMagma)
         {
             u32 pick = first + (DungeonRandom() % (last - first + 1));
 
-            *isMagma = sRogueDungeonMiniBosses[pick].isMagma;
+            *gfxId = sRogueDungeonMiniBosses[pick].gfxId;
             return sRogueDungeonMiniBosses[pick].trainerId;
         }
     }
 
-    *isMagma = sRogueDungeonMiniBosses[0].isMagma;
+    *gfxId = sRogueDungeonMiniBosses[0].gfxId;
     return sRogueDungeonMiniBosses[0].trainerId;
 }
 
@@ -715,12 +715,11 @@ static void PrepareArenaFloor(u16 floor)
     }
     else if (dungeon < DUNGEON_GYM_DUNGEONS)
     {
-        bool8 isMagma = FALSE;
-
+        // The table carries its own sprite, so a female grunt looks female and
+        // a leader looks like the leader rather than like one of their grunts.
         sTrainerIds[0] = PickMiniBossForLevel(
-            FloorTargetLevel(floor) + DUNGEON_MINIBOSS_LEVEL_BONUS, &isMagma);
-        sTrainerGfx[0] = isMagma ? OBJ_EVENT_GFX_MAGMA_MEMBER_M
-                                 : OBJ_EVENT_GFX_AQUA_MEMBER_M;
+            FloorTargetLevel(floor) + DUNGEON_MINIBOSS_LEVEL_BONUS,
+            &sTrainerGfx[0]);
     }
     else
     {
