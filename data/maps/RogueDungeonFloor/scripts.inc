@@ -58,19 +58,43 @@ RogueDungeonFloor_EventScript_TrainerDone::
 
 @ Boss floors have no exit until the boss falls - that is what forces the fight,
 @ since an arena has no other way out.
+@
+@ This runs again every time the player talks to the boss afterwards: the engine
+@ answers "you already beat this trainer" by jumping to the post-battle script.
+@ So only the exit half may repeat. The reward half is behind a flag, or the ace
+@ could be taken once per conversation until the party was full of clones.
 RogueDungeonFloor_EventScript_BossDone::
 	special RogueDungeon_OnBossDefeated
+	goto_if_set FLAG_ROGUE_BOSS_REWARD_TAKEN, RogueDungeonFloor_EventScript_BossExit
+	setflag FLAG_ROGUE_BOSS_REWARD_TAKEN
+	call RogueDungeonFloor_EventScript_BossAce
+	goto RogueDungeonFloor_EventScript_BossExit
+
+@ The special declines on a mini boss floor, so this block is a no-op there.
+RogueDungeonFloor_EventScript_BossAce::
 	specialvar VAR_RESULT, RogueDungeon_PrepareBossAceOffer
-	goto_if_eq VAR_RESULT, FALSE, RogueDungeonFloor_EventScript_AfterAce
+	goto_if_eq VAR_RESULT, ROGUE_ACE_PARTY_FULL, RogueDungeonFloor_EventScript_BossAceNoRoom
+	compare VAR_RESULT, ROGUE_ACE_OFFER
+	goto_if_ne RogueDungeonFloor_EventScript_BossAceDone
 	msgbox RogueDungeonFloor_Text_OfferAce, MSGBOX_YESNO
 	compare VAR_RESULT, YES
-	goto_if_ne RogueDungeonFloor_EventScript_AfterAce
+	goto_if_ne RogueDungeonFloor_EventScript_BossAceDone
 	special RogueDungeon_GiveBossAce
 	playfanfare MUS_OBTAIN_TMHM
 	msgbox RogueDungeonFloor_Text_AceJoined, MSGBOX_DEFAULT
 	waitfanfare
+RogueDungeonFloor_EventScript_BossAceDone::
+	return
 
-RogueDungeonFloor_EventScript_AfterAce::
+@ Say so rather than saying nothing. There is still no swap UI, so a full party
+@ loses the ace - but the player should at least learn what they walked past.
+RogueDungeonFloor_EventScript_BossAceNoRoom::
+	msgbox RogueDungeonFloor_Text_AceNoRoom, MSGBOX_DEFAULT
+	return
+
+@ Never behind the reward flag. This is the only way off an arena floor, so it
+@ has to work on a re-talk too - otherwise a player who saved here is stuck.
+RogueDungeonFloor_EventScript_BossExit::
 	specialvar VAR_RESULT, RogueDungeon_IsDungeonEndFloor
 	goto_if_eq VAR_RESULT, TRUE, RogueDungeonFloor_EventScript_ToRestStop
 	msgbox RogueDungeonFloor_Text_BossCleared, MSGBOX_DEFAULT
@@ -113,3 +137,7 @@ RogueDungeonFloor_Text_OfferAce:
 
 RogueDungeonFloor_Text_AceJoined:
 	.string "{STR_VAR_1} joined your team!$"
+
+RogueDungeonFloor_Text_AceNoRoom:
+	.string "Their {STR_VAR_1} watched you go.\p"
+	.string "There was no room for it.$"

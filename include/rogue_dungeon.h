@@ -602,11 +602,16 @@ void RogueDungeon_PrepareNewFloor(void);
 void RogueDungeon_LoadObjectEventTemplates(void);
 void RogueDungeon_SetUpTrainerBattle(void);
 void RogueDungeon_OnBossDefeated(void);
-void RogueDungeon_IsDungeonEndFloor(void);
 void RogueDungeon_GiveChosenStarter(void);
 bool8 RogueDungeon_TryHandleWhiteOut(void);
-void RogueDungeon_PrepareBossAceOffer(void);
 void RogueDungeon_GiveBossAce(void);
+
+// specialvar targets. The script command stores the function's RETURN VALUE -
+// it does not read gSpecialVar_Result - and data/specials.inc is assembly, so
+// nothing checks the prototype. A void special here silently hands the script
+// whatever is left in r0, which is the return address. Keep these returning u16.
+u16 RogueDungeon_IsDungeonEndFloor(void);
+u16 RogueDungeon_PrepareBossAceOffer(void);
 bool8 RogueDungeon_IsGeneratedTrainer(void);
 bool8 RogueDungeon_HasTrainerBeenBeaten(u8 objectEventId);
 bool8 RogueDungeon_IsBossFloor(u16 floor);

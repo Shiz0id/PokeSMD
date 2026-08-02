@@ -96,6 +96,28 @@ Leaving `battleScriptRetAddrA` NULL makes the engine fall through to
 `gotobeatenscript` — an infinite script loop that never releases player control.
 Set **both**.
 
+Both pointers are ours, and both point at the same script. So **a boss's
+post-battle script runs again on every later conversation** — that is how the
+engine says "nothing to fight here". Anything one-shot in it (a reward, an item,
+a Pokemon) must sit behind a flag, or the player can farm it by talking. Anything
+that opens the way out must sit *outside* that flag, or a reload strands them.
+
+### `specialvar` reads the return value, not `gSpecialVar_Result`
+
+`ScrCmd_specialvar` is `*ptr = gSpecials[index]();`. `data/specials.inc` is
+assembly, so there is no prototype and **nothing warns**. A `void` special used
+with `specialvar` hands the script whatever is left in `r0`, which after the
+epilogue is the return address — never 0, never 1, so every `goto_if_eq` against
+`TRUE`/`FALSE` silently takes the wrong branch.
+
+This cost a softlock: `RogueDungeon_IsDungeonEndFloor` wrote `gSpecialVar_Result`
+and returned `void`, so the rest-stop warp was never taken, and since a gym floor
+deliberately draws no stairs the player was sealed in the arena.
+
+**Every `specialvar` target must return `u16`.** Writing `gSpecialVar_Result`
+instead compiles, links, and runs — it just answers wrong. `special` (no var) is
+unaffected; those may stay `void`.
+
 ### Stock trainer defeat flags are permanent
 
 We reuse the stock game's 709 trainers every floor, and their defeat flags were
@@ -591,8 +613,9 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
 
 1. Nothing happens after floor 130 — the boss table wraps to Roxanne.
 2. Six themes against thirteen dungeons, so they cycle past dungeon 6.
-3. A full party silently declines a boss ace — no swap UI. Being unable to take
-   a Champion's ace because of a spare Zubat is a bad moment.
+3. A full party still loses the boss ace — there is no swap UI. It now says so
+   instead of declining in silence, but being unable to take a Champion's ace
+   because of a spare Zubat is still a bad moment.
 4. The rest stop has only a nurse. It reuses `LAYOUT_POKEMON_CENTER_1F` and is
    ready for a mart and game corner.
 5. The woods still gets none of the cosmetic passes — `DUNGEON_GEN_WOODS`

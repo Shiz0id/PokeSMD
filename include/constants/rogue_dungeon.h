@@ -21,6 +21,20 @@
 // does not use.
 #define FLAG_ROGUE_OBJECT_UNUSED FLAG_UNUSED_0x919
 
+// Set once this floor's boss has paid out. Talking to a trainer the player has
+// already beaten runs the post-battle script again - that is how the engine
+// reports "no battle to fight here" - so without this the reward sequence
+// re-runs on every conversation, and a boss ace can be farmed into a full party
+// of clones. Cleared only when a genuinely new floor is rolled, so it survives
+// a save and reload on the arena.
+#define FLAG_ROGUE_BOSS_REWARD_TAKEN FLAG_UNUSED_0x918
+
+// RogueDungeon_PrepareBossAceOffer results. PARTY_FULL is distinct from NONE so
+// the player is told what they walked away from rather than nothing happening.
+#define ROGUE_ACE_NONE       0
+#define ROGUE_ACE_OFFER      1
+#define ROGUE_ACE_PARTY_FULL 2
+
 // map.json must declare exactly this many object events: the engine reads
 // templates from the save block but takes the count from ROM.
 #define DUNGEON_MAX_TRAINERS            4

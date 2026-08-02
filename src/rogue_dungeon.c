@@ -743,31 +743,43 @@ EWRAM_DATA static u16 sBossAceSpecies = SPECIES_NONE;
 EWRAM_DATA static u8 sBossAceLevel = 0;
 EWRAM_DATA static u8 sBossAceSlot = 0;
 
-// specialvar target. TRUE if there is an ace to offer and room to take it.
-// Buffers the species name into gStringVar1 for the prompt.
+// specialvar target. Returns one of the ROGUE_ACE_* results and buffers the
+// species name into gStringVar1, for both the offer and the party-full refusal.
 //
 // The ace is the last party member: the stock data orders a trainer's team
 // weakest to strongest, so the signature Pokemon is always last.
-void RogueDungeon_PrepareBossAceOffer(void)
+u16 RogueDungeon_PrepareBossAceOffer(void)
 {
     u16 trainerId = sTrainerIds[0];
     u8 size = GetTrainerPartySizeFromId(trainerId);
     const struct TrainerMon *party = GetTrainerPartyFromId(trainerId);
 
-    gSpecialVar_Result = FALSE;
     sBossAceSpecies = SPECIES_NONE;
 
+    // Only a gym leader's ace is on offer. Mini bosses run the same post-battle
+    // script - RogueDungeon_IsBossFloor covers both - and an Aqua grunt handing
+    // over its Poochyena was never the intent.
+    if (DungeonFloorWithin(VarGet(VAR_ROGUE_DUNGEON_FLOOR)) != DUNGEON_BOSS_FLOOR)
+        return ROGUE_ACE_NONE;
+
     if (sTrainerCount == 0 || size == 0 || party == NULL)
-        return;
-    if (CalculatePlayerPartyCount() >= PARTY_SIZE)
-        return;
+        return ROGUE_ACE_NONE;
 
     sBossAceSlot = size - 1;
-    sBossAceSpecies = party[sBossAceSlot].species;
     sBossAceLevel = party[sBossAceSlot].lvl;
 
-    StringCopy(gStringVar1, GetSpeciesName(sBossAceSpecies));
-    gSpecialVar_Result = TRUE;
+    // Buffered before the party check, so the refusal can name what was missed.
+    // Leaving it until after meant the full-party path showed whatever species
+    // name a previous message happened to leave in the buffer.
+    StringCopy(gStringVar1, GetSpeciesName(party[sBossAceSlot].species));
+
+    // sBossAceSpecies stays SPECIES_NONE, so RogueDungeon_GiveBossAce refuses
+    // even if something did reach it.
+    if (CalculatePlayerPartyCount() >= PARTY_SIZE)
+        return ROGUE_ACE_PARTY_FULL;
+
+    sBossAceSpecies = party[sBossAceSlot].species;
+    return ROGUE_ACE_OFFER;
 }
 
 // Grants the ace at the level the boss ran it, with the same moveset, so it
@@ -1563,10 +1575,14 @@ static void PrepareArenaFloor(u16 floor)
 
 // specialvar target. The last floor of a dungeon sends the player to the rest
 // stop to heal rather than straight down another set of stairs.
-void RogueDungeon_IsDungeonEndFloor(void)
+//
+// Returning this rather than writing gSpecialVar_Result is load-bearing: see the
+// note in rogue_dungeon.h. Written the other way it answered with the low half
+// of a return address, the warp branch was never taken, and beating a gym leader
+// left the player sealed in an arena that by design has no stairs.
+u16 RogueDungeon_IsDungeonEndFloor(void)
 {
-    gSpecialVar_Result =
-        DungeonFloorWithin(VarGet(VAR_ROGUE_DUNGEON_FLOOR)) == DUNGEON_BOSS_FLOOR;
+    return DungeonFloorWithin(VarGet(VAR_ROGUE_DUNGEON_FLOOR)) == DUNGEON_BOSS_FLOOR;
 }
 
 // Called from the boss post-battle script. The exit does not exist until now,
@@ -2011,14 +2027,25 @@ static void WriteFloorBlocks(u16 *backupMapData)
                  MakeBlock(sStairsMetatile, 0, theme->elevationFloor));
 }
 
-// Called from the object-event template loader, which runs before the map is
-// generated. Rolls the floor early so trainer placement can see the rooms.
-void RogueDungeon_PrepareNewFloor(void)
+// Everything that marks the start of a genuinely new floor, as opposed to
+// repainting one the player is already standing on. Both callers below roll a
+// fresh seed, and both must clear the boss reward - but the reload path must
+// not, or saving on a cleared arena and loading would make the reward takeable
+// again. Kept in one place so the two cannot drift apart.
+static u16 RollNewFloorSeed(void)
 {
     u16 seed = Random();
 
     VarSet(VAR_ROGUE_DUNGEON_SEED, seed);
-    PrepareFloor(seed);
+    FlagClear(FLAG_ROGUE_BOSS_REWARD_TAKEN);
+    return seed;
+}
+
+// Called from the object-event template loader, which runs before the map is
+// generated. Rolls the floor early so trainer placement can see the rooms.
+void RogueDungeon_PrepareNewFloor(void)
+{
+    PrepareFloor(RollNewFloorSeed());
 }
 
 // Replaces LoadObjEventTemplatesFromHeader for dungeon floors, the same way the
@@ -2165,8 +2192,7 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
 
         if (setPlayerPosition == FALSE)
         {
-            seed = Random();
-            VarSet(VAR_ROGUE_DUNGEON_SEED, seed);
+            seed = RollNewFloorSeed();
         }
         else
         {
