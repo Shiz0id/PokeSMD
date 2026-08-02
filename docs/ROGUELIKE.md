@@ -17,9 +17,9 @@ boss's ace → heal at a rest stop → next dungeon. Losing wipes the run.
 
 - **13 dungeons × 10 floors = 130 floors.** Eight gym leaders, then Sidney,
   Phoebe, Glacia, Drake, Wallace.
-- **Three themes**: Petalburg Woods (dungeon 1, Roxanne), Granite Cave
-  (dungeon 2, Brawly) and New Mauville (dungeon 3, Wattson). They cycle past
-  that until more exist.
+- **Four themes**: Petalburg Woods (dungeon 1, Roxanne), Granite Cave
+  (dungeon 2, Brawly), New Mauville (dungeon 3, Wattson) and Fiery Path
+  (dungeon 4, Flannery). They cycle past that until more exist.
 - Reachable from a new game, which is slimmed to name entry only.
 
 Everything lives in `src/rogue_dungeon.c` / `include/rogue_dungeon.h` plus
@@ -339,7 +339,12 @@ Choosing a generator:
 it needs composed metatiles.** The cave needed seven spliced metatiles because
 vanilla caves are never one thick. New Mauville needed none: it is a facility
 full of thin partitions, so `0x227` and `0x290` already exist for exactly the
-sliver cases.
+sliver cases. Fiery Path needed six — its horizontal sliver (`0x30C`) is native
+(vanilla uses it with 100% consistency wherever floor sits both north and south)
+but nothing vertical exists. Its splices were much cleaner than the cave's,
+because every Lavaridge edge is a top-layer overlay over one shared bumpy base:
+each sliver is four quadrant copies, no hand-built entries
+(`make_fiery_slivers.py`).
 
 **Check what the wall art is drawn against.** New Mauville's edge pieces are all
 lit strips over black, so the mass interior has to be the void metatile. Filling
@@ -361,12 +366,20 @@ eye — the shading tile looks like an ordinary floor variant on a contact sheet
 In New Mauville: floor with a wall north is `0x22F` 40% of the time, west
 `0x27D` 67%, diagonal `0x275` 40%.
 
-**`ApplyWallDecor` swaps the occasional wall block for a decorated variant.**
-Keyed on the *painted metatile*, not the wall slot, so one entry covers every
-slot sharing that metatile. Because only wall is touched and collision is
-preserved, decoration can never change what is reachable — that is the whole
-reason it is limited to walls. Solid props standing on floor could wall off a
-corridor or bury the stairs, and are deliberately not supported.
+**`ApplyDecor` swaps the occasional block for a decorated variant.** Keyed on
+the *painted metatile*, not the wall slot, so one entry covers every slot
+sharing that metatile — and a floor base (Fiery Path's ember sparkles) is as
+valid as a wall base. The block's own collision and elevation are copied over
+unchanged, which is what makes it safe: a wall variant stays wall, a floor
+variant stays floor, and reachability cannot change. What remains deliberately
+unsupported is decoration that *adds* collision — solid props standing on floor
+could wall off a corridor or bury the stairs.
+
+A 2-wide entry (nonzero `variantEast`) lands only where the block east is also
+undecorated base and writes both halves — split art like New Mauville's
+bookcase reads as cut off if a lone half is placed. The west-to-east scan makes
+double decoration impossible, because a placed unit turns both blocks into
+non-base metatiles.
 
 `decorRarity` is 1-in-N; New Mauville uses 12, landing 6–15% of wall-band blocks
 depending on the floor. Vanilla is far denser because it is a designed facility;

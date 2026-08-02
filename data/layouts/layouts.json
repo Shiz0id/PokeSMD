@@ -9353,6 +9353,16 @@
       "secondary_tileset": "gTileset_BikeShop",
       "border_filepath": "data/layouts/RogueDungeonNewMauville/border.bin",
       "blockdata_filepath": "data/layouts/RogueDungeonNewMauville/map.bin"
+    },
+    {
+      "id": "LAYOUT_ROGUE_DUNGEON_FIERYPATH",
+      "name": "RogueDungeonFieryPath_Layout",
+      "width": 48,
+      "height": 48,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_Lavaridge",
+      "border_filepath": "data/layouts/RogueDungeonFieryPath/border.bin",
+      "blockdata_filepath": "data/layouts/RogueDungeonFieryPath/map.bin"
     }
   ]
 }

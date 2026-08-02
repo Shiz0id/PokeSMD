@@ -135,6 +135,51 @@
 // here, where the same art would be a grey stripe in the woods.
 #define NEWMAUVILLE_METATILE_STAIRS          0x0AF
 
+// Fiery Path, under gTileset_General + gTileset_Lavaridge. Mined from
+// FieryPath_Layout (corners cross-checked against JaggedPass and MtChimney).
+// Same structure as the cave: pale bumpy wall tops with dark red edging doing
+// the boundary work.
+#define FIERYPATH_METATILE_FLOOR          0x308
+#define FIERYPATH_METATILE_WALL_INTERIOR  0x271
+#define FIERYPATH_METATILE_WALL_WEST      0x306  // floor to the west
+#define FIERYPATH_METATILE_WALL_EAST      0x307  // floor to the east
+#define FIERYPATH_METATILE_WALL_FACE_MID  0x274
+#define FIERYPATH_METATILE_WALL_FACE_L    0x30E
+#define FIERYPATH_METATILE_WALL_FACE_R    0x30F
+#define FIERYPATH_METATILE_WALL_NORTH_MID 0x30C  // also the native 1-wide horizontal
+#define FIERYPATH_METATILE_WALL_NORTH_L   0x30A
+#define FIERYPATH_METATILE_WALL_NORTH_R   0x30B
+#define FIERYPATH_METATILE_WALL_CORNER_SE 0x27B  // inner corner, floor SE
+#define FIERYPATH_METATILE_WALL_CORNER_SW 0x27C
+#define FIERYPATH_METATILE_WALL_CORNER_NW 0x27E
+
+// The only shading this tileset has: a rubble streak on floor against a north
+// wall, used by vanilla for 11 of that tile's 13 appearances. The red rock is
+// matte, so there is no west shadow at all.
+#define FIERYPATH_METATILE_FLOOR_SHADOW_N 0x269
+
+// Decoration: ember-glint floor variants and rocks embedded in the wall top.
+#define FIERYPATH_METATILE_FLOOR_SPARKLE_A 0x310
+#define FIERYPATH_METATILE_FLOOR_SPARKLE_B 0x311
+#define FIERYPATH_METATILE_WALL_ROCKS_A    0x268
+#define FIERYPATH_METATILE_WALL_ROCKS_B    0x26A
+#define FIERYPATH_METATILE_WALL_BOULDER    0x30D
+
+// Composed by tools/rogue/make_fiery_slivers.py, appended after the 441
+// vanilla Lavaridge metatiles. Same seven cases as the cave, except the
+// horizontal sliver is native (0x30C) so only six needed composing.
+#define FIERYPATH_METATILE_SLIVER_VERT     0x3B9
+#define FIERYPATH_METATILE_SLIVER_VERT_TOP 0x3BA
+#define FIERYPATH_METATILE_SLIVER_VERT_BOT 0x3BB
+#define FIERYPATH_METATILE_SLIVER_HORZ_L   0x3BC
+#define FIERYPATH_METATILE_SLIVER_HORZ_R   0x3BD
+#define FIERYPATH_METATILE_SLIVER_ISOLATED 0x3BE
+
+// The dark cave-mouth interior from the primary tileset. In the woods this
+// read as a wrong dark rectangle in grass; on red volcanic rock it reads as a
+// hole descending, which is exactly what it is.
+#define FIERYPATH_METATILE_STAIRS          0x0A7
+
 // Composed by tools/rogue/make_woods_stairs.py and appended to the Rustboro
 // secondary tileset: earth steps in a grass-cornered opening.
 //

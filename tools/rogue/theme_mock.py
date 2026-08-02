@@ -42,6 +42,25 @@ THEMES = {
             'SLIVER_HORZ_L': 0x227, 'SLIVER_HORZ_R': 0x227,
             'SLIVER_ISOLATED': 0x290,
         }),
+    'fierypath': dict(
+        primary='gTileset_General', secondary='gTileset_Lavaridge',
+        floor=0x308, stairs=0x0A7,
+        # Only a north shadow exists in this tileset; the red rock is matte.
+        shadowN=0x269, shadowW=0, shadowNW=0x269,
+        decor=[(0x308, 0x310, 0), (0x308, 0x311, 0),   # ember sparkle floors
+               (0x271, 0x268, 0), (0x271, 0x26A, 0),   # embedded rocks
+               (0x271, 0x30D, 0)],                     # boulder
+        decor_rarity=12,
+        wall={
+            'INTERIOR_LEFT': 0x306, 'INTERIOR_MID': 0x271, 'INTERIOR_RIGHT': 0x307,
+            'FACE_LEFT': 0x30E, 'FACE_MID': 0x274, 'FACE_RIGHT': 0x30F,
+            'NORTH_LEFT': 0x30A, 'NORTH_MID': 0x30C, 'NORTH_RIGHT': 0x30B,
+            'CORNER_NW': 0x27B, 'CORNER_NE': 0x27C, 'CORNER_SOUTH': 0x27E,
+            'SLIVER_VERT': 0x3B9, 'SLIVER_HORZ': 0x30C,
+            'SLIVER_VERT_TOP': 0x3BA, 'SLIVER_VERT_BOT': 0x3BB,
+            'SLIVER_HORZ_L': 0x3BC, 'SLIVER_HORZ_R': 0x3BD,
+            'SLIVER_ISOLATED': 0x3BE,
+        }),
     'cave': dict(
         primary='gTileset_General', secondary='gTileset_Cave',
         floor=0x21C, stairs=0x214,
@@ -159,13 +178,17 @@ def paint(solid, theme, seed=0):
                     continue
                 n, w = is_wall(x, y - 1), is_wall(x - 1, y)
                 if n and w:
-                    out[y][x] = theme['shadowNW']
+                    m = theme['shadowNW']
                 elif n:
-                    out[y][x] = theme['shadowN']
+                    m = theme['shadowN']
                 elif w:
-                    out[y][x] = theme['shadowW']
+                    m = theme['shadowW']
                 elif is_wall(x - 1, y - 1):
-                    out[y][x] = theme['shadowNW']
+                    m = theme['shadowNW']
+                else:
+                    m = 0
+                if m:
+                    out[y][x] = m
 
     # Cosmetic wall swaps, position-hashed exactly as ApplyWallDecor does.
     if theme.get('decor') and theme.get('decor_rarity'):

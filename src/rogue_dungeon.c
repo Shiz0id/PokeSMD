@@ -95,11 +95,31 @@ static const struct RogueDecor sNewMauvilleDecor[] =
                                       NEWMAUVILLE_METATILE_WALL_BOOKCASE_R },
 };
 
+// Fiery Path's own residents plus their evolutions, with a couple of fire
+// types that fit the tunnel. Ordered weakest to strongest like the others.
+static const u16 sFieryPathSpecies[] =
+{
+    SPECIES_SLUGMA,   SPECIES_KOFFING,  SPECIES_NUMEL,    SPECIES_GRIMER,
+    SPECIES_MACHOP,   SPECIES_VULPIX,   SPECIES_HOUNDOUR, SPECIES_TORKOAL,
+    SPECIES_MAGCARGO, SPECIES_WEEZING,  SPECIES_CAMERUPT, SPECIES_MACHOKE,
+    SPECIES_MAGMAR,   SPECIES_MUK,      SPECIES_HOUNDOOM, SPECIES_NINETALES,
+};
+
+static const struct RogueDecor sFieryPathDecor[] =
+{
+    { FIERYPATH_METATILE_FLOOR, FIERYPATH_METATILE_FLOOR_SPARKLE_A },
+    { FIERYPATH_METATILE_FLOOR, FIERYPATH_METATILE_FLOOR_SPARKLE_B },
+    { FIERYPATH_METATILE_WALL_INTERIOR, FIERYPATH_METATILE_WALL_ROCKS_A },
+    { FIERYPATH_METATILE_WALL_INTERIOR, FIERYPATH_METATILE_WALL_ROCKS_B },
+    { FIERYPATH_METATILE_WALL_INTERIOR, FIERYPATH_METATILE_WALL_BOULDER },
+};
+
 enum DungeonThemeId
 {
     DUNGEON_THEME_WOODS,
     DUNGEON_THEME_CAVE,
     DUNGEON_THEME_NEWMAUVILLE,
+    DUNGEON_THEME_FIERYPATH,
     DUNGEON_THEME_COUNT
 };
 
@@ -214,6 +234,51 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
 
         .species = sNewMauvilleSpecies,
         .speciesCount = ARRAY_COUNT(sNewMauvilleSpecies),
+    },
+    [DUNGEON_THEME_FIERYPATH] =
+    {
+        .layoutId = LAYOUT_ROGUE_DUNGEON_FIERYPATH,
+        .generator = DUNGEON_GEN_CAVE,
+        .elevationFloor = DUNGEON_ELEVATION_FLOOR,
+        .elevationWall = DUNGEON_ELEVATION_WALL,
+        .floor = FIERYPATH_METATILE_FLOOR,
+        .tallGrass = 0,
+        .longGrass = 0,
+        .stairsDown = FIERYPATH_METATILE_STAIRS,
+        .stairsUp = FIERYPATH_METATILE_STAIRS,
+        .wall =
+        {
+            [WALL_INTERIOR_LEFT]  = FIERYPATH_METATILE_WALL_WEST,
+            [WALL_INTERIOR_MID]   = FIERYPATH_METATILE_WALL_INTERIOR,
+            [WALL_INTERIOR_RIGHT] = FIERYPATH_METATILE_WALL_EAST,
+            [WALL_FACE_LEFT]      = FIERYPATH_METATILE_WALL_FACE_L,
+            [WALL_FACE_MID]       = FIERYPATH_METATILE_WALL_FACE_MID,
+            [WALL_FACE_RIGHT]     = FIERYPATH_METATILE_WALL_FACE_R,
+            [WALL_NORTH_LEFT]     = FIERYPATH_METATILE_WALL_NORTH_L,
+            [WALL_NORTH_MID]      = FIERYPATH_METATILE_WALL_NORTH_MID,
+            [WALL_NORTH_RIGHT]    = FIERYPATH_METATILE_WALL_NORTH_R,
+            [WALL_CORNER_NW]      = FIERYPATH_METATILE_WALL_CORNER_SE,
+            [WALL_CORNER_NE]      = FIERYPATH_METATILE_WALL_CORNER_SW,
+            [WALL_CORNER_SOUTH]   = FIERYPATH_METATILE_WALL_CORNER_NW,
+            [WALL_SLIVER_VERT]    = FIERYPATH_METATILE_SLIVER_VERT,
+            [WALL_SLIVER_HORZ]    = FIERYPATH_METATILE_WALL_NORTH_MID,
+            [WALL_SLIVER_VERT_TOP]= FIERYPATH_METATILE_SLIVER_VERT_TOP,
+            [WALL_SLIVER_VERT_BOT]= FIERYPATH_METATILE_SLIVER_VERT_BOT,
+            [WALL_SLIVER_HORZ_L]  = FIERYPATH_METATILE_SLIVER_HORZ_L,
+            [WALL_SLIVER_HORZ_R]  = FIERYPATH_METATILE_SLIVER_HORZ_R,
+            [WALL_SLIVER_ISOLATED]= FIERYPATH_METATILE_SLIVER_ISOLATED,
+        },
+
+        .shadowNorth  = FIERYPATH_METATILE_FLOOR_SHADOW_N,
+        .shadowWest   = 0,
+        .shadowCorner = FIERYPATH_METATILE_FLOOR_SHADOW_N,
+
+        .decor = sFieryPathDecor,
+        .decorCount = ARRAY_COUNT(sFieryPathDecor),
+        .decorRarity = 12,
+
+        .species = sFieryPathSpecies,
+        .speciesCount = ARRAY_COUNT(sFieryPathSpecies),
     },
 };
 
@@ -576,7 +641,8 @@ static void ApplyFloorShading(u16 *map, const struct RogueDungeonTheme *theme)
 {
     s32 x, y;
 
-    if (theme->shadowNorth == 0)
+    if (theme->shadowNorth == 0 && theme->shadowWest == 0
+     && theme->shadowCorner == 0)
         return;
 
     for (y = 0; y < DUNGEON_HEIGHT; y++)
@@ -603,16 +669,22 @@ static void ApplyFloorShading(u16 *map, const struct RogueDungeonTheme *theme)
             else
                 continue;
 
+            // A theme may have art for only some directions - Fiery Path has a
+            // north shadow but nothing for west, because its light falls flat.
+            if (metatile == 0)
+                continue;
+
             SetBlock(map, x, y, MakeBlock(metatile, 0, theme->elevationFloor));
         }
     }
 }
 
-// Swaps the occasional wall block for a decorated variant of the same metatile.
-// Only wall is touched and collision is preserved, so this can never change
-// what is reachable.
-static void ApplyWallDecor(u16 *map, const struct RogueDungeonTheme *theme,
-                           u16 seed)
+// Swaps the occasional block for a decorated variant of the same metatile.
+// The block's collision and elevation are copied over unchanged, so a wall
+// variant stays wall and a floor variant (Fiery Path's ember sparkles) stays
+// floor - decoration can never change what is reachable.
+static void ApplyDecor(u16 *map, const struct RogueDungeonTheme *theme,
+                       u16 seed)
 {
     s32 x, y;
     u32 i;
@@ -624,17 +696,16 @@ static void ApplyWallDecor(u16 *map, const struct RogueDungeonTheme *theme,
     {
         for (x = 0; x < DUNGEON_WIDTH; x++)
         {
-            u16 hash, metatile;
+            u16 hash, metatile, block;
             u32 matches = 0, pick;
-
-            if (!IsWallAt(map, x, y))
-                continue;
 
             hash = DecorHash(seed, x, y);
             if (hash % theme->decorRarity != 0)
                 continue;
 
-            metatile = GetBlockMetatile(map, x, y);
+            block = map[(y + MAP_OFFSET) * gBackupMapLayout.width
+                        + (x + MAP_OFFSET)];
+            metatile = block & MAPGRID_METATILE_ID_MASK;
 
             // A 2-wide unit needs the block east to still be undecorated base
             // as well. Because this scans west to east, a placed unit turns
@@ -664,13 +735,12 @@ static void ApplyWallDecor(u16 *map, const struct RogueDungeonTheme *theme,
                     continue;
                 if (pick-- == 0)
                 {
-                    SetBlock(map, x, y,
-                             MakeBlock(theme->decor[i].variant, 1,
-                                       theme->elevationWall));
+                    u16 keep = block & ~MAPGRID_METATILE_ID_MASK;
+
+                    SetBlock(map, x, y, theme->decor[i].variant | keep);
                     if (theme->decor[i].variantEast != 0)
                         SetBlock(map, x + 1, y,
-                                 MakeBlock(theme->decor[i].variantEast, 1,
-                                           theme->elevationWall));
+                                 theme->decor[i].variantEast | keep);
                     break;
                 }
             }
@@ -783,7 +853,7 @@ static void ApplyWallAutotiling(u16 *map, const struct RogueDungeonTheme *theme)
     // point every cave-generator path passes through. Running before the stairs
     // are placed also means neither can paint over them.
     ApplyFloorShading(map, theme);
-    ApplyWallDecor(map, theme, VarGet(VAR_ROGUE_DUNGEON_SEED));
+    ApplyDecor(map, theme, VarGet(VAR_ROGUE_DUNGEON_SEED));
 }
 
 
