@@ -883,6 +883,16 @@ void RogueDungeon_SetUpTrainerBattle(void)
         slot = 0;
     trainerId = sTrainerIds[slot];
 
+    // Winning a battle ends on gotobeatenscript, which reads
+    // battleScriptRetAddrA - NOT sTrainerBattleEndScript, which only serves
+    // gotopostbattlescript on the already-defeated path. Leaving it NULL makes
+    // BattleSetup_GetTrainerPostBattleScript fall through to
+    // EventScript_TryGetTrainerScript, which loops straight back into
+    // gotobeatenscript and hangs the script context forever.
+    const u8 *endScript = RogueDungeon_IsBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR))
+                        ? RogueDungeonFloor_EventScript_BossDone
+                        : RogueDungeonFloor_EventScript_TrainerDone;
+
     // Mirrors BattleSetup_ConfigureFacilityTrainerBattle: when two trainers
     // spot the player at once this runs twice, and the second call must fill
     // slot B without wiping slot A.
@@ -893,6 +903,7 @@ void RogueDungeon_SetUpTrainerBattle(void)
         TRAINER_BATTLE_PARAM.opponentB = trainerId;
         TRAINER_BATTLE_PARAM.introTextB = (u8 *)RogueDungeonFloor_Text_TrainerIntro;
         TRAINER_BATTLE_PARAM.defeatTextB = (u8 *)RogueDungeonFloor_Text_TrainerDefeat;
+        TRAINER_BATTLE_PARAM.battleScriptRetAddrB = (u8 *)endScript;
         return;
     }
 
@@ -903,12 +914,13 @@ void RogueDungeon_SetUpTrainerBattle(void)
     TRAINER_BATTLE_PARAM.opponentA = trainerId;
     TRAINER_BATTLE_PARAM.introTextA = (u8 *)RogueDungeonFloor_Text_TrainerIntro;
     TRAINER_BATTLE_PARAM.defeatTextA = (u8 *)RogueDungeonFloor_Text_TrainerDefeat;
+    TRAINER_BATTLE_PARAM.battleScriptRetAddrA = (u8 *)endScript;
 
     SetMapVarsToTrainerA();
-    if (RogueDungeon_IsBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
-        SetTrainerBattleEndScript(RogueDungeonFloor_EventScript_BossDone);
-    else
-        SetTrainerBattleEndScript(RogueDungeonFloor_EventScript_TrainerDone);
+
+    // The other exit: talking to an already-beaten trainer skips the battle and
+    // leaves via gotopostbattlescript, which reads this one instead.
+    SetTrainerBattleEndScript(endScript);
 }
 
 void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
