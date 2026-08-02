@@ -11,6 +11,7 @@
 #include "field_camera.h"
 #include "overworld.h"
 #include "item.h"
+#include "data.h"
 #include "constants/items.h"
 #include "constants/layouts.h"
 #include "constants/moves.h"
@@ -192,6 +193,73 @@ void RogueDungeon_GiveChosenStarter(void)
     SetMonMoveSlot(mon, sRogueDungeonStarters[index].move, i);
     CalculateMonStats(mon);
     CalculatePlayerPartyCount();
+}
+
+// The boss ace on offer. Held between the two specials below rather than
+// recomputed, so the name shown in the prompt and the mon actually granted
+// cannot disagree.
+EWRAM_DATA static u16 sBossAceSpecies = SPECIES_NONE;
+EWRAM_DATA static u8 sBossAceLevel = 0;
+EWRAM_DATA static u8 sBossAceSlot = 0;
+
+// specialvar target. TRUE if there is an ace to offer and room to take it.
+// Buffers the species name into gStringVar1 for the prompt.
+//
+// The ace is the last party member: the stock data orders a trainer's team
+// weakest to strongest, so the signature Pokemon is always last.
+void RogueDungeon_PrepareBossAceOffer(void)
+{
+    u16 trainerId = sTrainerIds[0];
+    u8 size = GetTrainerPartySizeFromId(trainerId);
+    const struct TrainerMon *party = GetTrainerPartyFromId(trainerId);
+
+    gSpecialVar_Result = FALSE;
+    sBossAceSpecies = SPECIES_NONE;
+
+    if (sTrainerCount == 0 || size == 0 || party == NULL)
+        return;
+    if (CalculatePlayerPartyCount() >= PARTY_SIZE)
+        return;
+
+    sBossAceSlot = size - 1;
+    sBossAceSpecies = party[sBossAceSlot].species;
+    sBossAceLevel = party[sBossAceSlot].lvl;
+
+    StringCopy(gStringVar1, GetSpeciesName(sBossAceSpecies));
+    gSpecialVar_Result = TRUE;
+}
+
+// Grants the ace at the level the boss ran it, with the same moveset, so it
+// arrives as the thing that just beat you rather than a blank slate.
+void RogueDungeon_GiveBossAce(void)
+{
+    const struct TrainerMon *party = GetTrainerPartyFromId(sTrainerIds[0]);
+    u32 slot = CalculatePlayerPartyCount();
+    struct Pokemon *mon;
+    u32 i;
+
+    if (sBossAceSpecies == SPECIES_NONE || slot >= PARTY_SIZE || party == NULL)
+        return;
+
+    mon = &gParties[B_TRAINER_PLAYER][slot];
+    CreateRandomMonWithIVs(mon, sBossAceSpecies, sBossAceLevel, MAX_PER_STAT_IVS);
+
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        if (party[sBossAceSlot].moves[i] != MOVE_NONE)
+            SetMonMoveSlot(mon, party[sBossAceSlot].moves[i], i);
+    }
+
+    if (party[sBossAceSlot].heldItem != ITEM_NONE)
+    {
+        u16 item = party[sBossAceSlot].heldItem;
+
+        SetMonData(mon, MON_DATA_HELD_ITEM, &item);
+    }
+
+    CalculateMonStats(mon);
+    CalculatePlayerPartyCount();
+    sBossAceSpecies = SPECIES_NONE;
 }
 
 // A loss ends the run. Rather than the vanilla respawn at the last Pokemon

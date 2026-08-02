@@ -643,3 +643,5 @@ gSpecials::
 	def_special RogueDungeon_OnBossDefeated
 	def_special RogueDungeon_IsDungeonEndFloor
 	def_special RogueDungeon_GiveChosenStarter
+	def_special RogueDungeon_PrepareBossAceOffer
+	def_special RogueDungeon_GiveBossAce

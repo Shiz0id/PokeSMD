@@ -60,6 +60,17 @@ RogueDungeonFloor_EventScript_TrainerDone::
 @ since an arena has no other way out.
 RogueDungeonFloor_EventScript_BossDone::
 	special RogueDungeon_OnBossDefeated
+	specialvar VAR_RESULT, RogueDungeon_PrepareBossAceOffer
+	goto_if_eq VAR_RESULT, FALSE, RogueDungeonFloor_EventScript_AfterAce
+	msgbox RogueDungeonFloor_Text_OfferAce, MSGBOX_YESNO
+	compare VAR_RESULT, YES
+	goto_if_ne RogueDungeonFloor_EventScript_AfterAce
+	special RogueDungeon_GiveBossAce
+	playfanfare MUS_OBTAIN_TMHM
+	msgbox RogueDungeonFloor_Text_AceJoined, MSGBOX_DEFAULT
+	waitfanfare
+
+RogueDungeonFloor_EventScript_AfterAce::
 	specialvar VAR_RESULT, RogueDungeon_IsDungeonEndFloor
 	goto_if_eq VAR_RESULT, TRUE, RogueDungeonFloor_EventScript_ToRestStop
 	msgbox RogueDungeonFloor_Text_BossCleared, MSGBOX_DEFAULT
@@ -94,3 +105,11 @@ RogueDungeonFloor_Text_PickFirst:
 
 RogueDungeonFloor_Text_PickSecond:
 	.string "And one more to stand beside them.$"
+
+RogueDungeonFloor_Text_OfferAce:
+	.string "Their {STR_VAR_1} stayed behind,\n"
+	.string "and it is watching you.\p"
+	.string "Take it with you?$"
+
+RogueDungeonFloor_Text_AceJoined:
+	.string "{STR_VAR_1} joined your team!$"
