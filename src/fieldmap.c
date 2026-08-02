@@ -19,6 +19,7 @@
 #include "constants/metatile_behaviors.h"
 #include "constants/metatile_behaviors_frlg.h"
 #include "wild_encounter.h"
+#include "rogue_dungeon.h"
 
 struct ConnectionFlags
 {
@@ -159,6 +160,12 @@ void InitTrainerHillMap(void)
 {
     CpuFastFill16(MAPGRID_UNDEFINED, sBackupMapData, sizeof(sBackupMapData));
     GenerateTrainerHillFloorLayout(sBackupMapData);
+}
+
+void InitRogueDungeonMap(bool8 setPlayerPosition)
+{
+    CpuFastFill16(MAPGRID_UNDEFINED, sBackupMapData, sizeof(sBackupMapData));
+    GenerateRogueDungeonFloor(sBackupMapData, setPlayerPosition);
 }
 
 static void InitMapLayoutData(const struct MapHeader *mapHeader)

@@ -600,6 +600,9 @@ gStdScripts_End::
 	.include "data/maps/Route119_House/scripts.inc"
 	.include "data/maps/Route124_DivingTreasureHuntersHouse/scripts.inc"
 
+@ Roguelike maps
+	.include "data/maps/RogueDungeonFloor/scripts.inc"
+
 .if IS_FRLG
 
 @ FRLG scripts

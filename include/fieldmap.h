@@ -53,6 +53,7 @@ void InitMap(void);
 void InitMapFromSavedGame(void);
 void InitTrainerHillMap(void);
 void InitBattlePyramidMap(bool8 setPlayerPosition);
+void InitRogueDungeonMap(bool8 setPlayerPosition);
 void CopyMapTilesetsToVram(struct MapLayout const *mapLayout);
 void LoadMapTilesetPalettes(struct MapLayout const *mapLayout);
 void LoadSecondaryTilesetPalette(struct MapLayout const *mapLayout, bool8 skipFaded);
