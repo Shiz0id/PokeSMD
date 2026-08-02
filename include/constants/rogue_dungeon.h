@@ -36,4 +36,7 @@
 #define DUNGEON_STARTER_LEVEL 10
 #define DUNGEON_STARTER_COUNT 2
 
+// Handed out at the start of every run until shops exist.
+#define ROGUE_RUN_STARTING_BALLS 100
+
 #endif // GUARD_CONSTANTS_ROGUE_DUNGEON_H

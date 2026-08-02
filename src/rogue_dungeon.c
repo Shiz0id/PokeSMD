@@ -10,6 +10,7 @@
 #include "event_object_movement.h"
 #include "field_camera.h"
 #include "overworld.h"
+#include "item.h"
 #include "constants/items.h"
 #include "constants/layouts.h"
 #include "constants/moves.h"
@@ -205,6 +206,10 @@ bool8 RogueDungeon_TryHandleWhiteOut(void)
     VarSet(VAR_ROGUE_RUN_STATE, ROGUE_RUN_NEEDS_STARTERS);
     ZeroPlayerPartyMons();
     CalculatePlayerPartyCount();
+
+    // Otherwise the run-start item grant stacks with whatever survived the last
+    // run, and a few losses leave the player with hundreds of balls.
+    ClearBag();
 
     // Back to the first floor, where the frame table will ask for starters.
     SetWarpDestination(MAP_GROUP(MAP_ROGUE_DUNGEON_FLOOR),

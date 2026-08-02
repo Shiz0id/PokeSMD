@@ -18,6 +18,7 @@ RogueDungeonFloor_EventScript_ChooseStarters::
 	call RogueDungeonFloor_EventScript_PickStarter
 	msgbox RogueDungeonFloor_Text_PickSecond, MSGBOX_DEFAULT
 	call RogueDungeonFloor_EventScript_PickStarter
+	additem ITEM_ULTRA_BALL, ROGUE_RUN_STARTING_BALLS
 	setvar VAR_ROGUE_RUN_STATE, ROGUE_RUN_ACTIVE
 	releaseall
 	end
