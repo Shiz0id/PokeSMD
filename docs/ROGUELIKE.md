@@ -27,6 +27,12 @@ Losing wipes the run; so does winning, which is the point.
   The Elite Four come every five floors because a gauntlet is what they are.
   Giving each of them a mini boss as well would pad the endgame with grunts,
   and there is no stock trainer at that level to draw one from anyway.
+- **Wallace has the flower meadow**, dungeon 12 — Ever Grande, a mint plateau
+  carpeted in flower fields and ringed by tan cliffs, which is what the vanilla
+  city already is. It is the first theme whose encounter surface is neither
+  grass, cave floor nor water, and the first Elite Four pool not type-matched to
+  its member: the dungeon is deliberately not water themed. Only the finale
+  still wraps to another theme's art.
 - **Eight themes, one per gym dungeon, no repeats**: Petalburg Woods (dungeon 1,
   Roxanne), Granite Cave (2, Brawly), New Mauville (3, Wattson), Fiery Path
   (4, Flannery), Mirage Tower (5, Norman), the Jungle (6, Winona), the open
@@ -433,6 +439,10 @@ cap keeps that base and overlays both north corners, exploiting the fact that
 Scripts: `compose_metatiles.py` + `append_metatiles.py` (idempotent — it trims a
 previous append before rewriting).
 
+`gTileset_EverGrande` has the same rule and its own owner,
+`make_evergrande_tiles.py`. There is now one appender per edited tileset, by
+construction rather than by convention.
+
 **`append_metatiles.py` is the ONLY thing that may append to the cave tileset**,
 by construction rather than by convention. It stays idempotent by truncating
 everything past the vanilla 414 and rewriting the tail, so a second script
@@ -535,6 +545,39 @@ the original entry verbatim, flips and all. Check the source metatiles are
 bottom-layer only before flattening anything — all five here are, but flattening
 one that used a top layer would change whether it draws over the player. Each
 new metatile copies the attribute of the piece it replaces.
+
+### An encounter surface can cost sixteen metatiles and zero pixels
+
+**Neither `gTileset_EverGrande` nor `gTileset_Mauville` contains a single
+metatile carrying `TILE_FLAG_HAS_ENCOUNTERS`.** Every flower in both is
+`MB_NORMAL`. So flowers standing in for tall grass needed new entries — but not
+new art: `0x2A9`–`0x2B8` reference vanilla's flower tiles byte for byte and
+differ only in the attribute, which is `MB_LONG_GRASS`.
+
+**Attributes are per entry, and that is the whole trick.** The same pixels can
+be decoration in one metatile and an encounter surface in another.
+
+Which behaviour to hang on it is a real choice, and worth knowing the options:
+
+| behaviour | encounters | what else it drags in |
+|---|---|---|
+| `MB_UNUSED_05` | yes | **nothing** — its only reference in the engine is `Unref_MetatileBehavior_IsUnused05`, which nothing calls |
+| `MB_TALL_GRASS` | yes | the rustle overlay sprite |
+| `MB_LONG_GRASS` | yes | a full-tile curtain sprite, the OAM clip that hides the player's lower half, and `BATTLE_ENVIRONMENT_LONG_GRASS` |
+
+`MB_LONG_GRASS` was chosen because **the OAM clip is purely geometric** —
+`SetObjectEventSpriteOamTableForLongGrass` swaps the subsprite table so the
+player wades *into* the surface — and wading into a flower field is exactly
+right. Only the overlay sprite is grass-specific.
+
+**The palette trap if you ever want to change that sprite.** The template's
+`paletteTag` is `FLDEFF_PAL_TAG_GENERAL_1`, but the palette is **not** loaded
+from the template: `data/field_effect_scripts.s` does
+`field_eff_loadfadedpal_callnative gSpritePalette_GeneralFieldEffect1,
+FldEff_LongGrass`, and a script is fixed per `FLDEFF` id while a template is
+`const`. So a per-theme graphic has to be chosen inside `FldEff_LongGrass`
+itself, loading its own palette and calling `UpdateSpritePaletteWithWeather` —
+or it misses the weather fade that `loadfadedpal` would have applied.
 
 ### When splicing is not enough: drawing new tiles
 
@@ -907,6 +950,50 @@ three-quarters open with a max of 77.9%, which stops reading as a dungeon.
 gets its reachability and out-of-bounds checks for free — add an entry when you
 add a theme that carves differently.
 
+### Corridor width is a cheaper answer to slivers than art
+
+Four themes needed composed sliver metatiles. Ever Grande needed none, and the
+reason generalises: **which sliver slots fire is a function of `corridorWidth`,
+so widening the carve can retire the case a tileset has no art for.**
+
+Measured over two mock floors:
+
+| corridor | `SLIVER_VERT` | `SLIVER_HORZ` + caps |
+|---|---|---|
+| 3 | **19** | 2 |
+| 5 | **0** | 11 |
+
+At 3 the vertical fires and `gTileset_EverGrande` has nothing for it — a census
+over all 250 General-primary layouts puts the best candidate at 22%. At 5 it
+never occurs, and the load moves to the horizontal, which is decisive native
+art: `0x079`, the cliff's own **south face**, is what vanilla uses for a
+one-thick horizontal wall 492 times of 990 and for both caps at 77% and 67%.
+Showing a south face and nothing else *is* what such a wall looks like from
+below, so there was nothing to draw.
+
+**Check the slot counts at each width before reaching for the splice tools.**
+Note this is the opposite of what the jungle and underwater notes imply — they
+observe that wide corridors retire slivers generally, and here 5-wide *raised*
+the horizontal count from 2 to 11. Wide corridors do not remove slivers; they
+change **which** ones you get.
+
+### Material mismatch: a wall set that works in vanilla can still fail as art
+
+Ever Grande's cobble garden wall (`0x232` vertical, `0x234` horizontal) is
+genuinely one block thick in vanilla — `0x232` runs north-south with grass on
+both sides 85% of the time — and it still could not serve as the cliff's sliver
+art. At game scale the vertical piece reads as a pillar of a foreign material
+and the horizontal one as a **hole in the ground**, because the cobble's shaded
+face is blue-grey against the cliff's warm tan.
+
+It works in vanilla as a long terrace wall bordering a field, and fails as a
+one-block gap inside a rock mass. **"Vanilla uses this as a thin wall" is not the
+same claim as "this can be a thin wall in your wall set"** — the second needs
+the mock, and the mock settled it in one render.
+
+It is used instead for `WALL_SLIVER_ISOLATED`, which is what `arenaPlatform`
+paints, so Wallace stands on a stone dais rather than a lone boulder.
+
 **Check whether the tileset draws one-block-thick walls natively before assuming
 it needs composed metatiles.** The cave needed seven spliced metatiles because
 vanilla caves are never one thick. New Mauville needed none: it is a facility
@@ -1087,6 +1174,37 @@ the grass underneath keeps correct edges where a puddle covers it. The layer
 index is folded into the blob hash salt, or the two layers would stamp
 identically.
 
+### A set of N consecutive metatiles may be N PHASES, not N variants
+
+Ever Grande's flowers look like a scatter set: sixteen metatiles, each four
+consecutive distinct tiles, no flips, no top layer, and on a contact sheet the
+eight of a colourway are almost indistinguishable. Painting a blob by picking
+among them at random is the obvious implementation and it is wrong.
+
+They are **eight steps of a diagonal banding**. Over the 341 flower blocks of
+`EverGrandeCity_Layout`, **85% satisfy `variant = (y - x + k) mod 8`** for one of
+three values of `k` — one constant per flower field, wherever the artist started
+that field. Rendered, the field comes out as alternating diagonal rows of pink
+and orange, which is visible in the vanilla map the moment you crop it and
+invisible in any per-metatile view.
+
+So the generator paints a diagonal, not a hash (`RoguePatchLayer.phase`). Three
+things fall out of that:
+
+- **It is cheaper than a hash** and consumes no RNG, so `WriteFloorBlocks` can
+  repaint a floor without the flowers reshuffling under the player — the same
+  property the position-hashed passes need a hash to get.
+- **`0x298`–`0x2A7` are the same sixteen with a sand-edged bottom, preserving
+  phase.** A ready-made south edge, if one is ever wanted.
+- **Vanilla uses one colourway per field, never mixed** — pink and orange in one,
+  yellow and blue in another. So a theme or a blob can pick a colourway; the two
+  sets are the same 32 tiles under palettes A and B.
+
+**The general lesson: before treating N consecutive metatiles as
+interchangeable, test whether their index is a function of position.** A census
+that asks "which of these appears here" answers uniformly and tells you nothing;
+the question that works is "what is `variant - f(x, y)`".
+
 **Not every theme has a region set**, and it is worth checking before designing
 one. Fiery Path's floor variety is `0x310`/`0x311`, already decor; New
 Mauville's apparent region turned out to be its existing skirt tiles; the woods
@@ -1176,18 +1294,35 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
 
 ## 10. Known gaps
 
-1. Twelve themes against fourteen dungeons. Every gym dungeon and every Elite
-   Four member now has one of its own, so cycling starts at **dungeon 12,
-   Wallace** — who wraps to the woods, and Steven's finale to the cave. Both
-   want a theme of their own. Wallace's is planned as a flower dungeon after
-   Ever Grande with custom art, which is the first theme in the project that
-   will need real pixels rather than a table.
+1. Thirteen themes against fourteen dungeons. Wallace now has Ever Grande, so
+   only **dungeon 13, Steven's finale**, still wraps — to the woods. It wants
+   one of its own.
+
+   Ever Grande turned out to need far less new art than the entry above
+   predicted: four tiles for the exit and nothing else, because the encounter
+   flowers reuse vanilla's pixels and the wall set needed no slivers composed.
+   **The prediction that a new theme needs real pixel art has now been wrong
+   twice** — check what the tileset already holds first.
 
    The palette-only tileset in §5 is why the Elite Four stopped being the sore
    spot here, and it generalises: **any existing theme can spawn a recolour for
    one palette directory.** Worth reaching for before authoring a theme, but
    check first that what a theme paints comes from *its* palettes — the cave's
    walls do, its sand and decor do not.
+1c. **The flower field draws the grass rustle sprite.** `MB_LONG_GRASS` brings
+   `FLDEFF_LONG_GRASS`, whose art is a curtain of green blades, and over pink
+   and yellow blooms that is wrong rather than broken. §5 has the palette trap
+   and the route to a flower version; the bloom colours to copy live in
+   `ever_grande` palettes 10 and 11.
+1d. **Ever Grande's terrace is a path, not a region.** `0x23C`/`0x23D`/`0x23E`
+   has a left edge, a fill and a right edge and **no north or south edge art at
+   all** — the mask census puts continues-NSWE, SWE and NWE on the same fill. It
+   is laid as a patch layer anyway and survives because `ApplyFloorPatches`
+   erodes blobs round and the brick texture is busy, but a blob's top and bottom
+   are hard cuts. It also sits close in value to the cliff, so a plaza touching a
+   wall merges into it. The brick is secondary palette 9 and the flowers are 10
+   and 11, so palette 9 can be shifted cooler without touching a flower pixel —
+   it also carries the round shrub `0x220`, so that is not free.
 1a. **Underwater has no divers.** Trainers there are `SWIMMER_M`/`SWIMMER_F`,
    who are drawn treading the surface in swimwear while standing on the
    seafloor. There is no diver NPC graphic in the game at all — the only diving
