@@ -597,6 +597,19 @@
 // it is also the only fill it has that tiles invisibly: measured seam 0.0,
 // against 35-42 for every textured rock face in the Meteor Falls tileset that
 // was evaluated beside it, where a fill at that seam became visible corduroy.
+//
+// THE FLOOR IS NOT FROM THIS SHEET. The walls are Lapis Cave's crystal; the
+// ground is Mt. Freeze's snow, from a second rip by the same author, because
+// this theme is snowing on the player and neither sheet has both. The importer
+// composes a tileset from blocks across sheets and quantises everything sharing
+// a palette slot together - ground and its two decor variants are all slot 7,
+// twelve colours between them. Lapis' own ground is still in the sheet and is
+// simply not imported; swapping back is a one-word change to the block table.
+//
+// The ids below did not move when the ground was swapped, which is luck worth
+// naming rather than a guarantee: both sheets carry the same 47 ground cells in
+// the same legend order, so the block landed at the same offset. A sheet with a
+// different cell count would shift every id after the walls.
 #define LAPIS_METATILE_FLOOR                  0x233  // MB_CAVE, so encounters fire
 #define LAPIS_METATILE_WALL_INTERIOR_L        0x203
 #define LAPIS_METATILE_WALL_INTERIOR_M        0x204
@@ -623,6 +636,16 @@
 // rock on an ice floor is the one piece of this theme that does not belong.
 // Composing one from the sheet's own crystal is the obvious follow-up.
 #define LAPIS_METATILE_STAIRS                 0x0A7
+// Mt. Freeze's Ground Alt 1 and Alt 2 - a small clump and a swept drift, both
+// drawn on the plain snow in the SAME palette, so they read as surface texture
+// rather than as objects sitting on it. One cell each is all the sheet has.
+//
+// They carry the ground's attribute, not a bare one. Decor replaces a floor
+// block in place, so a decor metatile without MB_CAVE would be a hole in the
+// encounter surface that looks exactly like snow - check_encounter_flags.py
+// tests what the theme table names as its floor, and would not see it.
+#define LAPIS_METATILE_DECOR_CLUMP            0x25E
+#define LAPIS_METATILE_DECOR_DRIFT            0x25F
 
 
 // Ever Grande, the flower meadow, and Wallace's. gTileset_General +

@@ -47,24 +47,58 @@ NUM_PALS_TOTAL = 13
 
 # ---------------------------------------------------------------- sheet specs
 
+# A SHEET is a source image. Every rip SilverDeoxys563 has formatted shares one
+# geometry, verified identical on both sheets here, so a new one is a one-line
+# entry until a sheet turns up that disagrees.
 SHEETS = {
+    'lapis_cave': dict(source='tools/rogue/sheets/lapis_cave.png'),
+    'mt_freeze': dict(source='tools/rogue/sheets/mt_freeze.png'),
+}
+
+SHEET_GEOMETRY = dict(
+    origin=(8, 162),        # top-left of the first grid RULE, not the cell
+    pitch=25,               # 24px cell + 1px rule
+    cell=24,
+    legend_col=0,           # three 3x3 masks per row, one per terrain cell
+    background=(0, 128, 128),
+    colorkey=(255, 0, 255),
+)
+
+# Each NAMED column on these sheets is three grid cells wide, and the Legend
+# carries one 3x3 mask per cell, so a block is addressed by the first of its
+# three. The Alt groups hold a single cell each on both sheets - they are
+# variants of the plain fill, not autotile cases.
+COL = dict(walls=3, wall_alt1=6, wall_alt2=9,
+           ground=12, ground_alt1=15, ground_alt2=18, water=21)
+
+# A TILESET is what gets written. Blocks may come from DIFFERENT sheets, and
+# blocks sharing a palette slot are quantised together against one palette.
+#
+# THE ORDER HERE IS THE METATILE ORDER, and metatile ids are what the theme
+# table names, so appending a block is safe and reordering one is not.
+TILESETS = {
+    # Glacia's. Lapis Cave's crystal walls over Mt. Freeze's snow: the crystal
+    # is the better wall art and the snow is the better floor for a theme that
+    # is snowing on the player, and neither sheet has both.
     'lapis': dict(
-        source='tools/rogue/sheets/lapis_cave.png',
         out='data/tilesets/secondary/rogue_lapis_cave',
         symbol='RogueLapisCave',
-        origin=(8, 162),        # top-left of the first grid RULE, not the cell
-        pitch=25,               # 24px cell + 1px rule
-        cell=24,
-        legend_col=0,           # three 3x3 masks per row, one per terrain cell
-        # block name -> (first sheet column, GBA palette slot)
-        blocks={'wall': (3, 6), 'ground': (12, 7), 'water': (21, 8)},
-        # behaviour+layer type copied from these vanilla metatiles
-        attr_from={'wall': 0x0008,      # cave 0x211: MB_CAVE, layer NORMAL
-                   'ground': 0x0008,    # cave 0x201: MB_CAVE -> encounters fire
-                   'water': 0x0008},
-        background=(0, 128, 128),
-        colorkey=(255, 0, 255),
-    ),
+        prefix='LAPIS',
+        blocks=[
+            # attr is behaviour+layer type copied from a vanilla donor metatile
+            # rather than synthesised - see the module docstring. 0x0008 is cave
+            # 0x201: MB_CAVE, layer NORMAL, so wild encounters fire.
+            dict(name='wall', sheet='lapis_cave', col=COL['walls'], pal=6, attr=0x0008),
+            dict(name='ground', sheet='mt_freeze', col=COL['ground'], pal=7, attr=0x0008),
+            # The decor variants MUST carry the ground's attribute, not a bare
+            # one: they replace floor blocks in place, and a decorated block
+            # with no encounter flag would be a dead spot the player cannot see.
+            dict(name='decor1', sheet='mt_freeze', col=COL['ground_alt1'], pal=7, attr=0x0008),
+            dict(name='decor2', sheet='mt_freeze', col=COL['ground_alt2'], pal=7, attr=0x0008),
+            # Never painted by the theme - kept because it is what the sheet
+            # has, and dropping it would move every metatile id after it.
+            dict(name='water', sheet='lapis_cave', col=COL['water'], pal=8, attr=0x0008),
+        ]),
 }
 
 # our PaintWalls slots, as neighbour masks. '#' wall, 'o' floor, '.' don't care
@@ -212,51 +246,64 @@ class TileBank:
         return i, 0, 0
 
 
-def convert(spec, verbose=True):
-    sh = Sheet(spec)
-    nrows, ncols = len(sh.ys), len(sh.xs)
+def convert(ts, verbose=True):
+    cache = {}
 
-    blocks = {}
-    for name, (col0, pal) in spec['blocks'].items():
-        cells = []
-        for r in range(nrows):
-            for k in range(3):
-                if col0 + k < ncols and sh.filled(col0 + k, r):
-                    cells.append((r, k, sh.cell(col0 + k, r)))
-        blocks[name] = dict(pal=pal, cells=cells)
+    def sheet(name):
+        if name not in cache:
+            cache[name] = Sheet({**SHEET_GEOMETRY, **SHEETS[name]})
+        return cache[name]
+
+    blocks = []
+    for b in ts['blocks']:
+        sh = sheet(b['sheet'])
+        cells = [(r, k, sh.cell(b['col'] + k, r))
+                 for r in range(len(sh.ys))
+                 for k in range(3)
+                 if b['col'] + k < len(sh.xs) and sh.filled(b['col'] + k, r)]
+        blocks.append({**b, 'sh': sh, 'cells': cells})
         if verbose:
-            print(f'  {name:<8} {len(cells):3d} cells, palette slot {pal}')
+            print(f'  {b["name"]:<7} {len(cells):3d} cells  from {b["sheet"]:<11}'
+                  f' palette slot {b["pal"]}')
 
+    # Blocks sharing a palette slot share ONE palette, quantised from all their
+    # cells together. The ground and its two decor variants are the case that
+    # needs it: a tileset has one palette per slot, so quantising them apart
+    # would give slot 7 whichever was written last and silently recolour the
+    # other two. It also means the 15-colour budget is per SLOT, not per block.
     palettes = {}
-    for name, b in blocks.items():
-        palettes[name] = block_palette([c for _, _, c in b['cells']],
-                                       sh.key, sh.bg)
+    for b in blocks:
+        palettes.setdefault(b['pal'], []).extend(c for _, _, c in b['cells'])
+    for slot in sorted(palettes):
+        owner = next(b for b in blocks if b['pal'] == slot)
+        names = '+'.join(b['name'] for b in blocks if b['pal'] == slot)
+        palettes[slot] = block_palette(palettes[slot], owner['sh'].key, owner['sh'].bg)
         if verbose:
-            print(f'  {name:<8} {len(palettes[name]):2d} colours')
+            print(f'  palette {slot}  {len(palettes[slot]):2d} colours  ({names})')
 
     bank = TileBank()
-    metatiles = []                       # (block, row, k, [4 entries])
-    for name, b in blocks.items():
-        pal = b['pal']
+    metatiles = []
+    for b in blocks:
         for (r, k, cell) in b['cells']:
-            idx = to_indices(cell, palettes[name], sh.key, sh.bg)
+            idx = to_indices(cell, palettes[b['pal']], b['sh'].key, b['sh'].bg)
             entries = []
             for qy in (0, 1):
                 for qx in (0, 1):
                     t = idx[qy * 8:qy * 8 + 8, qx * 8:qx * 8 + 8]
-                    ti, xf, yf = bank.add(t, pal)
+                    ti, xf, yf = bank.add(t, b['pal'])
                     entries.append((NUM_TILES_IN_PRIMARY + ti)
-                                   | (xf << 10) | (yf << 11) | (pal << 12))
-            metatiles.append(dict(block=name, row=r, k=k, entries=entries))
+                                   | (xf << 10) | (yf << 11) | (b['pal'] << 12))
+            metatiles.append(dict(block=b['name'], attr=b['attr'], sh=b['sh'],
+                                  row=r, k=k, entries=entries))
 
-    # slot -> metatile local index, from the legend
+    # slot -> metatile local index, from the legend of the block's OWN sheet
     slotmap = {}
     for slot, want in SLOTS.items():
         best = None
         for li, mt in enumerate(metatiles):
             if mt['block'] != 'wall':
                 continue
-            s = match_slot(sh.mask(mt['row'], mt['k']), want)
+            s = match_slot(mt['sh'].mask(mt['row'], mt['k']), want)
             if s is not None and (best is None or s > best[0]):
                 best = (s, li)
         if best:
@@ -266,13 +313,16 @@ def convert(spec, verbose=True):
     floor_li = None
     for li, mt in enumerate(metatiles):
         if mt['block'] == 'ground' and all(
-                ch == '#' for j, row in enumerate(sh.mask(mt['row'], mt['k']))
+                ch == '#' for j, row in enumerate(mt['sh'].mask(mt['row'], mt['k']))
                 for i, ch in enumerate(row) if not (i == 1 and j == 1)):
             floor_li = li
             break
 
-    return dict(sheet=sh, blocks=blocks, palettes=palettes, bank=bank,
-                metatiles=metatiles, slotmap=slotmap, floor=floor_li)
+    decor = [(mt['block'], li) for li, mt in enumerate(metatiles)
+             if mt['block'].startswith('decor')]
+
+    return dict(blocks=blocks, palettes=palettes, bank=bank,
+                metatiles=metatiles, slotmap=slotmap, floor=floor_li, decor=decor)
 
 
 # ---------------------------------------------------------------- writing
@@ -291,7 +341,7 @@ def write_tileset(spec, conv):
     img = Image.fromarray(sheet, mode='P')
     # the PNG carries one palette for humans; every tile stores raw indices, so
     # tiles on the other palettes look wrong in an editor. That is normal.
-    first = list(conv['palettes'].values())[0]
+    first = conv['palettes'][min(conv['palettes'])]
     flat = [0, 0, 0]
     for c in first:
         flat += list(c)
@@ -300,9 +350,8 @@ def write_tileset(spec, conv):
     img.save(out / 'tiles.png', bits=4)
 
     # ---- palettes : JASC-PAL, CRLF, 16 entries. Secondary uses slots 6..12.
-    byslot = {b['pal']: conv['palettes'][n] for n, b in conv['blocks'].items()}
     for slot in range(16):
-        cols = byslot.get(slot, [])
+        cols = conv['palettes'].get(slot, [])
         lines = ['JASC-PAL', '0100', '16', '0 0 0']
         for c in cols:
             lines.append(f'{c[0]} {c[1]} {c[2]}')
@@ -319,7 +368,7 @@ def write_tileset(spec, conv):
             mt += int(e).to_bytes(2, 'little')
         for _ in range(4):
             mt += (0).to_bytes(2, 'little')      # empty top layer
-        at += int(spec['attr_from'][m['block']]).to_bytes(2, 'little')
+        at += int(m['attr']).to_bytes(2, 'little')
     (out / 'metatiles.bin').write_bytes(bytes(mt))
     (out / 'metatile_attributes.bin').write_bytes(bytes(at))
     return len(tiles), len(conv['metatiles'])
@@ -348,16 +397,18 @@ def print_decls(spec, conv, ntiles):
     print('    .callback = NULL,\n};')
 
     print(f'\n--- include/rogue_dungeon.h ---')
-    base = 0x200
-    print(f'#define LAPIS_METATILE_FLOOR  0x{base + conv["floor"]:03X}')
+    base, p = 0x200, spec['prefix']
+    print(f'#define {p}_METATILE_FLOOR{"":<12} 0x{base + conv["floor"]:03X}')
     for slot, li in conv['slotmap'].items():
-        print(f'#define LAPIS_METATILE_{slot:<16} 0x{base + li:03X}')
+        print(f'#define {p}_METATILE_{slot:<16} 0x{base + li:03X}')
+    for i, (name, li) in enumerate(conv['decor'], 1):
+        print(f'#define {p}_METATILE_DECOR_{i}{"":<10} 0x{base + li:03X}')
 
 
 def main(argv):
     name = argv[0] if argv else 'lapis'
-    spec = SHEETS[name]
-    print(f'=== {name}: {spec["source"]} ===')
+    spec = TILESETS[name]
+    print(f'=== {name} -> {spec["out"]} ===')
     conv = convert(spec)
 
     ntiles, nmt = len(conv['bank'].tiles), len(conv['metatiles'])
@@ -371,10 +422,14 @@ def main(argv):
           + (f'   MISSING: {missing}' if missing else ''))
     print(f'  floor metatile: local {conv["floor"]}'
           if conv['floor'] is not None else '  floor: NOT FOUND')
+    for nm, li in conv['decor']:
+        print(f'  {nm}: local {li}')
 
     if '--write' in argv:
         if ntiles > 512:
             raise SystemExit('refusing to write: over the 512-tile budget')
+        if conv['floor'] is None:
+            raise SystemExit('refusing to write: no plain floor found')
         n, m = write_tileset(spec, conv)
         print(f'\n  wrote {spec["out"]}  ({n} tiles, {m} metatiles)')
     if '--decls' in argv:

@@ -1733,9 +1733,14 @@ const u16 gTilesetPalettes_RogueVictoryRoadDrake[][16] =
 // tools/rogue/import_tile_sheet.py. Written longhand rather than behind a
 // macro because tileset_resolve.py finds asset paths by parsing these, and a
 // pasted symbol name would make the atlas tooling lose the tileset silently.
-// Only palettes 06 (wall), 07 (ground) and 08 (water) carry colour - a
-// secondary is loaded from NUM_PALS_IN_PRIMARY onward, so 00-05 are ignored.
-const u32 gTilesetTiles_RogueLapisCave[] = INCGFX_U32("data/tilesets/secondary/rogue_lapis_cave/tiles.png", ".4bpp.fastSmol", "-num_tiles 268 -Wnum_tiles");
+// Only palettes 06 (wall), 07 (ground plus both decor variants) and 08 (water)
+// carry colour - a secondary is loaded from NUM_PALS_IN_PRIMARY onward, so
+// 00-05 are ignored.
+//
+// num_tiles is NOT decorative: -Wnum_tiles makes gbagfx check the PNG against
+// it, and the importer prints the figure it wrote. Re-run the importer and this
+// number moves with it.
+const u32 gTilesetTiles_RogueLapisCave[] = INCGFX_U32("data/tilesets/secondary/rogue_lapis_cave/tiles.png", ".4bpp.fastSmol", "-num_tiles 285 -Wnum_tiles");
 
 const u16 gTilesetPalettes_RogueLapisCave[][16] =
 {

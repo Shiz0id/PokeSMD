@@ -237,9 +237,16 @@ THEMES = {
         # pair. It is grey rock on an ice floor and it is the one thing here
         # that does not belong; the sheet has no stairs of its own.
         floor=0x233, stairs=0x0A7,
-        # No patch and no decor yet. The sheet's Ground Alt columns hold only a
-        # single cell each, and its Water is a surfable-looking animated block
-        # this theme must never paint - see the ocean's rule in ROGUELIKE.md.
+        # The floor is Mt. Freeze's snow, not this sheet's ground - the walls
+        # are Lapis Cave's and the ground is a second rip, composed into one
+        # tileset. Decor is that sheet's Ground Alt 1 and Alt 2, one cell each,
+        # which is all either sheet has in those columns.
+        #
+        # Still no patch layer, and the Water block is imported but never
+        # painted: it is a surfable-looking animated block, and the ocean's rule
+        # in ROGUELIKE.md says a theme must not paint one it does not mean.
+        decor=[(0x233, 0x25E, 0), (0x233, 0x25F, 0)],
+        decor_rarity=8,
         rooms=8, room_min=5, room_max=10, corridor=1,
         wall={
             'INTERIOR_LEFT': 0x203, 'INTERIOR_MID': 0x204, 'INTERIOR_RIGHT': 0x205,

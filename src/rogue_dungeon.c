@@ -172,16 +172,22 @@ static const struct RogueDecor sNewMauvilleDecor[] =
                                       NEWMAUVILLE_METATILE_WALL_BOOKCASE_R },
 };
 
-// Glacia's snowfield decor USED to sit here, and is gone with the snowfield.
-// It named VICTORYROAD_METATILE_SNOW_DRIFT_L/_R and _ICE_ROCK, which are ids in
-// the snow tileset's files; Glacia now runs on gTileset_RogueLapisCave, where
-// the same three ids are unrelated pieces of crystal wall. Repointing the array
-// would have been the section 3 bug - a per-theme metatile id outliving the
-// tileset it was measured against - so it was deleted rather than carried.
+// Glacia's snow, take two. The first version was hers on a cave recolour and
+// was deleted rather than repointed when she moved to Lapis, because the ids
+// meant crystal wall under the new tileset. These are the real thing: Mt.
+// Freeze's own Ground Alt 1 and Alt 2, imported beside the ground they vary and
+// quantised into the same palette, so they are the snow rather than something
+// resting on it.
 //
-// The decor pass itself was proved out here and still supports a FLOOR base as
-// well as a wall one. Lapis wants its own drifts drawn in its own palette; that
-// is new art, not a rename.
+// FLOOR decor rather than wall decor, which the pass has always supported - it
+// keys on the painted metatile, and a floor base is as valid a base as a wall
+// one. Both are 1 wide, so unlike the old drift there is no pairing constraint
+// and they can land anywhere the floor does.
+static const struct RogueDecor sGlaciaDecor[] =
+{
+    { LAPIS_METATILE_FLOOR, LAPIS_METATILE_DECOR_CLUMP },
+    { LAPIS_METATILE_FLOOR, LAPIS_METATILE_DECOR_DRIFT },
+};
 
 // Fiery Path's own residents plus their evolutions, with a couple of fire
 // types that fit the tunnel. Ordered weakest to strongest like the others.
@@ -1231,12 +1237,14 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [WALL_SLIVER_HORZ_R]  = LAPIS_METATILE_SLIVER_HORZ_R,
             [WALL_SLIVER_ISOLATED]= LAPIS_METATILE_SLIVER_ISOLATED,
         },
-        // NO DECOR. sGlaciaDecor names 0x3A6-0x3A8, which are metatiles in the
-        // CAVE's files - correct while she ran on a cave recolour, and under
-        // this tileset they are three unrelated pieces of crystal wall. A
-        // per-theme metatile id surviving a tileset change is exactly the bug
-        // ROGUELIKE.md section 3 records three times; drawing Lapis its own
-        // drifts is the follow-up, not reusing these.
+        // A clump and a swept drift, scattered over the snow. Both are the
+        // sheet's own art in the floor's own palette, so this is texture
+        // breaking up a repeated tile rather than ornament placed on it - 1 in
+        // 8 floor blocks, which is denser than the ornamental themes run at
+        // because there is nothing here to notice individually.
+        .decor = sGlaciaDecor,
+        .decorCount = ARRAY_COUNT(sGlaciaDecor),
+        .decorRarity = 8,
 
         .species = sGlaciaSpecies,
         .speciesCount = ARRAY_COUNT(sGlaciaSpecies),
