@@ -44,6 +44,7 @@ their output by hand; all are idempotent.
 | `make_flower_fldeff.py` | the flower dungeon's wade-through overlay into `graphics/field_effects/` — derived from `long_grass.png`, so it is the one generator here whose input is another checked-in asset |
 | `make_petal_weather.py` | `WEATHER_PETALS`' two 8x8 frames and its palette into `graphics/weather/` |
 | `make_victory_road_palettes.py` | the four Victory Road palette sets into `data/tilesets/secondary/rogue_victory_road_*/` |
+| `import_tile_sheet.py` | a whole secondary tileset — tiles, metatiles, attributes and palettes — from a sheet in `tools/rogue/sheets/`, currently `data/tilesets/secondary/rogue_lapis_cave/` |
 | `setup_dungeon_map.py` | the dungeon map's layout and `map.json` scaffolding |
 
 The tileset writers (`make_woods_stairs`, `make_fiery_slivers`,
@@ -59,7 +60,17 @@ appender's entries get silently wiped the next time it runs. Anything needing a
 new Ever Grande metatile adds itself there. Same rule as `append_metatiles.py`
 has for the cave, and for the same reason.
 
-`make_glacia_snow.py` writes tiles into the cave sheet but **not** metatiles:
+`import_tile_sheet.py` is the odd one out: it **owns** its output directory
+rather than editing a vanilla one, and rewrites every file in it on each run, so
+nothing else may append there. It reads the sheet's own Legend column — a
+neighbour mask per cell — and matches it against the twenty `PaintWalls` slots,
+which is why Lapis needed no autotile mining at all. See §5 of `ROGUELIKE.md`.
+
+`make_glacia_snow.py` wrote Glacia's snowfield, which **nothing uses any more** —
+she moved to the imported Lapis Cave tileset, orphaning the snow art along with
+`LAYOUT_ROGUE_DUNGEON_VRGLACIA` and `gTileset_RogueVictoryRoadGlacia`. Kept for
+now because the tiles are still in the cave sheet. It writes tiles but **not**
+metatiles:
 `append_metatiles.py` is the only appender to that tileset and imports the snow
 entries, because it stays idempotent by truncating everything past the vanilla
 414 and would wipe a second appender's work. Run `make_glacia_snow.py --write`
@@ -106,7 +117,7 @@ tools it turns on:
 | `verify_dungeon_gen.py` | connectivity, reachability, no out-of-bounds writes |
 | `verify_seeding.py` | determinism, and that floors do not correlate |
 | `validate_maps.py` | the map.bin codec against vanilla layouts |
-| `check_encounter_flags.py` | every theme can spawn a wild Pokemon under its **own** tileset, and no `*_METATILE_*` constant is named inside a function |
+| `check_encounter_flags.py` | every theme can spawn a wild Pokemon under its **own** tileset; that its `mapId` is registered in `wild_encounters.json` with a full-length table for the branch its surface actually reads; and no `*_METATILE_*` constant is named inside a function |
 | `check_starter_moves.py` | what each starter actually holds at `DUNGEON_STARTER_LEVEL`, and that none ends up with only status moves |
 | `verify_run_structure.py` | that every floor maps to one dungeon now the Elite Four's are half length, that bosses land on the intended floors, and that the level curve still fits each boss's party — read live out of `trainers.party` |
 | `woods_prototype.py` | renders generated woods floors; mirrors `StampCell`, including the tree base row, the long grass base and the crown above a canopy |

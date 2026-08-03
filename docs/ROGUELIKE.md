@@ -41,14 +41,15 @@ Losing wipes the run; so does winning, which is the point.
   (4, Flannery), Mirage Tower (5, Norman), the Jungle (6, Winona), the open
   Ocean (7, Tate and Liza) and the Underwater seafloor (8, Juan).
 - **Four more for the Elite Four**, which is where the stock game puts Victory
-  Road — it is the road *to* them. One per member, tinted to their type: Sidney
-  violet for Dark, Phoebe near-black **and fogged** for Ghost, Glacia pale blue
-  **and snowing** for Ice, Drake crimson for Dragon. All four are the same
-  tileset recoloured — see §5 — with their own type-matched wild pools, and two
-  of them carry weather. Glacia also has a snowfield of her own — a snow floor,
-  drifts and ice rocks, the project's first new art that needed no new palette,
-  plus five cliff pieces reshaded to stand in snow rather than on cave ground.
-  Cycling now starts at dungeon 12, Wallace.
+  Road — it is the road *to* them. One per member, with their own type-matched
+  wild pools. **Three are the same tileset recoloured** — see §5 — Sidney violet
+  for Dark, Phoebe near-black **and fogged** for Ghost, Drake crimson for Dragon.
+  **Glacia is the exception**: she has **Lapis Cave**, the project's first
+  tileset that is neither vanilla nor a recolour, imported wholesale from a
+  Mystery Dungeon sheet whose own autotile legend supplied all twenty wall slots
+  — so it is also the first with four distinct inside corners and no composed
+  slivers. It is still snowing on her, since weather belongs to the map rather
+  than the tileset. Cycling now starts at dungeon 12, Wallace.
 - The ocean is crossed **surfing** and the seafloor **diving**. Surfing is a
   property of the floor metatile; diving is a property of the **map**, which is
   why underwater is the one theme with a map of its own — see §7.
@@ -257,6 +258,56 @@ gMapHeader.mapLayout = GetMapLayout(theme->layoutId);
 
 **Never patch `mapLayoutId`** — every dispatch in the project keys on it. The
 themed layout is a tileset donor only; no map points at it.
+
+### Wild encounters key on the MAP, and every map must be registered
+
+The corollary to the swap above, and it cost **five themes their wild Pokémon**
+— eight of the thirteen worked, so it read as a per-theme art bug for a long
+time. `StandardWildEncounter` runs two gates before the roguelike is consulted
+at all, and each one fails silently:
+
+1. `GetCurrentMapWildMonHeaderId()` matches `gSaveBlock1Ptr->location` against
+   `gWildMonHeaders` — the **real map**, not the swapped layout — and returns
+   `HEADER_NONE` if it is absent. Only `MAP_ROGUE_DUNGEON_FLOOR` was ever listed
+   in `wild_encounters.json`, so the four maps that exist purely to carry a
+   weather setting had no encounters from the day they were added. Snow, fog and
+   petals each broke their theme in the same commit that gave it its weather.
+2. It then picks the land or the water branch from the behaviour under the
+   player and returns if **that branch's** table is `NULL`. The ocean paints
+   `MB_OCEAN_WATER`, took the water branch, and found a land-only entry.
+
+So a theme needs an entry for its own `mapId`, carrying the table its own
+encounter surface reads. The branch is decided by two flag bits and nothing
+else:
+
+| | `TILE_FLAG_HAS_ENCOUNTERS` | `TILE_FLAG_SURFABLE` | branch |
+|---|---|---|---|
+| `MB_CAVE`, `MB_TALL_GRASS`, `MB_LONG_GRASS`, `MB_INDOOR_ENCOUNTER` | yes | no | land, 12 slots |
+| `MB_OCEAN_WATER`, `MB_SEAWEED_NO_SURFACING` | yes | yes | water, **5 slots** |
+
+Use `TILE_FLAG_SURFABLE`, **not**
+`MetatileBehavior_IsSurfableFishableWater` — the two disagree, and the
+disagreement is exactly the underwater seaweed, which is surfable-flagged but
+not in the fishable list. `IsWaterWildEncounter` reads the flag, so the seafloor
+is a water area even though the player is walking on it. Vanilla agrees: every
+`MAP_UNDERWATER_*` registers `water_mons`.
+
+Two consequences worth carrying:
+
+- **`encounter_rate` is live even when the table is a placeholder.** The rate is
+  read off the static JSON entry before the hook is called; only the species and
+  levels are substituted. Ours is 10 on every dungeon map.
+- **The slot counts differ, so the ladder window has to follow.**
+  `BuildWildEncounterTable` deals the window round-robin across the slots, and an
+  8-wide window across 5 water slots would leave three species in the ladder that
+  no floor could roll. The window is capped to the slot count instead.
+
+Placeholder tables are deliberately **Zubat, including in the water entries** —
+if the hook ever stops substituting, a Zubat while surfing is unmistakable,
+where a placeholder Tentacool would let the same failure pass for real.
+
+`check_encounter_flags.py` now derives each theme's branch from its own surface
+and proves the declaration, the registration and the table length all agree.
 
 ### Metatile ids are tileset-pair specific
 
@@ -799,6 +850,49 @@ Consequences worth knowing:
 at 2× and 5×; the lightness band in each tone is a linear remap rather than a
 gamma, because its width *is* the contrast budget and the wall outline is the
 only thing separating a wall from the floor it meets.
+
+### Importing a whole tileset from a sheet, legend and all
+
+Lapis Cave (`gTileset_RogueLapisCave`, Glacia's) is the first theme whose
+tileset is neither vanilla nor a recolour of one. `import_tile_sheet.py` builds
+it — tiles, metatiles, attributes and palettes — from a Mystery Dungeon: Red
+Rescue Team sheet ripped and formatted by SilverDeoxys563.
+
+**The thing worth importing was not the art, it was the rules.** Every other
+theme's wall vocabulary had to be recovered by reading vanilla layouts, because
+vanilla ships maps and not rules — see §4, where statistical mining is shown not
+to recover them. This sheet ships a **Legend column giving each cell's neighbour
+mask**, which the importer decodes and matches against the twenty `PaintWalls`
+slots directly. All twenty matched at full score. Nothing was guessed, and no
+mock was needed to disambiguate anything.
+
+Two things follow that no other theme gets:
+
+- **Four distinct inside corners.** Vanilla Emerald never drew them, which is
+  why every other table in the project repeats one metatile across
+  `CORNER_OPEN_NW` and `_NE`. This is the first where the two differ.
+- **No composed slivers.** The cave needed seven spliced metatiles, Fiery Path
+  six, the ocean seven — vanilla's walls are never one block thick. All seven
+  sliver cases are native here.
+
+The cost is that the interior is a flat dark block, so a wall mass reads as void
+with a crystal rim rather than as textured rock. That is the sheet's own look,
+and it is also the only fill it has that **tiles invisibly: measured seam 0.0**,
+against 35–42 for every textured rock face in the Meteor Falls tileset evaluated
+beside it, where a fill at that seam became visible corduroy.
+
+Still open: the theme borrows `gTileset_General`'s warp (`0x0A7`) for its
+stairs, because the sheet has no stairs of its own, and grey rock on an ice
+floor is the one piece that does not belong. Composing one from the sheet's own
+crystal is the obvious follow-up.
+
+**A theme swap orphans more than the theme table.** Moving Glacia off the snow
+recolour left `LAYOUT_ROGUE_DUNGEON_VRGLACIA`, `gTileset_RogueVictoryRoadGlacia`
+and everything `make_glacia_snow.py` wrote referenced by nothing but
+`layouts.json` — still linked into the ROM, still costing space. Her decor array
+went with the snowfield rather than being repointed: it named metatile ids in
+the snow tileset's files, and under Lapis those same ids are unrelated pieces of
+crystal wall, which is the §3 bug exactly.
 
 ---
 
@@ -1451,6 +1545,20 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    wall merges into it. The brick is secondary palette 9 and the flowers are 10
    and 11, so palette 9 can be shifted cooler without touching a flower pixel —
    it also carries the round shrub `0x220`, so that is not free.
+1d. **Lapis Cave has borrowed stairs and no decor.** Its descent is
+   `gTileset_General`'s warp `0x0A7` — a primary id, so it works under any pair,
+   and grey rock on an ice floor is the one piece of the theme that does not
+   belong. The sheet has no stairs of its own; composing a pair from its own
+   crystal is the follow-up. It also has no decor at all: Glacia's drifts were
+   deleted rather than repointed when she moved off the snow tileset, because
+   the ids mean crystal wall under this one.
+1e. **The snowfield is orphaned but still in the ROM.**
+   `LAYOUT_ROGUE_DUNGEON_VRGLACIA`, `gTileset_RogueVictoryRoadGlacia` and its
+   72 KB of palettes are referenced by nothing but `layouts.json` now that
+   Glacia runs on Lapis, and a layout listed there is emitted whether a map
+   points at it or not. `make_glacia_snow.py`'s tiles also still sit in the cave
+   sheet. Removing them is free ROM; keeping them costs nothing but clutter if
+   a future Ice theme wants the art back.
 1a. **Underwater has no divers.** Trainers there are `SWIMMER_M`/`SWIMMER_F`,
    who are drawn treading the surface in swimwear while standing on the
    seafloor. There is no diver NPC graphic in the game at all — the only diving
