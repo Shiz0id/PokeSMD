@@ -42,6 +42,7 @@ their output by hand; all are idempotent.
 | `make_glacia_snow.py` | Glacia's snow floor, drift and ice rock tiles into `data/tilesets/secondary/cave/` |
 | `make_evergrande_tiles.py` | the flower dungeon's exit and its sixteen encounter-flowers into `data/tilesets/secondary/ever_grande/` |
 | `make_flower_fldeff.py` | the flower dungeon's wade-through overlay into `graphics/field_effects/` — derived from `long_grass.png`, so it is the one generator here whose input is another checked-in asset |
+| `make_petal_weather.py` | `WEATHER_PETALS`' two 8x8 frames and its palette into `graphics/weather/` |
 | `make_victory_road_palettes.py` | the four Victory Road palette sets into `data/tilesets/secondary/rogue_victory_road_*/` |
 | `setup_dungeon_map.py` | the dungeon map's layout and `map.json` scaffolding |
 

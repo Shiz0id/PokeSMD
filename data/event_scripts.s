@@ -608,6 +608,7 @@ gStdScripts_End::
 	.include "data/maps/RogueDungeonUnderwater/scripts.inc"
 	.include "data/maps/RogueDungeonFog/scripts.inc"
 	.include "data/maps/RogueDungeonSnow/scripts.inc"
+	.include "data/maps/RogueDungeonPetals/scripts.inc"
 	.include "data/maps/RogueRestStop/scripts.inc"
 
 .if IS_FRLG

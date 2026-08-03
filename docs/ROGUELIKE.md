@@ -31,9 +31,11 @@ Losing wipes the run; so does winning, which is the point.
   carpeted in flower fields and ringed by tan cliffs, which is what the vanilla
   city already is. It is the first theme with **two encounter surfaces**: short
   flower beds you walk over, and stands of flowery long grass you wade into, on
-  different behaviours because they are different heights. Also the first Elite
-  Four pool not type-matched to its member — the dungeon is deliberately not
-  water themed. Only the finale still wraps to another theme's art.
+  different behaviours because they are different heights. Blossom blows across
+  it — `WEATHER_PETALS`, the project's first **new weather**, in a free enum
+  slot vanilla left empty. Also the first Elite Four pool not type-matched to
+  its member — the dungeon is deliberately not water themed. Only the finale
+  still wraps to another theme's art.
 - **Eight themes, one per gym dungeon, no repeats**: Petalburg Woods (dungeon 1,
   Roxanne), Granite Cave (2, Brawly), New Mauville (3, Wattson), Fiery Path
   (4, Flannery), Mirage Tower (5, Norman), the Jungle (6, Winona), the open
@@ -997,6 +999,61 @@ grass-**blob** placement, and a patch-layer theme would then paint it twice.
 `check_encounter_flags.py` reads. Everything that would paint *from* it lives in
 `StampCell`, which is `DUNGEON_GEN_WOODS` only.
 
+### Adding a WEATHER
+
+`WEATHER_PETALS` was the first new one. It is cheap, and the cost is almost
+entirely in knowing which four places to touch.
+
+**There are free slots.** `WEATHER_COUNT` is 24, but the named values stop at
+`WEATHER_ABNORMAL` (15) and resume at `WEATHER_ROUTE119_CYCLE` (20) — **16–19
+are an unused gap**, already inside the bound, and `sWeatherNames[WEATHER_COUNT]`
+already sizes for them.
+
+| what | why it matters |
+|---|---|
+| `sWeatherFuncs` | indexed with **no bounds check**, and it ends at index 14 |
+| `TranslateWeatherNum` | **the one that bites** — see below |
+| `sWeatherNames` | debug only |
+| the constant | the gap at 16–19 |
+
+**`TranslateWeatherNum` is the silent failure.** Without a `case`, a map header
+asking for the new weather falls through to `default: return WEATHER_NONE` and
+*absolutely nothing happens* — no crash, no warning, no effect. The map loads
+perfectly and is simply not weathered.
+
+**Never put new colours in `PALTAG_WEATHER`.** It holds `gFogPalette` and is
+shared by rain, snow, ash, bubbles and the fog itself, so recolouring it
+repaints every weather in the game. The route is `PALTAG_WEATHER_2`, a
+lazily-allocated second slot filled by `LoadCustomWeatherSpritePalette()` —
+which **clouds and sandstorm already use**, so there is precedent to copy rather
+than plumbing to invent. It calls `UpdateSpritePaletteWithWeather` itself, so
+the fade comes free. There is only one such slot, so a `PALTAG_WEATHER_2`
+weather cannot coexist with clouds or sandstorm; one weather runs at a time, so
+this never arises.
+
+**Decide explicitly whether it reaches battle.** Petals are absent from the
+overworld-to-battle switch in `battle_util.c`, so `gBattleWeather` stays clear
+and they are purely cosmetic. That is a decision, not an omission — `WEATHER_SNOW`
+*is* mechanical (§10), and a new weather silently inheriting nothing is the
+right default only if you meant it.
+
+**Sprite storage can be shared.** Petals reuse `snowflakeSprites[]` and its
+counters, because only one weather runs at a time and a second array would cost
+the `Weather` struct 64 bytes for nothing.
+
+**The snow's cut feature is worth finishing rather than deleting.**
+`InitSnowflakeSpriteMovement` writes `tFallCounter`, `tFallDuration` and
+`tDeltaY2` on every spawn and nothing reads them, and `WaitSnowflakeSprite` is
+`UNUSED` — a pause-and-resume cycle was built and left inert. Snow does not need
+it; petals do, and a petal that stalls, hangs and drops again is most of what
+separates blossom from confetti falling at a constant rate. **Dead machinery in
+a vanilla effect is often the feature the next effect wants.**
+
+The drift itself is two constants. Snow offsets x by `gSineTable[i] / 64`, which
+is ±4 pixels and reads as a wobble; petals use `/ 16`, so the sideways travel
+*is* the motion. Snow also starts every flake at wave index 0, so they all swing
+in step — petals randomise it.
+
 ### Openness
 
 `roomCount`, `roomMin`, `roomMax` and `corridorWidth` let a theme carve more
@@ -1432,8 +1489,13 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
 
    They are named for the **weather**, not for Phoebe and Glacia, and that is
    the answer: a map per weather, shared by every theme that points
-   `theme->mapId` at it. A rain map for the jungle is the same move a third
-   time — one `map.json` and an empty `scripts.inc`.
+   `theme->mapId` at it. `MAP_ROGUE_DUNGEON_PETALS` is the third, for Ever
+   Grande, and a rain map for the jungle would be the fourth — one `map.json`
+   and an empty `scripts.inc` each.
+
+   Every warp path picks the change up on its own, because they all go through
+   one accessor that returns `ThemeForFloor(floor)->mapId`. That is why the
+   five-paths problem underwater exposed only had to be solved once.
 
    **`WEATHER_SNOW` is worth knowing about.** `constants/weather.h` marks it
    `// Unused` and no vanilla map sets it, but it is not a stub: it is wired at

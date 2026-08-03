@@ -1299,7 +1299,11 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     [DUNGEON_THEME_EVERGRANDE] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_EVERGRANDE,
-        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        // Blossom on the wind. Weather lives in the map header, which is read
+        // out of ROM by warp group and id, so it needs a map of its own the way
+        // the fog and the snow do - and like those, the map is named for the
+        // WEATHER rather than for this theme, so a later one can point here too.
+        .mapId = MAP_ROGUE_DUNGEON_PETALS,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,

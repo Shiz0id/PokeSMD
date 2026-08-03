@@ -17,6 +17,10 @@
 #define WEATHER_DOWNPOUR                13
 #define WEATHER_UNDERWATER_BUBBLES      14
 #define WEATHER_ABNORMAL                15  // The alternating weather during Groudon/Kyogre conflict
+// 16-19 were an unused gap. Petals blow across the Ever Grande flower
+// dungeon. Purely cosmetic: deliberately absent from the overworld-to-battle
+// weather switch in battle_util.c, so it never reaches gBattleWeather.
+#define WEATHER_PETALS                  16
 #define WEATHER_ROUTE119_CYCLE          20
 #define WEATHER_ROUTE123_CYCLE          21
 #define WEATHER_FOG                     22  // Aggregate of WEATHER_FOG_HORIZONTAL and WEATHER_FOG_DIAGONAL

@@ -26,6 +26,11 @@ const u8 gWeatherFogHorizontalTiles[] = INCGFX_U8("graphics/weather/fog_horizont
 const u8 gWeatherCloudTiles[] = INCGFX_U8("graphics/weather/cloud.png", ".4bpp");
 const u8 gWeatherSnow1Tiles[] = INCGFX_U8("graphics/weather/snow0.png", ".4bpp");
 const u8 gWeatherSnow2Tiles[] = INCGFX_U8("graphics/weather/snow1.png", ".4bpp");
+const u8 gWeatherPetal1Tiles[] = INCGFX_U8("graphics/weather/petal0.png", ".4bpp");
+const u8 gWeatherPetal2Tiles[] = INCGFX_U8("graphics/weather/petal1.png", ".4bpp");
+// Loaded into PALTAG_WEATHER_2 by Petals_Main, the way clouds and sandstorm
+// load theirs. PALTAG_WEATHER is shared by rain, snow, ash and the fog.
+const u16 gPetalsWeatherPalette[] = INCGFX_U16("graphics/weather/petals.pal", ".gbapal");
 const u8 gWeatherBubbleTiles[] = INCGFX_U8("graphics/weather/bubble.png", ".4bpp");
 const u8 gWeatherAshTiles[] = INCGFX_U8("graphics/weather/ash.png", ".4bpp");
 const u8 gWeatherRainTiles[] = INCGFX_U8("graphics/weather/rain.png", ".4bpp");
@@ -985,6 +990,275 @@ static void UpdateSnowflakeSprite(struct Sprite *sprite)
 #undef tFallCounter
 #undef tFallDuration
 #undef tDeltaY2
+
+//------------------------------------------------------------------------------
+// WEATHER_PETALS
+//------------------------------------------------------------------------------
+//
+// Blossom blowing across the flower dungeon. The snow with a different drift.
+//
+// It reuses the snow's sprite storage and counters outright - only one weather
+// runs at a time, so snowflakeSprites[] is free whenever petals are up, and a
+// second array would cost the Weather struct 64 bytes for nothing.
+//
+// PURELY COSMETIC, deliberately. Petals do not appear in the overworld-to-battle
+// weather switch in battle_util.c, so gBattleWeather stays clear. That is a
+// choice rather than an omission: WEATHER_SNOW is NOT cosmetic, because
+// B_OVERWORLD_SNOW is GEN_LATEST and Glacia's floors hand every Ice type 1.5x
+// Defense. Wallace's floor stays mechanically plain.
+
+static void UpdatePetalSprite(struct Sprite *);
+static bool8 UpdateVisiblePetalSprites(void);
+static bool8 CreatePetalSprite(void);
+static bool8 DestroyPetalSprite(void);
+static void InitPetalSpriteMovement(struct Sprite *);
+
+void Petals_InitVars(void)
+{
+    gWeatherPtr->initStep = 0;
+    gWeatherPtr->weatherGfxLoaded = FALSE;
+    gWeatherPtr->targetColorMapIndex = 0;
+    gWeatherPtr->colorMapStepDelay = 20;
+    // Fewer than the snow's sixteen. A petal covers more ground than a flake
+    // because it drifts four times as far sideways, so the same count reads as
+    // confetti rather than as a breeze.
+    gWeatherPtr->targetSnowflakeSpriteCount = NUM_PETAL_SPRITES;
+    gWeatherPtr->snowflakeVisibleCounter = 0;
+    Weather_SetBlendCoeffs(8, BASE_SHADOW_INTENSITY); // preserve shadow darkness
+    gWeatherPtr->noShadows = FALSE;
+}
+
+void Petals_InitAll(void)
+{
+    u16 i;
+
+    Petals_InitVars();
+    while (gWeatherPtr->weatherGfxLoaded == FALSE)
+    {
+        Petals_Main();
+        for (i = 0; i < gWeatherPtr->snowflakeSpriteCount; i++)
+            UpdatePetalSprite(gWeatherPtr->sprites.s1.snowflakeSprites[i]);
+    }
+}
+
+void Petals_Main(void)
+{
+    if (gWeatherPtr->initStep == 0)
+    {
+        // PALTAG_WEATHER_2, not PALTAG_WEATHER. The latter holds gFogPalette
+        // and is shared by rain, snow, ash, bubbles and the fog itself, so
+        // putting petal colours there would repaint every weather in the game.
+        // This is the lazily-allocated second slot, and loading into it is
+        // exactly how clouds and sandstorm get their own colours. It applies
+        // the weather fade itself, so nothing else has to.
+        LoadCustomWeatherSpritePalette(gPetalsWeatherPalette);
+        if (!UpdateVisiblePetalSprites())
+        {
+            gWeatherPtr->weatherGfxLoaded = TRUE;
+            gWeatherPtr->initStep++;
+        }
+    }
+}
+
+bool8 Petals_Finish(void)
+{
+    switch (gWeatherPtr->finishStep)
+    {
+    case 0:
+        gWeatherPtr->targetSnowflakeSpriteCount = 0;
+        gWeatherPtr->snowflakeVisibleCounter = 0;
+        gWeatherPtr->finishStep++;
+        // fall through
+    case 1:
+        if (!UpdateVisiblePetalSprites())
+        {
+            gWeatherPtr->finishStep++;
+            return FALSE;
+        }
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static bool8 UpdateVisiblePetalSprites(void)
+{
+    if (gWeatherPtr->snowflakeSpriteCount == gWeatherPtr->targetSnowflakeSpriteCount)
+        return FALSE;
+
+    if (++gWeatherPtr->snowflakeVisibleCounter > 36)
+    {
+        gWeatherPtr->snowflakeVisibleCounter = 0;
+        if (gWeatherPtr->snowflakeSpriteCount < gWeatherPtr->targetSnowflakeSpriteCount)
+            CreatePetalSprite();
+        else
+            DestroyPetalSprite();
+    }
+
+    return gWeatherPtr->snowflakeSpriteCount != gWeatherPtr->targetSnowflakeSpriteCount;
+}
+
+static const struct OamData sPetalSpriteOamData =
+{
+    .y = 0,
+    .affineMode = ST_OAM_AFFINE_OFF,
+    .objMode = ST_OAM_OBJ_NORMAL,
+    .mosaic = FALSE,
+    .bpp = ST_OAM_4BPP,
+    .shape = SPRITE_SHAPE(8x8),
+    .x = 0,
+    .matrixNum = 0,
+    .size = SPRITE_SIZE(8x8),
+    .tileNum = 0,
+    .priority = 1,
+    .paletteNum = 0,
+    .affineParam = 0,
+};
+
+static const struct SpriteFrameImage sPetalSpriteImages[] =
+{
+    {gWeatherPetal1Tiles, sizeof(gWeatherPetal1Tiles)},
+    {gWeatherPetal2Tiles, sizeof(gWeatherPetal2Tiles)},
+};
+
+static const union AnimCmd sPetalAnimCmd0[] =
+{
+    ANIMCMD_FRAME(0, 16),
+    ANIMCMD_END,
+};
+
+static const union AnimCmd sPetalAnimCmd1[] =
+{
+    ANIMCMD_FRAME(1, 16),
+    ANIMCMD_END,
+};
+
+static const union AnimCmd *const sPetalAnimCmds[] =
+{
+    sPetalAnimCmd0,
+    sPetalAnimCmd1,
+};
+
+static const struct SpriteTemplate sPetalSpriteTemplate =
+{
+    .tileTag = TAG_NONE,
+    .paletteTag = PALTAG_WEATHER_2,
+    .oam = &sPetalSpriteOamData,
+    .anims = sPetalAnimCmds,
+    .images = sPetalSpriteImages,
+    .callback = UpdatePetalSprite,
+};
+
+#define tPosY       data[0]
+#define tDeltaY     data[1]
+#define tWaveDelta  data[2]
+#define tWaveIndex  data[3]
+#define tPetalId    data[4]
+#define tRestCount  data[5]
+#define tRestUntil  data[6]
+#define tFallDeltaY data[7]
+
+static bool8 CreatePetalSprite(void)
+{
+    u8 spriteId = CreateSpriteAtEnd(&sPetalSpriteTemplate, 0, 0, 78);
+    if (spriteId == MAX_SPRITES)
+        return FALSE;
+
+    gSprites[spriteId].tPetalId = gWeatherPtr->snowflakeSpriteCount;
+    InitPetalSpriteMovement(&gSprites[spriteId]);
+    gSprites[spriteId].coordOffsetEnabled = TRUE;
+    gWeatherPtr->sprites.s1.snowflakeSprites[gWeatherPtr->snowflakeSpriteCount++] = &gSprites[spriteId];
+    return TRUE;
+}
+
+static bool8 DestroyPetalSprite(void)
+{
+    if (gWeatherPtr->snowflakeSpriteCount)
+    {
+        DestroySprite(gWeatherPtr->sprites.s1.snowflakeSprites[--gWeatherPtr->snowflakeSpriteCount]);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static void InitPetalSpriteMovement(struct Sprite *sprite)
+{
+    u16 rand;
+    u16 x = ((sprite->tPetalId * 5) & 7) * 30 + (Random() % 30);
+
+    sprite->y = -3 - (gSpriteCoordOffsetY + sprite->centerToCornerVecY);
+    sprite->x = x - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
+    sprite->tPosY = sprite->y * 128;
+    sprite->x2 = 0;
+    rand = Random();
+    // Slower and more varied than snow, which falls at 64 to 79. A petal is
+    // being carried rather than dropped.
+    sprite->tDeltaY = (rand & 7) * 4 + 28;
+    sprite->tFallDeltaY = sprite->tDeltaY;
+    StartSpriteAnim(sprite, (rand & 1) ? 0 : 1);
+    // Not all in phase, unlike the snow, which starts every flake at wave index
+    // 0 and so has them all swing the same way at the same time.
+    sprite->tWaveIndex = Random() & 0xFF;
+    sprite->tWaveDelta = ((rand >> 4) & 3) + 2;
+    sprite->tRestUntil = (rand & 0x3F) + 90;
+    sprite->tRestCount = 0;
+}
+
+static void UpdatePetalSprite(struct Sprite *sprite)
+{
+    s16 x;
+
+    // THE SNOW'S CUT FEATURE, FINISHED. InitSnowflakeSpriteMovement writes
+    // tFallCounter, tFallDuration and tDeltaY2 on every spawn and nothing ever
+    // reads them, and WaitSnowflakeSprite is UNUSED - the machinery for a
+    // pause-and-resume cycle is all there and inert. Snow does not need it.
+    // Petals do: one caught in a breeze stalls, hangs, and then drops again,
+    // and that hesitation is most of what separates blossom from confetti
+    // falling at a constant rate.
+    if (++sprite->tRestCount > sprite->tRestUntil)
+    {
+        sprite->tDeltaY = sprite->tFallDeltaY / 4;
+        if (sprite->tRestCount > sprite->tRestUntil + 40)
+        {
+            sprite->tDeltaY = sprite->tFallDeltaY;
+            sprite->tRestCount = 0;
+        }
+    }
+
+    sprite->tPosY += sprite->tDeltaY;
+    sprite->y = sprite->tPosY >> 7;
+    sprite->tWaveIndex += sprite->tWaveDelta;
+    sprite->tWaveIndex &= 0xFF;
+    // The snow divides by 64, which is +/-4 pixels and reads as a wobble. This
+    // is +/-16, so the sideways travel IS the motion rather than a decoration
+    // on a fall.
+    sprite->x2 = gSineTable[sprite->tWaveIndex] / 16;
+
+    x = (sprite->x + sprite->centerToCornerVecX + gSpriteCoordOffsetX) & 0x1FF;
+    if (x & 0x100)
+        x |= -0x100;
+
+    if (x < -3)
+        sprite->x = 242 - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
+    else if (x > 242)
+        sprite->x = -3 - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
+
+    // Off the bottom: respawn at the top with a fresh drift. The snow relies on
+    // its flakes being off screen quickly; a petal that hangs would otherwise
+    // sit at the bottom edge for a long time.
+    if (sprite->y > 163)
+        InitPetalSpriteMovement(sprite);
+}
+
+#undef tPosY
+#undef tDeltaY
+#undef tWaveDelta
+#undef tWaveIndex
+#undef tPetalId
+#undef tRestCount
+#undef tRestUntil
+#undef tFallDeltaY
 
 //------------------------------------------------------------------------------
 // WEATHER_RAIN_THUNDERSTORM
@@ -2688,6 +2962,7 @@ static u8 TranslateWeatherNum(u8 weather)
     case WEATHER_DOWNPOUR:           return WEATHER_DOWNPOUR;
     case WEATHER_UNDERWATER_BUBBLES: return WEATHER_UNDERWATER_BUBBLES;
     case WEATHER_ABNORMAL:           return WEATHER_ABNORMAL;
+    case WEATHER_PETALS:             return WEATHER_PETALS;
     case WEATHER_ROUTE119_CYCLE:     return sWeatherCycleRoute119[gSaveBlock1Ptr->weatherCycleStage];
     case WEATHER_ROUTE123_CYCLE:     return sWeatherCycleRoute123[gSaveBlock1Ptr->weatherCycleStage];
     case WEATHER_DYNAMIC:            return GetDynamicWeather();
