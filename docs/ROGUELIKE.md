@@ -34,8 +34,9 @@ Losing wipes the run; so does winning, which is the point.
 - **Four more for the Elite Four**, which is where the stock game puts Victory
   Road — it is the road *to* them. One per member, tinted to their type: Sidney
   violet for Dark, Phoebe near-black **and fogged** for Ghost, Glacia pale blue
-  for Ice, Drake crimson for Dragon. All four are the same tileset recoloured —
-  see §5. Cycling now starts at dungeon 12, Wallace.
+  **and snowing** for Ice, Drake crimson for Dragon. All four are the same
+  tileset recoloured — see §5 — with their own type-matched wild pools, and two
+  of them carry weather. Cycling now starts at dungeon 12, Wallace.
 - The ocean is crossed **surfing** and the seafloor **diving**. Surfing is a
   property of the floor metatile; diving is a property of the **map**, which is
   why underwater is the one theme with a map of its own — see §7.
@@ -104,6 +105,35 @@ The floor 110 rival is invented (`TRAINER_ROGUE_RIVAL`) for the same reason in
 reverse: the stock game's last rival battle is **level 32**, seventy floors out
 of date. There are nine spare trainer ids before the defeat flags overflow; this
 takes one.
+
+### A species pool is a ladder, not a list
+
+`theme->species[]` must be sorted **weakest to strongest**, because
+`BuildWildEncounterTable` reads a *window* into it, not a prefix:
+
+```
+tiers  = STARTING_TIER(6) + floor / TIER_FLOORS(3), clamped to speciesCount
+bottom = tiers > WINDOW(8) ? tiers - WINDOW : 0
+```
+
+A prefix would keep the weakest species in play forever — that is why Zubat was
+everywhere before this. With a window they **retire** as stronger ones unlock.
+
+Two consequences that are easy to get wrong:
+
+- **Past floor ~30, `tiers` has clamped and only the last 8 entries ever
+  appear.** A pool for a deep-only theme should be 8 or fewer, or the extra
+  entries are species that can never spawn. The Elite Four's four pools are 6–8
+  for exactly this reason, while the gym pools are 16.
+- **Slots are dealt round-robin from the window, not drawn per slot.** Encounter
+  slot weights are steeply uneven (20/20/10/10/…), so independent draws let one
+  species take both 20% slots and own the floor. A pool size that divides
+  `NUM_LAND_MONS_ENCOUNTER_SLOTS` (12) spreads perfectly flat — Drake's six do.
+
+**Check a species' actual typing before putting it in a themed pool.** Seadra is
+pure Water and only becomes Water/Dragon as Kingdra; Swablu is Normal/Flying
+until it evolves; Trapinch is pure Ground. All three read as dragons and none of
+them are. `src/data/pokemon/species_info/` is the answer, not memory.
 
 ### Themes
 
@@ -1078,21 +1108,37 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    for it. Everything decorative it does have is inside `StampCell`. That is
    fine while the only variety is per-cell, but a woods theme wanting scattered
    props or ground patches would need the passes lifted out of the cave path.
-6. **The jungle has no rain** — but the open question in this entry is now
-   answered, so this is a table entry away rather than a design decision.
+6. **The jungle has no rain** — but the open question in this entry is answered
+   and the pattern has been used twice, so this is now a table entry rather than
+   a design decision.
 
-   Phoebe's floors needed fog, and fog is per-map for the same reason diving is:
-   `GetCurrentMapType` and the weather loader read the ROM header by warp group
-   and id, not `gMapHeader`, so the RAM patch that swaps tilesets per theme
-   cannot reach it. `MAP_ROGUE_DUNGEON_FOG` is the result — it shares
-   `LAYOUT_ROGUE_DUNGEON_FLOOR`, so `mapLayoutId` is identical and every
-   dispatch keying on it is untouched, and its `scripts.inc` defines nothing at
-   all.
+   Weather is per-map for the same reason diving is: `GetCurrentMapType` and the
+   weather loader read the ROM header by warp group and id, not `gMapHeader`, so
+   the RAM patch that swaps tilesets per theme cannot reach it.
+   `MAP_ROGUE_DUNGEON_FOG` and `MAP_ROGUE_DUNGEON_SNOW` are the result. Both
+   share `LAYOUT_ROGUE_DUNGEON_FLOOR`, so `mapLayoutId` is identical and every
+   dispatch keying on it is untouched, and both `scripts.inc` define nothing.
 
-   It is named for the **weather**, not for Phoebe, and that is the answer: a
-   map per weather, shared by every theme that points `theme->mapId` at it, not
-   a map per theme. A rain map for the jungle is the same move and costs one
-   `map.json` plus an empty `scripts.inc`.
+   They are named for the **weather**, not for Phoebe and Glacia, and that is
+   the answer: a map per weather, shared by every theme that points
+   `theme->mapId` at it. A rain map for the jungle is the same move a third
+   time — one `map.json` and an empty `scripts.inc`.
+
+   **`WEATHER_SNOW` is worth knowing about.** `constants/weather.h` marks it
+   `// Unused` and no vanilla map sets it, but it is not a stub: it is wired at
+   `[WEATHER_SNOW]` in `sWeatherFuncs` with a full init/main/finish set, real
+   art, and 16 sprites with two flake sizes, sine drift and screen wrap. What
+   was cut is a pause-and-respawn cycle — `WaitSnowflakeSprite` is `UNUSED`, and
+   `tFallCounter`/`tFallDuration`/`tDeltaY2` are written on every spawn and read
+   by nothing. Nothing on the live path is broken.
+
+   **And weather is not always only cosmetic.** `B_OVERWORLD_SNOW` is
+   `GEN_LATEST`, so a battle on a snowing map sets `B_WEATHER_SNOW`: Ice types
+   get ×1.5 Defense, Blizzard cannot miss, Weather Ball turns Ice, and Slush
+   Rush / Ice Body / Snow Cloak come online. Gen 9 snow deals no chip damage
+   where hail would, so it costs the player nothing passively — but **check what
+   a weather does in battle before hanging it on a theme**, because rain, sun
+   and sandstorm all reach `gBattleWeather` the same way.
 7. The jungle's four sliver slots are never exercised: 3-wide corridors do not
    leave one-block-thick walls. They are filled with plain canopy, so the risk
    is low, but they are unvalidated and would show up if `corridorWidth` ever
