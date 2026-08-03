@@ -36,8 +36,9 @@ Losing wipes the run; so does winning, which is the point.
   violet for Dark, Phoebe near-black **and fogged** for Ghost, Glacia pale blue
   **and snowing** for Ice, Drake crimson for Dragon. All four are the same
   tileset recoloured — see §5 — with their own type-matched wild pools, and two
-  of them carry weather. Glacia also has a snowfield of her own: a snow floor,
-  drifts and ice rocks, the project's first new art that needed no new palette.
+  of them carry weather. Glacia also has a snowfield of her own — a snow floor,
+  drifts and ice rocks, the project's first new art that needed no new palette,
+  plus five cliff pieces reshaded to stand in snow rather than on cave ground.
   Cycling now starts at dungeon 12, Wallace.
 - The ocean is crossed **surfing** and the seafloor **diving**. Surfing is a
   property of the floor metatile; diving is a property of the **map**, which is
@@ -489,6 +490,51 @@ Decor is also the escape from the primary-palette limit: the cave's own decor is
 half `gTileset_General`'s palettes and cannot be recoloured, but *new* art drawn
 in palette 6 recolours perfectly. That is why Glacia has decor and the other
 three Victory Road themes have none.
+
+### Borrowed wall art has the donor's FLOOR baked into it
+
+**A custom floor under a borrowed wall set does not just look different — it
+looks broken.** The cave's wall pieces draw the base of the cliff as *ground*
+inside the wall's own metatile, so it blends into `0x201` below. Put snow under
+it and that band stays cave-coloured: every room reads as a grey rectangle with
+a strip of bare rock along the bottom.
+
+This could not arise before Glacia. Every earlier theme either kept the donor's
+own floor (Mirage Tower walks on `0x201`) or took its whole wall table from the
+same tileset as its floor (Fiery Path) — the two always matched by
+construction. **Any theme that mixes a custom floor with a borrowed wall set
+needs this treatment.**
+
+The fix is five reshaded metatiles and twelve tiles. Which pixels to repaint is
+not a judgement call:
+
+1. **Seed from the edges that actually have floor**, taken from the `if/else`
+   chain in `PaintWalls` — not inferred from the art. `WALL_FACE_LEFT` is
+   `openSouth && openWest`, so it has ground on two edges; `WALL_FACE_MID` on
+   one.
+2. **Flood-fill through the floor's own tonal band**, stopping at the dark
+   outline. For the cave that is `{3,4,5}` — **not** 6, which is the floor's
+   third-commonest tone *and* the wall's dark edge, so letting the fill through
+   it leaks straight into the rock.
+3. **Replace with the floor's pixels at the same coordinates**, so the
+   repainted band lines up with the noise of the blocks beside it.
+
+Two slots look like they need it and do not:
+
+- **The north row.** Its light top band is index 3 — *lighter* than the floor's
+  dominant 4. That is the wall's own lit top edge, not ground. A cliff face has
+  a visible base; a cliff top does not.
+- **The corners.** No cardinal neighbour of a corner is floor, only a diagonal,
+  so none of them may show any. Seed them anyway and the fill claims 23% of
+  `WALL_CORNER_OPEN_SW`, all of it leak — cave wall interior and cave floor
+  share a tonal band, which is the same fact that makes a missing boundary
+  there *invisible* rather than merely plain (§4).
+
+**Only the quadrants the repaint touches get a new tile.** The rest reference
+the original entry verbatim, flips and all. Check the source metatiles are
+bottom-layer only before flattening anything — all five here are, but flattening
+one that used a top layer would change whether it draws over the player. Each
+new metatile copies the attribute of the piece it replaces.
 
 ### When splicing is not enough: drawing new tiles
 
