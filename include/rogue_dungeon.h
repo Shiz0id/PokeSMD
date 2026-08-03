@@ -375,21 +375,50 @@
 #define JUNGLE_METATILE_FLOOR_ALT_1      0x263
 #define JUNGLE_METATILE_FLOOR_ALT_2      0x264
 
-// Long grass stays PRIMARY and stays vanilla's - it is the encounter surface,
-// and moving it is a separate job to swapping the art around it.
+// The long grass is the theme's OWN now, on palette slot 9, and it cost no
+// pixel art at all - it is vanilla's pixels pointed at different colours.
 //
-// THE FRINGE IS GONE. 0x208 was the only MB_LONG_GRASS_SOUTH_EDGE metatile in
-// the game and it lived in gTileset_Fortree, which this theme no longer loads;
-// under the new secondary that id is a foliage wall face. The patch layer draws
-// plain long grass on its bottom row instead, so a stand of grass now ends on a
-// hard edge - and GAINS the row of encounters the fringe used to cost, since
-// the fringe carried none.
+// This is the section 5 palette-only trick applied to a graft. The vanilla
+// blades never use a ground palette index and the ground band never uses a
+// blade one - dumped and checked, blades are indices 1-4 and ground is 13-15 -
+// so the two can be recoloured independently. The blades take their ramp from
+// this tileset's WALL palette, which makes the grass the same greens as the
+// foliage it grows under; the ground takes its ramp from the DIRT palette.
 //
-// Recolouring the grass to sit better on dirt is NOT free, which is worth
-// knowing before trying: 0x015 is gTileset_General's, whose palettes are shared
-// with every theme in the game. The escape is Ever Grande's - draw an encounter
-// surface into the theme's OWN secondary, where the palette is its own.
-#define JUNGLE_METATILE_LONG_GRASS       0x015  // MB_LONG_GRASS
+// That is what buys the dirt fringe. 0x208 was the only MB_LONG_GRASS_SOUTH_
+// EDGE metatile in the game, it lived in gTileset_Fortree, and its lower band
+// is drawn as route grass - useless to a theme standing on dirt even if it
+// could still reach it. Recoloured, the same pixels end the grass on soil.
+//
+// Both are grafted by import_tile_sheet.py, so they live in this tileset and
+// its palettes are its own. gTileset_General's 0x015 is no longer used here,
+// which is the point: that one cannot be recoloured, because its palettes are
+// shared with every theme in the game.
+#define JUNGLE_METATILE_LONG_GRASS       0x294  // MB_LONG_GRASS
+#define JUNGLE_METATILE_LONG_GRASS_S     0x295  // the fringe, no encounters
+
+// The sheet's water, laid as a patch region. MB_PUDDLE, and that behaviour is
+// chosen rather than inherited: it is in MetatileBehavior_IsReflective, so the
+// player REFLECTS in it exactly the way vanilla ponds do, and its tile flags
+// are TILE_FLAG_UNUSED alone - walkable, splashy, NOT surfable, no encounters.
+//
+// MB_POND_WATER would reflect too and is the obvious pick, and it would have
+// been a bug: it is SURFABLE|HAS_ENCOUNTERS, so it would have made this theme
+// feed the WATER encounter branch while its long grass feeds the land one, and
+// only one table is swapped in per floor. check_encounter_flags.py would have
+// caught it, which is the point of it existing.
+//
+// Static. The sheet animates its water by cycling the palette, not the tiles,
+// and its Sparkle overlay is a second rate on top of that; neither is imported.
+#define JUNGLE_METATILE_WATER_NW         0x265
+#define JUNGLE_METATILE_WATER_N          0x266
+#define JUNGLE_METATILE_WATER_NE         0x267
+#define JUNGLE_METATILE_WATER_W          0x268
+#define JUNGLE_METATILE_WATER_MID        0x269
+#define JUNGLE_METATILE_WATER_E          0x26A
+#define JUNGLE_METATILE_WATER_SW         0x26B
+#define JUNGLE_METATILE_WATER_S          0x26C
+#define JUNGLE_METATILE_WATER_SE         0x26D
 
 // Puddles, a 3x3 region autotile in the PRIMARY tileset at base 0x0C8 with a
 // stride of 8. Every piece is MB_PUDDLE, which is TILE_FLAG_UNUSED - walkable,

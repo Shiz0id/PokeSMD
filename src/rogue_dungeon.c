@@ -323,13 +323,12 @@ static const struct RoguePatchLayer sJunglePatches[] =
             [PATCH_W]       = JUNGLE_METATILE_LONG_GRASS,
             [PATCH_MID]     = JUNGLE_METATILE_LONG_GRASS,
             [PATCH_E]       = JUNGLE_METATILE_LONG_GRASS,
-            // Plain grass, not the fringe: the fringe was gTileset_Fortree's
-            // and this theme does not load it any more. See the header. The
-            // bottom row is a hard edge now and carries encounters, which the
-            // fringe did not.
-            [PATCH_SW]      = JUNGLE_METATILE_LONG_GRASS,
-            [PATCH_S]       = JUNGLE_METATILE_LONG_GRASS,
-            [PATCH_SE]      = JUNGLE_METATILE_LONG_GRASS,
+            // The fringe is back, and it is the theme's own - vanilla's pixels
+            // recoloured so the band under the blades is dirt rather than the
+            // route grass it was drawn against. See the header.
+            [PATCH_SW]      = JUNGLE_METATILE_LONG_GRASS_S,
+            [PATCH_S]       = JUNGLE_METATILE_LONG_GRASS_S,
+            [PATCH_SE]      = JUNGLE_METATILE_LONG_GRASS_S,
             [PATCH_NW_WALL] = JUNGLE_METATILE_LONG_GRASS,
             [PATCH_N_WALL]  = JUNGLE_METATILE_LONG_GRASS,
             [PATCH_NE_WALL] = JUNGLE_METATILE_LONG_GRASS,
@@ -338,25 +337,41 @@ static const struct RoguePatchLayer sJunglePatches[] =
         // speckled. This is the theme's only encounter surface.
         .blobs = 6, .radius = 8,
     },
-    // THE PUDDLE LAYER IS GONE, and this is the reason rather than an oversight.
+    // The water, and it is the SHEET's rather than gTileset_General's.
     //
-    // 0x0C8-0x0DA is a 3x3 region autotile in gTileset_General, so it survived
-    // the tileset swap and still resolves - but its EIGHT edge pieces are drawn
-    // as a shore against green route grass, and its centre is the only piece
-    // that is purely water. Painted on dirt, every puddle came out ringed in a
-    // pale mint halo that reads as a rendering fault rather than as a bank.
-    // Measured on the mock before it was pulled, not guessed from the ids.
+    // The vanilla puddles that used to sit here were pulled, and the reason is
+    // worth keeping: 0x0C8-0x0DA is a 3x3 region autotile in the PRIMARY
+    // tileset, so it survived the tileset swap and still resolved perfectly -
+    // but its EIGHT edge pieces are a shore drawn against green route grass,
+    // and only its centre is purely water. On dirt every puddle came out ringed
+    // in a pale mint halo. An autotile's EDGES encode what the art expects to
+    // sit in, and swapping what it sits in invalidates all of them while
+    // leaving the ids valid; the mock is what showed it, not the build.
     //
-    // This is the same trap as borrowed wall art carrying the donor's floor
-    // (ROGUELIKE.md section 5), in its region-autotile form: an autotile's EDGES
-    // encode what the art expects to sit in, and swapping what it sits in
-    // invalidates all of them while leaving the ids perfectly valid.
+    // These edges were drawn against this sheet's own ground, so they fit.
     //
-    // The sheet's own water is the replacement. It is not imported yet because
-    // it ships as two columns at two animation rates - the water at 14 frames
-    // and a 98%-transparent Sparkle overlay at 6 - which needs top-layer
-    // compositing and a tileset animation callback that the importer does not
-    // write. Until then the jungle is dry, which is better than visibly wrong.
+    // MB_PUDDLE, so the player reflects in it and splashes through it, and so
+    // it stays off the water encounter branch entirely. See the header.
+    {
+        .tile =
+        {
+            [PATCH_NW]      = JUNGLE_METATILE_WATER_NW,
+            [PATCH_N]       = JUNGLE_METATILE_WATER_N,
+            [PATCH_NE]      = JUNGLE_METATILE_WATER_NE,
+            [PATCH_W]       = JUNGLE_METATILE_WATER_W,
+            [PATCH_MID]     = JUNGLE_METATILE_WATER_MID,
+            [PATCH_E]       = JUNGLE_METATILE_WATER_E,
+            [PATCH_SW]      = JUNGLE_METATILE_WATER_SW,
+            [PATCH_S]       = JUNGLE_METATILE_WATER_S,
+            [PATCH_SE]      = JUNGLE_METATILE_WATER_SE,
+            // No wall-adjacent variant exists, so the ordinary top edge serves.
+            [PATCH_NW_WALL] = JUNGLE_METATILE_WATER_NW,
+            [PATCH_N_WALL]  = JUNGLE_METATILE_WATER_N,
+            [PATCH_NE_WALL] = JUNGLE_METATILE_WATER_NE,
+        },
+        // Many and small: pools, not lakes.
+        .blobs = 10, .radius = 3,
+    },
 };
 
 // Was two entries scattering vanilla canopy variants at rarity 2, a near 50/50

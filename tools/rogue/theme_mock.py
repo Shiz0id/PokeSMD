@@ -116,19 +116,23 @@ THEMES = {
                (0x205, 0x232, 0), (0x207, 0x233, 0),
                (0x238, 0x263, 0), (0x238, 0x264, 0)],
         decor_rarity=4,
-        # Long grass stays vanilla's and stays PRIMARY. The south fringe 0x208
-        # was the only one in the game and it was Fortree's, so the bottom row
-        # is plain grass now - a hard edge, but one that carries encounters.
-        patch={'NW': 0x015, 'N': 0x015, 'NE': 0x015,
-               'W': 0x015, 'MID': 0x015, 'E': 0x015,
-               'SW': 0x015, 'S': 0x015, 'SE': 0x015,
-               'NW_WALL': 0x015, 'N_WALL': 0x015, 'NE_WALL': 0x015},
+        # The long grass is the theme's OWN now - vanilla's pixels grafted into
+        # this tileset on palette 9 and recoloured, blades from the wall palette
+        # and ground from the dirt one. That is what buys back the south fringe
+        # at 0x295: the same pixels, with the band under the blades turned to
+        # soil instead of the route grass it was drawn against.
+        patch={'NW': 0x294, 'N': 0x294, 'NE': 0x294,
+               'W': 0x294, 'MID': 0x294, 'E': 0x294,
+               'SW': 0x295, 'S': 0x295, 'SE': 0x295,
+               'NW_WALL': 0x294, 'N_WALL': 0x294, 'NE_WALL': 0x294},
         patch_blobs=6, patch_radius=8,
-        # The vanilla puddle layer was here and is deliberately gone. Its eight
-        # edge pieces are a shore drawn against green route grass, so on dirt
-        # every puddle came out ringed in a pale mint halo - this mock is what
-        # showed it. The sheet's own water replaces them once the importer can
-        # do animation. See sJunglePatches.
+        # The sheet's water, replacing the vanilla puddles that were pulled for
+        # having a route-grass shore. MB_PUDDLE, so it reflects.
+        patch2={'NW': 0x265, 'N': 0x266, 'NE': 0x267,
+                'W': 0x268, 'MID': 0x269, 'E': 0x26A,
+                'SW': 0x26B, 'S': 0x26C, 'SE': 0x26D,
+                'NW_WALL': 0x265, 'N_WALL': 0x266, 'NE_WALL': 0x267},
+        patch2_blobs=10, patch2_radius=3,
         rooms=12, room_min=7, room_max=13, corridor=3,
         wall={
             'INTERIOR_LEFT': 0x203, 'INTERIOR_MID': 0x204, 'INTERIOR_RIGHT': 0x205,

@@ -1762,11 +1762,12 @@ const u16 gTilesetPalettes_RogueLapisCave[][16] =
     INCGFX_U16("data/tilesets/secondary/rogue_lapis_cave/palettes/15.pal", ".gbapal"),
 };
 
-// Howling Jungle, Winona's, imported the same way. Palettes 06 (walls plus
-// their variants) and 07 (dirt plus its two) carry colour; there is no 08
-// because the sheet's water is not imported yet - it ships as two columns at
-// two animation rates and needs top-layer compositing this importer does not do.
-const u32 gTilesetTiles_RogueHowlingJungle[] = INCGFX_U32("data/tilesets/secondary/rogue_howling_jungle/tiles.png", ".4bpp.fastSmol", "-num_tiles 190 -Wnum_tiles");
+// Howling Jungle, Winona's, imported the same way. Four palettes carry colour:
+// 06 walls and their variants, 07 dirt and its two, 08 the water, and 09 the
+// long grass - which is GRAFTED, vanilla's own pixels recoloured into this
+// tileset rather than anything the sheet supplies. The sheet's Sparkle overlay
+// is still not imported; the water here is static.
+const u32 gTilesetTiles_RogueHowlingJungle[] = INCGFX_U32("data/tilesets/secondary/rogue_howling_jungle/tiles.png", ".4bpp.fastSmol", "-num_tiles 285 -Wnum_tiles");
 
 const u16 gTilesetPalettes_RogueHowlingJungle[][16] =
 {

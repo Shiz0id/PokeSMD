@@ -142,6 +142,27 @@ TILESETS = {
                  pal=7, attr=0x0000, varies='ground'),
             dict(name='decor2', sheet='howling_jungle', col=COL['ground_alt2'],
                  pal=7, attr=0x0000, varies='ground'),
+            # 0x16 is MB_PUDDLE, and it is chosen rather than inherited. It is
+            # in MetatileBehavior_IsReflective, so the player REFLECTS in it for
+            # free, and its tile flags are TILE_FLAG_UNUSED alone - walkable,
+            # NOT surfable, no encounters. MB_POND_WATER would also reflect but
+            # is SURFABLE|HAS_ENCOUNTERS, which would put a water encounter
+            # surface on a theme whose long grass is a land one, and section 3
+            # says a theme may only feed one branch.
+            #
+            # autotile: this block gets the same nine-mask treatment the walls
+            # do, because it is laid as a patch region and needs its own edges.
+            dict(name='water', sheet='howling_jungle', col=COL['water'],
+                 pal=8, attr=0x0016, autotile=True, over='ground'),
+            # The Sparkle column is still not imported - 98% transparent, a
+            # different animation rate, and the user does not want it.
+            #
+            # Long grass, grafted from vanilla and recoloured into THIS tileset:
+            # blades out of the wall palette so they are the same greens as the
+            # foliage, ground out of the dirt palette so the fringe band reads
+            # as dirt rather than as the route grass it was drawn against.
+            dict(name='grass', graft='vanilla_long_grass', pal=9,
+                 blades_from=6, ground_from=7),
         ]),
 }
 
@@ -251,18 +272,124 @@ def block_palette(cells, key, bg):
 
 
 def to_indices(cell24, palette, key, bg):
-    """24x24 RGB -> 16x16 palette indices. Index 0 is transparent."""
+    """24x24 RGB -> 16x16 palette indices. Index 0 is transparent.
+
+    TRANSPARENCY IS DECIDED AT SOURCE RESOLUTION and the mask downscaled, not
+    the other way round. Testing the blended 16x16 for background colour looks
+    equivalent and is not: BOX averaging two of the jungle water's dark teals -
+    (0,99,107) and (8,115,140) - lands on (4,107,123), which is 30 away from the
+    sheet's own (0,128,128) background and so was being read as a hole. The
+    result was a dotted line of BLACK PIXELS along every water bank, from art
+    that has no transparency there at all.
+
+    A blend cannot be transparent, because transparency is not a colour. Only a
+    pixel that was mostly hole in the source is one.
+    """
     small = np.asarray(Image.fromarray(cell24).resize((16, 16), Image.BOX), dtype=int)
     pal = np.array(palette, dtype=int)
-    out = np.zeros((16, 16), dtype=np.uint8)
     flat = small.reshape(-1, 3)
     # nearest palette entry, so BOX blending cannot invent a colour
     d = np.abs(flat[:, None, :] - pal[None, :, :]).sum(axis=2)
     idx = d.argmin(axis=1) + 1                      # +1: 0 stays transparent
-    transparent = (np.abs(flat - key).sum(axis=1) < 30) | \
-                  (np.abs(flat - bg).sum(axis=1) < 30)
-    idx[transparent] = 0
+
+    src = cell24.astype(int)
+    hole = ((np.abs(src - key).sum(axis=2) < 30)
+            | (np.abs(src - bg).sum(axis=2) < 30)).astype(np.uint8) * 255
+    # majority vote over the 1.5x1.5 source area each output pixel covers
+    hole16 = np.asarray(Image.fromarray(hole).resize((16, 16), Image.BOX)) > 127
+    idx[hole16.reshape(-1)] = 0
     return idx.reshape(16, 16).astype(np.uint8)
+
+
+# ---------------------------------------------------------------- grafts
+#
+# Art that is on no sheet, assembled from VANILLA tiles and given a palette of
+# this tileset's own. The point is section 5's palette-only trick: a tile stores
+# palette-RELATIVE indices, so copying vanilla pixels verbatim and pointing them
+# at different colours is a recolour with no pixel work at all.
+
+def _tile_reader(png):
+    """8x8 palette-index tiles out of a 4bpp tileset PNG, by tile number."""
+    a = np.asarray(Image.open(REPO / png).convert('P'), dtype=np.uint8)
+    per_row = a.shape[1] // 8
+
+    def get(i):
+        y, x = (i // per_row) * 8, (i % per_row) * 8
+        return a[y:y + 8, x:x + 8]
+    return get
+
+
+def _quad(get, ids):
+    """Four tile numbers, NW NE SW SE, into one 16x16 index block."""
+    tl, tr, bl, br = (get(i) for i in ids)
+    return np.vstack([np.hstack([tl, tr]), np.hstack([bl, br])])
+
+
+def _lum(c):
+    return 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]
+
+
+def _ramp(palette, want, pick):
+    """`want` colours out of `palette`, matching `pick`, spread over its range.
+
+    Ranked by luminance and sampled evenly rather than nearest-matched, because
+    what has to survive the recolour is the ORDER - a blade ramp that stops
+    descending stops reading as blades.
+    """
+    cand = sorted([c for c in palette if pick(c)], key=_lum, reverse=True)
+    if len(cand) < want:
+        cand = sorted(palette, key=_lum, reverse=True)
+    if len(cand) <= want:
+        return cand + [cand[-1]] * (want - len(cand))
+    step = (len(cand) - 1) / (want - 1) if want > 1 else 0
+    return [cand[round(i * step)] for i in range(want)]
+
+
+# Vanilla palette-2 indices, split by what they draw. Established by dumping the
+# tiles: the blades never use a ground index and the ground band never uses a
+# blade one, which is the whole reason this can be done with a palette.
+GRASS_BLADE_IDX = [1, 2, 3, 4]     # lightest to darkest
+GRASS_GROUND_IDX = [13, 14, 15]    # lightest to darkest
+
+
+def graft_long_grass(palettes, cfg):
+    """Vanilla long grass and its south fringe, recoloured onto this tileset.
+
+    The fringe is the reason this graft exists. 0x208 was the ONLY
+    MB_LONG_GRASS_SOUTH_EDGE metatile in the game, it lived in gTileset_Fortree,
+    and its lower band is drawn as route grass - so a theme that leaves Fortree
+    loses its only long-grass edge, and a theme standing on dirt would not want
+    that band even if it kept it.
+    """
+    gen = _tile_reader('data/tilesets/primary/general/tiles.png')
+    fortree = _tile_reader('data/tilesets/secondary/fortree/tiles.png')
+
+    blades = _ramp(palettes[cfg['blades_from']], len(GRASS_BLADE_IDX),
+                   lambda c: c[1] > c[0] and c[1] > c[2])
+    ground = _ramp(palettes[cfg['ground_from']], len(GRASS_GROUND_IDX),
+                   lambda c: c[0] >= c[1] > c[2])
+
+    # Start from vanilla's own palette so untouched indices stay sane, then
+    # overwrite only the two ramps the grass actually draws with.
+    src = (REPO / 'data/tilesets/primary/general/palettes/02.pal').read_text()
+    vanilla = [tuple(int(v) for v in line.split())
+               for line in src.splitlines()[4:19]]
+    pal = list(vanilla)
+    for i, c in zip(GRASS_BLADE_IDX, blades):
+        pal[i - 1] = c
+    for i, c in zip(GRASS_GROUND_IDX, ground):
+        pal[i - 1] = c
+
+    return dict(palette=pal, units=[
+        # MB_LONG_GRASS. The ground showing between the blades is the same three
+        # indices the fringe uses for its band, so it turns to dirt with them.
+        ('grass', _quad(gen, [0x012, 0x013, 0x022, 0x023]), 0x0003),
+        # MB_LONG_GRASS_SOUTH_EDGE, carrying no encounters, exactly as vanilla.
+        ('fringe', _quad(fortree, [0x10A, 0x10B, 0x11A, 0x11B]), 0x0009),
+    ])
+
+
+GRAFTS = {'vanilla_long_grass': graft_long_grass}
 
 
 class TileBank:
@@ -298,13 +425,52 @@ def convert(ts, verbose=True):
             cache[name] = Sheet({**SHEET_GEOMETRY, **SHEETS[name]})
         return cache[name]
 
+    def plain_fill(b):
+        """The cell of a block whose legend says every neighbour is the same."""
+        sh = b['sh']
+        for (r, k, cell) in b['cells']:
+            m = sh.mask(r, k)
+            if all(ch == '#' for j, row in enumerate(m)
+                   for i, ch in enumerate(row) if not (i == 1 and j == 1)):
+                return cell
+        return None
+
     blocks = []
     for b in ts['blocks']:
+        if 'graft' in b:
+            blocks.append({**b, 'sh': None, 'cells': []})
+            continue
         sh = sheet(b['sheet'])
         cells = [(r, k, sh.cell(b['col'] + k, r))
                  for r in range(len(sh.ys))
                  for k in range(3)
                  if b['col'] + k < len(sh.xs) and sh.filled(b['col'] + k, r)]
+
+        # `over` flattens a block onto another block's plain fill BEFORE any
+        # colour is extracted. These sheets draw a terrain's EDGE cells with
+        # transparent corners, meant to be composited over whatever the terrain
+        # borders - the sheets say so outright: "When Ground is adjacent to
+        # Water, treat Water as though it were a Ground tile."
+        #
+        # A GBA metatile could do that with its top layer over a ground bottom
+        # layer, and eventually should. Flattening here costs one thing and buys
+        # two: the cost is that the composite is baked, so this water can only
+        # ever border dirt; the gain is that it stays a one-layer metatile, with
+        # no layer-type question about whether the player walks over or under.
+        # Left unflattened, those corners are index 0 and render as BLACK
+        # SPECKLES along every bank.
+        if 'over' in b:
+            base = plain_fill(next(x for x in blocks if x['name'] == b['over']))
+            key, bg = sh.key, sh.bg
+            flat = []
+            for (r, k, cell) in cells:
+                hole = ((np.abs(cell - key).sum(axis=2) < 30)
+                        | (np.abs(cell - bg).sum(axis=2) < 30))
+                merged = cell.copy()
+                merged[hole] = base[hole]
+                flat.append((r, k, merged))
+            cells = flat
+
         blocks.append({**b, 'sh': sh, 'cells': cells})
         if verbose:
             print(f'  {b["name"]:<7} {len(cells):3d} cells  from {b["sheet"]:<11}'
@@ -317,19 +483,44 @@ def convert(ts, verbose=True):
     # other two. It also means the 15-colour budget is per SLOT, not per block.
     palettes = {}
     for b in blocks:
+        if 'graft' in b:
+            continue
         palettes.setdefault(b['pal'], []).extend(c for _, _, c in b['cells'])
     for slot in sorted(palettes):
-        owner = next(b for b in blocks if b['pal'] == slot)
-        names = '+'.join(b['name'] for b in blocks if b['pal'] == slot)
+        owner = next(b for b in blocks if b['pal'] == slot and 'graft' not in b)
+        names = '+'.join(b['name'] for b in blocks
+                         if b['pal'] == slot and 'graft' not in b)
         palettes[slot] = block_palette(palettes[slot], owner['sh'].key, owner['sh'].bg)
         if verbose:
             print(f'  palette {slot}  {len(palettes[slot]):2d} colours  ({names})')
 
+    # Grafts run AFTER the sheet palettes exist, because that is what they draw
+    # their colours out of - the whole point is that grafted art is recoloured
+    # into the tileset it is joining rather than carrying its own look in.
+    for b in blocks:
+        if 'graft' not in b:
+            continue
+        b['graft_out'] = GRAFTS[b['graft']](palettes, b)
+        palettes[b['pal']] = b['graft_out']['palette']
+        if verbose:
+            print(f'  {b["name"]:<7} {len(b["graft_out"]["units"]):3d} grafted'
+                  f'      from vanilla    palette slot {b["pal"]}')
+
     bank = TileBank()
     metatiles = []
     for b in blocks:
-        for (r, k, cell) in b['cells']:
-            idx = to_indices(cell, palettes[b['pal']], b['sh'].key, b['sh'].bg)
+        # A sheet block yields 24x24 RGB cells that have to be quantised; a
+        # graft yields 16x16 index blocks already. Past this point they are the
+        # same thing, so everything downstream sees one kind of metatile.
+        if 'graft' in b:
+            units = [(i, 0, idx, attr) for i, (_, idx, attr)
+                     in enumerate(b['graft_out']['units'])]
+        else:
+            units = [(r, k, to_indices(cell, palettes[b['pal']],
+                                       b['sh'].key, b['sh'].bg), b['attr'])
+                     for (r, k, cell) in b['cells']]
+
+        for (r, k, idx, attr) in units:
             entries = []
             for qy in (0, 1):
                 for qx in (0, 1):
@@ -337,21 +528,29 @@ def convert(ts, verbose=True):
                     ti, xf, yf = bank.add(t, b['pal'])
                     entries.append((NUM_TILES_IN_PRIMARY + ti)
                                    | (xf << 10) | (yf << 11) | (b['pal'] << 12))
-            metatiles.append(dict(block=b['name'], attr=b['attr'], sh=b['sh'],
+            metatiles.append(dict(block=b['name'], attr=attr, sh=b['sh'],
                                   row=r, k=k, entries=entries))
 
-    # slot -> metatile local index, from the legend of the block's OWN sheet
-    slotmap = {}
-    for slot, want in SLOTS.items():
-        best = None
-        for li, mt in enumerate(metatiles):
-            if mt['block'] != 'wall':
-                continue
-            s = match_slot(mt['sh'].mask(mt['row'], mt['k']), want)
-            if s is not None and (best is None or s > best[0]):
-                best = (s, li)
-        if best:
-            slotmap[slot] = best[1]
+    # slot -> metatile local index, from the legend of the block's OWN sheet.
+    # Any block may ask for this, not just the walls: a water body laid as a
+    # patch region needs the same nine masks under different names.
+    def autotile_of(block):
+        out = {}
+        for slot, want in SLOTS.items():
+            best = None
+            for li, mt in enumerate(metatiles):
+                if mt['block'] != block or mt['sh'] is None:
+                    continue
+                s = match_slot(mt['sh'].mask(mt['row'], mt['k']), want)
+                if s is not None and (best is None or s > best[0]):
+                    best = (s, li)
+            if best:
+                out[slot] = best[1]
+        return out
+
+    slotmap = autotile_of('wall')
+    autotiles = {b['name']: autotile_of(b['name'])
+                 for b in blocks if b.get('autotile')}
 
     # the plain floor: ground fully surrounded by ground
     floor_li = None
@@ -386,8 +585,19 @@ def convert(ts, verbose=True):
                 continue
             decor.append((b['name'], base, alt))
 
+    # Grafted units are named rather than autotiled, so they are addressed by
+    # the label the graft gave them.
+    grafted = {}
+    for b in blocks:
+        if 'graft' not in b:
+            continue
+        for i, (label, _, _) in enumerate(b['graft_out']['units']):
+            grafted[label] = next(li for li, mt in enumerate(metatiles)
+                                  if mt['block'] == b['name'] and mt['row'] == i)
+
     return dict(blocks=blocks, palettes=palettes, bank=bank, metatiles=metatiles,
-                slotmap=slotmap, floor=floor_li, decor=decor)
+                slotmap=slotmap, autotiles=autotiles, grafted=grafted,
+                floor=floor_li, decor=decor)
 
 
 # ---------------------------------------------------------------- writing
@@ -469,6 +679,19 @@ def print_decls(spec, conv, ntiles):
     for i, (name, _, alt) in enumerate(conv['decor'], 1):
         print(f'#define {p}_METATILE_DECOR_{i}{"":<10} 0x{base + alt:03X}  // varies '
               f'0x{base + conv["decor"][i - 1][1]:03X}')
+    for label, li in conv['grafted'].items():
+        print(f'#define {p}_METATILE_{label.upper():<16} 0x{base + li:03X}')
+    # A patch region wants nine of the twenty masks, under the patch pass's own
+    # names. Printed in that order so the RoguePatchLayer can be pasted.
+    PATCH = [('NW', 'NORTH_LEFT'), ('N', 'NORTH_MID'), ('NE', 'NORTH_RIGHT'),
+             ('W', 'INTERIOR_LEFT'), ('MID', 'INTERIOR_MID'), ('E', 'INTERIOR_RIGHT'),
+             ('SW', 'FACE_LEFT'), ('S', 'FACE_MID'), ('SE', 'FACE_RIGHT')]
+    for nm, m in conv['autotiles'].items():
+        print(f'\n// {nm} as a patch region')
+        for patch, slot in PATCH:
+            if slot in m:
+                print(f'#define {p}_METATILE_{nm.upper()}_{patch:<9} '
+                      f'0x{base + m[slot]:03X}')
     if conv['decor']:
         print('\n// struct RogueDecor entries: { base, replacement }')
         for name, b, a in conv['decor']:
@@ -494,6 +717,12 @@ def main(argv):
           if conv['floor'] is not None else '  floor: NOT FOUND')
     for nm, b, a in conv['decor']:
         print(f'  {nm}: local {a} varies local {b}')
+    for nm, m in conv['autotiles'].items():
+        miss = [s for s in SLOTS if s not in m]
+        print(f'  {nm} autotile: {len(m)}/{len(SLOTS)} slots'
+              + (f'   MISSING: {miss}' if miss else ''))
+    for label, li in conv['grafted'].items():
+        print(f'  grafted {label}: local {li}')
 
     if '--write' in argv:
         if ntiles > 512:
