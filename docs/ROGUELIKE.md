@@ -407,11 +407,28 @@ Art was iterated as text art rendered over real grass tiles and compared
 side by side, then round-tripped back out of the written asset files to confirm
 what shipped is what was designed.
 
-### Art that moves: the ocean's whirlpool
+### Art that moves: the whirlpool
 
-The ocean's way down is a whirlpool (`make_ocean_tiles.py`, `0x3D1`). It is the
-second piece of genuinely new art in the project and the first that animates, so
-it adds a few rules to the list above rather than replacing it.
+Both water dungeons descend through a whirlpool — the ocean's `0x3D1`
+(`make_ocean_tiles.py`) and the seafloor's `0x2EC`
+(`make_underwater_tiles.py`). It is the second piece of genuinely new art in the
+project and the first that animates, so it adds a few rules to the list above
+rather than replacing it.
+
+**The shape is shared and the colours are not.** Metatile ids above `0x200`
+belong to whichever secondary is loaded, so one exit cannot serve two tilesets
+and the metatile exists twice. The spiral lives once, in `whirlpool_art.py`, as
+a function of radius and angle — the exit is the one thing on a floor the player
+is hunting for, and two dungeons whose exits looked subtly different would teach
+them two things instead of one. But each caller passes its own **palette roles**,
+because a vortex reads as water only when it is made of the water around it: the
+sea's primary palette 4 over the ocean, `gTileset_Underwater`'s palette B over
+the seafloor. The bottom layer differs for the same reason — animated open water
+in one, the seafloor itself in the other, because the player is standing *on*
+something there and outside the disc it has to still be the ground.
+
+That split is worth copying for anything reused across tilesets: **share the
+geometry, never the palette.**
 
 - **Draw it in the palette of the thing it sits in.** The spiral is primary
   palette 4 — the sea's own — which carries whites, a foam pale and a full blue
@@ -436,6 +453,11 @@ Wiring the animation up, in `src/tileset_anims.c`:
 
 - Mossdeep's secondary animation callback was `NULL`, so the slot was free.
   `InitTilesetAnim_Mossdeep` now points at `TilesetAnim_Mossdeep`.
+  `TilesetAnim_Underwater` already existed for the seaweed, so the seafloor's
+  whirlpool is one more queue in it rather than a new callback — but on
+  **remainder 1** of the 8-tick stride, because the seaweed's `% 16 == 0` is a
+  subset of `% 8 == 0` and sharing that tick would queue two DMAs on the same
+  frame every other turn of the vortex.
 - **The tiles must be consecutive.** `AppendTilesetAnimToBuffer` DMAs the frame
   to VRAM in one run, so the four slots are one contiguous block
   (`NUM_TILES_IN_PRIMARY + 0xE9`) and must not wrap the sheet row.

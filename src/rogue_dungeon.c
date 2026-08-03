@@ -812,6 +812,10 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .tallGrass = 0,
         .longGrass = UNDERWATER_METATILE_SEAWEED,
 
+        // The same whirlpool the ocean uses, appended to this tileset too. Both
+        // water dungeons descending through one shape is the point: the exit is
+        // what the player is hunting for, and two different ones would be two
+        // things to learn instead of one.
         .stairsDown = UNDERWATER_METATILE_STAIRS,
         .stairsUp = UNDERWATER_METATILE_STAIRS,
         .wall =

@@ -447,7 +447,14 @@
 // other theme - it is the open water above the seafloor, not rock.
 #define UNDERWATER_METATILE_FLOOR          0x216  // MB_NORMAL, no encounters
 #define UNDERWATER_METATILE_SEAWEED        0x281  // MB_SEAWEED_NO_SURFACING
-#define UNDERWATER_METATILE_STAIRS         0x2A9  // MB_NO_SURFACING
+
+// The same whirlpool the ocean descends through, appended here by
+// make_underwater_tiles.py. Metatile ids above 0x200 belong to whichever
+// secondary is loaded, so the ocean's 0x3D1 means nothing under this tileset
+// and the metatile has to exist twice - shape shared from whirlpool_art.py,
+// colours not, because a vortex reads as water only when it is made of the
+// water around it. It keeps 0x2A9's attribute, so it is still MB_NO_SURFACING.
+#define UNDERWATER_METATILE_STAIRS         0x2EC  // MB_NO_SURFACING, 4 frames
 
 #define UNDERWATER_METATILE_WALL_NW        0x20A
 #define UNDERWATER_METATILE_WALL_N         0x20B

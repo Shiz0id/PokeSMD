@@ -68,6 +68,7 @@ static void QueueAnimTiles_Pacifidlog_LogBridges(u8);
 static void QueueAnimTiles_Pacifidlog_WaterCurrents(u8);
 static void QueueAnimTiles_Sootopolis_StormyWater(u16);
 static void QueueAnimTiles_Underwater_Seaweed(u8);
+static void QueueAnimTiles_Underwater_Whirlpool(u16);
 static void QueueAnimTiles_Cave_Lava(u16);
 static void QueueAnimTiles_BattleFrontierOutsideWest_Flag(u16);
 static void QueueAnimTiles_BattleFrontierOutsideEast_Flag(u16);
@@ -184,6 +185,22 @@ const u16 *const gTilesetAnims_Underwater_Seaweed[] = {
     gTilesetAnims_Underwater_Seaweed_Frame1,
     gTilesetAnims_Underwater_Seaweed_Frame2,
     gTilesetAnims_Underwater_Seaweed_Frame3
+};
+
+// The roguelike's seafloor floors descend through the same whirlpool its ocean
+// floors do. Drawn by tools/rogue/make_underwater_tiles.py, which shares the
+// spiral with the Mossdeep one below and not its colours - this one is in the
+// seafloor's own palette.
+const u16 gTilesetAnims_Underwater_Whirlpool_Frame0[] = INCGFX_U16("data/tilesets/secondary/underwater/anim/whirlpool/0.png", ".4bpp");
+const u16 gTilesetAnims_Underwater_Whirlpool_Frame1[] = INCGFX_U16("data/tilesets/secondary/underwater/anim/whirlpool/1.png", ".4bpp");
+const u16 gTilesetAnims_Underwater_Whirlpool_Frame2[] = INCGFX_U16("data/tilesets/secondary/underwater/anim/whirlpool/2.png", ".4bpp");
+const u16 gTilesetAnims_Underwater_Whirlpool_Frame3[] = INCGFX_U16("data/tilesets/secondary/underwater/anim/whirlpool/3.png", ".4bpp");
+
+const u16 *const gTilesetAnims_Underwater_Whirlpool[] = {
+    gTilesetAnims_Underwater_Whirlpool_Frame0,
+    gTilesetAnims_Underwater_Whirlpool_Frame1,
+    gTilesetAnims_Underwater_Whirlpool_Frame2,
+    gTilesetAnims_Underwater_Whirlpool_Frame3
 };
 
 const u16 gTilesetAnims_Pacifidlog_WaterCurrents_Frame0[] = INCGFX_U16("data/tilesets/secondary/pacifidlog/anim/water_currents/0.png", ".4bpp");
@@ -963,6 +980,12 @@ static void TilesetAnim_Underwater(u16 timer)
 {
     if (timer % 16 == 0)
         QueueAnimTiles_Underwater_Seaweed(timer / 16);
+    // Remainder 1 rather than 0: the seaweed's % 16 == 0 is a subset of % 8 == 0,
+    // so sharing that frame would queue two DMAs on the same tick every other
+    // turn of the vortex. Same 8-tick stride as the ocean's, so the roguelike's
+    // two water exits spin at the same rate.
+    if (timer % 8 == 1)
+        QueueAnimTiles_Underwater_Whirlpool(timer / 8);
 }
 
 static void TilesetAnim_Cave(u16 timer)
@@ -1059,6 +1082,15 @@ static void QueueAnimTiles_EverGrande_Flowers(u16 timer_div, u8 timer_mod)
     timer_div %= ARRAY_COUNT(gTilesetAnims_EverGrande_Flowers);
 
     AppendTilesetAnimToBuffer(gTilesetAnims_EverGrande_Flowers[timer_div], gTilesetAnims_EverGrande_VDests[timer_mod], 4 * TILE_SIZE_4BPP);
+}
+
+static void QueueAnimTiles_Underwater_Whirlpool(u16 timer)
+{
+    // Tiles 0x19A-0x19D of the secondary, consecutive because this is one DMA
+    // run, and well clear of the seaweed's 496-499. make_underwater_tiles.py
+    // picks and writes them.
+    u16 i = timer % ARRAY_COUNT(gTilesetAnims_Underwater_Whirlpool);
+    AppendTilesetAnimToBuffer(gTilesetAnims_Underwater_Whirlpool[i], (u16 *)(BG_VRAM + TILE_OFFSET_4BPP(NUM_TILES_IN_PRIMARY + 0x19A)), 4 * TILE_SIZE_4BPP);
 }
 
 static void QueueAnimTiles_Mossdeep_Whirlpool(u16 timer)

@@ -96,13 +96,13 @@ Run:  python3 tools/rogue/make_ocean_tiles.py
       Needs Pillow for the tile and frame art, so run it from Windows against
       //wsl.localhost/Ubuntu/... - WSL has no Pillow.
 """
-import math
 import struct
 import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import whirlpool_art
 from tileset_resolve import TilesetResolver
 
 BASE_COUNT = 454                     # vanilla Mossdeep metatile count
@@ -138,19 +138,15 @@ CORNER_PALETTE = 0xB         # Mossdeep's rock palette, as the nine slice uses
 # blank AND referenced by no metatile.
 WHIRL_TILES = (0x0E9, 0x0EA, 0x0EB, 0x0EC)
 WHIRL_PALETTE = 4            # the primary sea palette
-WHIRL_FRAMES = 4
+WHIRL_FRAMES = whirlpool_art.FRAMES
 
 # Palette 4 by role.  0 182952 is the transparent index.
 #   1 FFFFFF  2 DEE6EE  7 526AD5  8 415ABD  9 39529C  A 29418B  B ACC5E6  C 8BA4DE
-HOLE_DEEP, HOLE_MID = 0xA, 0x9
-TROUGH, TROUGH_LIT = 0x8, 0x7
-RIM = 0xC
-FOAM_FRINGE, FOAM, FOAM_HOT = 0xB, 0x2, 0x1
-
-ARMS = 2                     # two-fold symmetry, so four frames close the loop
-TWIST = 1.15                 # radians of sweep per pixel of radius
-R_OUT = 7.6                  # disc edge, inside the 16x16 block
-R_HOLE = 1.7
+WHIRL_ROLES = whirlpool_art.Roles(
+    hole_deep=0xA, hole_mid=0x9,
+    trough=0x8, trough_lit=0x7,
+    rim=0xC,
+    foam_fringe=0xB, foam=0x2, foam_hot=0x1)
 
 
 # ---------------------------------------------------------------- composition
@@ -214,41 +210,6 @@ def compose_whirlpool(mt):
     return [('whirlpool', sea + top, ATTR_STAIRS)]
 
 
-# ----------------------------------------------------------------- whirlpool
-
-def whirlpool_pixels(frame, frames=WHIRL_FRAMES):
-    """16x16 of palette-4 indices. 0 is transparent, so the sea shows through."""
-    px = [[0] * 16 for _ in range(16)]
-    phase = -2.0 * math.pi * frame / (frames * ARMS)
-    for y in range(16):
-        for x in range(16):
-            dx, dy = x - 7.5, y - 7.5
-            r = math.hypot(dx, dy)
-            if r > R_OUT:
-                continue
-            if r < R_HOLE:
-                # The throat: darkest dead centre, so it reads as a hole being
-                # looked down rather than a flat disc.
-                px[y][x] = HOLE_DEEP if r < R_HOLE - 0.6 else HOLE_MID
-                continue
-            th = math.atan2(dy, dx)
-            s = math.sin(ARMS * (th + TWIST * r) + ARMS * phase)
-            edge = (R_OUT - r) / (R_OUT - R_HOLE)   # 1 at the throat, 0 at the rim
-            # Foam is brightest where the water is pulled fastest - near the
-            # throat - and gives out before the rim, so the vortex fades into
-            # open sea instead of ending on a hard bright ring.
-            hot = 0.94 - 0.5 * edge
-            if s > 0.72 and edge > 0.18:
-                px[y][x] = FOAM_HOT if (s > hot and edge > 0.45) else FOAM
-            elif s > 0.30 and edge > 0.10:
-                px[y][x] = FOAM if edge > 0.75 else FOAM_FRINGE
-            elif s > -0.35:
-                px[y][x] = TROUGH_LIT if edge > 0.5 else RIM
-            else:
-                px[y][x] = TROUGH if edge > 0.35 else RIM
-    return px
-
-
 def check_corners_opaque(tiles_path):
     """A room corner may not show one pixel of water: no edge of it borders any.
     The corner art sits over the sea like the rest of the set, so it has to be
@@ -265,47 +226,6 @@ def check_corners_opaque(tiles_path):
                 raise SystemExit(f'{name}: tile 0x{t:03X} has {holes} '
                                  f'transparent pixels, so sea would show through')
     print(f'  all {len(CORNERS)} corners are fully opaque')
-
-
-def write_frames(outdir, sea_palette):
-    """One indexed 16x16 PNG per frame. gbagfx turns each into four tiles, in
-    TL, TR, BL, BR order - the order the metatile references them in."""
-    from PIL import Image
-    outdir.mkdir(parents=True, exist_ok=True)
-    flat = []
-    for r, g, b in sea_palette:
-        flat += [r, g, b]
-    flat += [0] * (768 - len(flat))
-    for f in range(WHIRL_FRAMES):
-        px = whirlpool_pixels(f)
-        im = Image.new('P', (16, 16))
-        im.putpalette(flat)
-        im.putdata([v for row in px for v in row])
-        im.save(outdir / f'{f}.png', bits=4, optimize=False)
-    return WHIRL_FRAMES
-
-
-def write_sheet_tiles(tiles_path):
-    """Frame 0 into the four reserved slots of the Mossdeep sheet.
-
-    The sheet will LOOK wrong opened in an editor, because these indices mean
-    primary palette 4 and the sheet carries Mossdeep's own. That is the normal
-    arrangement here in reverse - the rock's top layer is primary tiles under a
-    Mossdeep palette - and only the metatile's palette field decides.
-    """
-    from PIL import Image
-    img = Image.open(tiles_path)
-    if img.mode != 'P':
-        raise SystemExit('expected an indexed tile sheet')
-    px = whirlpool_pixels(0)
-    dst = img.load()
-    for k, slot in enumerate(WHIRL_TILES):
-        tx, ty = (slot % 16) * 8, (slot // 16) * 8
-        ox, oy = (k % 2) * 8, (k // 2) * 8
-        for y in range(8):
-            for x in range(8):
-                dst[tx + x, ty + y] = px[oy + y][ox + x]
-    img.save(tiles_path, bits=4, optimize=False)
 
 
 # ---------------------------------------------------------------------- main
@@ -362,8 +282,9 @@ def main():
     # is the palette number the metatile entry will name.
     sea = parse_jasc(gen['palettes'][WHIRL_PALETTE])
 
-    write_sheet_tiles(moss['tiles'])
-    n = write_frames(moss['tiles'].parent / 'anim' / 'whirlpool', sea)
+    whirlpool_art.write_sheet_tiles(moss['tiles'], WHIRL_TILES, WHIRL_ROLES)
+    n = whirlpool_art.write_frames(moss['tiles'].parent / 'anim' / 'whirlpool',
+                                   WHIRL_ROLES, sea)
     print(f'whirlpool: frame 0 into Mossdeep tiles '
           f'0x{WHIRL_TILES[0]:03X}-0x{WHIRL_TILES[-1]:03X}, {n} frames written')
 

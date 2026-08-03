@@ -16,7 +16,8 @@ of the WSL boundary. **Which side you need depends on Pillow:**
 |---|---|
 | `tileset_atlas.py`, `build_all_atlases.py` | `tileset_resolve.py` |
 | `compose_metatiles.py`, `make_woods_stairs.py` | `append_metatiles.py` |
-| `make_ocean_tiles.py` | |
+| `make_ocean_tiles.py`, `make_underwater_tiles.py` | |
+| `whirlpool_art.py` (writes PNGs) | |
 | `woods_prototype.py` | `gen_trainer_table.py`, `gen_starters.py` |
 | | `ram_budget.py`, `derive_wall_autotile.py` |
 | | `verify_*.py`, `validate_maps.py` |
@@ -36,13 +37,19 @@ their output by hand; all are idempotent.
 | `make_fiery_slivers.py` | composed 1-wide wall metatiles into `data/tilesets/secondary/lavaridge/` |
 | `make_mirage_slivers.py` | composed 1-wide wall metatiles into `data/tilesets/secondary/mirage_tower/` |
 | `make_ocean_tiles.py` | everything the ocean adds to `data/tilesets/secondary/mossdeep/` |
+| `make_underwater_tiles.py` | the seafloor's whirlpool into `data/tilesets/secondary/underwater/` |
 | `compose_metatiles.py` + `append_metatiles.py` | cave sliver metatiles into `data/tilesets/secondary/cave/` |
 | `setup_dungeon_map.py` | the dungeon map's layout and `map.json` scaffolding |
 
 The tileset writers (`make_woods_stairs`, `make_fiery_slivers`,
-`make_mirage_slivers`, `make_ocean_tiles`, `compose_metatiles`+`append_metatiles`)
-**edit vanilla asset files**. Pulling upstream changes to those tilesets means
-taking upstream's file and re-running the script, not merging.
+`make_mirage_slivers`, `make_ocean_tiles`, `make_underwater_tiles`,
+`compose_metatiles`+`append_metatiles`) **edit vanilla asset files**. Pulling
+upstream changes to those tilesets means taking upstream's file and re-running
+the script, not merging.
+
+`whirlpool_art.py` is shared by the last two rather than being a generator
+itself: two themes descend through the same vortex on different tilesets, so the
+shape lives in one place and each caller supplies its own palette roles.
 
 **Reference and analysis — read-only.**
 

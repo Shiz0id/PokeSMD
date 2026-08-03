@@ -171,7 +171,7 @@ THEMES = {
     # never fire, and the mock's unhit-slot report is what confirms it.
     'underwater': dict(
         primary='gTileset_General', secondary='gTileset_Underwater',
-        floor=0x216, stairs=0x2A9,
+        floor=0x216, stairs=0x2EC,      # the whirlpool, as the ocean
         rooms=12, room_min=7, room_max=13, corridor=5,
         # Seaweed, in blobs, the way vanilla lays it. It is a single uniform 2x2
         # metatile with no edge art - 0x201 and 0x281 are the same four tiles
