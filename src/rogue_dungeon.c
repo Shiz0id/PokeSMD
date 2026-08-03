@@ -406,6 +406,14 @@ enum DungeonThemeId
     DUNGEON_THEME_JUNGLE,
     DUNGEON_THEME_OCEAN,
     DUNGEON_THEME_UNDERWATER,
+    // Victory Road, one per Elite Four member. Their ORDER matters: ThemeForFloor
+    // is dungeon % DUNGEON_THEME_COUNT, and the Elite Four are dungeons 8 to 12,
+    // so sitting at indices 8, 9, 10 and 11 is what lands Sidney's theme on
+    // Sidney's dungeon with no change to ThemeForFloor at all.
+    DUNGEON_THEME_VICTORYROAD_SIDNEY,
+    DUNGEON_THEME_VICTORYROAD_PHOEBE,
+    DUNGEON_THEME_VICTORYROAD_GLACIA,
+    DUNGEON_THEME_VICTORYROAD_DRAKE,
     DUNGEON_THEME_COUNT
 };
 
@@ -868,6 +876,192 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .species = sUnderwaterSpecies,
         .speciesCount = ARRAY_COUNT(sUnderwaterSpecies),
     },
+
+    // Victory Road, the Elite Four's four dungeons. One theme each, differing
+    // ONLY in the palette their tileset ships - see the VICTORYROAD_METATILE_*
+    // block in the header and make_victory_road_palettes.py.
+    //
+    // Vanilla Emerald's Victory Road runs on gTileset_General + gTileset_Cave,
+    // the identical pair to Granite Cave. So the honest version of this theme
+    // is not a new wall table, it is a recolour: the entire cave wall table,
+    // both stairs and all seven composed slivers draw from palette 6 and only
+    // palette 6, and palette 6 is the first SECONDARY slot, so a tileset that
+    // shares Cave's tiles and metatiles and ships its own palettes recolours
+    // one hundred percent of what the generator paints.
+    //
+    // Deliberately NO .patches and NO decor, and that is not laziness. The
+    // cave's sand pool region draws 45% from primary palette 5 and its decor
+    // 50% from primary palette 3, both owned by gTileset_General and shared
+    // with every other theme, so they cannot be recoloured and would sit in
+    // Granite Cave's browns on a violet floor. A theme with no region set is
+    // an ordinary thing here - Fiery Path and New Mauville have none either.
+    //
+    // Written out four times rather than behind a macro because
+    // check_encounter_flags.py parses `.layoutId = <token>` out of this table
+    // literally; a pasted token would leave these four themes silently
+    // unverified, which is the exact failure the lint exists to catch.
+    [DUNGEON_THEME_VICTORYROAD_SIDNEY] =
+    {
+        .layoutId = LAYOUT_ROGUE_DUNGEON_VRSIDNEY,
+        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        .generator = DUNGEON_GEN_CAVE,
+        .elevationFloor = DUNGEON_ELEVATION_FLOOR,
+        .elevationWall = DUNGEON_ELEVATION_WALL,
+        .floor = VICTORYROAD_METATILE_FLOOR,
+        .tallGrass = 0,   // a cave has no grass; encounters fire anywhere
+        .longGrass = 0,
+        .stairsDown = VICTORYROAD_METATILE_STAIRS_DOWN,
+        .stairsUp = VICTORYROAD_METATILE_STAIRS_UP,
+        .wall =
+        {
+            [WALL_INTERIOR_LEFT]  = VICTORYROAD_METATILE_WALL_INTERIOR_L,
+            [WALL_INTERIOR_MID]   = VICTORYROAD_METATILE_WALL_INTERIOR_M,
+            [WALL_INTERIOR_RIGHT] = VICTORYROAD_METATILE_WALL_INTERIOR_R,
+            [WALL_FACE_LEFT]      = VICTORYROAD_METATILE_WALL_FACE_L,
+            [WALL_FACE_MID]       = VICTORYROAD_METATILE_WALL_FACE_M,
+            [WALL_FACE_RIGHT]     = VICTORYROAD_METATILE_WALL_FACE_R,
+            [WALL_NORTH_LEFT]     = VICTORYROAD_METATILE_WALL_NORTH_L,
+            [WALL_NORTH_MID]      = VICTORYROAD_METATILE_WALL_NORTH_M,
+            [WALL_NORTH_RIGHT]    = VICTORYROAD_METATILE_WALL_NORTH_R,
+            [WALL_CORNER_OPEN_SE] = VICTORYROAD_METATILE_WALL_CORNER_NW,
+            [WALL_CORNER_OPEN_SW] = VICTORYROAD_METATILE_WALL_CORNER_NE,
+            [WALL_CORNER_OPEN_NW] = VICTORYROAD_METATILE_WALL_CORNER_S,
+            [WALL_CORNER_OPEN_NE] = VICTORYROAD_METATILE_WALL_CORNER_S,
+            [WALL_SLIVER_VERT]    = VICTORYROAD_METATILE_SLIVER_VERT,
+            [WALL_SLIVER_HORZ]    = VICTORYROAD_METATILE_SLIVER_HORZ,
+            [WALL_SLIVER_VERT_TOP]= VICTORYROAD_METATILE_SLIVER_VERT_TOP,
+            [WALL_SLIVER_VERT_BOT]= VICTORYROAD_METATILE_SLIVER_VERT_BOT,
+            [WALL_SLIVER_HORZ_L]  = VICTORYROAD_METATILE_SLIVER_HORZ_L,
+            [WALL_SLIVER_HORZ_R]  = VICTORYROAD_METATILE_SLIVER_HORZ_R,
+            [WALL_SLIVER_ISOLATED]= VICTORYROAD_METATILE_SLIVER_ISOLATED,
+        },
+        .species = sCaveSpecies,
+        .speciesCount = ARRAY_COUNT(sCaveSpecies),
+    },
+
+    // Phoebe is the only one with a mapId of its own. Weather lives in the map
+    // HEADER, which is read out of ROM by warp group and id, so the RAM patch
+    // that swaps tilesets per theme cannot reach it - the same wall underwater
+    // ran into. MAP_ROGUE_DUNGEON_FOG shares LAYOUT_ROGUE_DUNGEON_FLOOR, so
+    // mapLayoutId is identical and every dispatch keying on it is untouched.
+    //
+    // The fog is why this palette can be as dark as it is: it is the lowest
+    // contrast of the four by some way, and fog over a near-black floor reads
+    // as depth rather than as an unlit room.
+    [DUNGEON_THEME_VICTORYROAD_PHOEBE] =
+    {
+        .layoutId = LAYOUT_ROGUE_DUNGEON_VRPHOEBE,
+        .mapId = MAP_ROGUE_DUNGEON_FOG,
+        .generator = DUNGEON_GEN_CAVE,
+        .elevationFloor = DUNGEON_ELEVATION_FLOOR,
+        .elevationWall = DUNGEON_ELEVATION_WALL,
+        .floor = VICTORYROAD_METATILE_FLOOR,
+        .tallGrass = 0,
+        .longGrass = 0,
+        .stairsDown = VICTORYROAD_METATILE_STAIRS_DOWN,
+        .stairsUp = VICTORYROAD_METATILE_STAIRS_UP,
+        .wall =
+        {
+            [WALL_INTERIOR_LEFT]  = VICTORYROAD_METATILE_WALL_INTERIOR_L,
+            [WALL_INTERIOR_MID]   = VICTORYROAD_METATILE_WALL_INTERIOR_M,
+            [WALL_INTERIOR_RIGHT] = VICTORYROAD_METATILE_WALL_INTERIOR_R,
+            [WALL_FACE_LEFT]      = VICTORYROAD_METATILE_WALL_FACE_L,
+            [WALL_FACE_MID]       = VICTORYROAD_METATILE_WALL_FACE_M,
+            [WALL_FACE_RIGHT]     = VICTORYROAD_METATILE_WALL_FACE_R,
+            [WALL_NORTH_LEFT]     = VICTORYROAD_METATILE_WALL_NORTH_L,
+            [WALL_NORTH_MID]      = VICTORYROAD_METATILE_WALL_NORTH_M,
+            [WALL_NORTH_RIGHT]    = VICTORYROAD_METATILE_WALL_NORTH_R,
+            [WALL_CORNER_OPEN_SE] = VICTORYROAD_METATILE_WALL_CORNER_NW,
+            [WALL_CORNER_OPEN_SW] = VICTORYROAD_METATILE_WALL_CORNER_NE,
+            [WALL_CORNER_OPEN_NW] = VICTORYROAD_METATILE_WALL_CORNER_S,
+            [WALL_CORNER_OPEN_NE] = VICTORYROAD_METATILE_WALL_CORNER_S,
+            [WALL_SLIVER_VERT]    = VICTORYROAD_METATILE_SLIVER_VERT,
+            [WALL_SLIVER_HORZ]    = VICTORYROAD_METATILE_SLIVER_HORZ,
+            [WALL_SLIVER_VERT_TOP]= VICTORYROAD_METATILE_SLIVER_VERT_TOP,
+            [WALL_SLIVER_VERT_BOT]= VICTORYROAD_METATILE_SLIVER_VERT_BOT,
+            [WALL_SLIVER_HORZ_L]  = VICTORYROAD_METATILE_SLIVER_HORZ_L,
+            [WALL_SLIVER_HORZ_R]  = VICTORYROAD_METATILE_SLIVER_HORZ_R,
+            [WALL_SLIVER_ISOLATED]= VICTORYROAD_METATILE_SLIVER_ISOLATED,
+        },
+        .species = sCaveSpecies,
+        .speciesCount = ARRAY_COUNT(sCaveSpecies),
+    },
+    [DUNGEON_THEME_VICTORYROAD_GLACIA] =
+    {
+        .layoutId = LAYOUT_ROGUE_DUNGEON_VRGLACIA,
+        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        .generator = DUNGEON_GEN_CAVE,
+        .elevationFloor = DUNGEON_ELEVATION_FLOOR,
+        .elevationWall = DUNGEON_ELEVATION_WALL,
+        .floor = VICTORYROAD_METATILE_FLOOR,
+        .tallGrass = 0,
+        .longGrass = 0,
+        .stairsDown = VICTORYROAD_METATILE_STAIRS_DOWN,
+        .stairsUp = VICTORYROAD_METATILE_STAIRS_UP,
+        .wall =
+        {
+            [WALL_INTERIOR_LEFT]  = VICTORYROAD_METATILE_WALL_INTERIOR_L,
+            [WALL_INTERIOR_MID]   = VICTORYROAD_METATILE_WALL_INTERIOR_M,
+            [WALL_INTERIOR_RIGHT] = VICTORYROAD_METATILE_WALL_INTERIOR_R,
+            [WALL_FACE_LEFT]      = VICTORYROAD_METATILE_WALL_FACE_L,
+            [WALL_FACE_MID]       = VICTORYROAD_METATILE_WALL_FACE_M,
+            [WALL_FACE_RIGHT]     = VICTORYROAD_METATILE_WALL_FACE_R,
+            [WALL_NORTH_LEFT]     = VICTORYROAD_METATILE_WALL_NORTH_L,
+            [WALL_NORTH_MID]      = VICTORYROAD_METATILE_WALL_NORTH_M,
+            [WALL_NORTH_RIGHT]    = VICTORYROAD_METATILE_WALL_NORTH_R,
+            [WALL_CORNER_OPEN_SE] = VICTORYROAD_METATILE_WALL_CORNER_NW,
+            [WALL_CORNER_OPEN_SW] = VICTORYROAD_METATILE_WALL_CORNER_NE,
+            [WALL_CORNER_OPEN_NW] = VICTORYROAD_METATILE_WALL_CORNER_S,
+            [WALL_CORNER_OPEN_NE] = VICTORYROAD_METATILE_WALL_CORNER_S,
+            [WALL_SLIVER_VERT]    = VICTORYROAD_METATILE_SLIVER_VERT,
+            [WALL_SLIVER_HORZ]    = VICTORYROAD_METATILE_SLIVER_HORZ,
+            [WALL_SLIVER_VERT_TOP]= VICTORYROAD_METATILE_SLIVER_VERT_TOP,
+            [WALL_SLIVER_VERT_BOT]= VICTORYROAD_METATILE_SLIVER_VERT_BOT,
+            [WALL_SLIVER_HORZ_L]  = VICTORYROAD_METATILE_SLIVER_HORZ_L,
+            [WALL_SLIVER_HORZ_R]  = VICTORYROAD_METATILE_SLIVER_HORZ_R,
+            [WALL_SLIVER_ISOLATED]= VICTORYROAD_METATILE_SLIVER_ISOLATED,
+        },
+        .species = sCaveSpecies,
+        .speciesCount = ARRAY_COUNT(sCaveSpecies),
+    },
+    [DUNGEON_THEME_VICTORYROAD_DRAKE] =
+    {
+        .layoutId = LAYOUT_ROGUE_DUNGEON_VRDRAKE,
+        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        .generator = DUNGEON_GEN_CAVE,
+        .elevationFloor = DUNGEON_ELEVATION_FLOOR,
+        .elevationWall = DUNGEON_ELEVATION_WALL,
+        .floor = VICTORYROAD_METATILE_FLOOR,
+        .tallGrass = 0,
+        .longGrass = 0,
+        .stairsDown = VICTORYROAD_METATILE_STAIRS_DOWN,
+        .stairsUp = VICTORYROAD_METATILE_STAIRS_UP,
+        .wall =
+        {
+            [WALL_INTERIOR_LEFT]  = VICTORYROAD_METATILE_WALL_INTERIOR_L,
+            [WALL_INTERIOR_MID]   = VICTORYROAD_METATILE_WALL_INTERIOR_M,
+            [WALL_INTERIOR_RIGHT] = VICTORYROAD_METATILE_WALL_INTERIOR_R,
+            [WALL_FACE_LEFT]      = VICTORYROAD_METATILE_WALL_FACE_L,
+            [WALL_FACE_MID]       = VICTORYROAD_METATILE_WALL_FACE_M,
+            [WALL_FACE_RIGHT]     = VICTORYROAD_METATILE_WALL_FACE_R,
+            [WALL_NORTH_LEFT]     = VICTORYROAD_METATILE_WALL_NORTH_L,
+            [WALL_NORTH_MID]      = VICTORYROAD_METATILE_WALL_NORTH_M,
+            [WALL_NORTH_RIGHT]    = VICTORYROAD_METATILE_WALL_NORTH_R,
+            [WALL_CORNER_OPEN_SE] = VICTORYROAD_METATILE_WALL_CORNER_NW,
+            [WALL_CORNER_OPEN_SW] = VICTORYROAD_METATILE_WALL_CORNER_NE,
+            [WALL_CORNER_OPEN_NW] = VICTORYROAD_METATILE_WALL_CORNER_S,
+            [WALL_CORNER_OPEN_NE] = VICTORYROAD_METATILE_WALL_CORNER_S,
+            [WALL_SLIVER_VERT]    = VICTORYROAD_METATILE_SLIVER_VERT,
+            [WALL_SLIVER_HORZ]    = VICTORYROAD_METATILE_SLIVER_HORZ,
+            [WALL_SLIVER_VERT_TOP]= VICTORYROAD_METATILE_SLIVER_VERT_TOP,
+            [WALL_SLIVER_VERT_BOT]= VICTORYROAD_METATILE_SLIVER_VERT_BOT,
+            [WALL_SLIVER_HORZ_L]  = VICTORYROAD_METATILE_SLIVER_HORZ_L,
+            [WALL_SLIVER_HORZ_R]  = VICTORYROAD_METATILE_SLIVER_HORZ_R,
+            [WALL_SLIVER_ISOLATED]= VICTORYROAD_METATILE_SLIVER_ISOLATED,
+        },
+        .species = sCaveSpecies,
+        .speciesCount = ARRAY_COUNT(sCaveSpecies),
+    },
 };
 
 // Which theme each dungeon uses, following the stock game: Petalburg Woods then
@@ -879,8 +1073,23 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
 // how the stock game reaches Mossdeep. Then the seafloor and Juan, since diving
 // is what Mossdeep hands the player and Sootopolis is reachable no other way.
 //
-// That is all eight gym dungeons with a theme of their own and no repeats. The
-// cycling starts at the Elite Four, where the dungeons are half as long.
+// That is all eight gym dungeons with a theme of their own and no repeats.
+//
+// The Elite Four then get Victory Road, which is where the stock game puts it -
+// it is the road TO them - as four recolours of the one tileset, tinted to each
+// member's type: Sidney violet for Dark, Phoebe near-black and fogged for
+// Ghost, Glacia pale blue for Ice, Drake crimson for Dragon. Four dungeons that
+// read as one place seen four ways is the right shape for a gauntlet, and it is
+// what makes them affordable: they share every metatile and differ only in a
+// palette set each.
+//
+// The modulo does the routing on its own. The Elite Four are dungeons 8 to 11
+// and these are theme indices 8 to 11, so nothing here needed changing.
+//
+// Cycling now starts at dungeon 12, which is Wallace, and wraps him to the
+// woods and Steven's finale to the cave. Wallace is getting a dungeon of his
+// own, so that is a known gap rather than a chosen pairing - and the finale
+// wants one too.
 static const struct RogueDungeonTheme *ThemeForFloor(u16 floor)
 {
     u32 dungeon = DungeonIndexOf(floor);

@@ -606,6 +606,7 @@ gStdScripts_End::
 @ silently never assembled for an Emerald build.
 	.include "data/maps/RogueDungeonFloor/scripts.inc"
 	.include "data/maps/RogueDungeonUnderwater/scripts.inc"
+	.include "data/maps/RogueDungeonFog/scripts.inc"
 	.include "data/maps/RogueRestStop/scripts.inc"
 
 .if IS_FRLG

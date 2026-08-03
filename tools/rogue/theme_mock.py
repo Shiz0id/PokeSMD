@@ -223,6 +223,30 @@ THEMES = {
             'SLIVER_HORZ_L': 0x3A2, 'SLIVER_HORZ_R': 0x3A3,
             'SLIVER_ISOLATED': 0x3A4,
         }),
+    # Victory Road, one per Elite Four member. Identical tables - identical
+    # METATILES, in fact, since these tilesets share gMetatiles_Cave - so the
+    # only thing a mock can show that the cave's does not is the palette, which
+    # is the entire point of the theme. Render them to check the recolour reads
+    # at floor scale, not to check the slots.
+    #
+    # No patch and no decor on purpose: the cave's sand region and decor draw
+    # partly from gTileset_General's palettes, which cannot be recoloured
+    # without dragging every other theme along.
+    **{f'victoryroad_{who.lower()}': dict(
+        primary='gTileset_General', secondary=f'gTileset_RogueVictoryRoad{who}',
+        floor=0x201, stairs=0x214,
+        wall={
+            'INTERIOR_LEFT': 0x210, 'INTERIOR_MID': 0x211, 'INTERIOR_RIGHT': 0x212,
+            'FACE_LEFT': 0x218, 'FACE_MID': 0x219, 'FACE_RIGHT': 0x21A,
+            'NORTH_LEFT': 0x220, 'NORTH_MID': 0x209, 'NORTH_RIGHT': 0x222,
+            'CORNER_OPEN_SE': 0x21B, 'CORNER_OPEN_SW': 0x21C,
+            'CORNER_OPEN_NW': 0x223, 'CORNER_OPEN_NE': 0x223,
+            'SLIVER_VERT': 0x39E, 'SLIVER_HORZ': 0x39F,
+            'SLIVER_VERT_TOP': 0x3A0, 'SLIVER_VERT_BOT': 0x3A1,
+            'SLIVER_HORZ_L': 0x3A2, 'SLIVER_HORZ_R': 0x3A3,
+            'SLIVER_ISOLATED': 0x3A4,
+        })
+       for who in ('Sidney', 'Phoebe', 'Glacia', 'Drake')},
 }
 
 

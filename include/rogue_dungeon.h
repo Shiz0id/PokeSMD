@@ -472,6 +472,51 @@
 #define UNDERWATER_METATILE_CORNER_OPEN_NE 0x223
 
 
+// Victory Road, the Elite Four's dungeons. ONE constant set for all four
+// variants, which is the one place this project may share metatile ids across
+// themes.
+//
+// Everywhere else that would be a bug - 0x214 is a ladder under gTileset_Cave
+// and a grey stripe under gTileset_Rustboro - and Mirage Tower spells its own
+// out precisely because its equality with the cave is a coincidence of two
+// reskins happening to have 414 metatiles each. Here it is not a coincidence:
+// gTileset_RogueVictoryRoad{Sidney,Phoebe,Glacia,Drake} literally share
+// gMetatiles_Cave, so the ids are the same file. Four copies of this block
+// could drift apart; the shared thing they describe could not.
+//
+// Vanilla Emerald's Victory Road runs on gTileset_General + gTileset_Cave, the
+// identical pair to Granite Cave, so the wall vocabulary transfers verbatim -
+// measured over all three vanilla Victory Road layouts, which use 0x201, 0x211,
+// 0x209, 0x219, 0x210, 0x212, 0x218, 0x21A, 0x21B, 0x21C and 0x223 and nothing
+// else for their walls. The difference between the two dungeons is the palette,
+// and only the palette. See tools/rogue/make_victory_road_palettes.py.
+//
+// The slivers come along for free for the same reason: they were appended to
+// gMetatiles_Cave, so these tilesets inherit them with no second append.
+#define VICTORYROAD_METATILE_FLOOR            0x201  // MB_CAVE, so encounters fire
+#define VICTORYROAD_METATILE_WALL_INTERIOR_L  0x210
+#define VICTORYROAD_METATILE_WALL_INTERIOR_M  0x211
+#define VICTORYROAD_METATILE_WALL_INTERIOR_R  0x212
+#define VICTORYROAD_METATILE_WALL_FACE_L      0x218
+#define VICTORYROAD_METATILE_WALL_FACE_M      0x219
+#define VICTORYROAD_METATILE_WALL_FACE_R      0x21A
+#define VICTORYROAD_METATILE_WALL_NORTH_L     0x220
+#define VICTORYROAD_METATILE_WALL_NORTH_M     0x209
+#define VICTORYROAD_METATILE_WALL_NORTH_R     0x222
+#define VICTORYROAD_METATILE_WALL_CORNER_NW   0x21B  // open SE diagonal
+#define VICTORYROAD_METATILE_WALL_CORNER_NE   0x21C  // open SW diagonal
+#define VICTORYROAD_METATILE_WALL_CORNER_S    0x223  // open NW or NE diagonal
+#define VICTORYROAD_METATILE_SLIVER_VERT      0x39E
+#define VICTORYROAD_METATILE_SLIVER_HORZ      0x39F
+#define VICTORYROAD_METATILE_SLIVER_VERT_TOP  0x3A0
+#define VICTORYROAD_METATILE_SLIVER_VERT_BOT  0x3A1
+#define VICTORYROAD_METATILE_SLIVER_HORZ_L    0x3A2
+#define VICTORYROAD_METATILE_SLIVER_HORZ_R    0x3A3
+#define VICTORYROAD_METATILE_SLIVER_ISOLATED  0x3A4
+#define VICTORYROAD_METATILE_STAIRS_DOWN      0x214
+#define VICTORYROAD_METATILE_STAIRS_UP        0x23E
+
+
 // Woods uses the same two elevations as caves.
 #define DUNGEON_ELEVATION_FLOOR 3
 #define DUNGEON_ELEVATION_WALL  0

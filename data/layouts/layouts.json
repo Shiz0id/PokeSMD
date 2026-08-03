@@ -9403,6 +9403,46 @@
       "secondary_tileset": "gTileset_Underwater",
       "border_filepath": "data/layouts/RogueDungeonUnderwaterTiles/border.bin",
       "blockdata_filepath": "data/layouts/RogueDungeonUnderwaterTiles/map.bin"
+    },
+    {
+      "id": "LAYOUT_ROGUE_DUNGEON_VRSIDNEY",
+      "name": "RogueDungeonVRSidney_Layout",
+      "width": 48,
+      "height": 48,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_RogueVictoryRoadSidney",
+      "border_filepath": "data/layouts/RogueDungeonVRSidney/border.bin",
+      "blockdata_filepath": "data/layouts/RogueDungeonVRSidney/map.bin"
+    },
+    {
+      "id": "LAYOUT_ROGUE_DUNGEON_VRPHOEBE",
+      "name": "RogueDungeonVRPhoebe_Layout",
+      "width": 48,
+      "height": 48,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_RogueVictoryRoadPhoebe",
+      "border_filepath": "data/layouts/RogueDungeonVRPhoebe/border.bin",
+      "blockdata_filepath": "data/layouts/RogueDungeonVRPhoebe/map.bin"
+    },
+    {
+      "id": "LAYOUT_ROGUE_DUNGEON_VRGLACIA",
+      "name": "RogueDungeonVRGlacia_Layout",
+      "width": 48,
+      "height": 48,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_RogueVictoryRoadGlacia",
+      "border_filepath": "data/layouts/RogueDungeonVRGlacia/border.bin",
+      "blockdata_filepath": "data/layouts/RogueDungeonVRGlacia/map.bin"
+    },
+    {
+      "id": "LAYOUT_ROGUE_DUNGEON_VRDRAKE",
+      "name": "RogueDungeonVRDrake_Layout",
+      "width": 48,
+      "height": 48,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_RogueVictoryRoadDrake",
+      "border_filepath": "data/layouts/RogueDungeonVRDrake/border.bin",
+      "blockdata_filepath": "data/layouts/RogueDungeonVRDrake/map.bin"
     }
   ]
 }

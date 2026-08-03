@@ -833,6 +833,69 @@ const struct Tileset gTileset_UnionRoom =
     .callback = NULL,
 };
 
+// Victory Road, one recolour per Elite Four member.
+//
+// Each SHARES gTileset_Cave's tiles, metatiles and attributes and differs only
+// in .palettes. Vanilla does the same thing: gMetatiles_SecretBaseSecondary is
+// shared by six tilesets, and gTileset_MirageTower is 411 of 414 metatiles
+// byte-identical to gTileset_Cave with a sand ramp over it.
+//
+// Sharing the metatiles is what makes this near-free. Every id is literally
+// the same id, so the cave's whole wall table transfers, and so do the seven
+// slivers we appended at 0x39E-0x3A4 - they live in gMetatiles_Cave, so these
+// tilesets inherit them without append_metatiles.py running again.
+//
+// Sharing the ATTRIBUTES matters just as much and is easier to miss: the
+// behaviours come with them, so MB_CAVE still carries the encounter flag and
+// nothing about wild spawns or check_encounter_flags.py changes.
+//
+// .callback must stay InitTilesetAnim_Cave. The animation DMAs tile pixels,
+// not colours, and the tiles are shared, so it works unchanged - but leaving
+// it NULL would silently stop the cave's animation on these floors only.
+const struct Tileset gTileset_RogueVictoryRoadSidney =
+{
+    .isCompressed = TRUE,
+    .isSecondary = TRUE,
+    .tiles = gTilesetTiles_Cave,
+    .palettes = gTilesetPalettes_RogueVictoryRoadSidney,
+    .metatiles = gMetatiles_Cave,
+    .metatileAttributes = gMetatileAttributes_Cave,
+    .callback = InitTilesetAnim_Cave,
+};
+
+const struct Tileset gTileset_RogueVictoryRoadPhoebe =
+{
+    .isCompressed = TRUE,
+    .isSecondary = TRUE,
+    .tiles = gTilesetTiles_Cave,
+    .palettes = gTilesetPalettes_RogueVictoryRoadPhoebe,
+    .metatiles = gMetatiles_Cave,
+    .metatileAttributes = gMetatileAttributes_Cave,
+    .callback = InitTilesetAnim_Cave,
+};
+
+const struct Tileset gTileset_RogueVictoryRoadGlacia =
+{
+    .isCompressed = TRUE,
+    .isSecondary = TRUE,
+    .tiles = gTilesetTiles_Cave,
+    .palettes = gTilesetPalettes_RogueVictoryRoadGlacia,
+    .metatiles = gMetatiles_Cave,
+    .metatileAttributes = gMetatileAttributes_Cave,
+    .callback = InitTilesetAnim_Cave,
+};
+
+const struct Tileset gTileset_RogueVictoryRoadDrake =
+{
+    .isCompressed = TRUE,
+    .isSecondary = TRUE,
+    .tiles = gTilesetTiles_Cave,
+    .palettes = gTilesetPalettes_RogueVictoryRoadDrake,
+    .metatiles = gMetatiles_Cave,
+    .metatileAttributes = gMetatileAttributes_Cave,
+    .callback = InitTilesetAnim_Cave,
+};
+
 #else
 
 // FRLG tilesets
