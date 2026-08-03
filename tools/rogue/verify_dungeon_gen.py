@@ -20,9 +20,6 @@ SHAPES = {
     'cave (default)': dict(rooms=8, rmin=5, rmax=10, corridor=1),
     'jungle': dict(rooms=12, rmin=7, rmax=13, corridor=3),
     # The most open shape in the game, and worth its own row rather than
-    # trusting the jungle's: 5-wide corridors against rooms up to 15 is where a
-    # carve would start writing outside the grid if it were going to.
-    # The most open shape in the game, and worth its own row rather than
     # trusting the jungle's: 5-wide corridors are where a carve would start
     # writing outside the grid if it were going to.
     #
@@ -30,7 +27,12 @@ SHAPES = {
     # measured WORSE on both axes - 44.6% coverage against 49.3%, and the room
     # count collapsed from 7.9 to 5.7 - which is the size-is-the-wrong-lever
     # finding repeating exactly. Corridor width alone buys the openness.
-    'ocean': dict(rooms=12, rmin=7, rmax=13, corridor=5),
+    #
+    # Ever Grande carves on exactly these numbers, so this row covers both and
+    # there is no second entry. Its width is not a taste choice either: at 3
+    # wide the vertical sliver fires and gTileset_EverGrande has no art for one,
+    # so 5 is what removes the only composed art that theme would have needed.
+    'ocean / evergrande': dict(rooms=12, rmin=7, rmax=13, corridor=5),
 }
 
 

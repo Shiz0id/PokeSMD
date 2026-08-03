@@ -480,6 +480,84 @@ static const struct RoguePatchLayer sUnderwaterPatch[] =
     },
 };
 
+// Wallace, the flower meadow. SIX, sorted weakest to strongest, and the first
+// Elite Four pool NOT type-matched to its member: the dungeon is deliberately
+// not water themed, so these are chosen for the field rather than for him.
+//
+// A pitcher plant, a sunflower, a moth that scatters powder over flowers,
+// dandelion seed, and the two things Gloom becomes. Six divides the twelve
+// encounter slots exactly, as Drake's does, so this floor spreads flat.
+//
+// Two rejections mattered more than they look. Beautifly and Dustox are the TOP
+// of the WOODS pool, at floors 1 to 10 - putting them back as Wallace's weakest
+// ninety floors later would undo the retirement the tier window exists for.
+// Masquerain, Volbeat, Illumise and Tropius are all the JUNGLE's, the other
+// lush-green land dungeon, and reusing them would blur two themes that already
+// share a palette family. Butterfree is unused and is the swap-in if a second
+// Bug is ever wanted; it costs Bellossom, since keeping both Gloom branches is
+// what fills the sixth slot.
+static const u16 sEverGrandeSpecies[] =
+{
+    SPECIES_VICTREEBEL, SPECIES_SUNFLORA, SPECIES_VENOMOTH,
+    SPECIES_JUMPLUFF,   SPECIES_BELLOSSOM, SPECIES_VILEPLUME,
+};
+
+// The flowers, and a brick terrace punched through them - the jungle's
+// arrangement, where a later layer wins over an earlier one.
+//
+// Layer 0 is the encounter surface and the whole point of the dungeon, so it is
+// tuned to 41% of floor, next to the jungle's 38%. It is PHASED: the eight ids
+// from the base are eight steps of a diagonal banding, not eight variants, so
+// the field comes out in alternating diagonal rows exactly as vanilla draws it.
+// Every slot is the same base because this set has no edge art whatsoever - the
+// region autotile degenerates to a fill, as underwater's seaweed does.
+//
+// Layer 1 is brick, and it is a path rather than a region: no north or south
+// edge art exists, so a blob's top and bottom are hard cuts. Small and sparse
+// on purpose.
+static const struct RoguePatchLayer sEverGrandePatch[] =
+{
+    {
+        .tile =
+        {
+            [PATCH_NW] = EVERGRANDE_METATILE_FLOWERS_PINK,
+            [PATCH_N]  = EVERGRANDE_METATILE_FLOWERS_PINK,
+            [PATCH_NE] = EVERGRANDE_METATILE_FLOWERS_PINK,
+            [PATCH_W]  = EVERGRANDE_METATILE_FLOWERS_PINK,
+            [PATCH_MID]= EVERGRANDE_METATILE_FLOWERS_PINK,
+            [PATCH_E]  = EVERGRANDE_METATILE_FLOWERS_PINK,
+            [PATCH_SW] = EVERGRANDE_METATILE_FLOWERS_PINK,
+            [PATCH_S]  = EVERGRANDE_METATILE_FLOWERS_PINK,
+            [PATCH_SE] = EVERGRANDE_METATILE_FLOWERS_PINK,
+            [PATCH_NW_WALL] = EVERGRANDE_METATILE_FLOWERS_PINK,
+            [PATCH_N_WALL]  = EVERGRANDE_METATILE_FLOWERS_PINK,
+            [PATCH_NE_WALL] = EVERGRANDE_METATILE_FLOWERS_PINK,
+        },
+        .blobs = 11,
+        .radius = 6,
+        .phase = EVERGRANDE_FLOWER_PHASE,
+    },
+    {
+        .tile =
+        {
+            [PATCH_NW] = EVERGRANDE_METATILE_PATH_W,
+            [PATCH_N]  = EVERGRANDE_METATILE_PATH_MID,
+            [PATCH_NE] = EVERGRANDE_METATILE_PATH_E,
+            [PATCH_W]  = EVERGRANDE_METATILE_PATH_W,
+            [PATCH_MID]= EVERGRANDE_METATILE_PATH_MID,
+            [PATCH_E]  = EVERGRANDE_METATILE_PATH_E,
+            [PATCH_SW] = EVERGRANDE_METATILE_PATH_W,
+            [PATCH_S]  = EVERGRANDE_METATILE_PATH_MID,
+            [PATCH_SE] = EVERGRANDE_METATILE_PATH_E,
+            [PATCH_NW_WALL] = EVERGRANDE_METATILE_PATH_W,
+            [PATCH_N_WALL]  = EVERGRANDE_METATILE_PATH_MID,
+            [PATCH_NE_WALL] = EVERGRANDE_METATILE_PATH_E,
+        },
+        .blobs = 5,
+        .radius = 4,
+    },
+};
+
 enum DungeonThemeId
 {
     DUNGEON_THEME_WOODS,
@@ -498,6 +576,9 @@ enum DungeonThemeId
     DUNGEON_THEME_VICTORYROAD_PHOEBE,
     DUNGEON_THEME_VICTORYROAD_GLACIA,
     DUNGEON_THEME_VICTORYROAD_DRAKE,
+    // Wallace is dungeon 12, so index 12 is his by the same modulo that gives
+    // the Elite Four theirs. This is what stops him wrapping back to the woods.
+    DUNGEON_THEME_EVERGRANDE,
     DUNGEON_THEME_COUNT
 };
 
@@ -1165,6 +1246,68 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         },
         .species = sDrakeSpecies,
         .speciesCount = ARRAY_COUNT(sDrakeSpecies),
+    },
+    // Ever Grande, Wallace's, and the first theme whose ENCOUNTER SURFACE is
+    // something other than grass, cave floor or water.
+    //
+    // Corridors are 5 wide like the ocean's, and that is a structural choice
+    // rather than a taste one: at 3 wide the vertical sliver fires and this
+    // tileset has no art for it, so widening removes the only composed art the
+    // theme would have needed. It also suits a meadow.
+    //
+    // tallGrass stays 0 and longGrass names the flowers, which is the jungle's
+    // and underwater's arrangement: tallGrass is what switches on grass-BLOB
+    // placement, and a patch-layer theme would then paint its encounter surface
+    // twice. longGrass is left as the declaration of where encounters fire,
+    // which is what check_encounter_flags.py reads.
+    [DUNGEON_THEME_EVERGRANDE] =
+    {
+        .layoutId = LAYOUT_ROGUE_DUNGEON_EVERGRANDE,
+        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        .generator = DUNGEON_GEN_CAVE,
+        .elevationFloor = DUNGEON_ELEVATION_FLOOR,
+        .elevationWall = DUNGEON_ELEVATION_WALL,
+        .roomCount = 12,
+        .roomMin = 7,
+        .roomMax = 13,
+        .corridorWidth = 5,
+        .floor = EVERGRANDE_METATILE_FLOOR,
+        .tallGrass = 0,
+        .longGrass = EVERGRANDE_METATILE_FLOWERS_PINK,
+        .stairsDown = EVERGRANDE_METATILE_STAIRS_DOWN,
+        .stairsUp = EVERGRANDE_METATILE_STAIRS_DOWN,
+        .wall =
+        {
+            [WALL_NORTH_LEFT]     = EVERGRANDE_METATILE_WALL_NORTH_L,
+            [WALL_NORTH_MID]      = EVERGRANDE_METATILE_WALL_NORTH_M,
+            [WALL_NORTH_RIGHT]    = EVERGRANDE_METATILE_WALL_NORTH_R,
+            [WALL_INTERIOR_LEFT]  = EVERGRANDE_METATILE_WALL_INTERIOR_L,
+            [WALL_INTERIOR_MID]   = EVERGRANDE_METATILE_WALL_INTERIOR_M,
+            [WALL_INTERIOR_RIGHT] = EVERGRANDE_METATILE_WALL_INTERIOR_R,
+            [WALL_FACE_LEFT]      = EVERGRANDE_METATILE_WALL_FACE_L,
+            [WALL_FACE_MID]       = EVERGRANDE_METATILE_WALL_FACE_M,
+            [WALL_FACE_RIGHT]     = EVERGRANDE_METATILE_WALL_FACE_R,
+            [WALL_CORNER_OPEN_SE] = EVERGRANDE_METATILE_CORNER_OPEN_SE,
+            [WALL_CORNER_OPEN_SW] = EVERGRANDE_METATILE_CORNER_OPEN_SW,
+            [WALL_CORNER_OPEN_NW] = EVERGRANDE_METATILE_CORNER_OPEN_NW,
+            [WALL_CORNER_OPEN_NE] = EVERGRANDE_METATILE_CORNER_OPEN_NE,
+            // The horizontal three are the cliff's own south face; the vertical
+            // three never fire at this corridor width and sit on the interior.
+            [WALL_SLIVER_HORZ]    = EVERGRANDE_METATILE_SLIVER_HORZ,
+            [WALL_SLIVER_HORZ_L]  = EVERGRANDE_METATILE_SLIVER_HORZ,
+            [WALL_SLIVER_HORZ_R]  = EVERGRANDE_METATILE_SLIVER_HORZ,
+            [WALL_SLIVER_VERT]    = EVERGRANDE_METATILE_WALL_INTERIOR_M,
+            [WALL_SLIVER_VERT_TOP]= EVERGRANDE_METATILE_WALL_INTERIOR_M,
+            [WALL_SLIVER_VERT_BOT]= EVERGRANDE_METATILE_WALL_INTERIOR_M,
+            // Wallace's dais. arenaPlatform paints one wall block ringed by
+            // floor, which resolves here.
+            [WALL_SLIVER_ISOLATED]= EVERGRANDE_METATILE_COBBLE,
+        },
+        .patches = sEverGrandePatch,
+        .patchCount = ARRAY_COUNT(sEverGrandePatch),
+        .arenaPlatform = TRUE,
+        .species = sEverGrandeSpecies,
+        .speciesCount = ARRAY_COUNT(sEverGrandeSpecies),
     },
 };
 
@@ -1911,8 +2054,22 @@ static void ApplyPatchLayer(u16 *map, const struct RogueDungeonTheme *theme,
             }
 
             if (layer->tile[slot] != 0)
+            {
+                u16 metatile = layer->tile[slot];
+
+                // A phased layer's slot id is the base of `phase` consecutive
+                // metatiles that are phases of a diagonal banding rather than
+                // interchangeable variants, so the offset is a diagonal and not
+                // a hash. Folded back into range by hand because y - x is
+                // signed and negative over half the floor, and C's % keeps the
+                // sign of the dividend.
+                if (layer->phase != 0)
+                    metatile += ((y - x) % layer->phase + layer->phase)
+                                % layer->phase;
+
                 SetBlock(map, x, y,
-                         MakeBlock(layer->tile[slot], 0, theme->elevationFloor));
+                         MakeBlock(metatile, 0, theme->elevationFloor));
+            }
         }
     }
 }

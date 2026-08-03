@@ -9443,6 +9443,16 @@
       "secondary_tileset": "gTileset_RogueVictoryRoadDrake",
       "border_filepath": "data/layouts/RogueDungeonVRDrake/border.bin",
       "blockdata_filepath": "data/layouts/RogueDungeonVRDrake/map.bin"
+    },
+    {
+      "id": "LAYOUT_ROGUE_DUNGEON_EVERGRANDE",
+      "name": "RogueDungeonEverGrande_Layout",
+      "width": 48,
+      "height": 48,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_EverGrande",
+      "border_filepath": "data/layouts/RogueDungeonEverGrande/border.bin",
+      "blockdata_filepath": "data/layouts/RogueDungeonEverGrande/map.bin"
     }
   ]
 }

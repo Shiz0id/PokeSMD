@@ -569,6 +569,90 @@
 #define VICTORYROAD_METATILE_SNOW_INTERIOR_R  0x3AD
 
 
+// Ever Grande, the flower meadow, and Wallace's. gTileset_General +
+// gTileset_EverGrande.
+//
+// THE WALL IS THE PRIMARY'S. 0x068-0x07A is gTileset_General's cliff nine
+// slice, on a stride of 8 like every other nine slice in this project. A
+// neighbour-mask census over EverGrandeCity_Layout could find nothing above 55%
+// because that map is a multi-level elevation plateau and the census pools
+// faces at four different heights - the ocean's pooling mistake exactly. One
+// isolated 3x3 cliff mass on MtPyre_Summit_Layout gives the whole table on
+// sight, which is the technique section 4 already recommends over counting.
+//
+// The four inside corners are the ones mined for the ocean, here in their own
+// tan palette rather than recoloured into Mossdeep's.
+#define EVERGRANDE_METATILE_FLOOR             0x27C  // MB_SHORT_GRASS, no encounters
+#define EVERGRANDE_METATILE_WALL_NORTH_L      0x068
+#define EVERGRANDE_METATILE_WALL_NORTH_M      0x069
+#define EVERGRANDE_METATILE_WALL_NORTH_R      0x06A
+#define EVERGRANDE_METATILE_WALL_INTERIOR_L   0x070
+#define EVERGRANDE_METATILE_WALL_INTERIOR_M   0x071
+#define EVERGRANDE_METATILE_WALL_INTERIOR_R   0x072
+#define EVERGRANDE_METATILE_WALL_FACE_L       0x078
+#define EVERGRANDE_METATILE_WALL_FACE_M       0x079
+#define EVERGRANDE_METATILE_WALL_FACE_R       0x07A
+#define EVERGRANDE_METATILE_CORNER_OPEN_SE    0x074
+#define EVERGRANDE_METATILE_CORNER_OPEN_SW    0x089
+#define EVERGRANDE_METATILE_CORNER_OPEN_NW    0x07D
+#define EVERGRANDE_METATILE_CORNER_OPEN_NE    0x07B
+
+// This is the first theme that needs NO composed sliver art, because the
+// corridors are 5 wide and the vertical case then never occurs at all - 0 hits
+// across two mock floors, against 19 at 3 wide. What is left is the horizontal
+// one, and 0x079 is simply the cliff's own south face: vanilla uses it for a
+// one-block-thick horizontal wall 492 times of 990, and for its two caps at 77%
+// and 67%. Showing a south face and nothing else IS what such a wall looks like
+// from below, so there is nothing to draw.
+//
+// The three vertical slots sit on the wall interior, the way underwater leaves
+// all seven, and the mock's unhit-slot report is what confirms they never fire.
+#define EVERGRANDE_METATILE_SLIVER_HORZ       0x079
+
+// Ever Grande's cobble garden wall, and the arena dais. arenaPlatform paints
+// one wall block ringed by floor, which the autotiler resolves to
+// WALL_SLIVER_ISOLATED, so this is what Wallace stands on.
+//
+// It is deliberately NOT used for the ordinary slivers. Tried there first and
+// it is wrong at game scale: its shaded face is blue-grey against the cliff's
+// warm tan, so the vertical piece reads as a pillar of a foreign material and
+// the horizontal one as a hole in the ground. It works in vanilla as a long
+// terrace wall bordering a field, never as a one-block gap in a rock mass.
+#define EVERGRANDE_METATILE_COBBLE            0x232
+
+// The brick path, standing in for a paved terrace. It is a PATH and not a
+// region: 0x23C is a left edge, 0x23E a right edge, and there is NO north or
+// south edge art at all - the mask census puts continues-NSWE, SWE and NWE all
+// on the same fill. So a blob's top and bottom are hard cuts. It survives
+// anyway because ApplyFloorPatches erodes blobs round and the brick texture is
+// busy enough that the cut does not register.
+#define EVERGRANDE_METATILE_PATH_W            0x23C
+#define EVERGRANDE_METATILE_PATH_MID          0x23D
+#define EVERGRANDE_METATILE_PATH_E            0x23E
+
+// Ours, appended by tools/rogue/make_evergrande_tiles.py, which is the ONLY
+// thing that may append to this tileset.
+//
+// The exit is the mint floor's own bottom layer under a new palette-8 stone
+// overlay, drawn in the woods stairs' shape because that is what the player has
+// already learned means down. Its attribute is COVERED rather than NORMAL, or
+// the overlay would draw over them while they stand on it.
+#define EVERGRANDE_METATILE_STAIRS_DOWN       0x2A8
+
+// The encounter flowers: sixteen entries referencing vanilla's flower tiles
+// byte for byte, differing only in carrying MB_LONG_GRASS. Vanilla's own are
+// MB_NORMAL, and neither this tileset nor gTileset_Mauville holds a single
+// metatile with TILE_FLAG_HAS_ENCOUNTERS, so a flower with wild Pokemon in it
+// had to be a new entry. No new art at all.
+//
+// EIGHT PHASES, NOT EIGHT VARIANTS - see RoguePatchLayer.phase. The pink and
+// yellow sets are the same eight pictures under two palettes, and vanilla uses
+// one colourway per field, never mixed.
+#define EVERGRANDE_METATILE_FLOWERS_PINK      0x2A9  // 0x2A9-0x2B0
+#define EVERGRANDE_METATILE_FLOWERS_YELLOW    0x2B1  // 0x2B1-0x2B8
+#define EVERGRANDE_FLOWER_PHASE               8
+
+
 // Woods uses the same two elevations as caves.
 #define DUNGEON_ELEVATION_FLOOR 3
 #define DUNGEON_ELEVATION_WALL  0
@@ -665,6 +749,22 @@ struct RoguePatchLayer
     u16 tile[PATCH_SLOT_COUNT];
     u8 blobs;    // ellipses stamped per floor, capped at DUNGEON_MAX_PATCH_BLOBS
     u8 radius;   // nominal; each blob varies a little either way
+
+    // Nonzero makes each slot's id the BASE of `phase` consecutive metatiles,
+    // and the one actually painted is base + (y - x) mod phase.
+    //
+    // This exists because Ever Grande's flower metatiles are not interchangeable
+    // variants: each set of eight is eight PHASES of a diagonal banding, and 85%
+    // of the 341 flower blocks on the vanilla map satisfy
+    // variant = (y - x + k) mod 8 for one of three per-field offsets - one
+    // constant per field, wherever the artist started. Picking among them at
+    // random, which is what a position hash would do, destroys the pattern and
+    // turns rows of alternating colour into noise.
+    //
+    // A diagonal is also cheaper than a hash, and like the rest of this pass it
+    // consumes no RNG, so WriteFloorBlocks can repaint a floor without the
+    // flowers reshuffling under the player.
+    u8 phase;
 };
 
 // One cosmetic wall swap: wherever `base` was painted, `variant` may replace it.

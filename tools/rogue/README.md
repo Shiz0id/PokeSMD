@@ -40,14 +40,22 @@ their output by hand; all are idempotent.
 | `make_underwater_tiles.py` | the seafloor's whirlpool into `data/tilesets/secondary/underwater/` |
 | `compose_metatiles.py` + `append_metatiles.py` | cave sliver metatiles into `data/tilesets/secondary/cave/` |
 | `make_glacia_snow.py` | Glacia's snow floor, drift and ice rock tiles into `data/tilesets/secondary/cave/` |
+| `make_evergrande_tiles.py` | the flower dungeon's exit and its sixteen encounter-flowers into `data/tilesets/secondary/ever_grande/` |
 | `make_victory_road_palettes.py` | the four Victory Road palette sets into `data/tilesets/secondary/rogue_victory_road_*/` |
 | `setup_dungeon_map.py` | the dungeon map's layout and `map.json` scaffolding |
 
 The tileset writers (`make_woods_stairs`, `make_fiery_slivers`,
 `make_mirage_slivers`, `make_ocean_tiles`, `make_underwater_tiles`,
-`compose_metatiles`+`append_metatiles`) **edit vanilla asset files**. Pulling
-upstream changes to those tilesets means taking upstream's file and re-running
-the script, not merging.
+`make_evergrande_tiles`, `compose_metatiles`+`append_metatiles`) **edit vanilla
+asset files**. Pulling upstream changes to those tilesets means taking
+upstream's file and re-running the script, not merging.
+
+`make_evergrande_tiles.py` is the **only** appender to `gTileset_EverGrande`,
+by construction rather than by convention: it stays idempotent by truncating
+everything past the vanilla 168 metatiles and rewriting the tail, so a second
+appender's entries get silently wiped the next time it runs. Anything needing a
+new Ever Grande metatile adds itself there. Same rule as `append_metatiles.py`
+has for the cave, and for the same reason.
 
 `make_glacia_snow.py` writes tiles into the cave sheet but **not** metatiles:
 `append_metatiles.py` is the only appender to that tileset and imports the snow

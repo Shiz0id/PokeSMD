@@ -257,6 +257,73 @@ THEMES = {
             'SLIVER_ISOLATED': 0x3A4,
         })
        for who in ('Sidney', 'Phoebe', 'Glacia', 'Drake')},
+    # CANDIDATE - Wallace's flower dungeon, Ever Grande.
+    #
+    # The wall mass is gTileset_General's cliff nine slice, 0x068-0x07A on a
+    # stride of 8. A neighbour-mask census over Ever Grande City could find
+    # nothing above 55% because that map is a multi-level elevation plateau and
+    # the census pools faces at four different heights - the ocean's mistake
+    # again. One isolated 3x3 cliff mass on Mt Pyre Summit gives the whole thing
+    # on sight. The four inside corners are the ones already mined for the
+    # ocean, here in their own tan palette rather than Mossdeep's.
+    #
+    # The slivers are Ever Grande's own cobble garden wall, which is genuinely
+    # one block thick in vanilla: 0x232 runs north-south with grass on both
+    # sides 85% of the time and 0x234 runs east-west at 82%. Nothing composed.
+    # The two variants below differ ONLY in corridor width, because at 3 wide
+    # no one-block wall ever occurs and the cobble would never draw at all.
+    **{f'evergrande{sfx}': dict(
+        primary='gTileset_General', secondary='gTileset_EverGrande',
+        floor=0x27C, stairs=0x2A8,      # our exit, drawn by make_evergrande_tiles
+        # The flowers. One id in every slot, as underwater does: this set has no
+        # edge art, so the region autotile degenerates to a plain fill. The real
+        # theme paints variant = (y - x) mod 8, which is what vanilla does: the
+        # eight are eight PHASES of a diagonal banding, not eight interchangeable
+        # variants, and 85% of Ever Grande City's 341 flower blocks obey it for
+        # one of three per-field offsets.
+        patch={k: 0x2A9 for k in PATCH_SLOTS},
+        patch_blobs=11, patch_radius=6, patch_phase=8,
+        # CANDIDATE terrace. The brick is a PATH, not a region: 0x23C left edge,
+        # 0x23D fill, 0x23E right edge, and no north or south edge art at all -
+        # the mask census puts NSWE, SWE and NWE all on the fill. So the top and
+        # bottom of a blob are hard cuts. This is here to be looked at, not
+        # trusted.
+        patch2={'NW': 0x23C, 'N': 0x23D, 'NE': 0x23E,
+                'W': 0x23C, 'MID': 0x23D, 'E': 0x23E,
+                'SW': 0x23C, 'S': 0x23D, 'SE': 0x23E,
+                'NW_WALL': 0x23C, 'N_WALL': 0x23D, 'NE_WALL': 0x23E},
+        patch2_blobs=5, patch2_radius=4,
+        rooms=12, room_min=7, room_max=13, corridor=cw,
+        wall={
+            'NORTH_LEFT': 0x068, 'NORTH_MID': 0x069, 'NORTH_RIGHT': 0x06A,
+            'INTERIOR_LEFT': 0x070, 'INTERIOR_MID': 0x071, 'INTERIOR_RIGHT': 0x072,
+            'FACE_LEFT': 0x078, 'FACE_MID': 0x079, 'FACE_RIGHT': 0x07A,
+            'CORNER_OPEN_SE': 0x074, 'CORNER_OPEN_SW': 0x089,
+            'CORNER_OPEN_NW': 0x07D, 'CORNER_OPEN_NE': 0x07B,
+            # Ever Grande's cobble garden wall was tried here first and is wrong:
+            # at game scale the vertical piece reads as a pillar of a foreign
+            # material and the horizontal one as a hole in the ground, because
+            # its shaded face is blue-grey against the cliff's warm tan. It
+            # works in vanilla as a long terrace wall bordering a field, never
+            # as a one-block gap in a rock mass.
+            #
+            # At 5-wide corridors the vertical sliver never fires at all, so the
+            # composed art the cave needed is not needed here: the horizontal is
+            # 0x079, the cliff's own south face, which vanilla uses for a
+            # one-thick horizontal wall 492 times of 990 and for its two caps at
+            # 77% and 67%. Showing only a south face IS what a one-thick wall
+            # looks like from below. The vertical three are left on the wall
+            # interior, as underwater leaves all seven.
+            'SLIVER_HORZ': 0x079,
+            'SLIVER_HORZ_L': 0x079, 'SLIVER_HORZ_R': 0x079,
+            'SLIVER_VERT': 0x071, 'SLIVER_VERT_TOP': 0x071,
+            'SLIVER_VERT_BOT': 0x071,
+            # The arena dais. SLIVER_ISOLATED is what arenaPlatform paints - one
+            # wall block ringed by floor - so Wallace stands on Ever Grande's own
+            # stone rather than on a lone boulder.
+            'SLIVER_ISOLATED': 0x232,
+        })
+       for sfx, cw in (('', 5), ('_thin', 3))},
 }
 
 
@@ -394,9 +461,10 @@ def paint(solid, theme, seed=0):
         blobs_key = key + '_blobs'
         if theme.get(key) and theme.get(blobs_key):
             layers.append((which, theme[key], theme[blobs_key],
-                           theme.get(key + '_radius', 4)))
+                           theme.get(key + '_radius', 4),
+                           theme.get(key + '_phase', 0)))
 
-    for which, p, nblobs, radius in layers:
+    for which, p, nblobs, radius, phase in layers:
         blobs = []
         for i in range(min(nblobs, 12)):
             # The layer index is folded into the salt, as BuildPatchBlobs does,
@@ -453,7 +521,12 @@ def paint(solid, theme, seed=0):
                 else:
                     slot = 'MID'
                 if p.get(slot):
-                    out[y][x] = p[slot]
+                    # A phased set is N consecutive ids that are N PHASES of a
+                    # diagonal banding rather than N interchangeable variants -
+                    # Ever Grande's flowers, where 85% of vanilla's 341 blocks
+                    # satisfy variant = (y - x + k) mod 8. Picking at random
+                    # would destroy the pattern, so this is a phase, not a hash.
+                    out[y][x] = p[slot] + ((y - x) % phase if phase else 0)
                     key = 'PATCH%d_%s' % (which, slot)
                     used[key] = used.get(key, 0) + 1
 
