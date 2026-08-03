@@ -36,7 +36,9 @@ Losing wipes the run; so does winning, which is the point.
   violet for Dark, Phoebe near-black **and fogged** for Ghost, Glacia pale blue
   **and snowing** for Ice, Drake crimson for Dragon. All four are the same
   tileset recoloured — see §5 — with their own type-matched wild pools, and two
-  of them carry weather. Cycling now starts at dungeon 12, Wallace.
+  of them carry weather. Glacia also has a snowfield of her own: a snow floor,
+  drifts and ice rocks, the project's first new art that needed no new palette.
+  Cycling now starts at dungeon 12, Wallace.
 - The ocean is crossed **surfing** and the seafloor **diving**. Surfing is a
   property of the floor metatile; diving is a property of the **map**, which is
   why underwater is the one theme with a map of its own — see §7.
@@ -430,6 +432,21 @@ cap keeps that base and overlays both north corners, exploiting the fact that
 Scripts: `compose_metatiles.py` + `append_metatiles.py` (idempotent — it trims a
 previous append before rewriting).
 
+**`append_metatiles.py` is the ONLY thing that may append to the cave tileset**,
+by construction rather than by convention. It stays idempotent by truncating
+everything past the vanilla 414 and rewriting the tail, so a second script
+appending to the same file gets silently wiped the next time this one runs.
+Anything needing a new cave metatile exports its entries and is imported there —
+`make_glacia_snow.py` does. Two further details it got wrong first:
+
+- **Compare the tail's CONTENT, not its length.** It decided it had already run
+  by counting metatiles, so a *changed* entry re-ran to "nothing to do" and the
+  fix never landed.
+- **Attributes are per-entry.** The slivers copy `0x211` and must behave like
+  wall; the snow copies `0x201` and must keep `MB_CAVE`, or Glacia's floors
+  spawn nothing. One shared attribute is the same shape of bug as a hard-coded
+  per-theme constant.
+
 **This edits vanilla asset files** (`data/tilesets/secondary/cave/*.bin`), so
 pulling upstream changes to that tileset needs care: take upstream's file, re-run
 the script.
@@ -437,6 +454,41 @@ the script.
 **Limits:** splicing only works when the source tiles have transparency. The
 cave-mouth metatile is opaque across the full 16×16, so the woods stairs needed
 genuinely new art.
+
+### Drawing a FLOOR: fine noise, never a feature
+
+Glacia's snowfield (`make_glacia_snow.py`) is three pieces — flat snow as the
+`.floor`, and a 2-wide drift and an ice rock as `decor`. The decor was easy.
+The floor took two attempts, and the reason is worth keeping.
+
+**A floor metatile repeats every 16 pixels, so any interior feature becomes a
+lattice.** The first version had a soft diagonal swell and four white glints;
+tiled, the swell became continuous candy-stripes across the whole floor and the
+glints a regular dot grid. A reference image is a hand-drawn field and never has
+to tile — this does, everywhere, against copies of itself.
+
+Vanilla's answer, read off cave `0x201` rather than guessed:
+
+| index | share |
+|---|---|
+| 4 | 55% |
+| 5 | 34% |
+| 6 | 9% |
+| 3 | 1.5% |
+
+**Fine per-pixel noise over four *adjacent* indices, never the extremes of the
+ramp.** Noise has no structure to repeat, and neighbouring indices are too close
+in value to read as a pattern where it does. `0x211` is flatter still — 82% one
+index. Reuse the proportions and slide them along the ramp to whatever the
+theme needs; snow is the same curve shifted to the pale end.
+
+**No white in a floor.** High contrast is exactly what makes the 16-pixel period
+visible. Glints belong in decor, which is position-hashed and so irregular.
+
+Decor is also the escape from the primary-palette limit: the cave's own decor is
+half `gTileset_General`'s palettes and cannot be recoloured, but *new* art drawn
+in palette 6 recolours perfectly. That is why Glacia has decor and the other
+three Victory Road themes have none.
 
 ### When splicing is not enough: drawing new tiles
 
@@ -446,6 +498,13 @@ genuinely new art.
   no metatile in the tileset references it *and* its pixels are blank. For
   Rustboro that is 220 of 512 tile slots, plus 161 metatile slots after this
   one. `gTileset_General` is full at 512/512, so new art goes in a secondary.
+- **…and then RECORDED, because writing the art invalidates the measurement.**
+  The snow script re-measured on every call, so once `--write` had filled the
+  slots, `append_metatiles.py` re-ran the search, got a different set, and wrote
+  metatile entries pointing at blank tiles — the floor rendered as palette index
+  0. Slots are pinned in a constant now and validated against the **vanilla**
+  metatile count only; validating against all of them, including our own
+  appends, makes the check circular.
 - **Draw inside an existing palette.** Palette 2 already carries both the mint
   greens and a full earth ramp, so the stairs needed no new palette. Check what
   the palette holds before designing — it has no true black, so `413931` is as

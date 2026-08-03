@@ -39,6 +39,7 @@ their output by hand; all are idempotent.
 | `make_ocean_tiles.py` | everything the ocean adds to `data/tilesets/secondary/mossdeep/` |
 | `make_underwater_tiles.py` | the seafloor's whirlpool into `data/tilesets/secondary/underwater/` |
 | `compose_metatiles.py` + `append_metatiles.py` | cave sliver metatiles into `data/tilesets/secondary/cave/` |
+| `make_glacia_snow.py` | Glacia's snow floor, drift and ice rock tiles into `data/tilesets/secondary/cave/` |
 | `make_victory_road_palettes.py` | the four Victory Road palette sets into `data/tilesets/secondary/rogue_victory_road_*/` |
 | `setup_dungeon_map.py` | the dungeon map's layout and `map.json` scaffolding |
 
@@ -48,9 +49,16 @@ The tileset writers (`make_woods_stairs`, `make_fiery_slivers`,
 upstream changes to those tilesets means taking upstream's file and re-running
 the script, not merging.
 
-`make_victory_road_palettes.py` is the exception that does not: it writes only
-into directories of its own, because the tilesets it feeds share Cave's tiles
-and metatiles and add nothing but palettes. `--preview` renders every tone side
+`make_glacia_snow.py` writes tiles into the cave sheet but **not** metatiles:
+`append_metatiles.py` is the only appender to that tileset and imports the snow
+entries, because it stays idempotent by truncating everything past the vanilla
+414 and would wipe a second appender's work. Run `make_glacia_snow.py --write`
+first, then `append_metatiles.py`. Its `--preview` needs Pillow; `--write` does
+too, since it edits a PNG.
+
+`make_victory_road_palettes.py` is the exception that does not touch a vanilla
+asset at all: it writes only into directories of its own, because the tilesets
+it feeds share Cave's tiles and metatiles and add nothing but palettes. `--preview` renders every tone side
 by side on real cave art at 2x and 5x and needs Pillow; `--write` is plain text
 and runs anywhere. Re-run `--write all` after changing a tone, then rebuild the
 atlas.
