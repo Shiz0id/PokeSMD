@@ -44,7 +44,7 @@ their output by hand; all are idempotent.
 | `make_flower_fldeff.py` | the flower dungeon's wade-through overlay into `graphics/field_effects/` — derived from `long_grass.png`, so it is the one generator here whose input is another checked-in asset |
 | `make_petal_weather.py` | `WEATHER_PETALS`' two 8x8 frames and its palette into `graphics/weather/` |
 | `make_victory_road_palettes.py` | the four Victory Road palette sets into `data/tilesets/secondary/rogue_victory_road_*/` |
-| `import_tile_sheet.py` | a whole secondary tileset — tiles, metatiles, attributes and palettes — from a sheet in `tools/rogue/sheets/`, currently `data/tilesets/secondary/rogue_lapis_cave/` |
+| `import_tile_sheet.py` | a whole secondary tileset — tiles, metatiles, attributes and palettes — composed from one or more sheets in `tools/rogue/sheets/`, currently `data/tilesets/secondary/rogue_lapis_cave/` |
 | `setup_dungeon_map.py` | the dungeon map's layout and `map.json` scaffolding |
 
 The tileset writers (`make_woods_stairs`, `make_fiery_slivers`,
@@ -65,6 +65,16 @@ rather than editing a vanilla one, and rewrites every file in it on each run, so
 nothing else may append there. It reads the sheet's own Legend column — a
 neighbour mask per cell — and matches it against the twenty `PaintWalls` slots,
 which is why Lapis needed no autotile mining at all. See §5 of `ROGUELIKE.md`.
+
+Its `TILESETS` table lists blocks, each naming its own **sheet** and column, so
+one tileset can be composed from several rips — Glacia's is Lapis Cave's walls
+over Mt. Freeze's snow. Two rules come with that: blocks sharing a palette slot
+are quantised **together** against one 15-colour palette, and the block order is
+the **metatile order**, so appending a block is safe and reordering one silently
+renumbers every id after it. It prints the `#define`s it would write; diff them
+against `rogue_dungeon.h` after any change to the table rather than assuming
+ids held still. It also prints the tile count, which has to be copied into the
+`-num_tiles` argument in `graphics.h` — `-Wnum_tiles` makes `gbagfx` check it.
 
 `make_glacia_snow.py` wrote Glacia's snowfield, which **nothing uses any more** —
 she moved to the imported Lapis Cave tileset, orphaning the snow art along with

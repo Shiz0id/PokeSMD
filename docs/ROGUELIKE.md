@@ -45,11 +45,13 @@ Losing wipes the run; so does winning, which is the point.
   wild pools. **Three are the same tileset recoloured** — see §5 — Sidney violet
   for Dark, Phoebe near-black **and fogged** for Ghost, Drake crimson for Dragon.
   **Glacia is the exception**: she has **Lapis Cave**, the project's first
-  tileset that is neither vanilla nor a recolour, imported wholesale from a
-  Mystery Dungeon sheet whose own autotile legend supplied all twenty wall slots
-  — so it is also the first with four distinct inside corners and no composed
-  slivers. It is still snowing on her, since weather belongs to the map rather
-  than the tileset. Cycling now starts at dungeon 12, Wallace.
+  tileset that is neither vanilla nor a recolour, imported from Mystery Dungeon
+  sheets whose own autotile legend supplied all twenty wall slots — so it is
+  also the first with four distinct inside corners and no composed slivers. It
+  is also the first tileset **composed from two sheets**: Lapis Cave's crystal
+  walls over Mt. Freeze's snow floor, with that sheet's two ground variants
+  scattered over it as decor. It is still snowing on her, since weather belongs
+  to the map rather than the tileset. Cycling starts at dungeon 12, Wallace.
 - The ocean is crossed **surfing** and the seafloor **diving**. Surfing is a
   property of the floor metatile; diving is a property of the **map**, which is
   why underwater is the one theme with a map of its own — see §7.
@@ -886,13 +888,48 @@ stairs, because the sheet has no stairs of its own, and grey rock on an ice
 floor is the one piece that does not belong. Composing one from the sheet's own
 crystal is the obvious follow-up.
 
+#### One tileset, two sheets
+
+**A tileset does not have to come from one sheet.** Glacia wears Lapis Cave's
+crystal walls over **Mt. Freeze's snow** — a second rip by the same author — for
+the plain reason that neither sheet has both, and hers is the theme it is
+snowing on. `import_tile_sheet.py` takes a list of blocks, each naming its own
+sheet and column, and the block order *is* the metatile order.
+
+Three things that fall out of composing rather than importing:
+
+- **The 15-colour budget is per PALETTE SLOT, not per block.** The ground and
+  its two decor variants all sit in slot 7 — a tileset has one palette per slot,
+  so quantising them apart would hand slot 7 whichever was written last and
+  silently recolour the other two. They are quantised together instead: twelve
+  colours between the three.
+- **Every block carries its own donor attribute.** Decor replaces a floor block
+  in place, so the decor metatiles need the ground's `MB_CAVE` and not a bare
+  attribute. A decor tile without the encounter flag would be a hole in the
+  encounter surface **that looks exactly like snow**, and §3's checker tests
+  what the theme table names as its floor — it would not see it.
+- **Ids move when a block's cell count changes.** Swapping the ground happened
+  to leave every id put, because both sheets carry the same 47 ground cells in
+  the same legend order. That is luck, not a guarantee. Re-run the importer and
+  diff the printed defines rather than assuming.
+
+The swap also improved the floor: Mt. Freeze's snow measures a **seam of 5.0
+horizontal and 6.2 vertical against the Lapis ground's 8.2 and 12.0**, so the
+fill it replaced was the more visible of the two. (The flat wall interior is 0.0
+by construction — a flat block has no seam to show.) Its Ground Alt 1 and Alt 2,
+one cell each on both sheets, are the decor: a clump and a swept drift, in the
+floor's own palette, so they read as surface texture and not as ornament resting
+on it. 1 in 8, denser than the ornamental themes run at, because there is
+nothing here meant to be noticed individually.
+
 **A theme swap orphans more than the theme table.** Moving Glacia off the snow
 recolour left `LAYOUT_ROGUE_DUNGEON_VRGLACIA`, `gTileset_RogueVictoryRoadGlacia`
 and everything `make_glacia_snow.py` wrote referenced by nothing but
 `layouts.json` — still linked into the ROM, still costing space. Her decor array
 went with the snowfield rather than being repointed: it named metatile ids in
 the snow tileset's files, and under Lapis those same ids are unrelated pieces of
-crystal wall, which is the §3 bug exactly.
+crystal wall, which is the §3 bug exactly. **The replacement is new art, which
+is what repointing could never have been** — a second sheet, not a rename.
 
 ---
 
@@ -1545,13 +1582,11 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    wall merges into it. The brick is secondary palette 9 and the flowers are 10
    and 11, so palette 9 can be shifted cooler without touching a flower pixel —
    it also carries the round shrub `0x220`, so that is not free.
-1d. **Lapis Cave has borrowed stairs and no decor.** Its descent is
-   `gTileset_General`'s warp `0x0A7` — a primary id, so it works under any pair,
-   and grey rock on an ice floor is the one piece of the theme that does not
-   belong. The sheet has no stairs of its own; composing a pair from its own
-   crystal is the follow-up. It also has no decor at all: Glacia's drifts were
-   deleted rather than repointed when she moved off the snow tileset, because
-   the ids mean crystal wall under this one.
+1d. **Lapis Cave has borrowed stairs.** Its descent is `gTileset_General`'s warp
+   `0x0A7` — a primary id, so it works under any pair, and grey rock on an ice
+   floor is the one piece of the theme that does not belong. Neither sheet it is
+   built from has stairs of its own; composing a pair from the crystal is the
+   follow-up. Its floor and decor are settled — Mt. Freeze's snow, see §5.
 1e. **The snowfield is orphaned but still in the ROM.**
    `LAYOUT_ROGUE_DUNGEON_VRGLACIA`, `gTileset_RogueVictoryRoadGlacia` and its
    72 KB of palettes are referenced by nothing but `layouts.json` now that
