@@ -516,6 +516,30 @@
 #define VICTORYROAD_METATILE_STAIRS_DOWN      0x214
 #define VICTORYROAD_METATILE_STAIRS_UP        0x23E
 
+// Glacia's snow, drawn by tools/rogue/make_glacia_snow.py and appended to the
+// cave's metatiles.bin after the seven slivers. Adapted from a Red Rescue Team
+// snow field, which has exactly the three things the generator already has
+// passes for: flat snow is a FLOOR, and the drifts and rocks are DECOR - a
+// block swapped for a variant with collision and elevation copied from the
+// base, so they cannot change reachability.
+//
+// These live in the SHARED cave files, because the Victory Road tilesets share
+// gMetatiles_Cave with Granite Cave - that sharing is why they are cheap. The
+// cave can see them and never paints them, which costs it nothing but ROM.
+//
+// Drawn entirely in palette 6, so Glacia's existing recolour renders them as
+// snow with no new palette: white at 8, pale ice at 1 and 9, a blue ladder at
+// 2-7. Under Granite Cave's palette 6 the same tiles are brown, which does not
+// matter for the same reason.
+//
+// The floor is fine per-pixel noise over three ADJACENT indices and nothing
+// else - see the note in make_glacia_snow.py for why a swell and a few glints
+// were both wrong in kind.
+#define VICTORYROAD_METATILE_SNOW_FLOOR       0x3A5
+#define VICTORYROAD_METATILE_SNOW_DRIFT_L     0x3A6  // 2 wide, needs _R east
+#define VICTORYROAD_METATILE_SNOW_DRIFT_R     0x3A7
+#define VICTORYROAD_METATILE_ICE_ROCK         0x3A8
+
 
 // Woods uses the same two elevations as caves.
 #define DUNGEON_ELEVATION_FLOOR 3

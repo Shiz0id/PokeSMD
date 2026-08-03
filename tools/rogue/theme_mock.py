@@ -232,9 +232,14 @@ THEMES = {
     # No patch and no decor on purpose: the cave's sand region and decor draw
     # partly from gTileset_General's palettes, which cannot be recoloured
     # without dragging every other theme along.
+    # Glacia is the exception: her floor is the new snow metatile rather than
+    # the cave's 0x201, and she is the only Victory Road theme with decor -
+    # drifts and an ice rock, drawn in palette 6 so the recolour reaches them.
     **{f'victoryroad_{who.lower()}': dict(
         primary='gTileset_General', secondary=f'gTileset_RogueVictoryRoad{who}',
-        floor=0x201, stairs=0x214,
+        floor=0x3A5 if who == 'Glacia' else 0x201, stairs=0x214,
+        **(dict(decor=[(0x3A5, 0x3A6, 0x3A7), (0x3A5, 0x3A8, 0)],
+                decor_rarity=14) if who == 'Glacia' else {}),
         wall={
             'INTERIOR_LEFT': 0x210, 'INTERIOR_MID': 0x211, 'INTERIOR_RIGHT': 0x212,
             'FACE_LEFT': 0x218, 'FACE_MID': 0x219, 'FACE_RIGHT': 0x21A,

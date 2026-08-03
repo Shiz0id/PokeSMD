@@ -171,6 +171,25 @@ static const struct RogueDecor sNewMauvilleDecor[] =
                                       NEWMAUVILLE_METATILE_WALL_BOOKCASE_R },
 };
 
+// Glacia's snowfield. FLOOR decor rather than wall decor, which the pass has
+// always supported - it keys on the painted metatile, and a floor base is as
+// valid a base as a wall one.
+//
+// This is the first Victory Road theme with any decor at all. The others have
+// none because the CAVE's decor draws about half its pixels from
+// gTileset_General's palettes, which are shared with every other theme and so
+// cannot be recoloured. New art drawn in palette 6 has no such problem, which
+// is the general escape from that limitation.
+//
+// The drift is 2 wide, so it only lands where the block east is also plain
+// snow - a lone half of a crescent reads as a smear.
+static const struct RogueDecor sGlaciaDecor[] =
+{
+    { VICTORYROAD_METATILE_SNOW_FLOOR, VICTORYROAD_METATILE_SNOW_DRIFT_L,
+                                       VICTORYROAD_METATILE_SNOW_DRIFT_R },
+    { VICTORYROAD_METATILE_SNOW_FLOOR, VICTORYROAD_METATILE_ICE_ROCK },
+};
+
 // Fiery Path's own residents plus their evolutions, with a couple of fire
 // types that fit the tunnel. Ordered weakest to strongest like the others.
 static const u16 sFieryPathSpecies[] =
@@ -1067,7 +1086,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
-        .floor = VICTORYROAD_METATILE_FLOOR,
+        .floor = VICTORYROAD_METATILE_SNOW_FLOOR,
         .tallGrass = 0,
         .longGrass = 0,
         .stairsDown = VICTORYROAD_METATILE_STAIRS_DOWN,
@@ -1095,6 +1114,13 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [WALL_SLIVER_HORZ_R]  = VICTORYROAD_METATILE_SLIVER_HORZ_R,
             [WALL_SLIVER_ISOLATED]= VICTORYROAD_METATILE_SLIVER_ISOLATED,
         },
+        // Roughly the reference field's own density: 1-in-14 of all blocks
+        // are rolled, and only floor blocks match the base, so this lands
+        // about 7% of the snow rather than 7% of the map.
+        .decor = sGlaciaDecor,
+        .decorCount = ARRAY_COUNT(sGlaciaDecor),
+        .decorRarity = 14,
+
         .species = sGlaciaSpecies,
         .speciesCount = ARRAY_COUNT(sGlaciaSpecies),
     },
