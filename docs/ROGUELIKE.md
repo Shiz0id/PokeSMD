@@ -30,8 +30,12 @@ Losing wipes the run; so does winning, which is the point.
 - **Eight themes, one per gym dungeon, no repeats**: Petalburg Woods (dungeon 1,
   Roxanne), Granite Cave (2, Brawly), New Mauville (3, Wattson), Fiery Path
   (4, Flannery), Mirage Tower (5, Norman), the Jungle (6, Winona), the open
-  Ocean (7, Tate and Liza) and the Underwater seafloor (8, Juan). Cycling now
-  starts at the Elite Four, where the dungeons are half as long.
+  Ocean (7, Tate and Liza) and the Underwater seafloor (8, Juan).
+- **Four more for the Elite Four**, which is where the stock game puts Victory
+  Road — it is the road *to* them. One per member, tinted to their type: Sidney
+  violet for Dark, Phoebe near-black **and fogged** for Ghost, Glacia pale blue
+  for Ice, Drake crimson for Dragon. All four are the same tileset recoloured —
+  see §5. Cycling now starts at dungeon 12, Wallace.
 - The ocean is crossed **surfing** and the seafloor **diving**. Surfing is a
   property of the floor metatile; diving is a property of the **map**, which is
   why underwater is the one theme with a map of its own — see §7.
@@ -165,6 +169,28 @@ deliberately draws no stairs the player was sealed in the arena.
 **Every `specialvar` target must return `u16`.** Writing `gSpecialVar_Result`
 instead compiles, links, and runs — it just answers wrong. `special` (no var) is
 unaffected; those may stay `void`.
+
+### A per-theme value hard-coded is the recurring bug in this project
+
+It has now happened three times, and the shape is always the same: a constant
+that was right for every theme that existed when it was written.
+
+| where | what was hard-coded | what it cost |
+|---|---|---|
+| `CarveFloor` | `DUNGEON_METATILE_FLOOR` | Fiery Path had ten floors with **no wild Pokémon** |
+| object event templates | elevation `3` | the player walked through every trainer on a water floor |
+| `RogueDungeon_OnBossDefeated` | `DUNGEON_ELEVATION_FLOOR` | **floor 65 stranded the run** |
+
+The third: that function draws the exit once an arena boss falls, and an arena
+floor has no other way out by design. It wrote elevation 3 while the ocean walks
+at `DUNGEON_ELEVATION_WATER`, and `IsElevationMismatchAt` blocks a move between
+two *different* non-zero elevations — so the whirlpool appeared where the player
+could not step, and re-entry redrew it just as wrong. Both generation paths
+already read `theme->elevationFloor`; only this one did not.
+
+**`check_encounter_flags.py` lints metatiles inside functions but not
+elevations.** Anything else per-theme is unguarded — grep for the constant, not
+just the field.
 
 ### Stock trainer defeat flags are permanent
 
@@ -469,6 +495,55 @@ Wiring the animation up, in `src/tileset_anims.c`:
 - The sheet still needs a copy of frame 0. The animation overwrites it within a
   few frames of the map loading, but the map has to render before that.
 
+### The cheapest art there is: a palette-only tileset
+
+A whole theme can cost one palette directory. `gTileset_RogueVictoryRoad*` share
+`gTilesetTiles_Cave`, `gMetatiles_Cave` **and** `gMetatileAttributes_Cave`, and
+differ only in `.palettes`.
+
+Vanilla does this: `gMetatiles_SecretBaseSecondary` is shared by six tilesets,
+and `gTileset_MirageTower` is 411 of 414 metatiles byte-identical to
+`gTileset_Cave` with a sand ramp over it.
+
+It works here because of one measured fact: **every metatile in the cave wall
+table, both stairs and all seven composed slivers draw from palette 6, and only
+palette 6.** `NUM_PALS_IN_PRIMARY` is 6, so palette 6 is the first *secondary*
+slot — the tileset's own. One palette file recolours everything the generator
+paints.
+
+**Check that before assuming this works elsewhere.** The same census says the
+cave's sand-pool region is 45% primary palette 5 and its decor 50% primary
+palette 3. Those belong to `gTileset_General` and are shared with every other
+theme, so they cannot be recoloured — which is why Victory Road runs with no
+patch layer and no decor rather than with mismatched ones.
+
+Consequences worth knowing:
+
+- **Sharing the attributes is as important as sharing the metatiles**, and
+  easier to miss. Behaviours come with them, so `MB_CAVE` still carries the
+  encounter flag and nothing about wild spawns changes.
+- **`.callback` must be carried over too** (`InitTilesetAnim_Cave`). The
+  animation DMAs tile pixels, not colours, and the tiles are shared — but `NULL`
+  would silently stop the animation on those floors only.
+- **This is the one place metatile ids may be shared across themes.** Everywhere
+  else that is the bug §3 describes; here the ids are the same *file*, so one
+  `VICTORYROAD_METATILE_*` block serves all four. Mirage Tower spells its own out
+  precisely because *its* equality with the cave is a coincidence.
+- **Write the palette declarations longhand, not behind a macro.**
+  `tileset_resolve.py` finds asset paths by parsing them, and a pasted symbol
+  name is invisible to it — the atlas tooling would silently lose the tileset.
+  The theme table entries want the same treatment:
+  `check_encounter_flags.py` parses `.layoutId = <token>` literally.
+- **Both `graphics.h` and `headers.h` end inside an FRLG branch** — and in
+  `headers.h` it is an `#else`, not a trailing `#endif`, so the Emerald block
+  ends around line 836. Appending at the end of either file is silently dropped
+  from an Emerald build. Same trap as `data/event_scripts.s`.
+
+`make_victory_road_palettes.py --preview` renders every tone on real cave art
+at 2× and 5×; the lightness band in each tone is a linear remap rather than a
+gamma, because its width *is* the contrast budget and the wall outline is the
+only thing separating a wall from the floor it meets.
+
 ---
 
 ## 6. Constraints
@@ -502,9 +577,16 @@ EWRAM, 226 KB used, where it goes:
 
 ## 7. Adding a theme
 
-The goal is 10+ more themes to reach the Champion. New Mauville was the first
-one added after the abstraction existed, and it needed **no generator changes
-and no engine changes** — a table entry, a donor layout, and a species pool.
+New Mauville was the first one added after the abstraction existed, and it
+needed **no generator changes and no engine changes** — a table entry, a donor
+layout, and a species pool.
+
+**Ask first whether it needs to be a new tileset at all.** A palette-only
+recolour of a tileset already done costs one palette directory and inherits the
+wall table, the slivers, the corners and the skirts verbatim — see §5 for how
+and for the one measurement that decides whether it will work. The four Victory
+Road themes are that, and they are the cheapest themes in the project by an
+order of magnitude. The process below is for when the answer is no.
 
 The process, with the tool for each step:
 
@@ -959,10 +1041,18 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
 
 ## 10. Known gaps
 
-1. Eight themes against fourteen dungeons. Every gym dungeon now has one of its
-   own, so cycling starts at the Elite Four — but those five are only five
-   floors long, which makes the repeat *more* visible, not less: a theme gets
-   half as long to make an impression.
+1. Twelve themes against fourteen dungeons. Every gym dungeon and every Elite
+   Four member now has one of its own, so cycling starts at **dungeon 12,
+   Wallace** — who wraps to the woods, and Steven's finale to the cave. Both
+   want a theme of their own. Wallace's is planned as a flower dungeon after
+   Ever Grande with custom art, which is the first theme in the project that
+   will need real pixels rather than a table.
+
+   The palette-only tileset in §5 is why the Elite Four stopped being the sore
+   spot here, and it generalises: **any existing theme can spawn a recolour for
+   one palette directory.** Worth reaching for before authoring a theme, but
+   check first that what a theme paints comes from *its* palettes — the cave's
+   walls do, its sand and decor do not.
 1a. **Underwater has no divers.** Trainers there are `SWIMMER_M`/`SWIMMER_F`,
    who are drawn treading the surface in swimwear while standing on the
    seafloor. There is no diver NPC graphic in the game at all — the only diving
@@ -988,13 +1078,21 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    for it. Everything decorative it does have is inside `StampCell`. That is
    fine while the only variety is per-cell, but a woods theme wanting scattered
    props or ground patches would need the passes lifted out of the cave path.
-6. **The jungle has no rain**, and the answer is now known. Weather is per-map
-   and the seven land themes share one map. Underwater proved the shape of the
-   fix: `theme->mapId` already exists, a second map costs one `map.json` and an
-   empty `scripts.inc` because layouts and scripts are both shareable, and the
-   underwater map carries `WEATHER_UNDERWATER_BUBBLES` today. A rainy map for
-   the jungle is the same move. Whether it is worth a map per weather is the
-   open question, not whether it works.
+6. **The jungle has no rain** — but the open question in this entry is now
+   answered, so this is a table entry away rather than a design decision.
+
+   Phoebe's floors needed fog, and fog is per-map for the same reason diving is:
+   `GetCurrentMapType` and the weather loader read the ROM header by warp group
+   and id, not `gMapHeader`, so the RAM patch that swaps tilesets per theme
+   cannot reach it. `MAP_ROGUE_DUNGEON_FOG` is the result — it shares
+   `LAYOUT_ROGUE_DUNGEON_FLOOR`, so `mapLayoutId` is identical and every
+   dispatch keying on it is untouched, and its `scripts.inc` defines nothing at
+   all.
+
+   It is named for the **weather**, not for Phoebe, and that is the answer: a
+   map per weather, shared by every theme that points `theme->mapId` at it, not
+   a map per theme. A rain map for the jungle is the same move and costs one
+   `map.json` plus an empty `scripts.inc`.
 7. The jungle's four sliver slots are never exercised: 3-wide corridors do not
    leave one-block-thick walls. They are filled with plain canopy, so the risk
    is low, but they are unvalidated and would show up if `corridorWidth` ever

@@ -39,6 +39,7 @@ their output by hand; all are idempotent.
 | `make_ocean_tiles.py` | everything the ocean adds to `data/tilesets/secondary/mossdeep/` |
 | `make_underwater_tiles.py` | the seafloor's whirlpool into `data/tilesets/secondary/underwater/` |
 | `compose_metatiles.py` + `append_metatiles.py` | cave sliver metatiles into `data/tilesets/secondary/cave/` |
+| `make_victory_road_palettes.py` | the four Victory Road palette sets into `data/tilesets/secondary/rogue_victory_road_*/` |
 | `setup_dungeon_map.py` | the dungeon map's layout and `map.json` scaffolding |
 
 The tileset writers (`make_woods_stairs`, `make_fiery_slivers`,
@@ -46,6 +47,13 @@ The tileset writers (`make_woods_stairs`, `make_fiery_slivers`,
 `compose_metatiles`+`append_metatiles`) **edit vanilla asset files**. Pulling
 upstream changes to those tilesets means taking upstream's file and re-running
 the script, not merging.
+
+`make_victory_road_palettes.py` is the exception that does not: it writes only
+into directories of its own, because the tilesets it feeds share Cave's tiles
+and metatiles and add nothing but palettes. `--preview` renders every tone side
+by side on real cave art at 2x and 5x and needs Pillow; `--write` is plain text
+and runs anywhere. Re-run `--write all` after changing a tone, then rebuild the
+atlas.
 
 `whirlpool_art.py` is shared by the last two rather than being a generator
 itself: two themes descend through the same vortex on different tilesets, so the
