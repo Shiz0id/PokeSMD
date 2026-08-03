@@ -1091,14 +1091,18 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .longGrass = 0,
         .stairsDown = VICTORYROAD_METATILE_STAIRS_DOWN,
         .stairsUp = VICTORYROAD_METATILE_STAIRS_UP,
+        // Five slots differ from the other three Victory Road themes: the
+        // ones whose art has cave FLOOR baked into a floor-facing edge. On a
+        // snow floor that band is the wrong colour - see the header. The rest
+        // of the table is the cave's, unchanged.
         .wall =
         {
-            [WALL_INTERIOR_LEFT]  = VICTORYROAD_METATILE_WALL_INTERIOR_L,
+            [WALL_INTERIOR_LEFT]  = VICTORYROAD_METATILE_SNOW_INTERIOR_L,
             [WALL_INTERIOR_MID]   = VICTORYROAD_METATILE_WALL_INTERIOR_M,
-            [WALL_INTERIOR_RIGHT] = VICTORYROAD_METATILE_WALL_INTERIOR_R,
-            [WALL_FACE_LEFT]      = VICTORYROAD_METATILE_WALL_FACE_L,
-            [WALL_FACE_MID]       = VICTORYROAD_METATILE_WALL_FACE_M,
-            [WALL_FACE_RIGHT]     = VICTORYROAD_METATILE_WALL_FACE_R,
+            [WALL_INTERIOR_RIGHT] = VICTORYROAD_METATILE_SNOW_INTERIOR_R,
+            [WALL_FACE_LEFT]      = VICTORYROAD_METATILE_SNOW_FACE_L,
+            [WALL_FACE_MID]       = VICTORYROAD_METATILE_SNOW_FACE_M,
+            [WALL_FACE_RIGHT]     = VICTORYROAD_METATILE_SNOW_FACE_R,
             [WALL_NORTH_LEFT]     = VICTORYROAD_METATILE_WALL_NORTH_L,
             [WALL_NORTH_MID]      = VICTORYROAD_METATILE_WALL_NORTH_M,
             [WALL_NORTH_RIGHT]    = VICTORYROAD_METATILE_WALL_NORTH_R,

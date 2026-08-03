@@ -33,7 +33,7 @@ BASE_COUNT = 414          # vanilla cave metatile count
 # floors spawn nothing. One shared attribute for both would be the same class
 # of bug as a hard-coded per-theme constant.
 NEW = ([(name, ent, 0x211) for name, ent in cm.APPEND_ORDER]
-       + [(name, ent, 0x201) for name, ent in snow.append_order()])
+       + list(snow.append_order()))
 
 
 def main():
@@ -63,7 +63,7 @@ def main():
     def attr_of(src):
         return struct.unpack_from('<H', at, (src - 0x200) * 2)[0]
 
-    for src in (0x211, 0x201):
+    for src in sorted({s for _, _, s in NEW}):
         a = attr_of(src)
         print(f'0x{src:03X} attribute = 0x{a:04X} (behavior {a & 0xFF}, '
               f'layer {(a >> 12) & 0xF})')

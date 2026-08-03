@@ -211,6 +211,58 @@ SLOTS = [0x043, 0x046, 0x056, 0x082,                    # snow floor
          0x0C8, 0x0C9, 0x0CC, 0x0CD,                    # drift, right half
          0x0CE, 0x0CF, 0x0D8, 0x0D9]                    # ice rock
 
+# Slots for the reshaded wall pieces below. Allocated after SLOTS and pinned
+# for the same reason.
+WALL_SLOTS = [0x0FC, 0x0FD, 0x0FE, 0x0FF, 0x11C, 0x11F,
+              0x136, 0x137, 0x146, 0x147, 0x148, 0x149]
+
+
+# ---------------------------------------------------------------------------
+# Reshading the borrowed cliff art
+#
+# The cave's wall pieces have the cave FLOOR baked into the edges that face
+# floor - the base of a cliff is drawn as ground within the wall's own
+# metatile, so it blends into 0x201 below it. Borrow those pieces and put a
+# different floor underneath and the ground band stays cave-coloured: against
+# pale snow the wall reads as a hard rectangle with a strip of bare rock along
+# the bottom, instead of as an outcrop standing in snow.
+#
+# This is the first time the project has mixed a custom floor with a borrowed
+# wall set. Every earlier theme either kept the donor's own floor (Mirage
+# Tower walks on 0x201) or brought its whole wall table from the same tileset
+# as its floor (Fiery Path), so the two always matched by construction.
+#
+# The fix is to repaint just those pixels as snow. Which pixels is not a
+# guess: flood-fill inward from the edges that actually have floor beside
+# them - straight out of the PaintWalls chain - through the tonal band the
+# cave floor occupies, stopping at the dark outline.
+#
+# The tones matter. 0x201 measures {3:4, 4:142, 5:87, 6:23}, and 6 is excluded
+# because it is also the wall's own dark edge and letting the fill through it
+# leaks into the rock.
+FLOOR_TONES = {3, 4, 5}
+
+# Which cardinals are floor when this slot is chosen, read off the if/else
+# chain in PaintWalls rather than inferred from the art.
+#
+# The north row is deliberately absent even though floor is north of it. Its
+# top band is index 3, which is LIGHTER than the floor's dominant 4 - it is
+# the wall's own lit top edge, not ground. A cliff face has a visible base;
+# a cliff top does not.
+#
+# The corners are absent because no cardinal neighbour of a corner is floor at
+# all - only a diagonal is open - so none of them may show any ground. Seeding
+# them anyway fills 23% of WALL_CORNER_OPEN_SW, all of it leak: the cave's
+# wall interior and its floor share a tonal band, which is exactly why the
+# handoff doc says a missing boundary there is invisible rather than plain.
+WALL_FIXES = [
+    ('face left',      0x218, 'SW'),
+    ('face mid',       0x219, 'S'),
+    ('face right',     0x21A, 'SE'),
+    ('interior left',  0x210, 'W'),
+    ('interior right', 0x212, 'E'),
+]
+
 
 def validate_slots(cave):
     """None of our slots may be referenced by a VANILLA cave metatile.
@@ -257,7 +309,7 @@ def free_tile_slots():
         tx, ty = (t % per) * 8, (t // per) * 8
         if all(px[tx + x, ty + y] == 0 for x in range(8) for y in range(8)):
             out.append(t)
-    return out, img, cave
+    return out
 
 
 def split_tiles(grid):
@@ -281,11 +333,90 @@ PIECES = [
 ]
 
 
+def _pair():
+    import tileset_atlas as ta
+    from tileset_resolve import TilesetResolver
+    R = TilesetResolver(REPO)
+    return ta.TilesetPair(ta.Tileset(R.resolve('gTileset_General')),
+                          ta.Tileset(R.resolve('gTileset_Cave')))
+
+
+def composite(pair, mid):
+    """16x16 of palette indices, top layer over bottom, flips applied.
+
+    All five reshaded pieces turn out to be bottom-layer only with no flips,
+    so this is more general than it needs to be - but checking that was the
+    point. Flattening a metatile that DID use a top layer would change whether
+    it draws over the player.
+    """
+    ent = pair.get_metatile(mid)
+    g = [[0] * 16 for _ in range(16)]
+    for layer in (0, 1):
+        for k, (oy, ox) in enumerate(((0, 0), (0, 8), (8, 0), (8, 8))):
+            e = ent[layer * 4 + k]
+            if layer == 1 and e == 0:
+                continue
+            px = pair.tile_pixels(e & 0x3FF)
+            if px is None:
+                continue
+            xf, yf = (e >> 10) & 1, (e >> 11) & 1
+            for y in range(8):
+                for x in range(8):
+                    v = px[7 - y if yf else y][7 - x if xf else x]
+                    if layer == 1 and v == 0:
+                        continue
+                    g[oy + y][ox + x] = v
+    return g
+
+
+def ground_mask(g, sides):
+    """Pixels reachable from a floor-facing edge through the floor's tones."""
+    from collections import deque
+    seeds = []
+    if 'S' in sides: seeds += [(x, 15) for x in range(16)]
+    if 'N' in sides: seeds += [(x, 0) for x in range(16)]
+    if 'W' in sides: seeds += [(0, y) for y in range(16)]
+    if 'E' in sides: seeds += [(15, y) for y in range(16)]
+    seen, q = set(), deque()
+    for (x, y) in seeds:
+        if g[y][x] in FLOOR_TONES and (x, y) not in seen:
+            seen.add((x, y)); q.append((x, y))
+    while q:
+        x, y = q.popleft()
+        for dx, dy in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < 16 and 0 <= ny < 16 and (nx, ny) not in seen \
+               and g[ny][nx] in FLOOR_TONES:
+                seen.add((nx, ny)); q.append((nx, ny))
+    return seen
+
+
+def reshaded_walls(pair):
+    """-> [(label, source id, 16x16 grid, {changed quadrant indices})]
+
+    The snow is sampled at the SAME coordinates the wall pixel sits at, so the
+    repainted band lines up with the noise of the floor blocks beside it - both
+    are the one 16x16 pattern at the same phase.
+    """
+    snow = flat_snow()
+    out = []
+    for label, mid, sides in WALL_FIXES:
+        g = composite(pair, mid)
+        mask = ground_mask(g, sides)
+        if not mask:
+            raise SystemExit(f'{label}: no ground found, check WALL_FIXES')
+        for (x, y) in mask:
+            g[y][x] = snow[y][x]
+        quads = {(0 if y < 8 else 2) + (0 if x < 8 else 1) for (x, y) in mask}
+        out.append((label, mid, g, quads))
+    return out
+
+
 def plan():
-    """-> (assignments, entries) without writing anything.
+    """-> (assignments, entries, img, cave) without writing anything.
 
     assignments: list of (name, [(slot, tile_pixels), ...])
-    entries:     list of (label, 8-tuple metatile entry)
+    entries:     list of (label, 8-tuple metatile entry, attribute source id)
     """
     from PIL import Image
     from tileset_resolve import TilesetResolver
@@ -309,14 +440,39 @@ def plan():
             ent = [(PALETTE << 12) | (NUM_TILES_IN_PRIMARY + s) for s in quad]
             ent += [0, 0, 0, 0]      # bottom layer only; see ice_rock()
             label = name if blocks == 1 else f'{name} {"LR"[b]}'
-            entries.append((label, tuple(ent)))
+            # Snow behaves like the cave floor: MB_CAVE, so encounters fire.
+            entries.append((label, tuple(ent), 0x201))
+
+    # The reshaded cliff pieces. Only the quadrants the repaint actually
+    # touched get a new tile; the rest reference the ORIGINAL entry verbatim,
+    # flips and all, so unchanged art stays literally the same tile.
+    pair = _pair()
+    cursor = 0
+    for label, mid, g, quads in reshaded_walls(pair):
+        orig = pair.get_metatile(mid)
+        tiles = split_tiles(g)
+        ent, pairs = [], []
+        for q in range(4):
+            if q in quads:
+                slot = WALL_SLOTS[cursor]; cursor += 1
+                pairs.append((slot, tiles[q]))
+                ent.append((PALETTE << 12) | (NUM_TILES_IN_PRIMARY + slot))
+            else:
+                ent.append(orig[q])
+        ent += list(orig[4:])
+        assignments.append((f'{label} (snow base)', pairs))
+        # Attribute from the piece it replaces, so behaviour and layer type
+        # are untouched and only the art differs.
+        entries.append((f'{label} snow', tuple(ent), mid))
+    if cursor != len(WALL_SLOTS):
+        raise SystemExit(f'WALL_SLOTS has {len(WALL_SLOTS)}, used {cursor}')
     return assignments, entries, img, cave
 
 
 # Consumed by append_metatiles.py. Order defines the appended ids, so appending
 # AFTER compose_metatiles' seven slivers keeps those at 0x39E-0x3A4.
 def append_order():
-    return [(label, ent) for label, ent in plan()[1]]
+    return plan()[1]
 
 
 def cmd_write():
@@ -337,8 +493,9 @@ def cmd_write():
     for name, pairs in assignments:
         print(f'  {name:12} tiles ' + ' '.join(f'0x{s:03X}' for s, _ in pairs))
     print('\nmetatile entries (append_metatiles.py assigns the ids):')
-    for label, ent in entries:
-        print(f'  {label:14} ' + ' '.join(f'{v:04X}' for v in ent))
+    for label, ent, src in entries:
+        print(f'  {label:22} ' + ' '.join(f'{v:04X}' for v in ent)
+              + f'   attr<-0x{src:03X}')
     print('\nnext: python3 append_metatiles.py')
 
 

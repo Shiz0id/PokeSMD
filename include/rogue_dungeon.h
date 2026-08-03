@@ -540,6 +540,34 @@
 #define VICTORYROAD_METATILE_SNOW_DRIFT_R     0x3A7
 #define VICTORYROAD_METATILE_ICE_ROCK         0x3A8
 
+// The cliff pieces reshaded to stand in snow instead of on the cave floor.
+//
+// The cave's wall art has the cave FLOOR baked into whichever edges face
+// floor - the base of a cliff is drawn as ground inside the wall's own
+// metatile so it blends into 0x201 below. Borrow that art and put a different
+// floor under it and the band stays cave-coloured: against pale snow the wall
+// reads as a grey rectangle with a strip of bare rock along the bottom rather
+// than as an outcrop standing in snow.
+//
+// This is the first theme in the project to mix a CUSTOM floor with a BORROWED
+// wall set. Every earlier one either kept the donor's own floor (Mirage Tower
+// walks on 0x201) or took its whole wall table from the same tileset as its
+// floor (Fiery Path), so the two always matched by construction. Any future
+// theme doing the same mixing will need the same treatment.
+//
+// Only these five. The north row is untouched because its light top band is
+// index 3, LIGHTER than the floor's dominant 4 - the wall's own lit top edge,
+// not ground. A cliff face has a visible base; a cliff top does not. The
+// corners are untouched because no cardinal neighbour of a corner is floor.
+//
+// Each keeps the attribute of the piece it replaces, so behaviour and layer
+// type are unchanged and only the art differs.
+#define VICTORYROAD_METATILE_SNOW_FACE_L      0x3A9
+#define VICTORYROAD_METATILE_SNOW_FACE_M      0x3AA
+#define VICTORYROAD_METATILE_SNOW_FACE_R      0x3AB
+#define VICTORYROAD_METATILE_SNOW_INTERIOR_L  0x3AC
+#define VICTORYROAD_METATILE_SNOW_INTERIOR_R  0x3AD
+
 
 // Woods uses the same two elevations as caves.
 #define DUNGEON_ELEVATION_FLOOR 3

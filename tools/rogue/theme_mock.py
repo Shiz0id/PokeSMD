@@ -241,8 +241,13 @@ THEMES = {
         **(dict(decor=[(0x3A5, 0x3A6, 0x3A7), (0x3A5, 0x3A8, 0)],
                 decor_rarity=14) if who == 'Glacia' else {}),
         wall={
-            'INTERIOR_LEFT': 0x210, 'INTERIOR_MID': 0x211, 'INTERIOR_RIGHT': 0x212,
-            'FACE_LEFT': 0x218, 'FACE_MID': 0x219, 'FACE_RIGHT': 0x21A,
+            # Glacia's five floor-facing slots are reshaded to stand in snow.
+            'INTERIOR_LEFT': 0x3AC if who == 'Glacia' else 0x210,
+            'INTERIOR_MID': 0x211,
+            'INTERIOR_RIGHT': 0x3AD if who == 'Glacia' else 0x212,
+            'FACE_LEFT': 0x3A9 if who == 'Glacia' else 0x218,
+            'FACE_MID': 0x3AA if who == 'Glacia' else 0x219,
+            'FACE_RIGHT': 0x3AB if who == 'Glacia' else 0x21A,
             'NORTH_LEFT': 0x220, 'NORTH_MID': 0x209, 'NORTH_RIGHT': 0x222,
             'CORNER_OPEN_SE': 0x21B, 'CORNER_OPEN_SW': 0x21C,
             'CORNER_OPEN_NW': 0x223, 'CORNER_OPEN_NE': 0x223,
