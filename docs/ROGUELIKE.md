@@ -39,7 +39,10 @@ Losing wipes the run; so does winning, which is the point.
 - **Eight themes, one per gym dungeon, no repeats**: Petalburg Woods (dungeon 1,
   Roxanne), Granite Cave (2, Brawly), New Mauville (3, Wattson), Fiery Path
   (4, Flannery), Mirage Tower (5, Norman), the Jungle (6, Winona), the open
-  Ocean (7, Tate and Liza) and the Underwater seafloor (8, Juan).
+  Ocean (7, Tate and Liza) and the Underwater seafloor (8, Juan). **The jungle
+  is imported too** — it was built almost entirely from `gTileset_General`, with
+  a two-metatile wall table, and read as a Route because that is what its art
+  was. It has the Howling Jungle sheet now: twenty wall slots and a dirt floor.
 - **Four more for the Elite Four**, which is where the stock game puts Victory
   Road — it is the road *to* them. One per member, with their own type-matched
   wild pools. **Three are the same tileset recoloured** — see §5 — Sidney violet
@@ -571,6 +574,30 @@ same tileset as its floor (Fiery Path) — the two always matched by
 construction. **Any theme that mixes a custom floor with a borrowed wall set
 needs this treatment.**
 
+#### The same trap, in region-autotile form
+
+The jungle hit this again from the other direction, and it is worth stating as
+the general rule: **an autotile's EDGES encode what the art expects to sit in,
+and changing what it sits in invalidates every one of them while leaving every
+id perfectly valid.**
+
+Its puddles are `0x0C8`–`0x0DA`, a 3×3 region autotile in the *primary* tileset.
+When the jungle's secondary was replaced, those ids survived untouched and
+resolved exactly as before — nothing in the build could notice. But **eight of
+the nine pieces are a shore drawn against green route grass**; only the centre
+is purely water. Painted on the new brown dirt, every puddle came out ringed in
+a pale mint halo that reads as a rendering fault rather than as a bank. The
+layer was deleted rather than carried.
+
+Two things to take from it:
+
+- **Primary ids surviving a secondary swap is a hazard, not a comfort.** They
+  are the ones that keep working and stop *fitting*. The ids that break loudly —
+  the two `gTileset_Fortree` ones — were the easy half of that change.
+- **Only the mock could see it.** `check_encounter_flags.py` passes, the build
+  passes, the behaviours are right. Render the theme before believing an art
+  swap is done.
+
 The fix is five reshaded metatiles and twelve tiles. Which pixels to repaint is
 not a judgement call:
 
@@ -912,6 +939,20 @@ Three things that fall out of composing rather than importing:
   to leave every id put, because both sheets carry the same 47 ground cells in
   the same legend order. That is luck, not a guarantee. Re-run the importer and
   diff the printed defines rather than assuming.
+- **Alternates pair by LEGEND POSITION, not by order.** A block declaring
+  `varies` is a column of variants for another block, and an Alt cell at
+  `(row, k)` varies whatever the base draws at the same `(row, k)` — the same
+  neighbour mask, so the same autotile case. The jungle's five wall variants
+  fall out of the sheet this way. Pairing them by hand would put a north-edge
+  variant on an interior block, which reads as a hole in the foliage.
+- **A block's donor attribute is a design decision, not boilerplate.** The
+  importer defaults a ground block to the cave's `MB_CAVE`, which carries
+  encounters. The jungle's ground is `MB_NORMAL`, copied from the route grass it
+  replaced, because that theme's wild battles come from its long grass layer and
+  its ground is safe to cross. Taking the default would have switched encounters
+  on across the whole floor **as a side effect of changing what the floor looks
+  like** — a gameplay change disguised as an art change, and nothing would have
+  flagged it.
 
 The swap also improved the floor: Mt. Freeze's snow measures a **seam of 5.0
 horizontal and 6.2 vertical against the Lapis ground's 8.2 and 12.0**, so the
@@ -1582,11 +1623,32 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    wall merges into it. The brick is secondary palette 9 and the flowers are 10
    and 11, so palette 9 can be shifted cooler without touching a flower pixel —
    it also carries the round shrub `0x220`, so that is not free.
+1f. **The jungle is dry, and the sheet's water is the reason the importer is not
+   finished.** Howling Jungle ships water as TWO columns at TWO animation rates
+   — the water at 14 frames and a separate **98%-transparent Sparkle overlay** at
+   6. That needs three things the importer does not do: a fill test that accepts
+   a mostly-transparent cell (today's rejects them, correctly, as empty), use of
+   the metatile's **top layer**, which it currently writes as zeros, and a
+   tileset animation callback. Mind that a top layer under
+   `METATILE_LAYER_TYPE_NORMAL` draws *over* the player — fine for scenery,
+   wrong for anything surfed. Painting real surfable water would also make the
+   jungle the first **two-branch** theme, since its long grass is a land
+   encounter surface; see §3.
+1g. **The jungle's long grass is still vanilla's, and still primary.** Recolouring
+   it to sit on dirt is not free — `0x015` is `gTileset_General`'s, whose
+   palettes are shared with every theme. Ever Grande's answer is the way in:
+   draw the encounter surface into the theme's own secondary. Its south fringe
+   is already gone, since the only `MB_LONG_GRASS_SOUTH_EDGE` metatile in the
+   game was Fortree's; stands of grass end on a hard edge that at least carries
+   the encounters the fringe did not.
 1d. **Lapis Cave has borrowed stairs.** Its descent is `gTileset_General`'s warp
    `0x0A7` — a primary id, so it works under any pair, and grey rock on an ice
    floor is the one piece of the theme that does not belong. Neither sheet it is
    built from has stairs of its own; composing a pair from the crystal is the
    follow-up. Its floor and decor are settled — Mt. Freeze's snow, see §5.
+   **The jungle now owes the same debt for the same reason**: Fortree's rope
+   ladder went with the tileset and `0x0A7` replaced it, so there are two themes
+   wanting stairs drawn from their own art.
 1e. **The snowfield is orphaned but still in the ROM.**
    `LAYOUT_ROGUE_DUNGEON_VRGLACIA`, `gTileset_RogueVictoryRoadGlacia` and its
    72 KB of palettes are referenced by nothing but `layouts.json` now that

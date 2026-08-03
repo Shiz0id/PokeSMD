@@ -68,10 +68,20 @@ which is why Lapis needed no autotile mining at all. See §5 of `ROGUELIKE.md`.
 
 Its `TILESETS` table lists blocks, each naming its own **sheet** and column, so
 one tileset can be composed from several rips — Glacia's is Lapis Cave's walls
-over Mt. Freeze's snow. Two rules come with that: blocks sharing a palette slot
-are quantised **together** against one 15-colour palette, and the block order is
+over Mt. Freeze's snow. Three rules come with that: blocks sharing a palette slot
+are quantised **together** against one 15-colour palette; the block order is
 the **metatile order**, so appending a block is safe and reordering one silently
-renumbers every id after it. It prints the `#define`s it would write; diff them
+renumbers every id after it; and a block declaring `varies` is a column of
+alternates paired to the base block **by legend position**, which is what emits
+the `RogueDecor` entries.
+
+**`attr` is a design decision, not boilerplate.** It is the behaviour copied from
+a vanilla donor, and the ground default (`0x0008`, the cave's `MB_CAVE`) carries
+wild encounters. The jungle's ground is `0x0000` because that theme's encounters
+come from its long grass and its floor is meant to be safe to cross — taking the
+default would have turned battles on across the whole floor as a side effect of
+changing the art. Read the attributes back out of the written `.bin` when it
+matters; nothing else checks a decor block against the floor it replaces. It prints the `#define`s it would write; diff them
 against `rogue_dungeon.h` after any change to the table rather than assuming
 ids held still. It also prints the tile count, which has to be copied into the
 `-num_tiles` argument in `graphics.h` — `-Wnum_tiles` makes `gbagfx` check it.
