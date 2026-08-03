@@ -716,6 +716,33 @@ const struct SpriteTemplate gFieldEffectObjectTemplate_LongGrass = {
     .callback = UpdateLongGrassFieldEffect,
 };
 
+// The same curtain in flowers, for the Ever Grande dungeon. Shares the anim
+// table and the callback deliberately: this is FLDEFF_LONG_GRASS with a
+// different graphic, not a second effect, and UpdateLongGrassFieldEffect ends
+// itself with FieldEffectStop(sprite, FLDEFF_LONG_GRASS).
+//
+// The palette is NOT loaded from this tag. Field effect palettes come from
+// data/field_effect_scripts.s, and the script is fixed per FLDEFF id, so
+// FldEff_LongGrass loads this one itself and overrides oam.paletteNum.
+static const struct SpriteFrameImage sPicTable_RogueFlowers[] = {
+    overworld_frame(gFieldEffectObjectPic_RogueFlowers, 2, 2, 0),
+    overworld_frame(gFieldEffectObjectPic_RogueFlowers, 2, 2, 1),
+    overworld_frame(gFieldEffectObjectPic_RogueFlowers, 2, 2, 2),
+    overworld_frame(gFieldEffectObjectPic_RogueFlowers, 2, 2, 3),
+};
+
+const struct SpritePalette gSpritePalette_RogueFlowers = {
+    gFieldEffectObjectPal_RogueFlowers, FLDEFF_PAL_TAG_ROGUE_FLOWERS};
+
+const struct SpriteTemplate gFieldEffectObjectTemplate_RogueFlowers = {
+    .tileTag = TAG_NONE,
+    .paletteTag = FLDEFF_PAL_TAG_ROGUE_FLOWERS,
+    .oam = &gObjectEventBaseOam_16x16,
+    .anims = sAnimTable_LongGrass,
+    .images = sPicTable_RogueFlowers,
+    .callback = UpdateLongGrassFieldEffect,
+};
+
 static const struct SpriteFrameImage sPicTable_JumpLongGrass[] = {
     overworld_frame(gFieldEffectObjectPic_JumpLongGrass, 2, 2, 0),
     overworld_frame(gFieldEffectObjectPic_JumpLongGrass, 2, 2, 1),

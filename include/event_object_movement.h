@@ -125,6 +125,9 @@ extern const struct SpriteFrameImage gPicTable_PechaBerryTree[];
 
 extern const struct SpritePalette gSpritePalette_GeneralFieldEffect0;
 extern const struct SpritePalette gSpritePalette_GeneralFieldEffect1;
+// The flower dungeon curtain. Loaded by FldEff_LongGrass rather than by a
+// field effect script, because the script is fixed per FLDEFF id.
+extern const struct SpritePalette gSpritePalette_RogueFlowers;
 
 extern const enum Direction gStandardDirections[];
 

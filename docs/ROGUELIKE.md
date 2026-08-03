@@ -568,16 +568,51 @@ Which behaviour to hang on it is a real choice, and worth knowing the options:
 `MB_LONG_GRASS` was chosen because **the OAM clip is purely geometric** —
 `SetObjectEventSpriteOamTableForLongGrass` swaps the subsprite table so the
 player wades *into* the surface — and wading into a flower field is exactly
-right. Only the overlay sprite is grass-specific.
+right. Only the overlay sprite is grass-specific, and that is replaced per theme
+by the section below.
 
-**The palette trap if you ever want to change that sprite.** The template's
-`paletteTag` is `FLDEFF_PAL_TAG_GENERAL_1`, but the palette is **not** loaded
-from the template: `data/field_effect_scripts.s` does
+### Giving one field effect a per-theme graphic
+
+The flower dungeon needed its own wade-through curtain, and doing it turns up a
+structure worth knowing: **a field effect's palette is chosen in neither of the
+two places you would look.**
+
+The template has a `paletteTag`, but nothing loads from it. The palette comes
+from `data/field_effect_scripts.s` —
 `field_eff_loadfadedpal_callnative gSpritePalette_GeneralFieldEffect1,
-FldEff_LongGrass`, and a script is fixed per `FLDEFF` id while a template is
-`const`. So a per-theme graphic has to be chosen inside `FldEff_LongGrass`
-itself, loading its own palette and calling `UpdateSpritePaletteWithWeather` —
-or it misses the weather fade that `loadfadedpal` would have applied.
+FldEff_LongGrass` — and a script is fixed per `FLDEFF` id, while a
+`SpriteTemplate` is `const`. So per-theme art has to be chosen in the `FldEff_`
+function itself. Four things it has to get right:
+
+- **Vary `FLDEFFOBJ`, never `FLDEFF`.** The effect id stays `FLDEFF_LONG_GRASS`,
+  because every ground-effect flag, the OAM clip, and
+  `UpdateLongGrassFieldEffect`'s own `FieldEffectStop` key on it. Only the
+  graphic differs, so the two templates share an anim table and a callback.
+- **Load the palette *before* creating the sprite.** `LoadSpritePalette` returns
+  `0xFF` when no slot is free, and `0xFF` truncates to slot **15** in a four-bit
+  OAM field — so a late failure draws the art in whatever lives there. Loading
+  first lets it fall back to the stock graphic instead: a wrong graphic beats a
+  wrong graphic in wrong colours.
+- **Call `UpdateSpritePaletteWithWeather` by hand.** `loadfadedpal` is the
+  `faded` half of that script command, and stepping around it means the sprite
+  ignores the weather fade every other field effect obeys — visible immediately
+  on the fog and snow maps.
+- **Derive the art from the one it replaces.** `make_flower_fldeff.py` reads
+  `long_grass.png` and remaps its indices rather than drawing a mass from
+  scratch. Two attempts at generating one failed, and the second is the
+  instructive one: **noise with the right histogram still looks wrong**, because
+  vanilla's light pixels are not scattered — they form blades, short diagonal
+  strokes. Reusing them also inherits two properties that are hard to hit by eye
+  — the mass is opaque enough to read as something you are standing *in*, and it
+  **tiles invisibly**, which matters because one sprite spawns per occupied tile
+  and several sit edge to edge whenever the player walks a run of them.
+
+The colours move onto the *flower metatiles' own* leaf ramp rather than the
+grass sprite's, so the overlay is made of the same greens as the thing it
+covers — the whirlpool's rule again. And the blooms are pink and orange only,
+because that is the colourway the theme paints: a blossom in the overlay that
+appears nowhere on the floor is a flower the player is standing in that does not
+exist.
 
 ### When splicing is not enough: drawing new tiles
 
@@ -1309,12 +1344,7 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    one palette directory.** Worth reaching for before authoring a theme, but
    check first that what a theme paints comes from *its* palettes — the cave's
    walls do, its sand and decor do not.
-1c. **The flower field draws the grass rustle sprite.** `MB_LONG_GRASS` brings
-   `FLDEFF_LONG_GRASS`, whose art is a curtain of green blades, and over pink
-   and yellow blooms that is wrong rather than broken. §5 has the palette trap
-   and the route to a flower version; the bloom colours to copy live in
-   `ever_grande` palettes 10 and 11.
-1d. **Ever Grande's terrace is a path, not a region.** `0x23C`/`0x23D`/`0x23E`
+1c. **Ever Grande's terrace is a path, not a region.** `0x23C`/`0x23D`/`0x23E`
    has a left edge, a fill and a right edge and **no north or south edge art at
    all** — the mask census puts continues-NSWE, SWE and NWE on the same fill. It
    is laid as a patch layer anyway and survives because `ApplyFloorPatches`

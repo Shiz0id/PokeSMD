@@ -14,6 +14,7 @@ extern const struct SpriteTemplate gFieldEffectObjectTemplate_JumpBigSplash;
 extern const struct SpriteTemplate gFieldEffectObjectTemplate_Splash;
 extern const struct SpriteTemplate gFieldEffectObjectTemplate_JumpSmallSplash;
 extern const struct SpriteTemplate gFieldEffectObjectTemplate_LongGrass;
+extern const struct SpriteTemplate gFieldEffectObjectTemplate_RogueFlowers;
 extern const struct SpriteTemplate gFieldEffectObjectTemplate_JumpLongGrass;
 extern const struct SpriteTemplate gFieldEffectObjectTemplate_UnusedGrass;
 extern const struct SpriteTemplate gFieldEffectObjectTemplate_UnusedGrass2;
@@ -93,4 +94,5 @@ const struct SpriteTemplate *const gFieldEffectObjectTemplatePointers[] = {
     [FLDEFFOBJ_ORAS_DOWSE_BRENDAN]    = &gFieldEffectObjectTemplate_ORASDowsingBrendan,
     [FLDEFFOBJ_ORAS_DOWSE_MAY]        = &gFieldEffectObjectTemplate_ORASDowsingMay,
     [FLDEFFOBJ_SHINY_SPARKLE]         = &gFieldEffectObjectTemplate_ShinySparkle,
+    [FLDEFFOBJ_ROGUE_FLOWERS]         = &gFieldEffectObjectTemplate_RogueFlowers,
 };

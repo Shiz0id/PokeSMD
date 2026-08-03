@@ -313,6 +313,12 @@ const u32 gFieldEffectObjectPic_JumpLongGrass[] = INCGFX_U32("graphics/field_eff
 const u32 gFieldEffectObjectPic_Unknown17[] = INCGFX_U32("graphics/field_effects/pics/unknown_17.png", ".4bpp", "-mwidth 2 -mheight 2");
 const u32 gFieldEffectObjectPic_UnusedGrass2[] = INCGFX_U32("graphics/field_effects/pics/unused_grass_2.png", ".4bpp", "-mwidth 2 -mheight 2");
 const u32 gFieldEffectObjectPic_LongGrass[] = INCGFX_U32("graphics/field_effects/pics/long_grass.png", ".4bpp", "-mwidth 2 -mheight 2");
+// The flower dungeon's wade-through curtain: the same blades, recoloured onto
+// the flower metatiles' own leaf ramp with blossoms among them. Written by
+// tools/rogue/make_flower_fldeff.py, which derives it FROM long_grass.png, so
+// the two stay the same shape and the same density by construction.
+const u32 gFieldEffectObjectPic_RogueFlowers[] = INCGFX_U32("graphics/field_effects/pics/rogue_flowers.png", ".4bpp", "-mwidth 2 -mheight 2");
+const u16 gFieldEffectObjectPal_RogueFlowers[] = INCGFX_U16("graphics/field_effects/palettes/rogue_flowers.pal", ".gbapal");
 const u32 gFieldEffectObjectPic_TallGrass[] = INCGFX_U32("graphics/field_effects/pics/tall_grass.png", ".4bpp", "-mwidth 2 -mheight 2");
 const u32 gFieldEffectObjectPic_ShortGrass[] = INCGFX_U32("graphics/field_effects/pics/short_grass.png", ".4bpp", "-mwidth 2 -mheight 2");
 const u32 gFieldEffectObjectPic_SandFootprints[] = INCGFX_U32("graphics/field_effects/pics/sand_footprints.png", ".4bpp", "-mwidth 2 -mheight 2");

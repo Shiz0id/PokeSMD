@@ -983,6 +983,10 @@ struct RogueDungeonTheme
 
 void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition);
 bool8 RogueDungeon_TryStartStairsScript(struct MapPosition *position);
+// Which FLDEFFOBJ_ the long-grass effect should wear here. The effect id stays
+// FLDEFF_LONG_GRASS either way; only the graphic differs, so the flower dungeon
+// gets blossoms and the jungle keeps its blades.
+u8 RogueDungeon_LongGrassFieldEffectObj(void);
 const struct WildPokemonInfo *RogueDungeon_GetWildMonInfo(enum WildPokemonArea area);
 void RogueDungeon_ApplyNewGameUnlocks(void);
 void RogueDungeon_GetFloorName(u8 *dest);

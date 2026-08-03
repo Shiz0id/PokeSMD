@@ -11,6 +11,7 @@
 #include "sound.h"
 #include "sprite.h"
 #include "trig.h"
+#include "rogue_dungeon.h"
 #include "wild_encounter_ow.h"
 #include "constants/event_objects.h"
 #include "constants/field_effects.h"
@@ -538,13 +539,44 @@ u8 FindTallGrassFieldEffectSpriteId(u8 localId, u8 mapNum, u8 mapGroup, s16 x, s
 u32 FldEff_LongGrass(void)
 {
     u8 spriteId;
+    // The flower dungeon wears a different curtain. This is the only place that
+    // choice can be made: gFieldEffectScript_LongGrass names one palette and a
+    // SpriteTemplate is const, so neither of the two places that would normally
+    // decide can decide per theme.
+    u8 fldEffObj = RogueDungeon_LongGrassFieldEffectObj();
+    u8 paletteNum = 0xFF;
     s16 x = gFieldEffectArguments[0];
     s16 y = gFieldEffectArguments[1];
+
+    // Loaded BEFORE the sprite exists, so a failure can still change its mind.
+    // The script loaded gSpritePalette_GeneralFieldEffect1 and faded it for the
+    // weather; a template with any other tag comes back 0xFF from
+    // IndexOfSpritePaletteTag, and 0xFF truncates to slot 15 in a four-bit OAM
+    // field, so an unloadable palette would draw the flowers in whatever
+    // happens to live there. Falling back to the blades is a wrong graphic;
+    // that would be a wrong graphic in wrong colours.
+    if (fldEffObj != FLDEFFOBJ_LONG_GRASS)
+    {
+        paletteNum = LoadSpritePalette(&gSpritePalette_RogueFlowers);
+        if (paletteNum == 0xFF)
+            fldEffObj = FLDEFFOBJ_LONG_GRASS;
+    }
+
     SetSpritePosToOffsetMapCoords(&x, &y, 8, 8);
-    spriteId = CreateSpriteAtEnd(gFieldEffectObjectTemplatePointers[FLDEFFOBJ_LONG_GRASS], x, y, 0);
+    spriteId = CreateSpriteAtEnd(gFieldEffectObjectTemplatePointers[fldEffObj], x, y, 0);
     if (spriteId != MAX_SPRITES)
     {
         struct Sprite *sprite = &gSprites[spriteId];
+
+        if (fldEffObj != FLDEFFOBJ_LONG_GRASS)
+        {
+            sprite->oam.paletteNum = paletteNum;
+            // loadfadedpal is what the script would have done, and stepping
+            // around it means doing this by hand - or the flowers stay bright
+            // through fog, snow and every darkened map.
+            UpdateSpritePaletteWithWeather(paletteNum, FALSE);
+        }
+
         sprite->coordOffsetEnabled = TRUE;
         sprite->oam.priority = ElevationToPriority(gFieldEffectArguments[2]);
         sprite->sElevation = gFieldEffectArguments[2];

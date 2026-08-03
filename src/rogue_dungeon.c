@@ -14,6 +14,7 @@
 #include "item.h"
 #include "data.h"
 #include "trainer_see.h"
+#include "constants/field_effects.h"
 #include "constants/items.h"
 #include "constants/layouts.h"
 #include "constants/moves.h"
@@ -3193,6 +3194,34 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
     // Consumed. The next map load must prepare afresh, or it would repaint this
     // floor instead of generating the next one.
     sFloorPrepared = FALSE;
+}
+
+// Which graphic FLDEFF_LONG_GRASS should wear on this floor.
+//
+// MB_LONG_GRASS is what makes Ever Grande's flowers an encounter surface, and
+// it brings FLDEFF_LONG_GRASS with it - whose art is a curtain of green blades.
+// Over pink and orange blooms that is not broken, it just tells the player they
+// are standing in grass. The flower curtain is the same sprite recoloured onto
+// the flower metatiles' own leaf ramp with blossoms among the blades.
+//
+// This picks the GRAPHIC only. The effect stays FLDEFF_LONG_GRASS, because
+// every ground-effect flag, the OAM clip that hides the player's lower half and
+// UpdateLongGrassFieldEffect's own FieldEffectStop all key on that id. The
+// jungle, whose long grass is genuinely grass, is untouched.
+//
+// Keyed on the floor's theme rather than on the metatile under the player,
+// because the caller has the object event's position and not necessarily the
+// block, and a floor only ever has one long-grass surface.
+u8 RogueDungeon_LongGrassFieldEffectObj(void)
+{
+    if (gMapHeader.mapLayoutId != LAYOUT_ROGUE_DUNGEON_FLOOR)
+        return FLDEFFOBJ_LONG_GRASS;
+
+    if (ThemeForFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR))
+        == &sDungeonThemes[DUNGEON_THEME_EVERGRANDE])
+        return FLDEFFOBJ_ROGUE_FLOWERS;
+
+    return FLDEFFOBJ_LONG_GRASS;
 }
 
 // Hooked into TryStartStepBasedScript. Returning TRUE means we consumed the
