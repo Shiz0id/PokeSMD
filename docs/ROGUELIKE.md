@@ -29,10 +29,11 @@ Losing wipes the run; so does winning, which is the point.
   and there is no stock trainer at that level to draw one from anyway.
 - **Wallace has the flower meadow**, dungeon 12 — Ever Grande, a mint plateau
   carpeted in flower fields and ringed by tan cliffs, which is what the vanilla
-  city already is. It is the first theme whose encounter surface is neither
-  grass, cave floor nor water, and the first Elite Four pool not type-matched to
-  its member: the dungeon is deliberately not water themed. Only the finale
-  still wraps to another theme's art.
+  city already is. It is the first theme with **two encounter surfaces**: short
+  flower beds you walk over, and stands of flowery long grass you wade into, on
+  different behaviours because they are different heights. Also the first Elite
+  Four pool not type-matched to its member — the dungeon is deliberately not
+  water themed. Only the finale still wraps to another theme's art.
 - **Eight themes, one per gym dungeon, no repeats**: Petalburg Woods (dungeon 1,
   Roxanne), Granite Cave (2, Brawly), New Mauville (3, Wattson), Fiery Path
   (4, Flannery), Mirage Tower (5, Norman), the Jungle (6, Winona), the open
@@ -565,11 +566,46 @@ Which behaviour to hang on it is a real choice, and worth knowing the options:
 | `MB_TALL_GRASS` | yes | the rustle overlay sprite |
 | `MB_LONG_GRASS` | yes | a full-tile curtain sprite, the OAM clip that hides the player's lower half, and `BATTLE_ENVIRONMENT_LONG_GRASS` |
 
-`MB_LONG_GRASS` was chosen because **the OAM clip is purely geometric** —
-`SetObjectEventSpriteOamTableForLongGrass` swaps the subsprite table so the
-player wades *into* the surface — and wading into a flower field is exactly
-right. Only the overlay sprite is grass-specific, and that is replaced per theme
-by the section below.
+### Two encounter surfaces, and the behaviour has to match the ART'S HEIGHT
+
+The flower dungeon has **two**, and getting there was a mistake worth recording.
+
+The beds went on `MB_LONG_GRASS` first, for a good-sounding reason: the OAM clip
+that behaviour brings (`SetObjectEventSpriteOamTableForLongGrass` swaps the
+subsprite table) is purely geometric, so the player wades *into* the surface,
+and wading into a flower field sounded exactly right.
+
+Rendered in situ it was obviously wrong. **Ever Grande's beds are bold and
+LOW** — half-tile blooms with hard dark outlines, a flower bed seen from above —
+and the overlay is a full-height curtain that hides the player's lower half. The
+two disagreed about how tall the thing underfoot was. Vanilla never has that
+problem because its long grass *tile* is tall, so tile and overlay agree by
+construction.
+
+The answer was not to pick a different behaviour but to **add the surface the
+overlay was describing**:
+
+| surface | behaviour | what stepping on it does |
+|---|---|---|
+| short flower beds, `0x2A9`–`0x2B8` | `MB_UNUSED_05` | encounters, nothing else — no overlay, no clip |
+| flowery long grass, `0x2B9`–`0x2C0` | `MB_LONG_GRASS` | encounters, the curtain, the clip |
+
+The tall one is `gTileset_General`'s own long grass `0x015` under a bloom
+overlay, keeping `0x015`'s attribute. Five new tiles, because each blossom is
+placed inside a single quadrant and the other three top-layer quadrants are the
+entry `0x0000`, which references no tile at all.
+
+**Three of its eight are bare.** A feature baked into a metatile repeats every
+16 pixels and becomes a lattice — §5 says that about floors and it is just as
+true of a patch layer. Gaps in the cycle are what make the blossoms punctuate
+the grass instead of ruling it.
+
+**The general rule: pick the behaviour to match how tall the art is, not how
+much you want the effect.** `MB_UNUSED_05` exists for exactly the case where a
+surface should spawn encounters and otherwise be walked over.
+
+Only the overlay sprite is grass-specific, and that is replaced per theme by the
+section below.
 
 ### Giving one field effect a per-theme graphic
 
@@ -607,12 +643,17 @@ function itself. Four things it has to get right:
   **tiles invisibly**, which matters because one sprite spawns per occupied tile
   and several sit edge to edge whenever the player walks a run of them.
 
-The colours move onto the *flower metatiles' own* leaf ramp rather than the
-grass sprite's, so the overlay is made of the same greens as the thing it
-covers — the whirlpool's rule again. And the blooms are pink and orange only,
-because that is the colourway the theme paints: a blossom in the overlay that
-appears nowhere on the floor is a flower the player is standing in that does not
-exist.
+The greens do not move at all: they stay `general_1`'s ramp, which is what
+`0x015` is drawn in, and `0x015` is what the overlay covers. The blooms are pink
+and orange only, because that is the colourway the theme paints — a blossom in
+the overlay that appears nowhere on the floor is a flower the player is standing
+in that does not exist.
+
+**They were briefly retargeted to the flower beds' ramp, and that was a bug of
+inattention rather than of reasoning.** "Made of what it sits in" was the right
+rule; it stopped being applied when the surface underneath changed from the beds
+to the tall grass. **A rule about matching something needs re-checking whenever
+the something moves.**
 
 ### When splicing is not enough: drawing new tiles
 

@@ -503,19 +503,24 @@ static const u16 sEverGrandeSpecies[] =
     SPECIES_JUMPLUFF,   SPECIES_BELLOSSOM, SPECIES_VILEPLUME,
 };
 
-// The flowers, and a brick terrace punched through them - the jungle's
-// arrangement, where a later layer wins over an earlier one.
+// Three layers, painted in order so a later one wins.
 //
-// Layer 0 is the encounter surface and the whole point of the dungeon, so it is
-// tuned to 41% of floor, next to the jungle's 38%. It is PHASED: the eight ids
-// from the base are eight steps of a diagonal banding, not eight variants, so
-// the field comes out in alternating diagonal rows exactly as vanilla draws it.
-// Every slot is the same base because this set has no edge art whatsoever - the
-// region autotile degenerates to a fill, as underwater's seaweed does.
+// Layer 0 is the short flower beds, MB_UNUSED_05 - encounters and nothing else,
+// no overlay and no clip, the way Ever Grande City treats them. PHASED: the
+// eight ids from the base are eight steps of a diagonal banding rather than
+// eight variants, so the beds come out in alternating diagonal rows exactly as
+// vanilla lays them. Every slot is the same base because the set has no edge
+// art at all - the region autotile degenerates to a fill, as seaweed does.
 //
-// Layer 1 is brick, and it is a path rather than a region: no north or south
+// Layer 1 is the flowery long grass, MB_LONG_GRASS, which is what the
+// wade-through curtain belongs to. Fewer and smaller blobs than the beds: it is
+// the deeper surface and it should read as stands of tall planting standing in
+// a meadow, not as the meadow. It wins where it overlaps the beds, which is
+// the right way round - grass grows up through a bed, not the reverse.
+//
+// Layer 2 is brick, and it is a path rather than a region: no north or south
 // edge art exists, so a blob's top and bottom are hard cuts. Small and sparse
-// on purpose.
+// on purpose, and last so it reads as laid ON the planting.
 static const struct RoguePatchLayer sEverGrandePatch[] =
 {
     {
@@ -537,6 +542,26 @@ static const struct RoguePatchLayer sEverGrandePatch[] =
         .blobs = 11,
         .radius = 6,
         .phase = EVERGRANDE_FLOWER_PHASE,
+    },
+    {
+        .tile =
+        {
+            [PATCH_NW] = EVERGRANDE_METATILE_LONG_GRASS,
+            [PATCH_N]  = EVERGRANDE_METATILE_LONG_GRASS,
+            [PATCH_NE] = EVERGRANDE_METATILE_LONG_GRASS,
+            [PATCH_W]  = EVERGRANDE_METATILE_LONG_GRASS,
+            [PATCH_MID]= EVERGRANDE_METATILE_LONG_GRASS,
+            [PATCH_E]  = EVERGRANDE_METATILE_LONG_GRASS,
+            [PATCH_SW] = EVERGRANDE_METATILE_LONG_GRASS,
+            [PATCH_S]  = EVERGRANDE_METATILE_LONG_GRASS,
+            [PATCH_SE] = EVERGRANDE_METATILE_LONG_GRASS,
+            [PATCH_NW_WALL] = EVERGRANDE_METATILE_LONG_GRASS,
+            [PATCH_N_WALL]  = EVERGRANDE_METATILE_LONG_GRASS,
+            [PATCH_NE_WALL] = EVERGRANDE_METATILE_LONG_GRASS,
+        },
+        .blobs = 6,
+        .radius = 4,
+        .phase = EVERGRANDE_LONG_GRASS_PHASE,
     },
     {
         .tile =
@@ -1256,11 +1281,21 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     // tileset has no art for it, so widening removes the only composed art the
     // theme would have needed. It also suits a meadow.
     //
-    // tallGrass stays 0 and longGrass names the flowers, which is the jungle's
-    // and underwater's arrangement: tallGrass is what switches on grass-BLOB
-    // placement, and a patch-layer theme would then paint its encounter surface
-    // twice. longGrass is left as the declaration of where encounters fire,
-    // which is what check_encounter_flags.py reads.
+    // tallGrass stays 0 and longGrass names the tall flowery grass, which is
+    // the jungle's and underwater's arrangement. tallGrass is not merely
+    // unused here, it is unsafe: PrepareFloor places grass blobs whenever
+    // tallGrass is nonzero and consumes RNG doing it, while only StampCell -
+    // DUNGEON_GEN_WOODS - ever paints from them. Setting it on a cave-generator
+    // theme would shift the RNG stream and silently relay out every floor for
+    // blobs that never get drawn.
+    //
+    // longGrass is left as the declaration of where encounters fire, which is
+    // what check_encounter_flags.py reads. The short beds are the floor's OTHER
+    // encounter surface and no field names them - they are painted by patch
+    // layer 0 and carry MB_UNUSED_05. The lint only has to find one surface per
+    // theme so it passes either way, which means it cannot catch the beds
+    // silently losing their encounter flag; make_evergrande_tiles.py asserts
+    // that instead, on the attributes it has just written.
     [DUNGEON_THEME_EVERGRANDE] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_EVERGRANDE,
@@ -1274,7 +1309,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .corridorWidth = 5,
         .floor = EVERGRANDE_METATILE_FLOOR,
         .tallGrass = 0,
-        .longGrass = EVERGRANDE_METATILE_FLOWERS_PINK,
+        .longGrass = EVERGRANDE_METATILE_LONG_GRASS,
         .stairsDown = EVERGRANDE_METATILE_STAIRS_DOWN,
         .stairsUp = EVERGRANDE_METATILE_STAIRS_DOWN,
         .wall =

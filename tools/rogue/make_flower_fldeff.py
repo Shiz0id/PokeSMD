@@ -64,10 +64,10 @@ FRAMES = 4
 # the whirlpool's rule that a thing must be made of what it sits in.
 PALETTE = [
     (0x73, 0xBD, 0xEE),   # 0  transparent
-    (0xC5, 0xFF, 0xA4),   # 1  leaf highlight
+    (0xB4, 0xFF, 0x83),   # 1  leaf highlight
     (0x83, 0xC5, 0x62),   # 2  leaf mid
-    (0x5A, 0xA4, 0x31),   # 3  leaf dark        - the bulk, as vanilla's is
-    (0x41, 0x62, 0x10),   # 4  leaf deep shade  - the bottom band
+    (0x39, 0x8B, 0x31),   # 3  leaf dark        - the bulk, as vanilla's is
+    (0x4A, 0x5A, 0x08),   # 4  leaf deep shade  - the bottom band
     (0xA4, 0xD5, 0xC5),   # 5  mint pale        - the ragged top
     (0x73, 0xC5, 0xA4),   # 6  mint
     (0xFF, 0xCD, 0xEE),   # 7  pink light
@@ -106,10 +106,14 @@ BLOOMS = (
 # of flowers, and a curtain with any left or right edge structure would turn
 # into a visible grid at exactly the moment it is being looked at.
 #
-# So only the hue moves, onto the flower metatiles' own leaf ramp - ever_grande
-# palette 10 indices 1-4 rather than general_1's - so the overlay foliage is
-# made of the same greens as the flowers under it. Vanilla's mint at index 13
-# is the ragged top edge and stays mint.
+# So the greens do not move AT ALL. They are general_1's own ramp, which is the
+# ramp gTileset_General's long grass 0x015 is drawn in - and 0x015 is exactly
+# what this overlay now covers. The curtain is vanilla's, with blossoms added.
+#
+# It was briefly tuned to the flower BEDS' ramp instead, back when the beds were
+# the MB_LONG_GRASS surface. Once the beds moved to MB_UNUSED_05 and the tall
+# grass became what the curtain sits on, that was matching the wrong thing.
+# "Made of what it sits in" only helps if you keep track of what it sits in.
 BLADE_REMAP = {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 13: 6}
 
 # Blooms: x, which palette triple, and y of the centre. FOUR, not the seven the

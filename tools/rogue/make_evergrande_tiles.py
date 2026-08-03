@@ -62,6 +62,41 @@ BASE = 0x200 + VANILLA_METATILES        # 0x2A8, the first id we own
 
 METATILE_STAIRS = BASE                  # 0x2A8
 METATILE_FLOWER_BASE = BASE + 1         # 0x2A9 .. 0x2B8, the sixteen
+METATILE_LONGGRASS_BASE = BASE + 17     # 0x2B9 .. 0x2C0, the eight
+
+# gTileset_General's long grass, MB_LONG_GRASS, bottom layer only and four
+# plain tiles. The flowery version is that verbatim with a bloom overlaid on
+# top - the cobble's structure, where 0x232 is General's grass under a
+# palette-8 stone overlay.
+GENERAL_LONG_GRASS = 0x015
+
+# Where a blossom sits in each of the eight, as (x, y) of its centre in the
+# 16x16, or None. Palette 10 is the pink-and-orange flower bed's own, so the
+# blooms up here are the same colours as the beds across the floor.
+#
+# THREE OF THE EIGHT ARE BARE, and that is the point. A feature baked into a
+# metatile repeats every 16 pixels and becomes a lattice - section 5 says so
+# about floors and it is just as true of a patch layer. Leaving gaps in the
+# cycle means the flowers punctuate the grass instead of ruling it, and the
+# bare ones cost no tiles at all: an entirely transparent top-layer quadrant is
+# the entry 0x0000 and references nothing.
+#
+# Positions are kept clear of the quadrant boundaries so each blossom lands
+# inside ONE quadrant. That is not cosmetic - it is what keeps this to five new
+# tiles instead of twenty.
+LONGGRASS_BLOOMS = (
+    None,
+    (4, 5, 'pink'),
+    (11, 3, 'orange'),
+    None,
+    (6, 11, 'orange'),
+    (13, 9, 'pink'),
+    None,
+    (3, 12, 'pink'),
+)
+LONGGRASS_PALETTE = 10
+# Palette 10: 6-8 are the orange ramp, 9-11 the pink one, 0 transparent.
+BLOOM_COLOURS = {'orange': (6, 7, 8), 'pink': (9, 10, 11)}
 
 # The vanilla flower sets these copy. 0x288-0x28F are pink and orange, 0x290-
 # 0x297 yellow and blue, and each set is EIGHT PHASES OF A DIAGONAL BANDING
@@ -78,6 +113,10 @@ FLOWER_SOURCES = tuple(range(0x288, 0x298))
 # palette index 0. Validated below against the tiles VANILLA references, never
 # against the current sheet, or the check is circular.
 STAIRS_TILES = (0x01C, 0x01D, 0x01E, 0x01F)
+# One per flowered long-grass variant. Five, not twenty, because each blossom
+# is placed inside a single quadrant and the other three quadrants of its top
+# layer are the entry 0x0000, which references no tile at all.
+LONGGRASS_TILES = (0x02B, 0x02C, 0x02D, 0x02E, 0x02F)
 
 # gTileset_EverGrande palette 8, the cobble's. It carries a cream-to-olive stone
 # ramp at 11-14 and a grey-to-navy shadow ramp at 5-8, which is everything a
@@ -116,6 +155,19 @@ STAIRS_ART = [
 
 def resolver():
     return TilesetResolver(REPO)
+
+
+def mt_primary():
+    """gTileset_General's metatiles. The long grass is a PRIMARY metatile, so
+    its bottom layer is borrowed rather than copied - primary tile indices mean
+    the same thing under every pair, which is the one case where sharing an id
+    across themes is safe."""
+    return resolver().resolve('gTileset_General')['metatiles'].read_bytes()
+
+
+def primary_attr(mid):
+    at = resolver().resolve('gTileset_General')['attributes'].read_bytes()
+    return struct.unpack_from('<H', at, mid * 2)[0]
 
 
 def read_metatile(mt: bytes, mid: int):
@@ -164,6 +216,27 @@ def behavior_value(name: str) -> int:
     raise SystemExit(f'no such behaviour {name}')
 
 
+def bloom_quadrant(bloom):
+    """-> (quadrant index 0-3, an 8x8 tile) for one blossom.
+
+    A five-pixel blossom: lit centre, mid ring, one dark pixel below for a
+    shadow. Everything else is index 0, which in a TOP layer is transparent, so
+    the long grass shows through around it."""
+    bx, by, which = bloom
+    light, mid, dark = BLOOM_COLOURS[which]
+    q = (0 if by < 8 else 2) + (0 if bx < 8 else 1)
+    tile = [[0] * 8 for _ in range(8)]
+    ox, oy = bx % 8, by % 8
+    for dx, dy, c in ((0, 0, light), (-1, 0, mid), (1, 0, mid),
+                      (0, -1, mid), (0, 1, dark)):
+        x, y = ox + dx, oy + dy
+        if not (0 <= x < 8 and 0 <= y < 8):
+            raise SystemExit(f'blossom at {bx},{by} crosses a quadrant edge; '
+                             f'move it or this needs more than one tile')
+        tile[y][x] = c
+    return q, tile
+
+
 def build_entries(res):
     """-> [(metatile_id, eight u16 entries, attribute)] in append order."""
     mt = res['metatiles'].read_bytes()
@@ -177,13 +250,39 @@ def build_entries(res):
         | (1 << 12)                                  # layer type COVERED
     rows.append((METATILE_STAIRS, list(floor[:4]) + top, stairs_attr))
 
-    # The flowers: vanilla's pixels, our behaviour.
-    long_grass = behavior_value('MB_LONG_GRASS')
+    # The short beds: vanilla's pixels, our behaviour.
+    #
+    # MB_UNUSED_05, not MB_LONG_GRASS. It carries TILE_FLAG_HAS_ENCOUNTERS and
+    # NOTHING else - its only reference in the whole engine is
+    # Unref_MetatileBehavior_IsUnused05, which nothing calls - so these spawn
+    # wild Pokemon and draw no overlay and do not clip the player. That is how
+    # Ever Grande City itself treats these beds: you walk over them.
+    #
+    # They were MB_LONG_GRASS first, and seeing it in situ is what changed it.
+    # The bed is bold and LOW - half-tile blooms with hard dark outlines - and
+    # the long grass overlay is a full-height curtain that hides the player's
+    # lower half. The two disagreed about how tall the thing underfoot was.
+    unused_05 = behavior_value('MB_UNUSED_05')
     for n, src in enumerate(FLOWER_SOURCES):
         src_attr = struct.unpack_from('<H', at, (src - 0x200) * 2)[0]
         rows.append((METATILE_FLOWER_BASE + n,
                      list(read_metatile(mt, src)),
-                     (src_attr & 0xFF00) | long_grass))
+                     (src_attr & 0xFF00) | unused_05))
+
+    # The tall surface, which is what the curtain belongs to: General's own long
+    # grass under a bloom overlay. Keeps 0x015's attribute, so it stays
+    # MB_LONG_GRASS and the overlay and the OAM clip both fire.
+    # Indexed directly, not through read_metatile, which subtracts 0x200 for a
+    # secondary id and would run off the front of a primary file.
+    lg = struct.unpack_from('<8H', mt_primary(), GENERAL_LONG_GRASS * 16)
+    lg_attr = primary_attr(GENERAL_LONG_GRASS)
+    tile_iter = iter(LONGGRASS_TILES)
+    for n, bloom in enumerate(LONGGRASS_BLOOMS):
+        top = [0, 0, 0, 0]
+        if bloom is not None:
+            q, _ = bloom_quadrant(bloom)
+            top[q] = entry(512 + next(tile_iter), LONGGRASS_PALETTE)
+        rows.append((METATILE_LONGGRASS_BASE + n, list(lg[:4]) + top, lg_attr))
     return rows
 
 
@@ -194,7 +293,10 @@ def write(res):
         raise SystemExit('metatile file is shorter than the vanilla count')
 
     # Pinned slots must be free in VANILLA. They will not be free after we run.
-    clash = set(STAIRS_TILES) & vanilla_referenced_tiles(mt)
+    pinned = set(STAIRS_TILES) | set(LONGGRASS_TILES)
+    if len(pinned) != len(STAIRS_TILES) + len(LONGGRASS_TILES):
+        raise SystemExit('two pinned tile slots are the same')
+    clash = pinned & vanilla_referenced_tiles(mt)
     if clash:
         raise SystemExit(f'pinned tile slots collide with vanilla art: '
                          f'{[hex(c) for c in sorted(clash)]}')
@@ -203,7 +305,14 @@ def write(res):
     if sheet.mode != 'P':
         raise SystemExit('tiles.png is not paletted; refusing to touch it')
     cols = sheet.width // 8
-    for slot, tile in zip(STAIRS_TILES, quadrants(STAIRS_ART)):
+
+    art = list(zip(STAIRS_TILES, quadrants(STAIRS_ART)))
+    tile_iter = iter(LONGGRASS_TILES)
+    for bloom in LONGGRASS_BLOOMS:
+        if bloom is not None:
+            art.append((next(tile_iter), bloom_quadrant(bloom)[1]))
+
+    for slot, tile in art:
         tx, ty = (slot % cols) * 8, (slot // cols) * 8
         for y in range(8):
             for x in range(8):
@@ -220,11 +329,72 @@ def write(res):
     mt_path.write_bytes(head_mt + tail_mt)
     at_path.write_bytes(head_at + tail_at)
 
-    print(f'wrote {len(STAIRS_TILES)} tiles into {tiles_path.name}')
+    verify(res)
+    print(f'wrote {len(art)} tiles into {tiles_path.name}')
     print(f'appended {len(rows)} metatiles: 0x{rows[0][0]:03X}..0x{rows[-1][0]:03X}')
     print(f'  0x{METATILE_STAIRS:03X}                 exit, COVERED')
     print(f'  0x{METATILE_FLOWER_BASE:03X}..0x{METATILE_FLOWER_BASE + 15:03X}   '
-          f'flowers, MB_LONG_GRASS ({behavior_value("MB_LONG_GRASS")})')
+          f'short beds, MB_UNUSED_05 ({behavior_value("MB_UNUSED_05")}) '
+          f'- encounters, no overlay')
+    print(f'  0x{METATILE_LONGGRASS_BASE:03X}..0x{METATILE_LONGGRASS_BASE + 7:03X}   '
+          f'flowery long grass, MB_LONG_GRASS '
+          f'({behavior_value("MB_LONG_GRASS")}) - encounters and the curtain')
+
+
+def encounter_behaviours():
+    """Behaviour names carrying TILE_FLAG_HAS_ENCOUNTERS, read out of the engine
+    rather than listed here, so a change upstream cannot silently pass."""
+    txt = (REPO / 'src/metatile_behavior.c').read_text(encoding='utf-8')
+    return {m.group(1) for m in
+            re.finditer(r'\[(MB_[A-Z0-9_]+)\]\s*=\s*([^,\n]+)', txt)
+            if 'HAS_ENCOUNTERS' in m.group(2)}
+
+
+def behaviour_names():
+    txt = (REPO / 'include/constants/metatile_behaviors.h').read_text(encoding='utf-8')
+    out, val = {}, 0
+    for m in re.finditer(r'^\s*(MB_[A-Z0-9_]+)\s*(?:=\s*(0x[0-9A-Fa-f]+|\d+))?\s*,',
+                         txt, re.M):
+        if m.group(2):
+            val = int(m.group(2), 0)
+        out[val] = m.group(1)
+        val += 1
+    return out
+
+
+def verify(res):
+    """Re-read what was just written and hold BOTH encounter surfaces to
+    account.
+
+    check_encounter_flags.py cannot do this. It reads .floor, .tallGrass and
+    .longGrass off the theme table and passes a theme that has ONE surface
+    carrying encounters - so the tall grass alone would satisfy it, and the
+    sixteen short beds silently losing their flag would go unnoticed until a
+    playthrough turned up a floor where half the flowers were inert. Nothing in
+    the theme table names the beds at all; they are painted by a patch layer.
+    """
+    at = res['attributes'].read_bytes()
+    names, enc = behaviour_names(), encounter_behaviours()
+
+    def behaviour_of(mid):
+        return names.get(struct.unpack_from('<H', at, (mid - 0x200) * 2)[0] & 0xFF)
+
+    bad = []
+    for n in range(16):
+        mid = METATILE_FLOWER_BASE + n
+        if behaviour_of(mid) not in enc:
+            bad.append((mid, behaviour_of(mid)))
+    for n in range(len(LONGGRASS_BLOOMS)):
+        mid = METATILE_LONGGRASS_BASE + n
+        if behaviour_of(mid) not in enc:
+            bad.append((mid, behaviour_of(mid)))
+    if bad:
+        raise SystemExit('these carry no encounter flag: '
+                         + ', '.join(f'0x{m:03X} ({b})' for m, b in bad))
+
+    # And the exit must NOT, or a wild battle fires as the player leaves.
+    if behaviour_of(METATILE_STAIRS) in enc:
+        raise SystemExit(f'the exit 0x{METATILE_STAIRS:03X} carries encounters')
 
 
 def preview(res):

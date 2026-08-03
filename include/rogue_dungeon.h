@@ -639,11 +639,19 @@
 // the overlay would draw over them while they stand on it.
 #define EVERGRANDE_METATILE_STAIRS_DOWN       0x2A8
 
-// The encounter flowers: sixteen entries referencing vanilla's flower tiles
-// byte for byte, differing only in carrying MB_LONG_GRASS. Vanilla's own are
-// MB_NORMAL, and neither this tileset nor gTileset_Mauville holds a single
-// metatile with TILE_FLAG_HAS_ENCOUNTERS, so a flower with wild Pokemon in it
-// had to be a new entry. No new art at all.
+// THE FLOOR HAS TWO ENCOUNTER SURFACES, and they differ in what stepping on
+// them does, not only in how they look.
+//
+// The short beds: sixteen entries referencing vanilla's flower tiles byte for
+// byte, differing only in the behaviour. Vanilla's own are MB_NORMAL, and
+// neither this tileset nor gTileset_Mauville holds a single metatile with
+// TILE_FLAG_HAS_ENCOUNTERS, so a flower with wild Pokemon in it had to be a new
+// entry. No new art at all.
+//
+// MB_UNUSED_05 carries TILE_FLAG_HAS_ENCOUNTERS and nothing else - its one
+// reference in the engine is a function nothing calls - so these spawn wild
+// Pokemon, draw no overlay and do not clip the player. That is how Ever Grande
+// City itself treats them: you walk over them.
 //
 // EIGHT PHASES, NOT EIGHT VARIANTS - see RoguePatchLayer.phase. The pink and
 // yellow sets are the same eight pictures under two palettes, and vanilla uses
@@ -651,6 +659,20 @@
 #define EVERGRANDE_METATILE_FLOWERS_PINK      0x2A9  // 0x2A9-0x2B0
 #define EVERGRANDE_METATILE_FLOWERS_YELLOW    0x2B1  // 0x2B1-0x2B8
 #define EVERGRANDE_FLOWER_PHASE               8
+
+// The tall surface: gTileset_General's own long grass 0x015 under a bloom
+// overlay, keeping 0x015's attribute so it stays MB_LONG_GRASS. This is what
+// the wade-through curtain belongs to - a full-height overlay that hides the
+// player's lower half needs something full-height underfoot, and the beds are
+// bold and LOW.
+//
+// Eight again so the patch layer's phase works the same way, but THREE OF THE
+// EIGHT ARE BARE. A feature baked into a metatile repeats every 16 pixels and
+// becomes a lattice; gaps in the cycle are what make the blossoms punctuate the
+// grass rather than rule it, and a bare one costs no tiles, since an entirely
+// transparent top-layer quadrant is the entry 0x0000.
+#define EVERGRANDE_METATILE_LONG_GRASS        0x2B9  // 0x2B9-0x2C0
+#define EVERGRANDE_LONG_GRASS_PHASE           8
 
 
 // Woods uses the same two elevations as caves.

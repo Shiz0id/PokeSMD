@@ -288,11 +288,13 @@ THEMES = {
         # the mask census puts NSWE, SWE and NWE all on the fill. So the top and
         # bottom of a blob are hard cuts. This is here to be looked at, not
         # trusted.
-        patch2={'NW': 0x23C, 'N': 0x23D, 'NE': 0x23E,
+        patch2={k: 0x2B9 for k in PATCH_SLOTS},
+        patch2_blobs=6, patch2_radius=4, patch2_phase=8,
+        patch3={'NW': 0x23C, 'N': 0x23D, 'NE': 0x23E,
                 'W': 0x23C, 'MID': 0x23D, 'E': 0x23E,
                 'SW': 0x23C, 'S': 0x23D, 'SE': 0x23E,
                 'NW_WALL': 0x23C, 'N_WALL': 0x23D, 'NE_WALL': 0x23E},
-        patch2_blobs=5, patch2_radius=4,
+        patch3_blobs=5, patch3_radius=4,
         rooms=12, room_min=7, room_max=13, corridor=cw,
         wall={
             'NORTH_LEFT': 0x068, 'NORTH_MID': 0x069, 'NORTH_RIGHT': 0x06A,
@@ -457,7 +459,7 @@ def paint(solid, theme, seed=0):
     # Layers are painted in order, so a later one wins where they overlap: the
     # jungle lays long grass and then punches puddles through it.
     layers = []
-    for which, key in enumerate(('patch', 'patch2')):
+    for which, key in enumerate(('patch', 'patch2', 'patch3')):
         blobs_key = key + '_blobs'
         if theme.get(key) and theme.get(blobs_key):
             layers.append((which, theme[key], theme[blobs_key],
@@ -623,7 +625,7 @@ def main(name):
         print(f'  {s:<18} {n:>5}  0x{theme["wall"][s]:03X}{mark}')
 
     floor_cells = totals.get('FLOOR_CELLS', 0)
-    for which, key in enumerate(('patch', 'patch2')):
+    for which, key in enumerate(('patch', 'patch2', 'patch3')):
         if not theme.get(key):
             continue
         print(f'\nfloor region layer {which} ({key}):')
