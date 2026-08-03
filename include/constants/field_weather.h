@@ -18,10 +18,20 @@ enum ColorMapType
 #define NUM_FOG_DIAGONAL_SPRITES     20
 #define NUM_SANDSTORM_SPRITES        20
 #define NUM_SWIRL_SANDSTORM_SPRITES  5
-#define NUM_SNOWFLAKE_SPRITES        16
+// Vanilla's sixteen, raised for the same reason the petals were: sixteen read
+// as a light dusting on a floor whose whole character is that it is snowing.
+// Twenty, and the snow-covered ground under it now sells the rest.
+//
+// WEATHER_SNOW is used by exactly ONE map in this build, MAP_ROGUE_DUNGEON_SNOW,
+// so this global is Glacia's in practice - no stock map pays for it.
+//
+// Free at load, like the petals: UpdateVisibleSnowflakeSprites spawns one per 36
+// frames, but Snow_InitAll spins until the target count is met, so a floor
+// arrives with all twenty already up.
+#define NUM_SNOWFLAKE_SPRITES        20
 // Petals reuse the snowflake sprite array, so this must never exceed its 101.
 //
-// MORE than the snow's sixteen, not fewer. This was 10 on the reasoning that a
+// MORE than the snow's, not fewer. This was 10 on the reasoning that a
 // petal drifts four times as far sideways as a flake and so covers more ground
 // per sprite. True, and still the wrong call: it made the air look empty rather
 // than breezy, and the blossom IS this floor's character, so it wants to be
