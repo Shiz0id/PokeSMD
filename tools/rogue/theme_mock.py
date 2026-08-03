@@ -96,35 +96,50 @@ THEMES = {
             'SLIVER_ISOLATED': 0x3A4,
         }),
     # The jungle runs on the CAVE generator even though it looks like woods: the
-    # Fortree canopy is a continuous mass that tiles 1x1, not discrete 2x2 tree
-    # stamps. One edge case only - the row with floor to its south.
+    # foliage mass is continuous and tiles 1x1, not discrete 2x2 tree stamps.
+    #
+    # WAS gTileset_Fortree with a two-metatile wall table and a plain green route
+    # floor, which is why it read as a Route rather than a jungle - nearly every
+    # id it painted was PRIMARY, the same shared art every theme draws from. Now
+    # the imported Howling Jungle sheet: twenty wall slots off its own legend,
+    # and a dirt floor.
     'jungle': dict(
-        primary='gTileset_General', secondary='gTileset_Fortree',
-        floor=0x001, stairs=0x245,
-        decor=[(0x0C6, 0x0C7, 0), (0x017, 0x016, 0)],
-        decor_rarity=2,
+        primary='gTileset_General', secondary='gTileset_RogueHowlingJungle',
+        # 0x0A7 is gTileset_General's warp again - the Fortree rope ladder went
+        # with the tileset, and a primary id is the only thing guaranteed to
+        # survive a secondary swap.
+        floor=0x238, stairs=0x0A7,
+        # Five wall variants and two floor ones. The pairings come out of the
+        # sheet rather than being chosen: an Alt cell varies whatever sits at
+        # the same legend position.
+        decor=[(0x201, 0x22F, 0), (0x203, 0x230, 0), (0x204, 0x231, 0),
+               (0x205, 0x232, 0), (0x207, 0x233, 0),
+               (0x238, 0x263, 0), (0x238, 0x264, 0)],
+        decor_rarity=4,
+        # Long grass stays vanilla's and stays PRIMARY. The south fringe 0x208
+        # was the only one in the game and it was Fortree's, so the bottom row
+        # is plain grass now - a hard edge, but one that carries encounters.
         patch={'NW': 0x015, 'N': 0x015, 'NE': 0x015,
                'W': 0x015, 'MID': 0x015, 'E': 0x015,
-               'SW': 0x208, 'S': 0x208, 'SE': 0x208,
+               'SW': 0x015, 'S': 0x015, 'SE': 0x015,
                'NW_WALL': 0x015, 'N_WALL': 0x015, 'NE_WALL': 0x015},
         patch_blobs=6, patch_radius=8,
-        patch2={'NW': 0x0C8, 'N': 0x0C9, 'NE': 0x0CA,
-                'W': 0x0D0, 'MID': 0x0D1, 'E': 0x0D2,
-                'SW': 0x0D8, 'S': 0x0D9, 'SE': 0x0DA,
-                'NW_WALL': 0x0C8, 'N_WALL': 0x0C9, 'NE_WALL': 0x0CA},
-        patch2_blobs=10, patch2_radius=3,
+        # The vanilla puddle layer was here and is deliberately gone. Its eight
+        # edge pieces are a shore drawn against green route grass, so on dirt
+        # every puddle came out ringed in a pale mint halo - this mock is what
+        # showed it. The sheet's own water replaces them once the importer can
+        # do animation. See sJunglePatches.
         rooms=12, room_min=7, room_max=13, corridor=3,
         wall={
-            'FACE_LEFT': 0x017, 'FACE_MID': 0x017, 'FACE_RIGHT': 0x017,
-            'SLIVER_HORZ': 0x017, 'SLIVER_HORZ_L': 0x017,
-            'SLIVER_HORZ_R': 0x017, 'SLIVER_VERT_BOT': 0x017,
-            'SLIVER_ISOLATED': 0x017,
-            'INTERIOR_LEFT': 0x0C6, 'INTERIOR_MID': 0x0C6,
-            'INTERIOR_RIGHT': 0x0C6, 'NORTH_LEFT': 0x0C6,
-            'NORTH_MID': 0x0C6, 'NORTH_RIGHT': 0x0C6,
-            'CORNER_OPEN_SE': 0x0C6, 'CORNER_OPEN_SW': 0x0C6,
-            'CORNER_OPEN_NW': 0x0C6, 'CORNER_OPEN_NE': 0x0C6,
-            'SLIVER_VERT': 0x0C6, 'SLIVER_VERT_TOP': 0x0C6,
+            'INTERIOR_LEFT': 0x203, 'INTERIOR_MID': 0x204, 'INTERIOR_RIGHT': 0x205,
+            'FACE_LEFT': 0x206, 'FACE_MID': 0x207, 'FACE_RIGHT': 0x208,
+            'NORTH_LEFT': 0x200, 'NORTH_MID': 0x201, 'NORTH_RIGHT': 0x202,
+            'CORNER_OPEN_SE': 0x21D, 'CORNER_OPEN_SW': 0x21E,
+            'CORNER_OPEN_NW': 0x220, 'CORNER_OPEN_NE': 0x21F,
+            'SLIVER_VERT': 0x20C, 'SLIVER_HORZ': 0x20A,
+            'SLIVER_VERT_TOP': 0x210, 'SLIVER_VERT_BOT': 0x214,
+            'SLIVER_HORZ_L': 0x211, 'SLIVER_HORZ_R': 0x213,
+            'SLIVER_ISOLATED': 0x20D,
         }),
     # The open ocean, and the first theme where the player is SURFING rather
     # than walking. The floor is MB_OCEAN_WATER, which the engine notices under

@@ -316,28 +316,80 @@
 // Jungle, under gTileset_General + gTileset_Fortree - Route 119, Route 120 and
 // Fortree City. Mined from the two routes.
 //
-// The canopy is why this theme is not a second woods. Rustboro draws discrete
-// 2x3 trees on a 2x2 grid, with gaps between them; Fortree draws a CONTINUOUS
-// leaf mass that tiles 1x1 in both directions. So the jungle runs on
-// DUNGEON_GEN_CAVE, which is also the path the cosmetic passes live on - the
-// woods generator returns before any of them.
+// It USED to run on gTileset_General + gTileset_Fortree, and that is exactly
+// why it did not read as a jungle: almost every id it named was PRIMARY - plain
+// route grass for the floor, vanilla canopy for the walls, vanilla puddles -
+// so it was built out of the same shared art every other theme draws from.
+// Only two ids in the whole theme were Fortree's.
 //
-// It needs no composed metatiles and almost no table, because the mass has
-// exactly ONE edge case: the row where floor sits to the south. Every other
-// neighbour combination is just more canopy. 0x0C6/0x0C7 and 0x016/0x017 are
-// interchangeable variants scattered for texture, not a 2-wide pair - checked
-// against x-parity across both routes and Fortree City and they come out 50/50.
-#define JUNGLE_METATILE_GRASS            0x001  // plain, no encounters
-#define JUNGLE_METATILE_CANOPY           0x0C6  // dense leaf mass, tiles 1x1
-#define JUNGLE_METATILE_CANOPY_ALT       0x0C7  // interchangeable variant
-#define JUNGLE_METATILE_CANOPY_BASE      0x017  // where floor sits to the south
-#define JUNGLE_METATILE_CANOPY_BASE_ALT  0x016
+// Worse, its entire wall table was TWO metatiles: the canopy, and the canopy
+// with a base row where floor sat to the south. Every other neighbour case was
+// just more canopy, so a wall mass had no silhouette - no corners, no faces, no
+// slivers. That is cheap and it looks it.
+//
+// Now gTileset_General + gTileset_RogueHowlingJungle, imported from the Howling
+// Jungle sheet, which supplies all twenty PaintWalls slots from its own legend
+// and a brown dirt floor with sprouts pushing through it. The floor is the
+// single biggest change: the mint-green route grass is what read as "outdoors,
+// generic" more than anything else did.
+// MB_NORMAL, copied from the plain route grass this replaces - NO encounters.
+// That is the theme's design and it predates the art: wild battles come from
+// the long grass layer, the way they do in the woods, and the ground is safe to
+// cross. The importer defaults a ground block to the cave's MB_CAVE, which
+// would have turned encounters on across the entire floor as a side effect of
+// changing what the floor looks like.
+#define JUNGLE_METATILE_FLOOR            0x238  // dirt, MB_NORMAL
+#define JUNGLE_METATILE_WALL_INTERIOR_L  0x203
+#define JUNGLE_METATILE_WALL_INTERIOR_M  0x204
+#define JUNGLE_METATILE_WALL_INTERIOR_R  0x205
+#define JUNGLE_METATILE_WALL_FACE_L      0x206
+#define JUNGLE_METATILE_WALL_FACE_M      0x207
+#define JUNGLE_METATILE_WALL_FACE_R      0x208
+#define JUNGLE_METATILE_WALL_NORTH_L     0x200
+#define JUNGLE_METATILE_WALL_NORTH_M     0x201
+#define JUNGLE_METATILE_WALL_NORTH_R     0x202
+#define JUNGLE_METATILE_WALL_CORNER_SE   0x21D
+#define JUNGLE_METATILE_WALL_CORNER_SW   0x21E
+#define JUNGLE_METATILE_WALL_CORNER_NW   0x220
+#define JUNGLE_METATILE_WALL_CORNER_NE   0x21F
+#define JUNGLE_METATILE_SLIVER_VERT      0x20C
+#define JUNGLE_METATILE_SLIVER_HORZ      0x20A
+#define JUNGLE_METATILE_SLIVER_VERT_TOP  0x210
+#define JUNGLE_METATILE_SLIVER_VERT_BOT  0x214
+#define JUNGLE_METATILE_SLIVER_HORZ_L    0x211
+#define JUNGLE_METATILE_SLIVER_HORZ_R    0x213
+#define JUNGLE_METATILE_SLIVER_ISOLATED  0x20D
 
-// Long grass is the jungle's, not the woods'. 0x208 is the only
-// MB_LONG_GRASS_SOUTH_EDGE metatile in the game and it lives here; vanilla puts
-// long grass directly above it in 272 of 272 placements.
+// Wall Alt 2, five variants of specific wall cases, paired to the case each one
+// varies by its position in the sheet's legend. FREE: the walls need 14 colours
+// and the walls plus these need 14. Wall Alt 1 is the flowered set and would
+// have pushed the slot to 17, over the 4bpp limit, so it is not imported.
+#define JUNGLE_METATILE_WALL_ALT_NORTH_M 0x22F  // varies 0x201
+#define JUNGLE_METATILE_WALL_ALT_INT_L   0x230  // varies 0x203
+#define JUNGLE_METATILE_WALL_ALT_INT_M   0x231  // varies 0x204
+#define JUNGLE_METATILE_WALL_ALT_INT_R   0x232  // varies 0x205
+#define JUNGLE_METATILE_WALL_ALT_FACE_M  0x233  // varies 0x207
+
+// Ground Alt 1 and 2, one cell each, scattered over the dirt. Ground plus both
+// of these is EXACTLY 15 colours - the 4bpp limit with no headroom left.
+#define JUNGLE_METATILE_FLOOR_ALT_1      0x263
+#define JUNGLE_METATILE_FLOOR_ALT_2      0x264
+
+// Long grass stays PRIMARY and stays vanilla's - it is the encounter surface,
+// and moving it is a separate job to swapping the art around it.
+//
+// THE FRINGE IS GONE. 0x208 was the only MB_LONG_GRASS_SOUTH_EDGE metatile in
+// the game and it lived in gTileset_Fortree, which this theme no longer loads;
+// under the new secondary that id is a foliage wall face. The patch layer draws
+// plain long grass on its bottom row instead, so a stand of grass now ends on a
+// hard edge - and GAINS the row of encounters the fringe used to cost, since
+// the fringe carried none.
+//
+// Recolouring the grass to sit better on dirt is NOT free, which is worth
+// knowing before trying: 0x015 is gTileset_General's, whose palettes are shared
+// with every theme in the game. The escape is Ever Grande's - draw an encounter
+// surface into the theme's OWN secondary, where the palette is its own.
 #define JUNGLE_METATILE_LONG_GRASS       0x015  // MB_LONG_GRASS
-#define JUNGLE_METATILE_LONG_GRASS_S     0x208  // the fringe row, no encounters
 
 // Puddles, a 3x3 region autotile in the PRIMARY tileset at base 0x0C8 with a
 // stride of 8. Every piece is MB_PUDDLE, which is TILE_FLAG_UNUSED - walkable,
@@ -353,10 +405,13 @@
 #define JUNGLE_METATILE_PUDDLE_S         0x0D9
 #define JUNGLE_METATILE_PUDDLE_SE        0x0DA
 
-// Fortree's wooden ladder. The stairs hook matches on metatile id rather than
-// behaviour, so this only has to read as a way down - and a rope ladder through
-// the canopy is exactly right for the treehouse town's route.
-#define JUNGLE_METATILE_STAIRS           0x245
+// WAS Fortree's wooden ladder at 0x245, which was exactly right for a treehouse
+// town's route and is not available any more - it was the theme's other Fortree
+// id, and 0x245 is a patch of dirt under the new secondary. gTileset_General's
+// warp instead, the same one Fiery Path and Lapis Cave fall back to: a PRIMARY
+// id, so it survives any secondary. Grey rock in a jungle is the piece that
+// does not belong, and it is the same debt Lapis carries.
+#define JUNGLE_METATILE_STAIRS           0x0A7
 
 // gTileset_Mossdeep, the sea routes out of Lilycove that lead to Tate and
 // Liza's city. The first theme the player crosses SURFING rather than walking.

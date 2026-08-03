@@ -323,9 +323,13 @@ static const struct RoguePatchLayer sJunglePatches[] =
             [PATCH_W]       = JUNGLE_METATILE_LONG_GRASS,
             [PATCH_MID]     = JUNGLE_METATILE_LONG_GRASS,
             [PATCH_E]       = JUNGLE_METATILE_LONG_GRASS,
-            [PATCH_SW]      = JUNGLE_METATILE_LONG_GRASS_S,
-            [PATCH_S]       = JUNGLE_METATILE_LONG_GRASS_S,
-            [PATCH_SE]      = JUNGLE_METATILE_LONG_GRASS_S,
+            // Plain grass, not the fringe: the fringe was gTileset_Fortree's
+            // and this theme does not load it any more. See the header. The
+            // bottom row is a hard edge now and carries encounters, which the
+            // fringe did not.
+            [PATCH_SW]      = JUNGLE_METATILE_LONG_GRASS,
+            [PATCH_S]       = JUNGLE_METATILE_LONG_GRASS,
+            [PATCH_SE]      = JUNGLE_METATILE_LONG_GRASS,
             [PATCH_NW_WALL] = JUNGLE_METATILE_LONG_GRASS,
             [PATCH_N_WALL]  = JUNGLE_METATILE_LONG_GRASS,
             [PATCH_NE_WALL] = JUNGLE_METATILE_LONG_GRASS,
@@ -334,34 +338,45 @@ static const struct RoguePatchLayer sJunglePatches[] =
         // speckled. This is the theme's only encounter surface.
         .blobs = 6, .radius = 8,
     },
-    {
-        .tile =
-        {
-            [PATCH_NW]      = JUNGLE_METATILE_PUDDLE_NW,
-            [PATCH_N]       = JUNGLE_METATILE_PUDDLE_N,
-            [PATCH_NE]      = JUNGLE_METATILE_PUDDLE_NE,
-            [PATCH_W]       = JUNGLE_METATILE_PUDDLE_W,
-            [PATCH_MID]     = JUNGLE_METATILE_PUDDLE_MID,
-            [PATCH_E]       = JUNGLE_METATILE_PUDDLE_E,
-            [PATCH_SW]      = JUNGLE_METATILE_PUDDLE_SW,
-            [PATCH_S]       = JUNGLE_METATILE_PUDDLE_S,
-            [PATCH_SE]      = JUNGLE_METATILE_PUDDLE_SE,
-            // No wall-adjacent variant exists, so the ordinary top edge serves.
-            [PATCH_NW_WALL] = JUNGLE_METATILE_PUDDLE_NW,
-            [PATCH_N_WALL]  = JUNGLE_METATILE_PUDDLE_N,
-            [PATCH_NE_WALL] = JUNGLE_METATILE_PUDDLE_NE,
-        },
-        // Many and small: puddles, not lakes.
-        .blobs = 10, .radius = 3,
-    },
+    // THE PUDDLE LAYER IS GONE, and this is the reason rather than an oversight.
+    //
+    // 0x0C8-0x0DA is a 3x3 region autotile in gTileset_General, so it survived
+    // the tileset swap and still resolves - but its EIGHT edge pieces are drawn
+    // as a shore against green route grass, and its centre is the only piece
+    // that is purely water. Painted on dirt, every puddle came out ringed in a
+    // pale mint halo that reads as a rendering fault rather than as a bank.
+    // Measured on the mock before it was pulled, not guessed from the ids.
+    //
+    // This is the same trap as borrowed wall art carrying the donor's floor
+    // (ROGUELIKE.md section 5), in its region-autotile form: an autotile's EDGES
+    // encode what the art expects to sit in, and swapping what it sits in
+    // invalidates all of them while leaving the ids perfectly valid.
+    //
+    // The sheet's own water is the replacement. It is not imported yet because
+    // it ships as two columns at two animation rates - the water at 14 frames
+    // and a 98%-transparent Sparkle overlay at 6 - which needs top-layer
+    // compositing and a tileset animation callback that the importer does not
+    // write. Until then the jungle is dry, which is better than visibly wrong.
 };
 
-// The canopy's two body variants and two base variants are interchangeable, so
-// decor is what scatters them. Rarity 2 gets close to vanilla's even 50/50 mix.
+// Was two entries scattering vanilla canopy variants at rarity 2, a near 50/50
+// mix. The imported sheet has more to work with: five wall variants, each one
+// varying a SPECIFIC wall case rather than the mass as a whole, plus two
+// variants of the dirt floor.
+//
+// The pairing is not a judgement call - import_tile_sheet.py reads it out of
+// the sheet, because an Alt cell sits at the same legend position as the case
+// it varies. Getting it wrong by hand would put a north-edge variant on an
+// interior block, which reads as a hole in the foliage.
 static const struct RogueDecor sJungleDecor[] =
 {
-    { JUNGLE_METATILE_CANOPY,      JUNGLE_METATILE_CANOPY_ALT },
-    { JUNGLE_METATILE_CANOPY_BASE, JUNGLE_METATILE_CANOPY_BASE_ALT },
+    { JUNGLE_METATILE_WALL_NORTH_M,    JUNGLE_METATILE_WALL_ALT_NORTH_M },
+    { JUNGLE_METATILE_WALL_INTERIOR_L, JUNGLE_METATILE_WALL_ALT_INT_L },
+    { JUNGLE_METATILE_WALL_INTERIOR_M, JUNGLE_METATILE_WALL_ALT_INT_M },
+    { JUNGLE_METATILE_WALL_INTERIOR_R, JUNGLE_METATILE_WALL_ALT_INT_R },
+    { JUNGLE_METATILE_WALL_FACE_M,     JUNGLE_METATILE_WALL_ALT_FACE_M },
+    { JUNGLE_METATILE_FLOOR,           JUNGLE_METATILE_FLOOR_ALT_1 },
+    { JUNGLE_METATILE_FLOOR,           JUNGLE_METATILE_FLOOR_ALT_2 },
 };
 
 // The seafloor. Vanilla puts only three species underwater - Clamperl,
@@ -847,46 +862,52 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .roomMax = 13,
         .corridorWidth = 3,
 
-        .floor = JUNGLE_METATILE_GRASS,
+        .floor = JUNGLE_METATILE_FLOOR,
         // Encounters come from the long grass layer, not the ground, the same
-        // way they do in the woods. Plain grass is MB_NORMAL and safe to cross.
+        // way they do in the woods. The dirt is MB_NORMAL and safe to cross -
+        // unchanged from when it was plain green grass, and deliberately so.
+        // Swapping the art is not licence to move where wild battles fire.
         .tallGrass = 0,
         .longGrass = JUNGLE_METATILE_LONG_GRASS,
         .stairsDown = JUNGLE_METATILE_STAIRS,
         .stairsUp = JUNGLE_METATILE_STAIRS,
+        // Twenty slots where there were two. The sheet's legend supplied every
+        // one at full score, so a wall mass has faces, corners and slivers
+        // instead of being an undifferentiated block of leaves.
         .wall =
         {
-            // One edge case only. Every slot whose south neighbour is floor
-            // gets the base row; all the rest are just more canopy.
-            [WALL_FACE_LEFT]      = JUNGLE_METATILE_CANOPY_BASE,
-            [WALL_FACE_MID]       = JUNGLE_METATILE_CANOPY_BASE,
-            [WALL_FACE_RIGHT]     = JUNGLE_METATILE_CANOPY_BASE,
-            [WALL_SLIVER_HORZ]    = JUNGLE_METATILE_CANOPY_BASE,
-            [WALL_SLIVER_HORZ_L]  = JUNGLE_METATILE_CANOPY_BASE,
-            [WALL_SLIVER_HORZ_R]  = JUNGLE_METATILE_CANOPY_BASE,
-            [WALL_SLIVER_VERT_BOT]= JUNGLE_METATILE_CANOPY_BASE,
-            [WALL_SLIVER_ISOLATED]= JUNGLE_METATILE_CANOPY_BASE,
-
-            [WALL_INTERIOR_LEFT]  = JUNGLE_METATILE_CANOPY,
-            [WALL_INTERIOR_MID]   = JUNGLE_METATILE_CANOPY,
-            [WALL_INTERIOR_RIGHT] = JUNGLE_METATILE_CANOPY,
-            [WALL_NORTH_LEFT]     = JUNGLE_METATILE_CANOPY,
-            [WALL_NORTH_MID]      = JUNGLE_METATILE_CANOPY,
-            [WALL_NORTH_RIGHT]    = JUNGLE_METATILE_CANOPY,
-            [WALL_CORNER_OPEN_SE] = JUNGLE_METATILE_CANOPY,
-            [WALL_CORNER_OPEN_SW] = JUNGLE_METATILE_CANOPY,
-            [WALL_CORNER_OPEN_NW] = JUNGLE_METATILE_CANOPY,
-            [WALL_CORNER_OPEN_NE] = JUNGLE_METATILE_CANOPY,
-            [WALL_SLIVER_VERT]    = JUNGLE_METATILE_CANOPY,
-            [WALL_SLIVER_VERT_TOP]= JUNGLE_METATILE_CANOPY,
+            [WALL_INTERIOR_LEFT]  = JUNGLE_METATILE_WALL_INTERIOR_L,
+            [WALL_INTERIOR_MID]   = JUNGLE_METATILE_WALL_INTERIOR_M,
+            [WALL_INTERIOR_RIGHT] = JUNGLE_METATILE_WALL_INTERIOR_R,
+            [WALL_FACE_LEFT]      = JUNGLE_METATILE_WALL_FACE_L,
+            [WALL_FACE_MID]       = JUNGLE_METATILE_WALL_FACE_M,
+            [WALL_FACE_RIGHT]     = JUNGLE_METATILE_WALL_FACE_R,
+            [WALL_NORTH_LEFT]     = JUNGLE_METATILE_WALL_NORTH_L,
+            [WALL_NORTH_MID]      = JUNGLE_METATILE_WALL_NORTH_M,
+            [WALL_NORTH_RIGHT]    = JUNGLE_METATILE_WALL_NORTH_R,
+            [WALL_CORNER_OPEN_SE] = JUNGLE_METATILE_WALL_CORNER_SE,
+            [WALL_CORNER_OPEN_SW] = JUNGLE_METATILE_WALL_CORNER_SW,
+            [WALL_CORNER_OPEN_NW] = JUNGLE_METATILE_WALL_CORNER_NW,
+            [WALL_CORNER_OPEN_NE] = JUNGLE_METATILE_WALL_CORNER_NE,
+            [WALL_SLIVER_VERT]    = JUNGLE_METATILE_SLIVER_VERT,
+            [WALL_SLIVER_HORZ]    = JUNGLE_METATILE_SLIVER_HORZ,
+            [WALL_SLIVER_VERT_TOP]= JUNGLE_METATILE_SLIVER_VERT_TOP,
+            [WALL_SLIVER_VERT_BOT]= JUNGLE_METATILE_SLIVER_VERT_BOT,
+            [WALL_SLIVER_HORZ_L]  = JUNGLE_METATILE_SLIVER_HORZ_L,
+            [WALL_SLIVER_HORZ_R]  = JUNGLE_METATILE_SLIVER_HORZ_R,
+            [WALL_SLIVER_ISOLATED]= JUNGLE_METATILE_SLIVER_ISOLATED,
         },
 
         .patches = sJunglePatches,
         .patchCount = ARRAY_COUNT(sJunglePatches),
 
+        // Rarity 4 rather than the old 2. The old pair were interchangeable
+        // halves of a 50/50 mix, so half of everything was meant to flip; these
+        // are variants of a fill that already reads, and seven entries at 1-in-2
+        // would leave almost nothing plain.
         .decor = sJungleDecor,
         .decorCount = ARRAY_COUNT(sJungleDecor),
-        .decorRarity = 2,   // texture scatter, not ornament
+        .decorRarity = 4,
 
         .species = sJungleSpecies,
         .speciesCount = ARRAY_COUNT(sJungleSpecies),

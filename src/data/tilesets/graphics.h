@@ -1762,6 +1762,32 @@ const u16 gTilesetPalettes_RogueLapisCave[][16] =
     INCGFX_U16("data/tilesets/secondary/rogue_lapis_cave/palettes/15.pal", ".gbapal"),
 };
 
+// Howling Jungle, Winona's, imported the same way. Palettes 06 (walls plus
+// their variants) and 07 (dirt plus its two) carry colour; there is no 08
+// because the sheet's water is not imported yet - it ships as two columns at
+// two animation rates and needs top-layer compositing this importer does not do.
+const u32 gTilesetTiles_RogueHowlingJungle[] = INCGFX_U32("data/tilesets/secondary/rogue_howling_jungle/tiles.png", ".4bpp.fastSmol", "-num_tiles 190 -Wnum_tiles");
+
+const u16 gTilesetPalettes_RogueHowlingJungle[][16] =
+{
+    INCGFX_U16("data/tilesets/secondary/rogue_howling_jungle/palettes/00.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_howling_jungle/palettes/01.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_howling_jungle/palettes/02.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_howling_jungle/palettes/03.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_howling_jungle/palettes/04.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_howling_jungle/palettes/05.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_howling_jungle/palettes/06.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_howling_jungle/palettes/07.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_howling_jungle/palettes/08.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_howling_jungle/palettes/09.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_howling_jungle/palettes/10.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_howling_jungle/palettes/11.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_howling_jungle/palettes/12.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_howling_jungle/palettes/13.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_howling_jungle/palettes/14.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_howling_jungle/palettes/15.pal", ".gbapal"),
+};
+
 #if IS_FRLG
 
 const u32 gTilesetTiles_Building_Frlg[] = INCGFX_U32("data/tilesets/primary/building_frlg/tiles.png", ".4bpp.smol");

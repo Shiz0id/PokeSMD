@@ -53,6 +53,7 @@ NUM_PALS_TOTAL = 13
 SHEETS = {
     'lapis_cave': dict(source='tools/rogue/sheets/lapis_cave.png'),
     'mt_freeze': dict(source='tools/rogue/sheets/mt_freeze.png'),
+    'howling_jungle': dict(source='tools/rogue/sheets/howling_jungle.png'),
 }
 
 SHEET_GEOMETRY = dict(
@@ -98,6 +99,49 @@ TILESETS = {
             # Never painted by the theme - kept because it is what the sheet
             # has, and dropping it would move every metatile id after it.
             dict(name='water', sheet='lapis_cave', col=COL['water'], pal=8, attr=0x0008),
+        ]),
+
+    # Winona's. The jungle was built almost entirely out of gTileset_General -
+    # plain grass, vanilla canopy, vanilla puddles - and read as a Route rather
+    # than a jungle because that is literally what its art is. Its whole wall
+    # table was TWO metatiles, canopy and canopy-with-a-base-row, so a wall mass
+    # had no silhouette at all.
+    #
+    # Water is deliberately NOT imported yet. The sheet ships it as two columns
+    # at two animation rates - the water at 14 frames and a separate, 98%
+    # transparent Sparkle overlay at 6 - which needs top-layer compositing and
+    # tileset animation that this importer does not do. Walls and ground first.
+    'jungle': dict(
+        out='data/tilesets/secondary/rogue_howling_jungle',
+        symbol='RogueHowlingJungle',
+        prefix='JUNGLE',
+        blocks=[
+            # 0x0008 is cave 0x201: MB_CAVE, layer NORMAL.
+            dict(name='wall', sheet='howling_jungle', col=COL['walls'], pal=6, attr=0x0008),
+            # Wall Alt 2 costs NOTHING: walls alone need 14 colours and walls
+            # plus this need 14, so it is scatter for free. Wall Alt 1 is the
+            # flowered set and needs 17 - over the 4bpp limit - so it is left
+            # out rather than given a slot of its own for five cells.
+            dict(name='walldecor', sheet='howling_jungle', col=COL['wall_alt2'],
+                 pal=6, attr=0x0008, varies='wall'),
+            # 0x0000 is General 0x001, the plain route grass this floor
+            # replaces: MB_NORMAL, so it carries NO encounters. That is the
+            # jungle's design and predates the art swap - encounters come from
+            # the long grass layer, the way they do in the woods, and the ground
+            # is somewhere safe to cross. The cave's 0x0008 would have been the
+            # obvious copy-paste and would have silently turned wild battles on
+            # across the whole floor.
+            dict(name='ground', sheet='howling_jungle', col=COL['ground'], pal=7, attr=0x0000),
+            # Ground plus both variants is EXACTLY 15 colours - the 4bpp limit,
+            # with no headroom at all. Anything else wanting slot 7 has to
+            # displace one of these. They take the ground's attribute, not a
+            # bare one, for the same reason Lapis' decor takes its ground's: a
+            # decor block that disagrees with the floor it replaces is a patch
+            # of different rules wearing the same paint.
+            dict(name='decor1', sheet='howling_jungle', col=COL['ground_alt1'],
+                 pal=7, attr=0x0000, varies='ground'),
+            dict(name='decor2', sheet='howling_jungle', col=COL['ground_alt2'],
+                 pal=7, attr=0x0000, varies='ground'),
         ]),
 }
 
@@ -318,11 +362,32 @@ def convert(ts, verbose=True):
             floor_li = li
             break
 
-    decor = [(mt['block'], li) for li, mt in enumerate(metatiles)
-             if mt['block'].startswith('decor')]
+    # A block declaring `varies` is a column of alternates for another block,
+    # and the sheet pairs them BY CELL POSITION: an alt at (row, k) is a variant
+    # of whatever the base block draws at the same (row, k), because that is the
+    # same legend mask - the same autotile case. Pairing on position rather than
+    # on order is what makes an Alt column with holes in it safe.
+    #
+    # This is what feeds struct RogueDecor, whose first field is the metatile to
+    # look for and whose rest are what to draw instead.
+    where = {}
+    for li, mt in enumerate(metatiles):
+        where[(mt['block'], mt['row'], mt['k'])] = li
+    decor = []
+    for b in blocks:
+        if 'varies' not in b:
+            continue
+        for (r, k, _) in b['cells']:
+            base = where.get((b['varies'], r, k))
+            alt = where[(b['name'], r, k)]
+            if base is None:
+                print(f'  WARNING: {b["name"]} at row {r} k {k} varies nothing '
+                      f'in {b["varies"]} - dropped')
+                continue
+            decor.append((b['name'], base, alt))
 
-    return dict(blocks=blocks, palettes=palettes, bank=bank,
-                metatiles=metatiles, slotmap=slotmap, floor=floor_li, decor=decor)
+    return dict(blocks=blocks, palettes=palettes, bank=bank, metatiles=metatiles,
+                slotmap=slotmap, floor=floor_li, decor=decor)
 
 
 # ---------------------------------------------------------------- writing
@@ -401,8 +466,13 @@ def print_decls(spec, conv, ntiles):
     print(f'#define {p}_METATILE_FLOOR{"":<12} 0x{base + conv["floor"]:03X}')
     for slot, li in conv['slotmap'].items():
         print(f'#define {p}_METATILE_{slot:<16} 0x{base + li:03X}')
-    for i, (name, li) in enumerate(conv['decor'], 1):
-        print(f'#define {p}_METATILE_DECOR_{i}{"":<10} 0x{base + li:03X}')
+    for i, (name, _, alt) in enumerate(conv['decor'], 1):
+        print(f'#define {p}_METATILE_DECOR_{i}{"":<10} 0x{base + alt:03X}  // varies '
+              f'0x{base + conv["decor"][i - 1][1]:03X}')
+    if conv['decor']:
+        print('\n// struct RogueDecor entries: { base, replacement }')
+        for name, b, a in conv['decor']:
+            print(f'//   {{ 0x{base + b:03X}, 0x{base + a:03X} }},   // {name}')
 
 
 def main(argv):
@@ -422,8 +492,8 @@ def main(argv):
           + (f'   MISSING: {missing}' if missing else ''))
     print(f'  floor metatile: local {conv["floor"]}'
           if conv['floor'] is not None else '  floor: NOT FOUND')
-    for nm, li in conv['decor']:
-        print(f'  {nm}: local {li}')
+    for nm, b, a in conv['decor']:
+        print(f'  {nm}: local {a} varies local {b}')
 
     if '--write' in argv:
         if ntiles > 512:

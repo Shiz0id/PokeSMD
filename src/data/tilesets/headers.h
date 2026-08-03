@@ -913,6 +913,22 @@ const struct Tileset gTileset_RogueLapisCave =
     .callback = NULL,
 };
 
+// Howling Jungle, replacing gTileset_Fortree on Winona's dungeon. .callback is
+// NULL for the same reason Lapis' is - the only animated terrain either sheet
+// has is its water, and this theme does not paint it yet. That callback is what
+// will have to exist when it does, and this sheet needs TWO rates: 14 frames
+// for the water and 6 for the sparkle layer over it.
+const struct Tileset gTileset_RogueHowlingJungle =
+{
+    .isCompressed = TRUE,
+    .isSecondary = TRUE,
+    .tiles = gTilesetTiles_RogueHowlingJungle,
+    .palettes = gTilesetPalettes_RogueHowlingJungle,
+    .metatiles = gMetatiles_RogueHowlingJungle,
+    .metatileAttributes = gMetatileAttributes_RogueHowlingJungle,
+    .callback = NULL,
+};
+
 #else
 
 // FRLG tilesets
