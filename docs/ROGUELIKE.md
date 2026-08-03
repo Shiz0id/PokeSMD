@@ -55,6 +55,13 @@ Losing wipes the run; so does winning, which is the point.
   walls over Mt. Freeze's snow floor, with that sheet's two ground variants
   scattered over it as decor. It is still snowing on her, since weather belongs
   to the map rather than the tileset. Cycling starts at dungeon 12, Wallace.
+- **The jungle is the deepest import.** Winona's has foliage walls and a dirt
+  floor from the Howling Jungle sheet, that sheet's water laid as pools the
+  player **reflects in** (`MB_PUDDLE` — reflective, walkable, and off the water
+  encounter branch), and long grass **grafted** from vanilla and recoloured into
+  its own palettes, so the blades match the foliage above them and the south
+  fringe ends on soil. Its encounters still come only from the grass, exactly as
+  they did before any of the art changed.
 - The ocean is crossed **surfing** and the seafloor **diving**. Surfing is a
   property of the floor metatile; diving is a property of the **map**, which is
   why underwater is the one theme with a map of its own — see §7.
@@ -953,6 +960,56 @@ Three things that fall out of composing rather than importing:
   on across the whole floor **as a side effect of changing what the floor looks
   like** — a gameplay change disguised as an art change, and nothing would have
   flagged it.
+- **`over` flattens a block onto another's plain fill before any colour is
+  read.** These sheets draw a terrain's edge cells with transparent corners and
+  say so outright — *"When Ground is adjacent to Water, treat Water as though it
+  were a Ground tile."* A metatile could do that with its top layer and
+  eventually should; flattening bakes the composite, so the jungle's water can
+  only ever border dirt, but it stays one layer with no question about whether
+  the player walks over or under it.
+
+#### A blend cannot be transparent
+
+Worth its own heading because it was invisible until a terrain's own palette
+happened to approach the sheet's background, and it was latent in **every**
+import before that.
+
+The importer decided transparency by testing the **downscaled** 16×16 for the
+background colour. BOX-averaging two of the jungle water's dark teals —
+`(0,99,107)` and `(8,115,140)` — lands on `(4,107,123)`, which is exactly 30
+from the sheet's own `(0,128,128)` background and so was read as a hole. Every
+water bank came out with a dotted line of **black pixels**, from art that has no
+transparency there at all.
+
+**Transparency is not a colour, so a blend of two opaque colours cannot be
+one.** The mask is computed at source resolution and downscaled by majority vote
+over the area each output pixel covers. Re-running Lapis afterwards gives the
+same 285 tiles, the same 143 metatiles and the same floor id — and its painted
+blocks now carry zero transparent pixels, where before some were speckled the
+same way and nobody had looked.
+
+#### Grafting: vanilla pixels, this tileset's colours
+
+A `graft` block is art on no sheet, assembled from vanilla tiles and given a
+palette of the tileset it is joining. The jungle's long grass is the case, and
+it cost **no pixel art at all**.
+
+It works because of something checked rather than assumed: in vanilla's long
+grass **the blades never use a ground palette index and the ground never uses a
+blade one** — blades are indices 1–4, ground is 13–15 — so the two recolour
+independently. The blades take their ramp from this tileset's *wall* palette,
+which makes the grass the same greens as the foliage above it; the ground takes
+its ramp from the *dirt* palette.
+
+That is what buys the fringe back. `0x208` was the only
+`MB_LONG_GRASS_SOUTH_EDGE` metatile in the game, it was Fortree's, and its lower
+band is drawn as route grass — so leaving Fortree lost it, and it would have
+been wrong on dirt even if kept. Recoloured, the same pixels end a stand of
+grass on shaded soil.
+
+**Map ranks, not nearest colours.** What has to survive a recolour is the
+*order*: a blade ramp that stops descending stops reading as blades. Grafts run
+after the sheet palettes exist, because those are what they draw from.
 
 The swap also improved the floor: Mt. Freeze's snow measures a **seam of 5.0
 horizontal and 6.2 vertical against the Lapis ground's 8.2 and 12.0**, so the
@@ -1623,24 +1680,18 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    wall merges into it. The brick is secondary palette 9 and the flowers are 10
    and 11, so palette 9 can be shifted cooler without touching a flower pixel —
    it also carries the round shrub `0x220`, so that is not free.
-1f. **The jungle is dry, and the sheet's water is the reason the importer is not
-   finished.** Howling Jungle ships water as TWO columns at TWO animation rates
-   — the water at 14 frames and a separate **98%-transparent Sparkle overlay** at
-   6. That needs three things the importer does not do: a fill test that accepts
-   a mostly-transparent cell (today's rejects them, correctly, as empty), use of
-   the metatile's **top layer**, which it currently writes as zeros, and a
-   tileset animation callback. Mind that a top layer under
-   `METATILE_LAYER_TYPE_NORMAL` draws *over* the player — fine for scenery,
-   wrong for anything surfed. Painting real surfable water would also make the
-   jungle the first **two-branch** theme, since its long grass is a land
-   encounter surface; see §3.
-1g. **The jungle's long grass is still vanilla's, and still primary.** Recolouring
-   it to sit on dirt is not free — `0x015` is `gTileset_General`'s, whose
-   palettes are shared with every theme. Ever Grande's answer is the way in:
-   draw the encounter surface into the theme's own secondary. Its south fringe
-   is already gone, since the only `MB_LONG_GRASS_SOUTH_EDGE` metatile in the
-   game was Fortree's; stands of grass end on a hard edge that at least carries
-   the encounters the fringe did not.
+1f. **The jungle's water is static, and its Sparkle layer is unimported.** The
+   water itself is in and reflective, but the sheet animates it by **cycling the
+   palette** rather than the tiles, and ships a separate **98%-transparent
+   Sparkle overlay** at a second rate (6 frames against the water's 14). Two
+   things are missing for either: a fill test that accepts a mostly-transparent
+   cell — today's rejects them, correctly, as empty — and use of the metatile's
+   **top layer**, which the importer writes as zeros. Mind that a top layer
+   under `METATILE_LAYER_TYPE_NORMAL` draws *over* the player: fine for
+   scenery, wrong for anything walked on. Painting real **surfable** water would
+   also make the jungle the first **two-branch** theme, since its long grass is
+   a land encounter surface; `MB_PUDDLE` sidesteps that entirely, which is why
+   it is what the water carries. See §3.
 1d. **Lapis Cave has borrowed stairs.** Its descent is `gTileset_General`'s warp
    `0x0A7` — a primary id, so it works under any pair, and grey rock on an ice
    floor is the one piece of the theme that does not belong. Neither sheet it is

@@ -75,6 +75,15 @@ renumbers every id after it; and a block declaring `varies` is a column of
 alternates paired to the base block **by legend position**, which is what emits
 the `RogueDecor` entries.
 
+Two more block keys. **`autotile`** gives any block the wall block's nine-mask
+treatment, which is what a water body laid as a patch region needs. **`over`**
+flattens a block onto another's plain fill before any colour is read, because
+these sheets draw edge cells with transparent corners meant to sit on the
+terrain they border. And a **`graft`** block is art on no sheet at all,
+assembled from vanilla tiles and recoloured into this tileset's palettes — the
+jungle's long grass, which cost no pixel art. Grafts run after the sheet
+palettes exist, since those are what they draw their colours from.
+
 **`attr` is a design decision, not boilerplate.** It is the behaviour copied from
 a vanilla donor, and the ground default (`0x0008`, the cave's `MB_CAVE`) carries
 wild encounters. The jungle's ground is `0x0000` because that theme's encounters
