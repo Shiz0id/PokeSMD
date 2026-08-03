@@ -364,6 +364,71 @@ static const u16 sUnderwaterSpecies[] =
     SPECIES_CRAWDAUNT, SPECIES_STARMIE,  SPECIES_HUNTAIL,  SPECIES_GOREBYSS,
 };
 
+// The Elite Four's pools, each the type its member specialises in.
+//
+// EIGHT entries, not sixteen like the gym pools, and that is deliberate.
+// BuildWildEncounterTable clamps `tiers` to speciesCount and then takes the top
+// DUNGEON_ENCOUNTER_WINDOW (8) of the ladder, so on any floor past about 30
+// every entry beyond the last eight has already retired. These themes are only
+// ever reached at floor 81 and later. Sixteen would mean writing eight species
+// that can never appear.
+//
+// Still sorted weakest to strongest, because the window is a window: the
+// ordering is what the tier machinery reads, and it stays correct if these
+// pools are ever pointed at a shallower dungeon.
+//
+// Kept to Gen 1-3, like every other pool here, and kept off the pseudo
+// legendaries. Tyranitar, Dragonite and Salamence are all type-appropriate and
+// all sit at 600 BST; at one-of-eight they would be a fifth of the encounters
+// on their floor rather than a rare, and Drake's ace would stop meaning
+// anything. Their pre-evolutions are absent for the same reason in reverse -
+// there is no level 53 Bagon.
+
+// Sidney, Dark. Mightyena through Houndoom is his own party plus the rest of
+// Hoenn's Dark types; Sneasel and Houndoom come from Gen 2, which is where the
+// type's depth is.
+static const u16 sSidneySpecies[] =
+{
+    SPECIES_MIGHTYENA, SPECIES_SNEASEL,  SPECIES_SHARPEDO, SPECIES_ABSOL,
+    SPECIES_CRAWDAUNT, SPECIES_CACTURNE, SPECIES_SHIFTRY,  SPECIES_HOUNDOOM,
+};
+
+// Phoebe, Ghost. SEVEN, because Gen 1-3 has only ten Ghosts in total and three
+// of them - Gastly, Shuppet, Duskull - are too weak to belong at level 49.
+// Padding it to eight would mean reaching outside the type or outside the
+// generation, and neither is worth one slot. Shedinja is a free catch at this
+// depth and is in anyway: it is one of the most distinctive things in the
+// generation and it is exactly what a Ghost floor is for.
+static const u16 sPhoebeSpecies[] =
+{
+    SPECIES_SHEDINJA, SPECIES_SABLEYE,  SPECIES_HAUNTER, SPECIES_MISDREAVUS,
+    SPECIES_BANETTE,  SPECIES_DUSCLOPS, SPECIES_GENGAR,
+};
+
+// Glacia, Ice. Sealeo, Glalie and Walrein are her own three. This is the pool
+// that actually interacts with the floor: MAP_ROGUE_DUNGEON_SNOW puts
+// B_WEATHER_SNOW up in every battle, so all eight of these get 1.5x Defense.
+static const u16 sGlaciaSpecies[] =
+{
+    SPECIES_SEALEO, SPECIES_PILOSWINE, SPECIES_JYNX,   SPECIES_DEWGONG,
+    SPECIES_GLALIE, SPECIES_CLOYSTER,  SPECIES_WALREIN, SPECIES_LAPRAS,
+};
+
+// Drake, Dragon. SIX, the thinnest pool here, and it is the whole of what Gen
+// 1-3 offers once the pseudo legendaries are out: Dragon was deliberately rare
+// until Gen 4. Everything else in the neighbourhood only looks like it belongs -
+// Seadra is pure Water and only becomes Water/Dragon as Kingdra, Swablu is
+// Normal/Flying until it evolves, Trapinch is pure Ground. Checked rather than
+// assumed, because all three read as dragons and none of them are.
+//
+// Six divides the twelve encounter slots exactly, so this floor is the most
+// evenly spread in the run rather than the least varied.
+static const u16 sDrakeSpecies[] =
+{
+    SPECIES_VIBRAVA, SPECIES_DRAGONAIR, SPECIES_SHELGON,
+    SPECIES_ALTARIA, SPECIES_FLYGON,    SPECIES_KINGDRA,
+};
+
 // Seaweed, laid in blobs the way vanilla lays it. Every slot is the same id
 // because the region autotile has nothing to autotile: seaweed is one uniform
 // 2x2 metatile with no edge art at all - 0x201 and 0x281 are the same four
@@ -935,8 +1000,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [WALL_SLIVER_HORZ_R]  = VICTORYROAD_METATILE_SLIVER_HORZ_R,
             [WALL_SLIVER_ISOLATED]= VICTORYROAD_METATILE_SLIVER_ISOLATED,
         },
-        .species = sCaveSpecies,
-        .speciesCount = ARRAY_COUNT(sCaveSpecies),
+        .species = sSidneySpecies,
+        .speciesCount = ARRAY_COUNT(sSidneySpecies),
     },
 
     // Phoebe is the only one with a mapId of its own. Weather lives in the map
@@ -983,13 +1048,22 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [WALL_SLIVER_HORZ_R]  = VICTORYROAD_METATILE_SLIVER_HORZ_R,
             [WALL_SLIVER_ISOLATED]= VICTORYROAD_METATILE_SLIVER_ISOLATED,
         },
-        .species = sCaveSpecies,
-        .speciesCount = ARRAY_COUNT(sCaveSpecies),
+        .species = sPhoebeSpecies,
+        .speciesCount = ARRAY_COUNT(sPhoebeSpecies),
     },
+    // The second theme with a map of its own, for the same reason Phoebe has
+    // one - weather is in the map header, out of reach of the tileset patch.
+    //
+    // Unlike the fog, this one is NOT only cosmetic, and that is intended.
+    // B_OVERWORLD_SNOW is GEN_LATEST, so ArriveInBattle sets B_WEATHER_SNOW
+    // here: every Ice type on the floor gets 1.5x Defense, Blizzard cannot
+    // miss, Weather Ball turns Ice. Gen 9 snow does no chip damage the way hail
+    // would, so it costs the player's team nothing just for being here - but
+    // Glacia's own party is Ice and she fights her boss battle with the buff up.
     [DUNGEON_THEME_VICTORYROAD_GLACIA] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_VRGLACIA,
-        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        .mapId = MAP_ROGUE_DUNGEON_SNOW,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
@@ -1021,8 +1095,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [WALL_SLIVER_HORZ_R]  = VICTORYROAD_METATILE_SLIVER_HORZ_R,
             [WALL_SLIVER_ISOLATED]= VICTORYROAD_METATILE_SLIVER_ISOLATED,
         },
-        .species = sCaveSpecies,
-        .speciesCount = ARRAY_COUNT(sCaveSpecies),
+        .species = sGlaciaSpecies,
+        .speciesCount = ARRAY_COUNT(sGlaciaSpecies),
     },
     [DUNGEON_THEME_VICTORYROAD_DRAKE] =
     {
@@ -1059,8 +1133,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [WALL_SLIVER_HORZ_R]  = VICTORYROAD_METATILE_SLIVER_HORZ_R,
             [WALL_SLIVER_ISOLATED]= VICTORYROAD_METATILE_SLIVER_ISOLATED,
         },
-        .species = sCaveSpecies,
-        .speciesCount = ARRAY_COUNT(sCaveSpecies),
+        .species = sDrakeSpecies,
+        .speciesCount = ARRAY_COUNT(sDrakeSpecies),
     },
 };
 

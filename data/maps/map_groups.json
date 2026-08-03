@@ -1166,6 +1166,7 @@
     "RogueDungeonFloor",
     "RogueDungeonUnderwater",
     "RogueDungeonFog",
+    "RogueDungeonSnow",
     "RogueRestStop"
   ]
 }
