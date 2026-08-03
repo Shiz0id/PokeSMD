@@ -1789,6 +1789,32 @@ const u16 gTilesetPalettes_RogueHowlingJungle[][16] =
     INCGFX_U16("data/tilesets/secondary/rogue_howling_jungle/palettes/15.pal", ".gbapal"),
 };
 
+// Murky Cave, Steven's finale. Palettes 06 (walls plus their six variants),
+// 07 (ground plus its two) and 08 (water) carry colour. 06 and 08 are both
+// REDUCED palettes - the sheet wanted more than fifteen and the importer merged
+// the lowest-error pairs to fit, which it reports when it does it.
+const u32 gTilesetTiles_RogueMurkyCave[] = INCGFX_U32("data/tilesets/secondary/rogue_murky_cave/tiles.png", ".4bpp.fastSmol", "-num_tiles 278 -Wnum_tiles");
+
+const u16 gTilesetPalettes_RogueMurkyCave[][16] =
+{
+    INCGFX_U16("data/tilesets/secondary/rogue_murky_cave/palettes/00.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_murky_cave/palettes/01.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_murky_cave/palettes/02.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_murky_cave/palettes/03.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_murky_cave/palettes/04.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_murky_cave/palettes/05.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_murky_cave/palettes/06.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_murky_cave/palettes/07.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_murky_cave/palettes/08.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_murky_cave/palettes/09.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_murky_cave/palettes/10.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_murky_cave/palettes/11.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_murky_cave/palettes/12.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_murky_cave/palettes/13.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_murky_cave/palettes/14.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_murky_cave/palettes/15.pal", ".gbapal"),
+};
+
 #if IS_FRLG
 
 const u32 gTilesetTiles_Building_Frlg[] = INCGFX_U32("data/tilesets/primary/building_frlg/tiles.png", ".4bpp.smol");

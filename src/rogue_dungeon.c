@@ -531,6 +531,66 @@ static const u16 sEverGrandeSpecies[] =
     SPECIES_JUMPLUFF,   SPECIES_BELLOSSOM, SPECIES_VILEPLUME,
 };
 
+// Steven, Steel, and the deepest floors in the run. EIGHT, like the Elite Four
+// pools, and here that is not a window - dungeon 13 is floors 106-115, where
+// `tiers` has long since clamped to speciesCount, so ALL EIGHT appear on every
+// floor of it. Nothing retires, so every one of these has to belong at the end
+// of a run rather than merely being on the ladder to it.
+//
+// That is most of why the list looks like this. Gen 1-3 has only nine Steel
+// types once the legendaries and Metagross are set aside, so this is nearly all
+// of them and there was no room to drop the two mid-stages: Metang and Lairon
+// are here because the type has nothing else, the same squeeze Phoebe's Ghosts
+// ran into. Mawile is the one cut, at 380 BST against the next weakest's 420.
+//
+// METAGROSS IS ABSENT and it is his ace. Same call as Drake's: 600 BST at
+// one-in-eight would be a fifth of the encounters on his own floor rather than
+// a rare, and beating the champion's signature on the way to him takes the
+// meaning out of meeting it.
+static const u16 sStevenSpecies[] =
+{
+    SPECIES_METANG,     SPECIES_LAIRON,   SPECIES_MAGNETON, SPECIES_FORRETRESS,
+    SPECIES_SKARMORY,   SPECIES_SCIZOR,   SPECIES_STEELIX,  SPECIES_AGGRON,
+};
+
+// Six wall variants and two floor ones, all paired out of the sheet's legend.
+// The wall set is the largest of any theme - this sheet has both Alt columns
+// filled, and neither costs a colour the walls do not already carry.
+static const struct RogueDecor sMurkyDecor[] =
+{
+    { MURKY_METATILE_WALL_NORTH_M,    MURKY_METATILE_WALL_ALT_NORTH_M },
+    { MURKY_METATILE_WALL_INTERIOR_L, MURKY_METATILE_WALL_ALT_INT_L },
+    { MURKY_METATILE_WALL_INTERIOR_M, MURKY_METATILE_WALL_ALT_INT_M },
+    { MURKY_METATILE_WALL_INTERIOR_R, MURKY_METATILE_WALL_ALT_INT_R },
+    { MURKY_METATILE_WALL_FACE_M,     MURKY_METATILE_WALL_ALT_FACE_M },
+    { MURKY_METATILE_WALL_INTERIOR_M, MURKY_METATILE_WALL_ALT_INT_M2 },
+    { MURKY_METATILE_FLOOR,           MURKY_METATILE_FLOOR_ALT_1 },
+    { MURKY_METATILE_FLOOR,           MURKY_METATILE_FLOOR_ALT_2 },
+};
+
+// Pools, the same shape the jungle lays. MB_PUDDLE, so they reflect.
+static const struct RoguePatchLayer sMurkyPatches[] =
+{
+    {
+        .tile =
+        {
+            [PATCH_NW]      = MURKY_METATILE_WATER_NW,
+            [PATCH_N]       = MURKY_METATILE_WATER_N,
+            [PATCH_NE]      = MURKY_METATILE_WATER_NE,
+            [PATCH_W]       = MURKY_METATILE_WATER_W,
+            [PATCH_MID]     = MURKY_METATILE_WATER_MID,
+            [PATCH_E]       = MURKY_METATILE_WATER_E,
+            [PATCH_SW]      = MURKY_METATILE_WATER_SW,
+            [PATCH_S]       = MURKY_METATILE_WATER_S,
+            [PATCH_SE]      = MURKY_METATILE_WATER_SE,
+            [PATCH_NW_WALL] = MURKY_METATILE_WATER_NW,
+            [PATCH_N_WALL]  = MURKY_METATILE_WATER_N,
+            [PATCH_NE_WALL] = MURKY_METATILE_WATER_NE,
+        },
+        .blobs = 10, .radius = 3,
+    },
+};
+
 // Three layers, painted in order so a later one wins.
 //
 // Layer 0 is the short flower beds, MB_UNUSED_05 - encounters and nothing else,
@@ -633,6 +693,11 @@ enum DungeonThemeId
     // Wallace is dungeon 12, so index 12 is his by the same modulo that gives
     // the Elite Four theirs. This is what stops him wrapping back to the woods.
     DUNGEON_THEME_EVERGRANDE,
+    // Steven is dungeon 13, the finale, so index 13 is his by the same modulo.
+    // With this the enum is as long as the run is: fourteen themes against
+    // fourteen dungeons, and NOTHING WRAPS any more. ThemeForFloor's modulo is
+    // now only a bounds guard rather than a routing decision.
+    DUNGEON_THEME_MURKYCAVE,
     DUNGEON_THEME_COUNT
 };
 
@@ -1399,6 +1464,66 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .species = sEverGrandeSpecies,
         .speciesCount = ARRAY_COUNT(sEverGrandeSpecies),
     },
+    // Steven's, dungeon 13, and the last theme the run needed. Everything
+    // before this either had a dungeon of its own or was borrowing one; with
+    // this the enum is as long as the run and nothing wraps.
+    [DUNGEON_THEME_MURKYCAVE] =
+    {
+        .layoutId = LAYOUT_ROGUE_DUNGEON_MURKYCAVE,
+        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        .generator = DUNGEON_GEN_CAVE,
+        .elevationFloor = DUNGEON_ELEVATION_FLOOR,
+        .elevationWall = DUNGEON_ELEVATION_WALL,
+
+        // The cave's own shape, not the jungle's openness. The finale is ten
+        // floors of carved corridor rather than a plateau, and a tighter carve
+        // is what makes the pillared wall art readable - a wall mass that is
+        // mostly interior shows none of its edges.
+        .floor = MURKY_METATILE_FLOOR,
+        // A cave, so encounters come from the floor itself. There is no grass
+        // layer here to take that job the way the woods and jungle have.
+        .tallGrass = 0,
+        .longGrass = 0,
+        .stairsDown = MURKY_METATILE_STAIRS,
+        .stairsUp = MURKY_METATILE_STAIRS,
+        .wall =
+        {
+            [WALL_INTERIOR_LEFT]  = MURKY_METATILE_WALL_INTERIOR_L,
+            [WALL_INTERIOR_MID]   = MURKY_METATILE_WALL_INTERIOR_M,
+            [WALL_INTERIOR_RIGHT] = MURKY_METATILE_WALL_INTERIOR_R,
+            [WALL_FACE_LEFT]      = MURKY_METATILE_WALL_FACE_L,
+            [WALL_FACE_MID]       = MURKY_METATILE_WALL_FACE_M,
+            [WALL_FACE_RIGHT]     = MURKY_METATILE_WALL_FACE_R,
+            [WALL_NORTH_LEFT]     = MURKY_METATILE_WALL_NORTH_L,
+            [WALL_NORTH_MID]      = MURKY_METATILE_WALL_NORTH_M,
+            [WALL_NORTH_RIGHT]    = MURKY_METATILE_WALL_NORTH_R,
+            [WALL_CORNER_OPEN_SE] = MURKY_METATILE_WALL_CORNER_SE,
+            [WALL_CORNER_OPEN_SW] = MURKY_METATILE_WALL_CORNER_SW,
+            [WALL_CORNER_OPEN_NW] = MURKY_METATILE_WALL_CORNER_NW,
+            [WALL_CORNER_OPEN_NE] = MURKY_METATILE_WALL_CORNER_NE,
+            [WALL_SLIVER_VERT]    = MURKY_METATILE_SLIVER_VERT,
+            [WALL_SLIVER_HORZ]    = MURKY_METATILE_SLIVER_HORZ,
+            [WALL_SLIVER_VERT_TOP]= MURKY_METATILE_SLIVER_VERT_TOP,
+            [WALL_SLIVER_VERT_BOT]= MURKY_METATILE_SLIVER_VERT_BOT,
+            [WALL_SLIVER_HORZ_L]  = MURKY_METATILE_SLIVER_HORZ_L,
+            [WALL_SLIVER_HORZ_R]  = MURKY_METATILE_SLIVER_HORZ_R,
+            [WALL_SLIVER_ISOLATED]= MURKY_METATILE_SLIVER_ISOLATED,
+        },
+
+        .patches = sMurkyPatches,
+        .patchCount = ARRAY_COUNT(sMurkyPatches),
+
+        // Eight entries, the most of any theme, so a lower rate than the
+        // jungle's: at 1-in-4 with eight variants almost nothing would be left
+        // plain, and the pillars are meant to be occasional rather than the
+        // rule.
+        .decor = sMurkyDecor,
+        .decorCount = ARRAY_COUNT(sMurkyDecor),
+        .decorRarity = 7,
+
+        .species = sStevenSpecies,
+        .speciesCount = ARRAY_COUNT(sStevenSpecies),
+    },
 };
 
 // Which theme each dungeon uses, following the stock game: Petalburg Woods then
@@ -1423,10 +1548,11 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
 // The modulo does the routing on its own. The Elite Four are dungeons 8 to 11
 // and these are theme indices 8 to 11, so nothing here needed changing.
 //
-// Cycling now starts at dungeon 12, which is Wallace, and wraps him to the
-// woods and Steven's finale to the cave. Wallace is getting a dungeon of his
-// own, so that is a known gap rather than a chosen pairing - and the finale
-// wants one too.
+// NOTHING WRAPS ANY MORE. There are fourteen themes against fourteen dungeons,
+// Wallace has Ever Grande at 12 and Steven has Murky Cave at 13, so the modulo
+// below is a bounds guard rather than a routing decision - every dungeon lands
+// on the theme written for it. The first arrangement in the project where that
+// is true, and the reason the "wraps to another theme's art" gap is closed.
 static const struct RogueDungeonTheme *ThemeForFloor(u16 floor)
 {
     u32 dungeon = DungeonIndexOf(floor);

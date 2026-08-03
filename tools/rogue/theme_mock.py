@@ -278,6 +278,42 @@ THEMES = {
             'SLIVER_HORZ_L': 0x211, 'SLIVER_HORZ_R': 0x213,
             'SLIVER_ISOLATED': 0x20D,
         }),
+    # Murky Cave, Steven's finale, dungeon 13 - the last theme that was still
+    # wrapping to another theme's art. Carved pillars and ochre rubble, the only
+    # one of the imported sheets that reads as somewhere BUILT.
+    #
+    # Its walls are the first block on any sheet that did not fit a 4bpp
+    # palette: seventeen colours reduced to fifteen by merging the two
+    # lowest-error pairs. See import_tile_sheet.py.
+    'murky': dict(
+        primary='gTileset_General', secondary='gTileset_RogueMurkyCave',
+        floor=0x239, stairs=0x0A7,
+        # Six wall variants and two floor ones - the largest decor set of any
+        # theme, because this sheet fills both Alt columns and neither costs a
+        # colour. Rarity 7 rather than the jungle's 4: eight entries at 1-in-4
+        # would leave almost nothing plain.
+        decor=[(0x201, 0x22F, 0), (0x203, 0x230, 0), (0x204, 0x231, 0),
+               (0x205, 0x232, 0), (0x207, 0x233, 0), (0x204, 0x234, 0),
+               (0x239, 0x264, 0), (0x239, 0x265, 0)],
+        decor_rarity=7,
+        # Pools, MB_PUDDLE so they reflect. No grass layer: this is a cave, so
+        # the floor itself is the encounter surface.
+        patch={'NW': 0x266, 'N': 0x267, 'NE': 0x268,
+               'W': 0x269, 'MID': 0x26A, 'E': 0x26B,
+               'SW': 0x26C, 'S': 0x26D, 'SE': 0x26E,
+               'NW_WALL': 0x266, 'N_WALL': 0x267, 'NE_WALL': 0x268},
+        patch_blobs=10, patch_radius=3,
+        wall={
+            'INTERIOR_LEFT': 0x203, 'INTERIOR_MID': 0x204, 'INTERIOR_RIGHT': 0x205,
+            'FACE_LEFT': 0x206, 'FACE_MID': 0x207, 'FACE_RIGHT': 0x208,
+            'NORTH_LEFT': 0x200, 'NORTH_MID': 0x201, 'NORTH_RIGHT': 0x202,
+            'CORNER_OPEN_SE': 0x21D, 'CORNER_OPEN_SW': 0x21E,
+            'CORNER_OPEN_NW': 0x220, 'CORNER_OPEN_NE': 0x21F,
+            'SLIVER_VERT': 0x20C, 'SLIVER_HORZ': 0x20A,
+            'SLIVER_VERT_TOP': 0x210, 'SLIVER_VERT_BOT': 0x214,
+            'SLIVER_HORZ_L': 0x211, 'SLIVER_HORZ_R': 0x213,
+            'SLIVER_ISOLATED': 0x20D,
+        }),
     # Victory Road, one per Elite Four member. Identical tables - identical
     # METATILES, in fact, since these tilesets share gMetatiles_Cave - so the
     # only thing a mock can show that the cave's does not is the palette, which

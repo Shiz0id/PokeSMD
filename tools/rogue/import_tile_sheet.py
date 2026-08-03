@@ -54,6 +54,7 @@ SHEETS = {
     'lapis_cave': dict(source='tools/rogue/sheets/lapis_cave.png'),
     'mt_freeze': dict(source='tools/rogue/sheets/mt_freeze.png'),
     'howling_jungle': dict(source='tools/rogue/sheets/howling_jungle.png'),
+    'murky_cave': dict(source='tools/rogue/sheets/murky_cave.png'),
 }
 
 SHEET_GEOMETRY = dict(
@@ -164,6 +165,41 @@ TILESETS = {
             dict(name='grass', graft='vanilla_long_grass', pal=9,
                  blades_from=6, ground_from=7),
         ]),
+
+    # Steven's finale, dungeon 13 - the last one that was still wrapping to
+    # another theme's art. Carved pillars and ochre rubble, which is the only
+    # sheet of the four that reads as somewhere BUILT rather than somewhere
+    # grown, and the right note to end a run on.
+    #
+    # Its Ground Alt columns are named differently - "Ground Alt" and "Unused
+    # Ground" rather than Alt 1 and Alt 2 - but they sit at the same grid
+    # columns, so COL still addresses them. The second is art the original game
+    # never used, which costs nothing to put back.
+    'murky': dict(
+        out='data/tilesets/secondary/rogue_murky_cave',
+        symbol='RogueMurkyCave',
+        prefix='MURKY',
+        blocks=[
+            # SEVENTEEN colours before reduction, the first block on any sheet
+            # that does not fit 4bpp. Both wall Alt columns are free on top of
+            # that - they add no colour the walls do not already have.
+            dict(name='wall', sheet='murky_cave', col=COL['walls'], pal=6, attr=0x0008),
+            dict(name='walldecor1', sheet='murky_cave', col=COL['wall_alt1'],
+                 pal=6, attr=0x0008, varies='wall'),
+            dict(name='walldecor2', sheet='murky_cave', col=COL['wall_alt2'],
+                 pal=6, attr=0x0008, varies='wall'),
+            # MB_CAVE here, unlike the jungle: this is a cave, and a cave's
+            # floor is its encounter surface. There is no grass layer to take
+            # that job, the way there is in the woods and the jungle.
+            dict(name='ground', sheet='murky_cave', col=COL['ground'], pal=7, attr=0x0008),
+            dict(name='decor1', sheet='murky_cave', col=COL['ground_alt1'],
+                 pal=7, attr=0x0008, varies='ground'),
+            dict(name='decor2', sheet='murky_cave', col=COL['ground_alt2'],
+                 pal=7, attr=0x0008, varies='ground'),
+            # MB_PUDDLE again: reflective, walkable, and off the water branch.
+            dict(name='water', sheet='murky_cave', col=COL['water'],
+                 pal=8, attr=0x0016, autotile=True, over='ground'),
+        ]),
 }
 
 # our PaintWalls slots, as neighbour masks. '#' wall, 'o' floor, '.' don't care
@@ -259,16 +295,53 @@ def match_slot(sheet_mask, want):
 
 # ---------------------------------------------------------------- conversion
 
-def block_palette(cells, key, bg):
-    """Exact colour list for a block, from the ORIGINAL cells."""
+def block_palette(cells, key, bg, label='', verbose=False):
+    """Colour list for a block, from the ORIGINAL cells, reduced to fit 4bpp.
+
+    Murky Cave's walls are the first block on any sheet to want more than the
+    fifteen a 4bpp palette has - seventeen - so a palette that does not fit is a
+    thing to SOLVE rather than to refuse.
+
+    Reduction merges the pair minimising `distance * min(count)` - an estimate
+    of the pixel error the merge introduces - and repeats. Ranking by error
+    rather than by rarity alone is the point: a rare colour that is far from
+    everything else is exactly the one worth keeping, because being far from
+    everything else is what makes it a different colour rather than a shade.
+
+    On Murky Cave's walls that costs one near-duplicate brown (distance 16, 187
+    pixels) and then folds the two mossy greens together (distance 50). The
+    greens are 0.5% of the block each and rarity alone would have deleted one
+    outright; merging them keeps the moss and loses only a shade of it, which is
+    the trade the weighting is there to make. Anything reduced is REPORTED, so
+    art quietly losing a colour is never silent.
+    """
     px = np.concatenate([c.reshape(-1, 3) for c in cells])
     px = px[np.abs(px - key).sum(axis=1) > 30]
     px = px[np.abs(px - bg).sum(axis=1) > 30]
     u, counts = np.unique(px, axis=0, return_counts=True)
-    u = u[np.argsort(-counts)]                      # commonest first
-    if len(u) > 15:
-        raise SystemExit(f'block needs {len(u)} colours, 15 is the 4bpp limit')
-    return [tuple(int(v) for v in c) for c in u]
+    u, counts = u.astype(int), counts.astype(int)
+
+    while len(u) > 15:
+        best = None
+        for i in range(len(u)):
+            for j in range(i + 1, len(u)):
+                dist = int(np.abs(u[i] - u[j]).sum())
+                cost = dist * int(min(counts[i], counts[j]))
+                if best is None or cost < best[0]:
+                    best = (cost, dist, i, j)
+        _, dist, i, j = best
+        keep, drop = (i, j) if counts[i] >= counts[j] else (j, i)
+        if verbose:
+            a = tuple(int(v) for v in u[drop])
+            b = tuple(int(v) for v in u[keep])
+            print(f'    {label}: merged {a} x{int(counts[drop])} into '
+                  f'{b} x{int(counts[keep])}  (distance {dist})')
+        counts[keep] += counts[drop]
+        u = np.delete(u, drop, axis=0)
+        counts = np.delete(counts, drop)
+
+    order = np.argsort(-counts)                     # commonest first
+    return [tuple(int(v) for v in c) for c in u[order]]
 
 
 def to_indices(cell24, palette, key, bg):
@@ -490,9 +563,13 @@ def convert(ts, verbose=True):
         owner = next(b for b in blocks if b['pal'] == slot and 'graft' not in b)
         names = '+'.join(b['name'] for b in blocks
                          if b['pal'] == slot and 'graft' not in b)
-        palettes[slot] = block_palette(palettes[slot], owner['sh'].key, owner['sh'].bg)
+        raw = len({tuple(int(v) for v in p)
+                   for c in palettes[slot] for p in c.reshape(-1, 3)})
+        palettes[slot] = block_palette(palettes[slot], owner['sh'].key,
+                                       owner['sh'].bg, names, verbose)
         if verbose:
-            print(f'  palette {slot}  {len(palettes[slot]):2d} colours  ({names})')
+            note = f'   REDUCED from {raw - 2}' if raw - 2 > 15 else ''
+            print(f'  palette {slot}  {len(palettes[slot]):2d} colours  ({names}){note}')
 
     # Grafts run AFTER the sheet palettes exist, because that is what they draw
     # their colours out of - the whole point is that grafted art is recoloured

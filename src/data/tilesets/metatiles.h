@@ -219,6 +219,9 @@ const u16 gMetatileAttributes_RogueLapisCave[] = INCBIN_U16("data/tilesets/secon
 const u16 gMetatiles_RogueHowlingJungle[] = INCBIN_U16("data/tilesets/secondary/rogue_howling_jungle/metatiles.bin");
 const u16 gMetatileAttributes_RogueHowlingJungle[] = INCBIN_U16("data/tilesets/secondary/rogue_howling_jungle/metatile_attributes.bin");
 
+const u16 gMetatiles_RogueMurkyCave[] = INCBIN_U16("data/tilesets/secondary/rogue_murky_cave/metatiles.bin");
+const u16 gMetatileAttributes_RogueMurkyCave[] = INCBIN_U16("data/tilesets/secondary/rogue_murky_cave/metatile_attributes.bin");
+
 #else
 
 const u16 gMetatiles_Building_Frlg[] = INCBIN_U16("data/tilesets/primary/building_frlg/metatiles.bin");

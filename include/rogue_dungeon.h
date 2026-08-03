@@ -838,6 +838,76 @@
 #define EVERGRANDE_LONG_GRASS_PHASE           8
 
 
+// Murky Cave, Steven's finale, and the last dungeon that was still wrapping to
+// another theme's art. gTileset_General + gTileset_RogueMurkyCave, imported
+// from the Murky Cave sheet.
+//
+// Carved pillars and ochre rubble. It is the only one of the four imported
+// sheets that reads as somewhere BUILT rather than somewhere grown, which is
+// the note to end a run on - the player has been through woods, caves, sea and
+// jungle, and finishes somewhere that was made.
+//
+// THE FIRST BLOCK ON ANY SHEET THAT DID NOT FIT 4bpp. Its walls want seventeen
+// colours against a palette's fifteen, so import_tile_sheet.py reduces by
+// merging the pair with the lowest estimated pixel error - distance times the
+// rarer count - rather than by dropping the rarest outright. Here that folds
+// one near-duplicate brown (distance 16) and then the two mossy greens into
+// each other (distance 50): the moss survives as one tone instead of two, where
+// dropping by rarity would have taken the only green out of a brown wall. Both
+// wall Alt columns are free on top of that, adding no colour the walls lack.
+#define MURKY_METATILE_FLOOR             0x239  // MB_CAVE, so encounters fire
+#define MURKY_METATILE_WALL_INTERIOR_L   0x203
+#define MURKY_METATILE_WALL_INTERIOR_M   0x204
+#define MURKY_METATILE_WALL_INTERIOR_R   0x205
+#define MURKY_METATILE_WALL_FACE_L       0x206
+#define MURKY_METATILE_WALL_FACE_M       0x207
+#define MURKY_METATILE_WALL_FACE_R       0x208
+#define MURKY_METATILE_WALL_NORTH_L      0x200
+#define MURKY_METATILE_WALL_NORTH_M      0x201
+#define MURKY_METATILE_WALL_NORTH_R      0x202
+#define MURKY_METATILE_WALL_CORNER_SE    0x21D
+#define MURKY_METATILE_WALL_CORNER_SW    0x21E
+#define MURKY_METATILE_WALL_CORNER_NW    0x220
+#define MURKY_METATILE_WALL_CORNER_NE    0x21F
+#define MURKY_METATILE_SLIVER_VERT       0x20C
+#define MURKY_METATILE_SLIVER_HORZ       0x20A
+#define MURKY_METATILE_SLIVER_VERT_TOP   0x210
+#define MURKY_METATILE_SLIVER_VERT_BOT   0x214
+#define MURKY_METATILE_SLIVER_HORZ_L     0x211
+#define MURKY_METATILE_SLIVER_HORZ_R     0x213
+#define MURKY_METATILE_SLIVER_ISOLATED   0x20D
+
+// Six wall variants - five from Wall Alt 1 and one from Wall Alt 2 - each
+// paired to the specific wall case it varies by its position in the legend.
+#define MURKY_METATILE_WALL_ALT_NORTH_M  0x22F  // varies 0x201
+#define MURKY_METATILE_WALL_ALT_INT_L    0x230  // varies 0x203
+#define MURKY_METATILE_WALL_ALT_INT_M    0x231  // varies 0x204
+#define MURKY_METATILE_WALL_ALT_INT_R    0x232  // varies 0x205
+#define MURKY_METATILE_WALL_ALT_FACE_M   0x233  // varies 0x207
+#define MURKY_METATILE_WALL_ALT_INT_M2   0x234  // varies 0x204, a second one
+
+// Ground Alt and "Unused Ground" - the second is art the original game never
+// used, which costs nothing to put back.
+#define MURKY_METATILE_FLOOR_ALT_1       0x264
+#define MURKY_METATILE_FLOOR_ALT_2       0x265
+
+// Pools. MB_PUDDLE, so the player reflects in them and splashes through, and so
+// the theme feeds only the land encounter branch - see the jungle's water.
+#define MURKY_METATILE_WATER_NW          0x266
+#define MURKY_METATILE_WATER_N           0x267
+#define MURKY_METATILE_WATER_NE          0x268
+#define MURKY_METATILE_WATER_W           0x269
+#define MURKY_METATILE_WATER_MID         0x26A
+#define MURKY_METATILE_WATER_E           0x26B
+#define MURKY_METATILE_WATER_SW          0x26C
+#define MURKY_METATILE_WATER_S           0x26D
+#define MURKY_METATILE_WATER_SE          0x26E
+
+// gTileset_General's warp again. The third theme to fall back on it, and the
+// third to owe its own stairs - see the known gaps.
+#define MURKY_METATILE_STAIRS            0x0A7
+
+
 // Woods uses the same two elevations as caves.
 #define DUNGEON_ELEVATION_FLOOR 3
 #define DUNGEON_ELEVATION_WALL  0

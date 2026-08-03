@@ -929,6 +929,21 @@ const struct Tileset gTileset_RogueHowlingJungle =
     .callback = NULL,
 };
 
+// Murky Cave, Steven's finale. .callback is NULL for the same reason the other
+// two imports' are: the only animated terrain on any of these sheets is the
+// water, which they cycle the PALETTE for rather than the tiles, and none of
+// that is imported.
+const struct Tileset gTileset_RogueMurkyCave =
+{
+    .isCompressed = TRUE,
+    .isSecondary = TRUE,
+    .tiles = gTilesetTiles_RogueMurkyCave,
+    .palettes = gTilesetPalettes_RogueMurkyCave,
+    .metatiles = gMetatiles_RogueMurkyCave,
+    .metatileAttributes = gMetatileAttributes_RogueMurkyCave,
+    .callback = NULL,
+};
+
 #else
 
 // FRLG tilesets
