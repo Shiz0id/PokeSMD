@@ -2064,14 +2064,24 @@ u16 RogueDungeon_GiveBossTM(void)
 // which is what forces the fight - there is no other way off an arena floor.
 void RogueDungeon_OnBossDefeated(void)
 {
+    u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+
     // A dungeon's last floor warps to the rest stop instead of opening an exit,
     // so drawing one here would give the player a way to skip the heal. Steven's
     // floor ends the run outright and needs an exit even less.
-    if (IsDungeonBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
+    if (IsDungeonBossFloor(floor))
         return;
 
+    // theme->elevationFloor, NOT DUNGEON_ELEVATION_FLOOR. The ocean walks at
+    // DUNGEON_ELEVATION_WATER, and IsElevationMismatchAt blocks a move between
+    // two DIFFERENT non-zero elevations - so writing the exit at 3 on a floor
+    // the player crosses at 1 puts the whirlpool somewhere they cannot step.
+    // An arena floor has no other way out, so that stranded the run outright.
+    //
+    // Both generation paths already read it from the theme; this one did not.
     MapGridSetMetatileEntryAt(sStairsX + MAP_OFFSET, sStairsY + MAP_OFFSET,
-                              MakeBlock(sStairsMetatile, 0, DUNGEON_ELEVATION_FLOOR));
+                              MakeBlock(sStairsMetatile, 0,
+                                        ThemeForFloor(floor)->elevationFloor));
     DrawWholeMapView();
 }
 
