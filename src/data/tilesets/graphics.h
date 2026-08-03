@@ -1740,7 +1740,7 @@ const u16 gTilesetPalettes_RogueVictoryRoadDrake[][16] =
 // num_tiles is NOT decorative: -Wnum_tiles makes gbagfx check the PNG against
 // it, and the importer prints the figure it wrote. Re-run the importer and this
 // number moves with it.
-const u32 gTilesetTiles_RogueLapisCave[] = INCGFX_U32("data/tilesets/secondary/rogue_lapis_cave/tiles.png", ".4bpp.fastSmol", "-num_tiles 285 -Wnum_tiles");
+const u32 gTilesetTiles_RogueLapisCave[] = INCGFX_U32("data/tilesets/secondary/rogue_lapis_cave/tiles.png", ".4bpp.fastSmol", "-num_tiles 289 -Wnum_tiles");
 
 const u16 gTilesetPalettes_RogueLapisCave[][16] =
 {
@@ -1767,7 +1767,7 @@ const u16 gTilesetPalettes_RogueLapisCave[][16] =
 // long grass - which is GRAFTED, vanilla's own pixels recoloured into this
 // tileset rather than anything the sheet supplies. The sheet's Sparkle overlay
 // is still not imported; the water here is static.
-const u32 gTilesetTiles_RogueHowlingJungle[] = INCGFX_U32("data/tilesets/secondary/rogue_howling_jungle/tiles.png", ".4bpp.fastSmol", "-num_tiles 285 -Wnum_tiles");
+const u32 gTilesetTiles_RogueHowlingJungle[] = INCGFX_U32("data/tilesets/secondary/rogue_howling_jungle/tiles.png", ".4bpp.fastSmol", "-num_tiles 288 -Wnum_tiles");
 
 const u16 gTilesetPalettes_RogueHowlingJungle[][16] =
 {
@@ -1793,7 +1793,7 @@ const u16 gTilesetPalettes_RogueHowlingJungle[][16] =
 // 07 (ground plus its two) and 08 (water) carry colour. 06 and 08 are both
 // REDUCED palettes - the sheet wanted more than fifteen and the importer merged
 // the lowest-error pairs to fit, which it reports when it does it.
-const u32 gTilesetTiles_RogueMurkyCave[] = INCGFX_U32("data/tilesets/secondary/rogue_murky_cave/tiles.png", ".4bpp.fastSmol", "-num_tiles 278 -Wnum_tiles");
+const u32 gTilesetTiles_RogueMurkyCave[] = INCGFX_U32("data/tilesets/secondary/rogue_murky_cave/tiles.png", ".4bpp.fastSmol", "-num_tiles 280 -Wnum_tiles");
 
 const u16 gTilesetPalettes_RogueMurkyCave[][16] =
 {

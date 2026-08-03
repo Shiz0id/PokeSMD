@@ -69,6 +69,12 @@ Losing wipes the run; so does winning, which is the point.
   With it, **fourteen themes stand against fourteen dungeons and nothing wraps**
   — the first arrangement in the project where every dungeon lands on the theme
   written for it.
+- **Every imported tileset draws its own descent.** Lapis, the jungle and Murky
+  Cave were the three sharing `gTileset_General`'s grey warp `0x0A7` — vanilla
+  rock in three tilesets that contain no grey. They have drawn stairs now: a
+  crack in the ice, a hollow under the roots, and a cut stairwell, all on one
+  step rhythm so the exit reads the same everywhere. Cost nine tiles between
+  them. Fiery Path keeps `0x0A7` deliberately, where it reads. See §5.
 - The ocean is crossed **surfing** and the seafloor **diving**. Surfing is a
   property of the floor metatile; diving is a property of the **map**, which is
   why underwater is the one theme with a map of its own — see §7.
@@ -845,6 +851,94 @@ Wiring the animation up, in `src/tileset_anims.c`:
 - The sheet still needs a copy of frame 0. The animation overwrites it within a
   few frames of the map loading, but the map has to render before that.
 
+### Drawing the descent, three times, out of what was already there
+
+Lapis, the jungle and Murky Cave all descended through `gTileset_General`'s warp
+`0x0A7`. It is a **primary** id, so it survives any secondary — which is exactly
+why it got reached for three times — and it is vanilla grey rock in three
+tilesets that do not contain a grey. `import_tile_sheet.py` draws all three now,
+from a `stairs` block that costs no pixel art and no sheet.
+
+**The exit is not decoration, so it does not get a decoration's rules.** It is
+one of two things on a floor the player is actively hunting for. That is the
+argument for the whirlpool's split — *share the geometry, never the palette* —
+and it applies here unchanged: one skeleton and one step rhythm across all
+three, so the player learns the shape once.
+
+**The step rhythm is the woods stairs', copied row for row**, because that is
+the one drawn descent in this project that already reads. Why it reads:
+
+- **The riser IS the void**, not a darker shade of the tread. What separates two
+  steps is darkness. The first attempt here used a mid-tone riser and produced a
+  framed rectangle lying on the floor — recognisably a *thing*, not a hole.
+- **Each tread sits inside the void with a two-pixel margin**, so the well has
+  depth at its edges instead of butting against its own rim.
+- **A step is (void, tread, tread, lit edge), in that order**, so the run ends on
+  a lit edge — the tread nearest the player — and the dark always sits above the
+  thing it shadows.
+- **Two rim rows**: an outer that meets the floor, a darker inner that turns the
+  corner into the well.
+
+**What varies is the framing, and it carries the theme.** Lapis and the jungle
+round their four corners off to the floor, the way the woods stairs seat into
+turf. **Murky Cave does not** — it runs square to the tile edge with no floor
+showing anywhere, because it is the one tileset that reads as somewhere *built*,
+and a stairwell in a built place was made rather than opened. That is the whole
+distinction between the three, and it is one character in the generator.
+
+#### Darkness is not only a luminance
+
+The jungle is the entry worth keeping, because two palettes were tried and both
+failed for *different* reasons:
+
+- **Dirt (slot 7), the floor's own**, runs 70 to 169 luminance and has no dark at
+  all. The void came out **lighter than the floor around it** and the stairs read
+  as a plate lying on the ground.
+- **Foliage (slot 6)** reaches `#006300` at luminance 58 — as dark as the woods'
+  own void, on paper. It reads as **paint**, because it is a saturated green. A
+  colour dark enough to be shadow can still be too saturated to *be* shadow.
+- **Long grass (slot 9)** is what works. It is vanilla's palette 2 with two ramps
+  swapped out by the graft, so it still carries `#413931` — the very colour the
+  woods stairs use — and vanilla's tan ramp above it. The jungle's descent is
+  therefore the woods' descent in the woods' tones, which is the right echo:
+  both are holes dug in forest floor.
+
+So **a theme's stairs are not obliged to use its floor's palette**, and the
+corner pixels are what usually forces the question. The answer is one line: the
+floor's plain fill is run back through `to_indices` against whatever palette the
+stairs are drawn in. It is a no-op where the two agree, and for the jungle it
+costs two near-duplicate substitutions across the twelve corner pixels.
+
+#### A palette with headroom can be extended, from its own tileset
+
+Lapis has no dark either — snow runs 157 to 240 — and unlike the jungle it had no
+third palette to move to. Its slot 7 had **three free entries**, so the `stairs`
+block appends into them, and the two colours it appends are lifted **verbatim out
+of palette 6**, the crystal walls. Nothing is invented: the stairwell is lit by
+the same rock it cuts into.
+
+**Appending is safe because it only ever adds to the end.** Colours already in
+the palette keep their indices, so every block already quantised against that
+slot is untouched — verified by diffing the written files against the previous
+commit, where Lapis' `07.pal` gains exactly two entries and loses none, and both
+other tilesets' palettes come out byte-identical.
+
+Two rules came out of building it:
+
+- **Bind roles to colours, not to indices, and fail loudly.** Every role names an
+  RGB that must already be in the palette. An index means a different colour in
+  every tileset, and a nearest-match would silently bind the exit to whatever
+  happened to be closest.
+- **Blocks that draw rather than read go LAST in the block list**, so their
+  metatile lands after every id a theme table already names. The jungle's must
+  also come after its long-grass graft, since it draws in the palette that graft
+  writes. Ordering here is the same hazard `varies` has: appending is safe,
+  reordering silently renumbers.
+
+Cost: **three metatiles and nine tiles total** — four for Lapis, three for the
+jungle, two for Murky Cave, since each stairs metatile is two unique quadrants
+and their x-mirrors.
+
 ### The cheapest art there is: a palette-only tileset
 
 A whole theme can cost one palette directory. `gTileset_RogueVictoryRoad*` share
@@ -924,10 +1018,10 @@ and it is also the only fill it has that **tiles invisibly: measured seam 0.0**,
 against 35–42 for every textured rock face in the Meteor Falls tileset evaluated
 beside it, where a fill at that seam became visible corduroy.
 
-Still open: the theme borrows `gTileset_General`'s warp (`0x0A7`) for its
-stairs, because the sheet has no stairs of its own, and grey rock on an ice
-floor is the one piece that does not belong. Composing one from the sheet's own
-crystal is the obvious follow-up.
+The sheet has no stairs of its own, so the theme borrowed `gTileset_General`'s
+grey warp (`0x0A7`) for a while — the one piece that did not belong. It has its
+own now, drawn rather than composed, and the crystal it is lit by is literally
+palette 6's: see *Drawing the descent* above.
 
 #### One tileset, two sheets
 
@@ -1721,15 +1815,28 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    also make the jungle the first **two-branch** theme, since its long grass is
    a land encounter surface; `MB_PUDDLE` sidesteps that entirely, which is why
    it is what the water carries. See §3.
-1d. **Lapis Cave has borrowed stairs.** Its descent is `gTileset_General`'s warp
-   `0x0A7` — a primary id, so it works under any pair, and grey rock on an ice
-   floor is the one piece of the theme that does not belong. Neither sheet it is
-   built from has stairs of its own; composing a pair from the crystal is the
-   follow-up. Its floor and decor are settled — Mt. Freeze's snow, see §5.
-   **The jungle and the finale now owe the same debt for the same reason**:
-   Fortree's rope ladder and Murky Cave's absence of any stairs at all both end
-   at `0x0A7`, so **three** themes want stairs drawn from their own art. It is
-   the single most repeated shortcut in the project.
+1d. ~~Borrowed stairs.~~ **CLOSED.** All three themes that ended at
+   `gTileset_General`'s warp `0x0A7` — Lapis, the jungle, Murky Cave — have
+   descents drawn from their own material now: `LAPIS_METATILE_STAIRS` `0x28F`,
+   `JUNGLE_METATILE_STAIRS` `0x296`, `MURKY_METATILE_STAIRS` `0x295`. See §5.
+
+   **Fiery Path still uses `0x0A7` and should.** It was never part of this gap:
+   that theme is a vanilla tileset, and the dark cave mouth reads as a hole
+   descending on red volcanic rock. The debt was never "borrows a primary id",
+   it was "borrows art made of colours the tileset does not contain".
+
+   Kept because of what the entry got wrong. It called this "the single most
+   repeated shortcut", which was true, and predicted the fix was *composing a
+   pair from the crystal* — new art, per theme. It cost none: three `stairs`
+   block entries, nine tiles, and one shape parameter. **That is the same wrong
+   prediction gap 1 made every time it closed** — see the note there. The
+   question to ask first is still what the tileset already holds.
+
+   What was *not* obvious, and is the part worth carrying forward: the hard
+   problem was never the geometry, it was finding a **dark**. Two of the three
+   floors' own palettes have no colour dark enough to be a mouth, and one of the
+   two alternatives that looked dark enough was too saturated to read as shadow.
+   §5 has both.
 1e. **The snowfield is orphaned but still in the ROM.**
    `LAYOUT_ROGUE_DUNGEON_VRGLACIA`, `gTileset_RogueVictoryRoadGlacia` and its
    72 KB of palettes are referenced by nothing but `layouts.json` now that

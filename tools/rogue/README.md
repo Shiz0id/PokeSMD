@@ -84,6 +84,25 @@ assembled from vanilla tiles and recoloured into this tileset's palettes — the
 jungle's long grass, which cost no pixel art. Grafts run after the sheet
 palettes exist, since those are what they draw their colours from.
 
+A **`stairs`** block is the descent, drawn from the theme's own colours instead
+of borrowing `gTileset_General`'s grey warp. It runs when the grafts do and for
+the same reason. Three things about it are load-bearing:
+
+- Its `roles` name **RGB values that must already be in the palette**, and it
+  raises if one is not. Binding the exit by index, or by nearest match, would
+  let it land silently on the wrong colour.
+- `append` adds colours to a palette that has headroom — Lapis' snow has no dark
+  at all, so its mouth is lifted verbatim out of the crystal walls' palette.
+  Appending only ever writes past the end, so existing indices never move.
+- **`stairs` blocks go last in the list.** Their metatile has to land after every
+  id a theme table already names, and the jungle's has to run after its graft
+  because it draws in the palette that graft writes.
+
+`rounded` is the only shape control: it opens the four corners back up to the
+floor. Murky Cave is the one that sets it false, because it is the one tileset
+that reads as built. See §5 of `ROGUELIKE.md` for why the jungle's stairs are
+drawn in its long-grass palette rather than in its floor's.
+
 **A palette that does not fit is reduced, not refused.** A block wanting more
 than fifteen colours has its lowest-error pairs merged — `distance × min(count)`
 — until it fits, and **every merge is printed**. Read that output: it is the

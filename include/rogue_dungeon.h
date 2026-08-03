@@ -434,13 +434,16 @@
 #define JUNGLE_METATILE_PUDDLE_S         0x0D9
 #define JUNGLE_METATILE_PUDDLE_SE        0x0DA
 
-// WAS Fortree's wooden ladder at 0x245, which was exactly right for a treehouse
-// town's route and is not available any more - it was the theme's other Fortree
-// id, and 0x245 is a patch of dirt under the new secondary. gTileset_General's
-// warp instead, the same one Fiery Path and Lapis Cave fall back to: a PRIMARY
-// id, so it survives any secondary. Grey rock in a jungle is the piece that
-// does not belong, and it is the same debt Lapis carries.
-#define JUNGLE_METATILE_STAIRS           0x0A7
+// A hollow dug under the roots, drawn by import_tile_sheet.py. WAS Fortree's
+// wooden ladder at 0x245, then gTileset_General's grey warp 0x0A7 once the
+// secondary changed under it - vanilla rock in a jungle, and one of the three
+// borrowed descents that are now gone.
+//
+// Drawn in palette 9, the LONG GRASS palette, which is neither the dirt it sits
+// in nor the foliage above it: dirt has no dark at all and foliage's only dark
+// is a saturated green that reads as paint. Slot 9 still carries vanilla's
+// #413931, the very colour the woods stairs use for their void. See §5.
+#define JUNGLE_METATILE_STAIRS           0x296
 
 // gTileset_Mossdeep, the sea routes out of Lilycove that lead to Tate and
 // Liza's city. The first theme the player crosses SURFING rather than walking.
@@ -715,11 +718,13 @@
 #define LAPIS_METATILE_SLIVER_HORZ_L          0x211
 #define LAPIS_METATILE_SLIVER_HORZ_R          0x213
 #define LAPIS_METATILE_SLIVER_ISOLATED        0x20D
-// gTileset_GENERAL's warp, the same one Fiery Path uses. A PRIMARY id, so it
-// is available under any pair. The sheet has no stairs of its own, and grey
-// rock on an ice floor is the one piece of this theme that does not belong.
-// Composing one from the sheet's own crystal is the obvious follow-up.
-#define LAPIS_METATILE_STAIRS                 0x0A7
+// A crack in the ice, drawn by import_tile_sheet.py - no longer gTileset_
+// General's grey warp 0x0A7, which was the one piece of this theme that did not
+// belong. Drawn in palette 7, the snow, so the corners are the snowfield
+// itself; but snow runs 157 to 240 luminance and has no dark whatsoever, so the
+// mouth and rim are APPENDED into its three free slots, lifted verbatim out of
+// palette 6. The well is therefore lit like the crystal walls it cuts into.
+#define LAPIS_METATILE_STAIRS                 0x28F
 // Mt. Freeze's Ground Alt 1 and Alt 2 - a small clump and a swept drift, both
 // drawn on the plain snow in the SAME palette, so they read as surface texture
 // rather than as objects sitting on it. One cell each is all the sheet has.
@@ -903,9 +908,12 @@
 #define MURKY_METATILE_WATER_S           0x26D
 #define MURKY_METATILE_WATER_SE          0x26E
 
-// gTileset_General's warp again. The third theme to fall back on it, and the
-// third to owe its own stairs - see the known gaps.
-#define MURKY_METATILE_STAIRS            0x0A7
+// Cut, not opened. The only one of the three drawn descents that runs SQUARE to
+// the tile edge with no floor showing at any corner, because this is the only
+// tileset that reads as somewhere built - and a stairwell in a built place was
+// made. Its own floor stone spans 46 to 215 luminance, so unlike Lapis it
+// needed nothing appended and nothing borrowed.
+#define MURKY_METATILE_STAIRS            0x295
 
 
 // Woods uses the same two elevations as caves.

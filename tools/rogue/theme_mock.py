@@ -105,10 +105,10 @@ THEMES = {
     # and a dirt floor.
     'jungle': dict(
         primary='gTileset_General', secondary='gTileset_RogueHowlingJungle',
-        # 0x0A7 is gTileset_General's warp again - the Fortree rope ladder went
-        # with the tileset, and a primary id is the only thing guaranteed to
-        # survive a secondary swap.
-        floor=0x238, stairs=0x0A7,
+        # 0x296 is the hollow dug under the roots, drawn by the importer into
+        # this tileset. It replaced gTileset_General's grey warp, which had in
+        # turn replaced the Fortree rope ladder when the secondary changed.
+        floor=0x238, stairs=0x296,
         # Five wall variants and two floor ones. The pairings come out of the
         # sheet rather than being chosen: an Alt cell varies whatever sits at
         # the same legend position.
@@ -252,10 +252,11 @@ THEMES = {
     # across CORNER_OPEN_NW and _NE.
     'lapis': dict(
         primary='gTileset_General', secondary='gTileset_RogueLapisCave',
-        # 0x0A7 is gTileset_GENERAL's warp - a primary id, so it works under any
-        # pair. It is grey rock on an ice floor and it is the one thing here
-        # that does not belong; the sheet has no stairs of its own.
-        floor=0x233, stairs=0x0A7,
+        # 0x28F is the crack in the ice, drawn by the importer. The sheet has no
+        # stairs of its own, so the mouth is two colours appended into this
+        # palette's headroom straight out of the crystal walls' palette - snow
+        # has no dark to cut a hole in.
+        floor=0x233, stairs=0x28F,
         # The floor is Mt. Freeze's snow, not this sheet's ground - the walls
         # are Lapis Cave's and the ground is a second rip, composed into one
         # tileset. Decor is that sheet's Ground Alt 1 and Alt 2, one cell each,
@@ -287,7 +288,11 @@ THEMES = {
     # lowest-error pairs. See import_tile_sheet.py.
     'murky': dict(
         primary='gTileset_General', secondary='gTileset_RogueMurkyCave',
-        floor=0x239, stairs=0x0A7,
+        # 0x295 is the cut stairwell - the only drawn descent that runs SQUARE
+        # to the tile edge with no floor at its corners, because this is the
+        # tileset that reads as built. Its floor stone spans 46 to 215
+        # luminance, so it needed nothing appended and nothing borrowed.
+        floor=0x239, stairs=0x295,
         # Six wall variants and two floor ones - the largest decor set of any
         # theme, because this sheet fills both Alt columns and neither costs a
         # colour. Rarity 7 rather than the jungle's 4: eight entries at 1-in-4

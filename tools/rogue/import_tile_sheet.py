@@ -100,6 +100,19 @@ TILESETS = {
             # Never painted by the theme - kept because it is what the sheet
             # has, and dropping it would move every metatile id after it.
             dict(name='water', sheet='lapis_cave', col=COL['water'], pal=8, attr=0x0008),
+            # A crack in the ice. Drawn in slot 7, the snow, so the corners are
+            # the snowfield itself - but snow has NO dark tone at all (157 to
+            # 240 luminance), so the mouth and the rim are appended out of
+            # palette 6 and the well is lit like the crystal walls it cuts into.
+            # 0x0000 is MB_NORMAL, the same attribute the woods stairs carry:
+            # the descent triggers on metatile id, and the tile it replaces
+            # carried no encounters either.
+            dict(name='stairs', pal=7, attr=0x0000, stairs=dict(
+                rounded=True,
+                append=[(0x00, 0x39, 0x52), (0x00, 0x6B, 0xF7)],
+                roles=dict(d=(0x00, 0x39, 0x52), t=(0x84, 0xC6, 0xEF),
+                           e=(0xDE, 0xF7, 0xF7), r=(0x00, 0x6B, 0xF7),
+                           R=(0x63, 0xAD, 0xE7)))),
         ]),
 
     # Winona's. The jungle was built almost entirely out of gTileset_General -
@@ -164,6 +177,25 @@ TILESETS = {
             # as dirt rather than as the route grass it was drawn against.
             dict(name='grass', graft='vanilla_long_grass', pal=9,
                  blades_from=6, ground_from=7),
+            # A hollow dug under the roots - and drawn in slot 9, the long
+            # grass, which is neither the floor it sits in nor the walls above
+            # it. Both of those were tried and neither works: DIRT (slot 7) runs
+            # 70 to 169 luminance and has no dark, so the void came out lighter
+            # than the floor and the stairs read as a plate lying on the ground;
+            # FOLIAGE (slot 6) reaches luminance 58 at #006300, dark enough on
+            # paper, but it is a saturated green and reads as paint rather than
+            # as shadow. Darkness is not only a luminance.
+            #
+            # Slot 9 is vanilla's palette 2 with two ramps swapped by the graft,
+            # so it still carries #413931 - the exact colour the woods stairs
+            # use for their void - and vanilla's tan ramp above it. The jungle's
+            # descent is therefore the woods' descent in the woods' own tones,
+            # which is the right echo: both are holes dug in forest floor.
+            dict(name='stairs', pal=9, attr=0x0000, stairs=dict(
+                rounded=True,
+                roles=dict(d=(0x41, 0x39, 0x31), t=(0xDE, 0x94, 0x73),
+                           e=(0xFF, 0xC5, 0x94), r=(0x5A, 0x4A, 0x21),
+                           R=(0x94, 0x73, 0x31)))),
         ]),
 
     # Steven's finale, dungeon 13 - the last one that was still wrapping to
@@ -199,6 +231,17 @@ TILESETS = {
             # MB_PUDDLE again: reflective, walkable, and off the water branch.
             dict(name='water', sheet='murky_cave', col=COL['water'],
                  pal=8, attr=0x0016, autotile=True, over='ground'),
+            # THE ONE THAT IS CUT. Not rounded: it runs square to the tile edge
+            # with no floor showing at any corner, because this is the only one
+            # of the three tilesets that reads as somewhere BUILT, and a
+            # stairwell in a built place was made rather than opened. Its own
+            # floor stone has the full ramp needed - 46 to 215 luminance - so it
+            # needs nothing appended and nothing borrowed.
+            dict(name='stairs', pal=7, attr=0x0000, stairs=dict(
+                rounded=False,
+                roles=dict(d=(0x4A, 0x29, 0x00), t=(0xCE, 0xAD, 0x4A),
+                           e=(0xEF, 0xDE, 0x73), r=(0x6B, 0x4A, 0x00),
+                           R=(0x73, 0x6B, 0x00)))),
         ]),
 }
 
@@ -465,6 +508,111 @@ def graft_long_grass(palettes, cfg):
 GRAFTS = {'vanilla_long_grass': graft_long_grass}
 
 
+# ---------------------------------------------------------------- stairs
+#
+# The descent, drawn instead of borrowed. Lapis, the jungle and Murky Cave all
+# fell back on gTileset_General's warp 0x0A7 - a PRIMARY id, so it survives any
+# secondary, which is exactly why it was reached for three times. It is vanilla
+# grey rock, and none of these three tilesets contains a grey.
+#
+# The whirlpool's rule applies again, and for the same reason: SHARE THE
+# GEOMETRY, NEVER THE PALETTE. The exit is the one thing on a floor the player
+# is hunting for, so all three are the same skeleton and the same step rhythm -
+# but each is cut out of its own theme's material, because a descent reads as
+# belonging to a place only when it is made of that place.
+
+def stairs_rows(rounded):
+    """The 16 rows of a descent, as roles.
+
+    Structure taken row for row from the woods stairs (`make_woods_stairs.py`),
+    the one drawn descent in this project that already reads, and it is worth
+    saying WHY it reads, because the first attempt here ignored all of it and
+    came out as a framed rectangle lying on the floor:
+
+      * THE RISER IS THE VOID, not a darker shade of the tread. What separates
+        two steps is darkness. A mid-tone riser flattens the whole thing.
+      * Each tread sits inside the void with a two-pixel margin either side, so
+        the well has depth at its edges instead of butting against the rim.
+      * A step is (void, tread, tread, lit edge) in that order, so the run ends
+        on a lit edge - the tread nearest the player - and the dark always sits
+        above the thing it shadows.
+      * Two rim rows, not one: an outer that meets the floor and a darker inner
+        that turns the corner into the well.
+
+    `rounded` opens the four corners back up to the floor, which is what seats
+    an opening into the ground instead of butting against it. Murky Cave is the
+    one that does NOT: it is the only tileset here that reads as somewhere
+    BUILT, so its descent is cut square and runs to the tile edge.
+
+      d void   t tread   e lit leading edge   r inner rim   R outer rim
+      .        the floor underneath shows through
+    """
+    o = '.' if rounded else 'R'
+    rows = [f'{o}{o}R' + 'r' * 10 + f'R{o}{o}',
+            f'{o}Rr' + 'd' * 10 + f'rR{o}']
+    for _ in range(3):
+        rows += ['r' + 'd' * 14 + 'r',
+                 'r' + 'dd' + 't' * 10 + 'dd' + 'r',
+                 'r' + 'dd' + 't' * 10 + 'dd' + 'r',
+                 'r' + 'dd' + 'e' * 10 + 'dd' + 'r']
+    rows += [f'{o}Rr' + 'd' * 10 + f'rR{o}',
+             f'{o}{o}R' + 'r' * 10 + f'R{o}{o}']
+    assert len(rows) == 16 and all(len(r) == 16 for r in rows)
+    return rows
+
+
+def draw_stairs(palettes, cfg, floor_cell, key, bg):
+    """One stairs metatile, in this tileset's own colours.
+
+    Every role colour must ALREADY be in the palette it names, and this raises
+    if one is not - the check is the point. A stairs metatile is one of exactly
+    two things in a theme the player has to be able to find, so it must not be
+    possible to bind it to a colour that merely quantises nearby.
+
+    `append` is the exception, and Lapis is why it exists. Its snow palette runs
+    157 to 240 luminance - it has no dark whatsoever - so a mouth cannot be
+    drawn in it at all. The two colours it appends are lifted verbatim out of
+    palette 6, the crystal walls, so the stairwell is lit by the same rock the
+    walls are and nothing new is invented. Appending is safe because it only
+    ever adds to the END of a palette: the colours already there keep their
+    indices, so every block already quantised against this slot is untouched.
+    """
+    spec = cfg['stairs']
+    pal = list(palettes[cfg['pal']])
+    for c in spec.get('append', ()):
+        if c in pal:
+            continue
+        if len(pal) >= 15:
+            raise SystemExit(f'stairs: palette {cfg["pal"]} is full, '
+                             f'cannot append {c}')
+        pal.append(c)
+
+    def index_of(rgb):
+        if rgb not in pal:
+            raise SystemExit(f'stairs: {rgb} is not in palette {cfg["pal"]}')
+        return pal.index(rgb) + 1          # 0 is transparent
+
+    roles = {k: index_of(v) for k, v in spec['roles'].items()}
+
+    # The floor showing at the corners has to be expressed in the palette the
+    # STAIRS are drawn in, which is not always the one the floor itself was
+    # quantised into - the jungle draws in slot 9 over a slot 7 floor. Running
+    # the plain fill back through to_indices against this palette is the whole
+    # of it, and it is a no-op where the two agree.
+    canvas = to_indices(floor_cell, pal, key, bg)
+    for y, row in enumerate(stairs_rows(spec['rounded'])):
+        for x, ch in enumerate(row):
+            if ch != '.':
+                canvas[y, x] = roles[ch]
+
+    return dict(palette=pal, units=[('stairs', canvas, cfg['attr'])])
+
+
+def drawn(b):
+    """A block whose art is generated rather than read off a sheet."""
+    return 'graft' in b or 'stairs' in b
+
+
 class TileBank:
     """8x8 tiles, deduped per palette and across x/y flips."""
 
@@ -510,7 +658,7 @@ def convert(ts, verbose=True):
 
     blocks = []
     for b in ts['blocks']:
-        if 'graft' in b:
+        if drawn(b):
             blocks.append({**b, 'sh': None, 'cells': []})
             continue
         sh = sheet(b['sheet'])
@@ -556,13 +704,13 @@ def convert(ts, verbose=True):
     # other two. It also means the 15-colour budget is per SLOT, not per block.
     palettes = {}
     for b in blocks:
-        if 'graft' in b:
+        if drawn(b):
             continue
         palettes.setdefault(b['pal'], []).extend(c for _, _, c in b['cells'])
     for slot in sorted(palettes):
-        owner = next(b for b in blocks if b['pal'] == slot and 'graft' not in b)
+        owner = next(b for b in blocks if b['pal'] == slot and not drawn(b))
         names = '+'.join(b['name'] for b in blocks
-                         if b['pal'] == slot and 'graft' not in b)
+                         if b['pal'] == slot and not drawn(b))
         raw = len({tuple(int(v) for v in p)
                    for c in palettes[slot] for p in c.reshape(-1, 3)})
         palettes[slot] = block_palette(palettes[slot], owner['sh'].key,
@@ -574,14 +722,31 @@ def convert(ts, verbose=True):
     # Grafts run AFTER the sheet palettes exist, because that is what they draw
     # their colours out of - the whole point is that grafted art is recoloured
     # into the tileset it is joining rather than carrying its own look in.
+    # Stairs run here too, and for the same reason - they are cut out of the
+    # theme's own colours. They come last in the block list so that (a) their
+    # metatile lands after every id a theme table already names, and (b) the
+    # jungle's, which draw in slot 9, see the palette the long-grass graft put
+    # there rather than the one it replaced.
     for b in blocks:
-        if 'graft' not in b:
+        if 'graft' in b:
+            b['graft_out'] = GRAFTS[b['graft']](palettes, b)
+            note = 'grafted      from vanilla '
+        elif 'stairs' in b:
+            under = next(x for x in blocks
+                         if x['name'] == b['stairs'].get('under', 'ground'))
+            fill = plain_fill(under)
+            if fill is None:
+                raise SystemExit(f'stairs: {under["name"]} has no plain fill to '
+                                 f'seat the corners in')
+            b['graft_out'] = draw_stairs(palettes, b, fill,
+                                         under['sh'].key, under['sh'].bg)
+            note = f'drawn        over {under["name"]:<7}'
+        else:
             continue
-        b['graft_out'] = GRAFTS[b['graft']](palettes, b)
         palettes[b['pal']] = b['graft_out']['palette']
         if verbose:
-            print(f'  {b["name"]:<7} {len(b["graft_out"]["units"]):3d} grafted'
-                  f'      from vanilla    palette slot {b["pal"]}')
+            print(f'  {b["name"]:<7} {len(b["graft_out"]["units"]):3d} {note}'
+                  f'  palette slot {b["pal"]}')
 
     bank = TileBank()
     metatiles = []
@@ -589,7 +754,7 @@ def convert(ts, verbose=True):
         # A sheet block yields 24x24 RGB cells that have to be quantised; a
         # graft yields 16x16 index blocks already. Past this point they are the
         # same thing, so everything downstream sees one kind of metatile.
-        if 'graft' in b:
+        if 'graft_out' in b:
             units = [(i, 0, idx, attr) for i, (_, idx, attr)
                      in enumerate(b['graft_out']['units'])]
         else:
@@ -666,7 +831,7 @@ def convert(ts, verbose=True):
     # the label the graft gave them.
     grafted = {}
     for b in blocks:
-        if 'graft' not in b:
+        if 'graft_out' not in b:
             continue
         for i, (label, _, _) in enumerate(b['graft_out']['units']):
             grafted[label] = next(li for li, mt in enumerate(metatiles)
