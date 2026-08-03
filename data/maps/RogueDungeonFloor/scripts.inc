@@ -5,7 +5,10 @@ RogueDungeonFloor_MapScripts::
 	map_script MAP_SCRIPT_ON_FRAME_TABLE, RogueDungeonFloor_OnFrame
 	.byte 0
 
-RogueDungeonFloor_OnFrame:
+@ Global, because RogueDungeonUnderwater shares this table rather than defining
+@ its own. A debug warp deep into the run with no party has to be offered
+@ starters whichever of the two dungeon maps it lands on.
+RogueDungeonFloor_OnFrame::
 	map_script_2 VAR_ROGUE_RUN_STATE, ROGUE_RUN_NEEDS_STARTERS, RogueDungeonFloor_EventScript_ChooseStarters
 	.2byte 0
 
@@ -34,9 +37,15 @@ RogueDungeonFloor_EventScript_Stairs::
 	releaseall
 	end
 
+@ The special rather than a plain `warp MAP_ROGUE_DUNGEON_FLOOR`, because which
+@ of the two dungeon maps a floor lives on depends on its theme: an underwater
+@ floor has to be entered through a MAP_TYPE_UNDERWATER map or the player
+@ arrives walking on the seafloor instead of diving over it.
+@
+@ It reads the floor counter to pick the map, so the addvar has to stay above it.
 RogueDungeonFloor_EventScript_NextFloor::
 	addvar VAR_ROGUE_DUNGEON_FLOOR, 1
-	warp MAP_ROGUE_DUNGEON_FLOOR
+	special RogueDungeon_WarpToCurrentFloor
 	waitstate
 	end
 
@@ -123,7 +132,7 @@ RogueDungeonFloor_EventScript_BossExit::
 RogueDungeonFloor_EventScript_RunComplete::
 	msgbox RogueDungeonFloor_Text_RunComplete, MSGBOX_DEFAULT
 	special RogueDungeon_ResetRun
-	warp MAP_ROGUE_DUNGEON_FLOOR
+	special RogueDungeon_WarpToCurrentFloor
 	waitstate
 	end
 

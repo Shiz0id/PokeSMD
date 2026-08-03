@@ -1164,6 +1164,7 @@
   ],
   "gMapGroup_Rogue": [
     "RogueDungeonFloor",
+    "RogueDungeonUnderwater",
     "RogueRestStop"
   ]
 }

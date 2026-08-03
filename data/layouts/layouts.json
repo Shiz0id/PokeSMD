@@ -9393,6 +9393,16 @@
       "secondary_tileset": "gTileset_Mossdeep",
       "border_filepath": "data/layouts/RogueDungeonOcean/border.bin",
       "blockdata_filepath": "data/layouts/RogueDungeonOcean/map.bin"
+    },
+    {
+      "id": "LAYOUT_ROGUE_DUNGEON_UNDERWATER",
+      "name": "RogueDungeonUnderwaterTiles_Layout",
+      "width": 48,
+      "height": 48,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_Underwater",
+      "border_filepath": "data/layouts/RogueDungeonUnderwaterTiles/border.bin",
+      "blockdata_filepath": "data/layouts/RogueDungeonUnderwaterTiles/map.bin"
     }
   ]
 }

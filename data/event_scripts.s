@@ -601,8 +601,11 @@ gStdScripts_End::
 	.include "data/maps/Route119_House/scripts.inc"
 	.include "data/maps/Route124_DivingTreasureHuntersHouse/scripts.inc"
 
-@ Roguelike maps
+@ Roguelike maps. These sit ABOVE the .if IS_FRLG block below deliberately: an
+@ include appended after the last map in the file lands inside that block and is
+@ silently never assembled for an Emerald build.
 	.include "data/maps/RogueDungeonFloor/scripts.inc"
+	.include "data/maps/RogueDungeonUnderwater/scripts.inc"
 	.include "data/maps/RogueRestStop/scripts.inc"
 
 .if IS_FRLG

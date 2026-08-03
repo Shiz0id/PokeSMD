@@ -648,3 +648,5 @@ gSpecials::
 	def_special RogueDungeon_GiveBossTM
 	def_special RogueDungeon_IsRunCompleteFloor
 	def_special RogueDungeon_ResetRun
+	def_special RogueDungeon_WarpToCurrentFloor
+	def_special RogueDungeon_SetRestStopExit

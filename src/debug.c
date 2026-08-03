@@ -1783,10 +1783,11 @@ static void DebugAction_Util_RogueFloor_SelectFloor(u8 taskId)
         // party leaves the run still needing starters, and the frame table asks
         // for them on arrival - which is how you start a test run deep, not a
         // case to guard against.
-        SetWarpDestination(MAP_GROUP(MAP_ROGUE_DUNGEON_FLOOR),
-                           MAP_NUM(MAP_ROGUE_DUNGEON_FLOOR), WARP_ID_NONE, -1, -1);
-        DoWarp();
-        ResetInitialPlayerAvatarState();
+        // Through the shared helper, so the debug warp picks the same map the
+        // stairs would. Warping straight at MAP_ROGUE_DUNGEON_FLOOR would enter
+        // an underwater floor on foot and make the theme look broken from the
+        // one tool most used to look at it.
+        RogueDungeon_WarpToCurrentFloor();
         DebugAction_DestroyExtraWindow(taskId);
         ScriptContext_Stop();
     }

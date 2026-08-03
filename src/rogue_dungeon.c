@@ -10,6 +10,7 @@
 #include "event_object_movement.h"
 #include "field_camera.h"
 #include "overworld.h"
+#include "field_screen_effect.h"   // DoWarp, for the script-side floor warp
 #include "item.h"
 #include "data.h"
 #include "trainer_see.h"
@@ -345,6 +346,56 @@ static const struct RogueDecor sJungleDecor[] =
     { JUNGLE_METATILE_CANOPY_BASE, JUNGLE_METATILE_CANOPY_BASE_ALT },
 };
 
+// The seafloor. Vanilla puts only three species underwater - Clamperl,
+// Relicanth and Chinchou - which is far too thin for ten floors, so this is
+// built out to the sixteen every other theme has, from what the deep sea and
+// Sootopolis hold rather than from what Routes 124-134 happen to list.
+//
+// Deliberately DISJOINT from sOceanSpecies. Underwater is the dungeon directly
+// after the ocean, and six shared species would have made the two read as one
+// long water stretch. It also foreshadows Juan for free: Luvdisc, Whiscash and
+// Crawdaunt are his, and Milotic closes the list because Sootopolis is where
+// the stock game puts it.
+static const u16 sUnderwaterSpecies[] =
+{
+    SPECIES_CHINCHOU,  SPECIES_CLAMPERL, SPECIES_CORPHISH, SPECIES_BARBOACH,
+    SPECIES_LUVDISC,   SPECIES_CORSOLA,  SPECIES_REMORAID, SPECIES_STARYU,
+    SPECIES_RELICANTH, SPECIES_WHISCASH, SPECIES_LANTURN,  SPECIES_OCTILLERY,
+    SPECIES_CRAWDAUNT, SPECIES_STARMIE,  SPECIES_HUNTAIL,  SPECIES_GOREBYSS,
+};
+
+// Seaweed, laid in blobs the way vanilla lays it. Every slot is the same id
+// because the region autotile has nothing to autotile: seaweed is one uniform
+// 2x2 metatile with no edge art at all - 0x201 and 0x281 are the same four
+// tiles under different palettes - so a patch is just a filled area.
+//
+// 0x281 rather than 0x201 because it is MB_SEAWEED_NO_SURFACING. Both carry
+// encounters; only this one also refuses to let the player surface, which on a
+// floor with no paired surface map is the difference between a sealed dungeon
+// and an unanswered dive warp.
+static const struct RoguePatchLayer sUnderwaterPatch[] =
+{
+    {
+        .tile =
+        {
+            [PATCH_NW] = UNDERWATER_METATILE_SEAWEED,
+            [PATCH_N]  = UNDERWATER_METATILE_SEAWEED,
+            [PATCH_NE] = UNDERWATER_METATILE_SEAWEED,
+            [PATCH_W]  = UNDERWATER_METATILE_SEAWEED,
+            [PATCH_MID]= UNDERWATER_METATILE_SEAWEED,
+            [PATCH_E]  = UNDERWATER_METATILE_SEAWEED,
+            [PATCH_SW] = UNDERWATER_METATILE_SEAWEED,
+            [PATCH_S]  = UNDERWATER_METATILE_SEAWEED,
+            [PATCH_SE] = UNDERWATER_METATILE_SEAWEED,
+            [PATCH_NW_WALL] = UNDERWATER_METATILE_SEAWEED,
+            [PATCH_N_WALL]  = UNDERWATER_METATILE_SEAWEED,
+            [PATCH_NE_WALL] = UNDERWATER_METATILE_SEAWEED,
+        },
+        .blobs = 10,
+        .radius = 5,
+    },
+};
+
 enum DungeonThemeId
 {
     DUNGEON_THEME_WOODS,
@@ -354,6 +405,7 @@ enum DungeonThemeId
     DUNGEON_THEME_MIRAGETOWER,
     DUNGEON_THEME_JUNGLE,
     DUNGEON_THEME_OCEAN,
+    DUNGEON_THEME_UNDERWATER,
     DUNGEON_THEME_COUNT
 };
 
@@ -362,6 +414,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     [DUNGEON_THEME_WOODS] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_WOODS,
+        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
         .generator = DUNGEON_GEN_WOODS,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
@@ -391,6 +444,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     [DUNGEON_THEME_CAVE] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_FLOOR,
+        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
@@ -431,6 +485,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     [DUNGEON_THEME_NEWMAUVILLE] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_NEWMAUVILLE,
+        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
@@ -487,6 +542,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     [DUNGEON_THEME_FIERYPATH] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_FIERYPATH,
+        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
@@ -533,6 +589,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     [DUNGEON_THEME_MIRAGETOWER] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_MIRAGETOWER,
+        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
@@ -580,6 +637,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     [DUNGEON_THEME_JUNGLE] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_JUNGLE,
+        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
         .generator = DUNGEON_GEN_CAVE,   // the canopy tiles 1x1, unlike the woods
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
@@ -639,6 +697,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     [DUNGEON_THEME_OCEAN] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_OCEAN,
+        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
         .generator = DUNGEON_GEN_CAVE,   // the rock nine slice tiles 1x1
         // NOT DUNGEON_ELEVATION_FLOOR. Water is elevation 1 - see the note by
         // the constant. The walls are ordinary rock and stay at 0.
@@ -709,6 +768,102 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .species = sOceanSpecies,
         .speciesCount = ARRAY_COUNT(sOceanSpecies),
     },
+    [DUNGEON_THEME_UNDERWATER] =
+    {
+        .layoutId = LAYOUT_ROGUE_DUNGEON_UNDERWATER,
+
+        // The one theme that does NOT live on the shared dungeon map. Diving is
+        // a map-header property and the header is read out of ROM, so it cannot
+        // be faked the way the tileset swap is. See theme->mapId.
+        .mapId = MAP_ROGUE_DUNGEON_UNDERWATER,
+
+        .generator = DUNGEON_GEN_CAVE,
+
+        // Elevation 3, the ordinary walking one, NOT the ocean's 1. The player
+        // is on the seafloor rather than on the surface, and vanilla puts 1467
+        // of 1468 passable underwater blocks at 3.
+        .elevationFloor = DUNGEON_ELEVATION_FLOOR,
+        .elevationWall = DUNGEON_ELEVATION_WALL,
+
+        // As open as the ocean. Vanilla underwater is a wide basin rather than
+        // a corridor network, and wide corridors are also what keeps the sliver
+        // slots from firing often, which matters because this tileset has no
+        // one-block-thick wall art at all.
+        .roomCount = 12,
+        .roomMin = 7,
+        .roomMax = 13,
+        .corridorWidth = 5,
+
+        .floor = UNDERWATER_METATILE_FLOOR,
+
+        // Encounters come from the seaweed patches below rather than from the
+        // floor, which is MB_NORMAL and carries none. That is what vanilla
+        // does - roughly 40% of its passable underwater area is seaweed - and
+        // it is the woods' arrangement rather than the ocean's.
+        //
+        // longGrass names the seaweed and tallGrass stays 0, which is the
+        // jungle's arrangement and not an abuse of the field: tallGrass is what
+        // switches on the grass-BLOB placement, and this theme is painted by a
+        // patch layer instead, so setting it would place the seaweed twice.
+        // longGrass is left as the declaration of where encounters fire, which
+        // is what check_encounter_flags.py reads. Everything that would paint
+        // from it - the base row under exposed blades, GrassAt - lives in
+        // StampCell, and StampCell is DUNGEON_GEN_WOODS only.
+        .tallGrass = 0,
+        .longGrass = UNDERWATER_METATILE_SEAWEED,
+
+        .stairsDown = UNDERWATER_METATILE_STAIRS,
+        .stairsUp = UNDERWATER_METATILE_STAIRS,
+        .wall =
+        {
+            [WALL_NORTH_LEFT]     = UNDERWATER_METATILE_WALL_NW,
+            [WALL_NORTH_MID]      = UNDERWATER_METATILE_WALL_N,
+            [WALL_NORTH_RIGHT]    = UNDERWATER_METATILE_WALL_NE,
+            [WALL_INTERIOR_LEFT]  = UNDERWATER_METATILE_WALL_W,
+            [WALL_INTERIOR_MID]   = UNDERWATER_METATILE_WALL_MID,
+            [WALL_INTERIOR_RIGHT] = UNDERWATER_METATILE_WALL_E,
+            [WALL_FACE_LEFT]      = UNDERWATER_METATILE_WALL_SW,
+            [WALL_FACE_MID]       = UNDERWATER_METATILE_WALL_S,
+            [WALL_FACE_RIGHT]     = UNDERWATER_METATILE_WALL_SE,
+
+            [WALL_CORNER_OPEN_SE] = UNDERWATER_METATILE_CORNER_OPEN_SE,
+            [WALL_CORNER_OPEN_SW] = UNDERWATER_METATILE_CORNER_OPEN_SW,
+            [WALL_CORNER_OPEN_NW] = UNDERWATER_METATILE_CORNER_OPEN_NW,
+            [WALL_CORNER_OPEN_NE] = UNDERWATER_METATILE_CORNER_OPEN_NE,
+
+            // No thin-wall art exists: the case never occurs once across all
+            // twelve vanilla Underwater layouts. Rather than the interior, which
+            // paints an unedged bar, each falls back on the edge that WOULD be
+            // visible - the south face for a horizontal, a side for a vertical.
+            // The mock still hits the horizontal three ways about 11 times a
+            // floor, so this is not hypothetical; composed art would be better.
+            [WALL_SLIVER_HORZ]    = UNDERWATER_METATILE_WALL_S,
+            [WALL_SLIVER_HORZ_L]  = UNDERWATER_METATILE_WALL_S,
+            [WALL_SLIVER_HORZ_R]  = UNDERWATER_METATILE_WALL_S,
+            [WALL_SLIVER_ISOLATED]= UNDERWATER_METATILE_WALL_S,
+            [WALL_SLIVER_VERT]    = UNDERWATER_METATILE_WALL_W,
+            [WALL_SLIVER_VERT_TOP]= UNDERWATER_METATILE_WALL_W,
+            [WALL_SLIVER_VERT_BOT]= UNDERWATER_METATILE_WALL_W,
+        },
+
+        .patches = sUnderwaterPatch,
+        .patchCount = ARRAY_COUNT(sUnderwaterPatch),
+
+        // Swimmers stand in until divers exist. They are wrong - a swimmer is
+        // drawn treading the surface in swimwear, and this is the seafloor -
+        // but the only diving sprites in the game are the player's own
+        // BRENDAN_UNDERWATER / MAY_UNDERWATER, and dressing every trainer as
+        // the player is worse.
+        .trainerGfx = OBJ_EVENT_GFX_SWIMMER_M,
+        .trainerGfxAlt = OBJ_EVENT_GFX_SWIMMER_F,
+
+        // No platform, unlike the ocean: the seafloor is ordinary walkable
+        // ground, so Juan stands on it the way every land boss does.
+        .arenaPlatform = FALSE,
+
+        .species = sUnderwaterSpecies,
+        .speciesCount = ARRAY_COUNT(sUnderwaterSpecies),
+    },
 };
 
 // Which theme each dungeon uses, following the stock game: Petalburg Woods then
@@ -717,8 +872,11 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
 // are what sit between Lavaridge and Petalburg - and the jungle then Winona,
 // Route 119 and 120 being the rainy overgrown approach to Fortree. Then the
 // open ocean and Tate and Liza, because Routes 124 to 126 out of Lilycove are
-// how the stock game reaches Mossdeep. Beyond the seventh they cycle until more
-// themes exist.
+// how the stock game reaches Mossdeep. Then the seafloor and Juan, since diving
+// is what Mossdeep hands the player and Sootopolis is reachable no other way.
+//
+// That is all eight gym dungeons with a theme of their own and no repeats. The
+// cycling starts at the Elite Four, where the dungeons are half as long.
 static const struct RogueDungeonTheme *ThemeForFloor(u16 floor)
 {
     u32 dungeon = DungeonIndexOf(floor);
@@ -1023,6 +1181,56 @@ void RogueDungeon_ResetRun(void)
     ClearBag();
 }
 
+// Which map a floor's theme lives on. Almost always MAP_ROGUE_DUNGEON_FLOOR;
+// see theme->mapId for why underwater cannot share it.
+//
+// EVERY path that puts the player on a dungeon floor has to go through this.
+// Warping to the wrong one of the two maps is not a visual glitch: the map type
+// is what decides whether the player arrives diving or walking, so a floor
+// reached by the wrong route would be underwater art walked over on foot.
+static u16 MapForFloor(u16 floor)
+{
+    return ThemeForFloor(floor)->mapId;
+}
+
+static void SetWarpDestinationToFloor(u16 floor)
+{
+    u16 map = MapForFloor(floor);
+
+    SetWarpDestination(MAP_GROUP(map), MAP_NUM(map), WARP_ID_NONE, -1, -1);
+}
+
+// Destination only, for the callers that follow it with WarpIntoMap rather than
+// DoWarp - a new game and a whiteout both move the player without a fade.
+void RogueDungeon_SetWarpToCurrentFloor(void)
+{
+    SetWarpDestinationToFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR));
+}
+
+// The script-side descent, replacing a hard-coded `warp MAP_ROGUE_DUNGEON_FLOOR`.
+// Mirrors ScrCmd_warp exactly - destination, DoWarp, reset the stored avatar
+// state - so the calling script still just follows it with waitstate.
+//
+// Callers must have advanced VAR_ROGUE_DUNGEON_FLOOR already, because this
+// reads the floor it is warping TO in order to pick the map.
+void RogueDungeon_WarpToCurrentFloor(void)
+{
+    RogueDungeon_SetWarpToCurrentFloor();
+    DoWarp();
+    ResetInitialPlayerAvatarState();
+}
+
+// The rest stop's exits are MAP_DYNAMIC, because which map they lead to depends
+// on the next dungeon's theme and a warp event cannot be conditional. Called
+// from the rest stop's ON_LOAD so it is recomputed however the player got there,
+// including loading a save made inside it.
+void RogueDungeon_SetRestStopExit(void)
+{
+    u16 map = MapForFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR));
+
+    SetDynamicWarp(0, MAP_GROUP(map), MAP_NUM(map), WARP_ID_NONE);
+}
+
 bool8 RogueDungeon_TryHandleWhiteOut(void)
 {
     if (gMapHeader.mapLayoutId != LAYOUT_ROGUE_DUNGEON_FLOOR)
@@ -1031,8 +1239,9 @@ bool8 RogueDungeon_TryHandleWhiteOut(void)
     RogueDungeon_ResetRun();
 
     // Back to the first floor, where the frame table will ask for starters.
-    SetWarpDestination(MAP_GROUP(MAP_ROGUE_DUNGEON_FLOOR),
-                       MAP_NUM(MAP_ROGUE_DUNGEON_FLOOR), WARP_ID_NONE, -1, -1);
+    // ResetRun has already put the floor counter back to 0, so this picks that
+    // floor's map rather than the one being whited out of.
+    RogueDungeon_SetWarpToCurrentFloor();
     WarpIntoMap();
     return TRUE;
 }

@@ -141,8 +141,12 @@ static void WarpToTruck(void)
     {
         // A run starts in the dungeon. CB2_NewGame overrides gFieldCallback to
         // skip the truck sequence to match.
-        SetWarpDestination(MAP_GROUP(MAP_ROGUE_DUNGEON_FLOOR),
-                           MAP_NUM(MAP_ROGUE_DUNGEON_FLOOR), WARP_ID_NONE, -1, -1);
+        //
+        // Through the helper rather than naming the map: floor 1's theme is the
+        // woods today, but which MAP a floor lives on is a theme property now,
+        // and a reordering that made floor 1 underwater should not silently
+        // start every new game walking on the seafloor.
+        RogueDungeon_SetWarpToCurrentFloor();
         WarpIntoMap();
         return;
     }

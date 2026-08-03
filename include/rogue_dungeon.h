@@ -427,6 +427,43 @@
 #define OCEAN_METATILE_CORNER_OPEN_NW    0x3CF
 #define OCEAN_METATILE_CORNER_OPEN_NE    0x3D0
 
+// gTileset_Underwater, the seafloor below the sea routes. The second theme the
+// player crosses without walking, and the first crossed DIVING.
+//
+// Unlike surfing, that is not a property of any metatile - it is the MAP.
+// MAP_TYPE_UNDERWATER makes GetAdjustedInitialTransitionFlags answer with
+// PLAYER_AVATAR_FLAG_UNDERWATER on arrival, ahead of any behaviour check, with
+// no Dive HM and no party requirement. GetCurrentMapType reads the ROM header
+// by warp group and id, so the RAM patch that swaps tilesets cannot fake it and
+// this theme gets its own map. See theme->mapId.
+//
+// Everything below is vanilla's, at better confidence than any other theme:
+// derive_wall_table.py on LAYOUT_UNDERWATER_ROUTE126 gives every cardinal case
+// at 68-93%, and a corner-case scan over all twelve Underwater layouts gives
+// all four inside corners at 69-94% with 155-188 examples each. Nothing here is
+// composed and nothing is drawn.
+//
+// Note the wall mass is LIGHTER than the floor, which is inverted from every
+// other theme - it is the open water above the seafloor, not rock.
+#define UNDERWATER_METATILE_FLOOR          0x216  // MB_NORMAL, no encounters
+#define UNDERWATER_METATILE_SEAWEED        0x281  // MB_SEAWEED_NO_SURFACING
+#define UNDERWATER_METATILE_STAIRS         0x2A9  // MB_NO_SURFACING
+
+#define UNDERWATER_METATILE_WALL_NW        0x20A
+#define UNDERWATER_METATILE_WALL_N         0x20B
+#define UNDERWATER_METATILE_WALL_NE        0x20C
+#define UNDERWATER_METATILE_WALL_W         0x212
+#define UNDERWATER_METATILE_WALL_MID       0x213
+#define UNDERWATER_METATILE_WALL_E         0x214
+#define UNDERWATER_METATILE_WALL_SW        0x21A
+#define UNDERWATER_METATILE_WALL_S         0x21B
+#define UNDERWATER_METATILE_WALL_SE        0x21C
+
+#define UNDERWATER_METATILE_CORNER_OPEN_SE 0x206
+#define UNDERWATER_METATILE_CORNER_OPEN_SW 0x207
+#define UNDERWATER_METATILE_CORNER_OPEN_NW 0x222
+#define UNDERWATER_METATILE_CORNER_OPEN_NE 0x223
+
 
 // Woods uses the same two elevations as caves.
 #define DUNGEON_ELEVATION_FLOOR 3
@@ -554,6 +591,23 @@ struct RogueSkirt
 struct RogueDungeonTheme
 {
     u16 layoutId;
+
+    // Which MAP the theme's floors live on, as opposed to which layout supplies
+    // its tilesets. Almost always MAP_ROGUE_DUNGEON_FLOOR: the generator swaps
+    // gMapHeader.mapLayout per theme, so one map carries every theme that
+    // differs only in art.
+    //
+    // A theme needs its own map only for something the map HEADER owns, and the
+    // header is read out of ROM by warp group and id - GetCurrentMapType goes
+    // through GetMapTypeByWarpData, not gMapHeader - so the RAM patch that
+    // swaps tilesets cannot reach it. Underwater is the case that needs it:
+    // MAP_TYPE_UNDERWATER is what hands the player the diving avatar on
+    // arrival, with no Dive HM and no party requirement, and it also carries
+    // the underwater battle backdrop, the diving field effect and the bubble
+    // weather. Set it on EVERY theme rather than defaulting, because 0 is a
+    // valid map id and a silent wrong map is a very confusing bug.
+    u16 mapId;
+
     u8 generator;
     u8 elevationFloor;
     u8 elevationWall;
@@ -749,6 +803,13 @@ bool8 RogueDungeon_HasTrainerBeenBeaten(u8 objectEventId);
 bool8 RogueDungeon_IsBossFloor(u16 floor);
 
 void RogueDungeon_ResetRun(void);
+
+// These pick the destination MAP from the floor's theme, which is what keeps an
+// underwater floor from being entered on foot. See theme->mapId. EVERY path
+// that puts the player on a dungeon floor goes through one of them.
+void RogueDungeon_SetWarpToCurrentFloor(void);  // destination only, then WarpIntoMap
+void RogueDungeon_WarpToCurrentFloor(void);     // the full ScrCmd_warp sequence
+void RogueDungeon_SetRestStopExit(void);        // the rest stop's MAP_DYNAMIC exits
 
 // Debug menu support. Describes a floor in one short line; see the debug warp
 // tool in src/debug.c.

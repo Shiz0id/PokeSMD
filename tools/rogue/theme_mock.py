@@ -156,6 +156,40 @@ THEMES = {
             'SLIVER_HORZ_L': 0x3CA, 'SLIVER_HORZ_R': 0x3CB,
             'SLIVER_ISOLATED': 0x3CC,
         }),
+    # The seafloor, and the first theme the player crosses DIVING. That is a
+    # property of the MAP rather than of any metatile - MAP_TYPE_UNDERWATER
+    # hands out the diving avatar on arrival - so this theme has its own map,
+    # MAP_ROGUE_DUNGEON_UNDERWATER, sharing the dungeon layout.
+    #
+    # The best-supported wall table in the project: derive_wall_table.py on
+    # LAYOUT_UNDERWATER_ROUTE126 gives every cardinal case at 68-93%, and a
+    # corner-case scan over all twelve Underwater layouts gives all four inside
+    # corners at 69-94% with 155-188 examples each. Nothing is composed here.
+    #
+    # Slivers never occur in vanilla underwater at all, so the seven sliver
+    # slots are left on the wall interior: with 5-wide corridors they should
+    # never fire, and the mock's unhit-slot report is what confirms it.
+    'underwater': dict(
+        primary='gTileset_General', secondary='gTileset_Underwater',
+        floor=0x216, stairs=0x2A9,
+        rooms=12, room_min=7, room_max=13, corridor=5,
+        # Seaweed, in blobs, the way vanilla lays it. It is a single uniform 2x2
+        # metatile with no edge art - 0x201 and 0x281 are the same four tiles
+        # under different palettes - so every slot is the same id and the region
+        # autotile degenerates to a plain fill. 0x281 is the NO_SURFACING one.
+        patch={k: 0x281 for k in PATCH_SLOTS},
+        patch_blobs=10, patch_radius=5,
+        wall={
+            'NORTH_LEFT': 0x20A, 'NORTH_MID': 0x20B, 'NORTH_RIGHT': 0x20C,
+            'INTERIOR_LEFT': 0x212, 'INTERIOR_MID': 0x213, 'INTERIOR_RIGHT': 0x214,
+            'FACE_LEFT': 0x21A, 'FACE_MID': 0x21B, 'FACE_RIGHT': 0x21C,
+            'CORNER_OPEN_SE': 0x206, 'CORNER_OPEN_SW': 0x207,
+            'CORNER_OPEN_NW': 0x222, 'CORNER_OPEN_NE': 0x223,
+            'SLIVER_VERT': 0x212, 'SLIVER_HORZ': 0x21B,
+            'SLIVER_VERT_TOP': 0x212, 'SLIVER_VERT_BOT': 0x212,
+            'SLIVER_HORZ_L': 0x21B, 'SLIVER_HORZ_R': 0x21B,
+            'SLIVER_ISOLATED': 0x21B,
+        }),
     # gTileset_MirageTower is a pure art reskin of gTileset_Cave - 411 of 414
     # metatiles byte-identical, all attributes identical - so the wall table is
     # the cave's verbatim. The one difference is floor and interior swapping

@@ -27,13 +27,14 @@ Losing wipes the run; so does winning, which is the point.
   The Elite Four come every five floors because a gauntlet is what they are.
   Giving each of them a mini boss as well would pad the endgame with grunts,
   and there is no stock trainer at that level to draw one from anyway.
-- **Seven themes**: Petalburg Woods (dungeon 1, Roxanne), Granite Cave
-  (dungeon 2, Brawly), New Mauville (dungeon 3, Wattson), Fiery Path
-  (dungeon 4, Flannery), Mirage Tower (dungeon 5, Norman), the Jungle
-  (dungeon 6, Winona) and the open Ocean (dungeon 7, Tate and Liza). They cycle
-  past that until more exist.
-- The ocean is the only theme the player crosses **surfing**, which is a
-  property of its floor metatile rather than a special case — see §7.
+- **Eight themes, one per gym dungeon, no repeats**: Petalburg Woods (dungeon 1,
+  Roxanne), Granite Cave (2, Brawly), New Mauville (3, Wattson), Fiery Path
+  (4, Flannery), Mirage Tower (5, Norman), the Jungle (6, Winona), the open
+  Ocean (7, Tate and Liza) and the Underwater seafloor (8, Juan). Cycling now
+  starts at the Elite Four, where the dungeons are half as long.
+- The ocean is crossed **surfing** and the seafloor **diving**. Surfing is a
+  property of the floor metatile; diving is a property of the **map**, which is
+  why underwater is the one theme with a map of its own — see §7.
 - Reachable from a new game, which is slimmed to name entry only.
 
 Everything lives in `src/rogue_dungeon.c` / `include/rogue_dungeon.h` plus
@@ -571,6 +572,73 @@ floor and paints `WALL_SLIVER_ISOLATED`, already a lone rock. It also turns that
 trainer talk-only, because a boss that keeps its sight range walks off the
 platform to approach and then spends the rest of the floor standing on water.
 
+### A theme the player dives through — and needs a second MAP for
+
+Surfing falls out of a metatile behaviour. **Diving does not: it falls out of
+the map header.**
+
+```c
+// GetAdjustedInitialTransitionFlags, overworld.c — checked BEFORE any behaviour
+else if (mapType == MAP_TYPE_UNDERWATER)
+    return PLAYER_AVATAR_FLAG_UNDERWATER;
+```
+
+Unconditional, like the surf case — no Dive HM, no badge, no party requirement.
+But **`GetCurrentMapType()` goes through `GetMapTypeByWarpData()`, which reads
+the ROM header by warp group and id, not `gMapHeader`.** So the RAM patch that
+swaps `gMapHeader.mapLayout` per theme cannot reach it, and no amount of
+per-theme trickery makes a shared map underwater.
+
+Hence `theme->mapId`, and `MAP_ROGUE_DUNGEON_UNDERWATER`. **This is cheap, and
+cheaper than it looks:**
+
+- **Two maps can share one layout** — 49 vanilla layouts already do,
+  `LAYOUT_POKEMON_CENTER_1F` by sixteen maps. The second map reuses
+  `LAYOUT_ROGUE_DUNGEON_FLOOR`, so `mapLayoutId` is *identical* on both and
+  every dispatch that keys on it keeps working untouched. The map-plumbing
+  recipe's step 5 — two dispatch branches in `overworld.c` — costs nothing here.
+- Scripts are shared too. The new map's object events point straight at
+  `RogueDungeonFloor_EventScript_Trainer`, and its frame table at that map's
+  `RogueDungeonFloor_OnFrame`, so its `scripts.inc` defines nothing at all.
+- It also buys the underwater **battle backdrop**, the diving **field effect**,
+  the cave-transition pair and `WEATHER_UNDERWATER_BUBBLES` — about eighteen
+  places key on `MAP_TYPE_UNDERWATER`, and a hook faking the avatar flag would
+  have got every one of them wrong.
+
+**Every path that puts the player on a floor has to choose the map.** There were
+five, not the one that was obvious: the stairs script, the run-complete script,
+the whiteout, the new-game start, and **the debug floor warp** — that last one
+matters most, because it is the tool the theme gets looked at with, and left
+alone it enters an underwater floor on foot and makes the theme look broken.
+They all go through `RogueDungeon_WarpToCurrentFloor` / `…SetWarpToCurrentFloor`.
+
+The rest stop's exits are `warp_event`s, which cannot be conditional, so they
+are **`MAP_DYNAMIC`** — the engine's own mechanism for this — with the
+destination set from the rest stop's `ON_LOAD`. On load rather than on the way
+in, so it is right however the player got there, including a save made inside it.
+
+Two things underwater gets for free that the ocean had to fight for:
+
+- **Elevation is 3**, the ordinary walking one, not the ocean's 1. Vanilla puts
+  1467 of 1468 passable underwater blocks at 3.
+- **No `arenaPlatform`.** The seafloor is ordinary walkable ground, so Juan
+  stands on it the way every land boss does.
+
+Encounters come from **seaweed**, not the floor: `0x216` is `MB_NORMAL` and
+carries none, `0x281` is `MB_SEAWEED_NO_SURFACING` and carries both
+`HAS_ENCOUNTERS` and `SURFABLE`. The `NO_SURFACING` variant matters — a dungeon
+has no paired surface map, so a plain `MB_SEAWEED` would leave an unanswered
+dive warp. Seaweed is a single uniform 2×2 metatile with no edge art at all
+(`0x201` and `0x281` are the same four tiles under different palettes), so the
+patch layer's nine-slice degenerates to a plain fill.
+
+`theme->longGrass` names it while `tallGrass` stays 0 — the jungle's
+arrangement. That is not an abuse of the field: `tallGrass` is what switches on
+grass-**blob** placement, and a patch-layer theme would then paint it twice.
+`longGrass` is left as the declaration of where encounters fire, which is what
+`check_encounter_flags.py` reads. Everything that would paint *from* it lives in
+`StampCell`, which is `DUNGEON_GEN_WOODS` only.
+
 ### Openness
 
 `roomCount`, `roomMin`, `roomMax` and `corridorWidth` let a theme carve more
@@ -869,9 +937,21 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
 
 ## 10. Known gaps
 
-1. Seven themes against fourteen dungeons, so they cycle past dungeon 7. The five
-   Elite Four dungeons are only five floors long, which makes the cycling more
-   visible, not less — a theme now gets half as long to make an impression.
+1. Eight themes against fourteen dungeons. Every gym dungeon now has one of its
+   own, so cycling starts at the Elite Four — but those five are only five
+   floors long, which makes the repeat *more* visible, not less: a theme gets
+   half as long to make an impression.
+1a. **Underwater has no divers.** Trainers there are `SWIMMER_M`/`SWIMMER_F`,
+   who are drawn treading the surface in swimwear while standing on the
+   seafloor. There is no diver NPC graphic in the game at all — the only diving
+   sprites are the player's own `BRENDAN_UNDERWATER` / `MAY_UNDERWATER`, which
+   are the obvious recolour base. This one needs new art; there is no table
+   entry that fixes it.
+1b. Underwater has no one-block-thick wall art, because the case never occurs
+   once across all twelve vanilla Underwater layouts. The sliver slots fall back
+   on the edge that would be visible rather than the unedged interior, but the
+   mock still hits the horizontal three ways about 11 times a floor. Composed
+   art, the way `make_ocean_tiles.py` does it, would be better.
 2. Winning ends the run the same way losing does: the party and bag are wiped
    and the player is back on floor 1. Nothing is carried forward and nothing
    records that it happened, so there is no reason to have won rather than
@@ -886,12 +966,13 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    for it. Everything decorative it does have is inside `StampCell`. That is
    fine while the only variety is per-cell, but a woods theme wanting scattered
    props or ground patches would need the passes lifted out of the cave path.
-6. **The jungle has no rain.** Route 119 and 120 are rainy in vanilla and the
-   theme is built to be, but weather is per-map and all six themes share one
-   map — only `gMapHeader.mapLayout` is swapped, and `mapLayoutId` is left alone
-   deliberately because every dispatch keys on it. So per-theme weather needs a
-   different hook than the tileset swap uses, and how `gMapHeader.weather`
-   survives our warp path has not been checked yet.
+6. **The jungle has no rain**, and the answer is now known. Weather is per-map
+   and the seven land themes share one map. Underwater proved the shape of the
+   fix: `theme->mapId` already exists, a second map costs one `map.json` and an
+   empty `scripts.inc` because layouts and scripts are both shareable, and the
+   underwater map carries `WEATHER_UNDERWATER_BUBBLES` today. A rainy map for
+   the jungle is the same move. Whether it is worth a map per weather is the
+   open question, not whether it works.
 7. The jungle's four sliver slots are never exercised: 3-wide corridors do not
    leave one-block-thick walls. They are filled with plain canopy, so the risk
    is low, but they are unvalidated and would show up if `corridorWidth` ever
