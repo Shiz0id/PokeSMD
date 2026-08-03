@@ -9453,6 +9453,16 @@
       "secondary_tileset": "gTileset_EverGrande",
       "border_filepath": "data/layouts/RogueDungeonEverGrande/border.bin",
       "blockdata_filepath": "data/layouts/RogueDungeonEverGrande/map.bin"
+    },
+    {
+      "id": "LAYOUT_ROGUE_DUNGEON_LAPIS",
+      "name": "RogueDungeonLapis_Layout",
+      "width": 48,
+      "height": 48,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_RogueLapisCave",
+      "border_filepath": "data/layouts/RogueDungeonLapis/border.bin",
+      "blockdata_filepath": "data/layouts/RogueDungeonLapis/map.bin"
     }
   ]
 }

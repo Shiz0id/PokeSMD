@@ -569,6 +569,62 @@
 #define VICTORYROAD_METATILE_SNOW_INTERIOR_R  0x3AD
 
 
+// Lapis Cave, Glacia's, and the first theme in the project whose tileset is
+// neither vanilla nor a recolour of one. gTileset_General +
+// gTileset_RogueLapisCave, built by tools/rogue/import_tile_sheet.py from a
+// Mystery Dungeon: Red Rescue Team sheet ripped and formatted by
+// SilverDeoxys563 - the same source the snow field above was adapted from,
+// imported wholesale this time rather than redrawn.
+//
+// NONE OF THIS TABLE WAS MINED. Every other theme's wall vocabulary had to be
+// recovered by reading vanilla layouts, because vanilla ships maps and not
+// rules. This sheet ships the rules: a Legend column giving each cell's
+// neighbour mask, which the importer decodes and matches against the twenty
+// PaintWalls slots directly. All twenty matched at full score, so nothing here
+// was guessed and nothing needed a mock to disambiguate.
+//
+// Two things follow that no other theme gets:
+//
+//  * FOUR DISTINCT INSIDE CORNERS. Vanilla Emerald never drew them, which is
+//    why every other table repeats one metatile across CORNER_NW and CORNER_NE.
+//    This is the first where the two differ.
+//  * NO COMPOSED SLIVERS. The cave needed seven spliced metatiles, Fiery Path
+//    six, the ocean seven - vanilla's walls are never one block thick. All
+//    seven sliver cases are native here.
+//
+// The interior is a flat dark block, so a wall mass reads as void with a
+// crystal rim rather than as textured rock. That is the sheet's own look, and
+// it is also the only fill it has that tiles invisibly: measured seam 0.0,
+// against 35-42 for every textured rock face in the Meteor Falls tileset that
+// was evaluated beside it, where a fill at that seam became visible corduroy.
+#define LAPIS_METATILE_FLOOR                  0x233  // MB_CAVE, so encounters fire
+#define LAPIS_METATILE_WALL_INTERIOR_L        0x203
+#define LAPIS_METATILE_WALL_INTERIOR_M        0x204
+#define LAPIS_METATILE_WALL_INTERIOR_R        0x205
+#define LAPIS_METATILE_WALL_FACE_L            0x206
+#define LAPIS_METATILE_WALL_FACE_M            0x207
+#define LAPIS_METATILE_WALL_FACE_R            0x208
+#define LAPIS_METATILE_WALL_NORTH_L           0x200
+#define LAPIS_METATILE_WALL_NORTH_M           0x201
+#define LAPIS_METATILE_WALL_NORTH_R           0x202
+#define LAPIS_METATILE_WALL_CORNER_SE         0x21D  // open SE diagonal
+#define LAPIS_METATILE_WALL_CORNER_SW         0x21E  // open SW
+#define LAPIS_METATILE_WALL_CORNER_NW         0x220  // open NW
+#define LAPIS_METATILE_WALL_CORNER_NE         0x21F  // open NE, and NOT the same
+#define LAPIS_METATILE_SLIVER_VERT            0x20C
+#define LAPIS_METATILE_SLIVER_HORZ            0x20A
+#define LAPIS_METATILE_SLIVER_VERT_TOP        0x210
+#define LAPIS_METATILE_SLIVER_VERT_BOT        0x214
+#define LAPIS_METATILE_SLIVER_HORZ_L          0x211
+#define LAPIS_METATILE_SLIVER_HORZ_R          0x213
+#define LAPIS_METATILE_SLIVER_ISOLATED        0x20D
+// gTileset_GENERAL's warp, the same one Fiery Path uses. A PRIMARY id, so it
+// is available under any pair. The sheet has no stairs of its own, and grey
+// rock on an ice floor is the one piece of this theme that does not belong.
+// Composing one from the sheet's own crystal is the obvious follow-up.
+#define LAPIS_METATILE_STAIRS                 0x0A7
+
+
 // Ever Grande, the flower meadow, and Wallace's. gTileset_General +
 // gTileset_EverGrande.
 //
@@ -910,6 +966,21 @@ struct RogueDungeonTheme
 
     const u16 *species;
     u8 speciesCount;
+
+    // Which of the engine's encounter tables this theme's floors feed, matching
+    // the metatile behaviour of whatever surface it actually paints encounters
+    // on. WILD_AREA_LAND is 0 and is right for eleven of the thirteen themes,
+    // so only the two water ones set it - unlike mapId above, a wrong value
+    // here cannot go unnoticed, because check_encounter_flags.py derives the
+    // area from the surface's own MB_ and fails if the two disagree.
+    //
+    // This exists because StandardWildEncounter picks the land or the water
+    // branch from the tile under the player, and each branch needs its own
+    // non-NULL table in wild_encounters.json before it will call the hook at
+    // all. The ocean paints MB_OCEAN_WATER and had only a land table, so it
+    // took the water branch, found NULL and returned - no wild encounters, on
+    // either water theme, for as long as they have existed.
+    u8 wildArea;
 };
 
 // Half-resolution grid for DUNGEON_GEN_WOODS, so a cell is one 2x2 stamp.

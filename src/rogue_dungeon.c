@@ -172,24 +172,16 @@ static const struct RogueDecor sNewMauvilleDecor[] =
                                       NEWMAUVILLE_METATILE_WALL_BOOKCASE_R },
 };
 
-// Glacia's snowfield. FLOOR decor rather than wall decor, which the pass has
-// always supported - it keys on the painted metatile, and a floor base is as
-// valid a base as a wall one.
+// Glacia's snowfield decor USED to sit here, and is gone with the snowfield.
+// It named VICTORYROAD_METATILE_SNOW_DRIFT_L/_R and _ICE_ROCK, which are ids in
+// the snow tileset's files; Glacia now runs on gTileset_RogueLapisCave, where
+// the same three ids are unrelated pieces of crystal wall. Repointing the array
+// would have been the section 3 bug - a per-theme metatile id outliving the
+// tileset it was measured against - so it was deleted rather than carried.
 //
-// This is the first Victory Road theme with any decor at all. The others have
-// none because the CAVE's decor draws about half its pixels from
-// gTileset_General's palettes, which are shared with every other theme and so
-// cannot be recoloured. New art drawn in palette 6 has no such problem, which
-// is the general escape from that limitation.
-//
-// The drift is 2 wide, so it only lands where the block east is also plain
-// snow - a lone half of a crescent reads as a smear.
-static const struct RogueDecor sGlaciaDecor[] =
-{
-    { VICTORYROAD_METATILE_SNOW_FLOOR, VICTORYROAD_METATILE_SNOW_DRIFT_L,
-                                       VICTORYROAD_METATILE_SNOW_DRIFT_R },
-    { VICTORYROAD_METATILE_SNOW_FLOOR, VICTORYROAD_METATILE_ICE_ROCK },
-};
+// The decor pass itself was proved out here and still supports a FLOOR base as
+// well as a wall one. Lapis wants its own drifts drawn in its own palette; that
+// is new art, not a rename.
 
 // Fiery Path's own residents plus their evolutions, with a couple of fire
 // types that fit the tunnel. Ordered weakest to strongest like the others.
@@ -966,6 +958,10 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
 
         .species = sOceanSpecies,
         .speciesCount = ARRAY_COUNT(sOceanSpecies),
+
+        // MB_OCEAN_WATER is a WATER encounter, not a land one - five slots
+        // rather than twelve. See BuildWildEncounterTable.
+        .wildArea = WILD_AREA_WATER,
     },
     [DUNGEON_THEME_UNDERWATER] =
     {
@@ -1066,6 +1062,11 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
 
         .species = sUnderwaterSpecies,
         .speciesCount = ARRAY_COUNT(sUnderwaterSpecies),
+
+        // The seaweed is MB_SEAWEED_NO_SURFACING, which carries TILE_FLAG_
+        // SURFABLE, so it is a WATER encounter even though the player is
+        // walking. Vanilla agrees: every UNDERWATER map registers water_mons.
+        .wildArea = WILD_AREA_WATER,
     },
 
     // Victory Road, the Elite Four's four dungeons. One theme each, differing
@@ -1186,51 +1187,56 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     // miss, Weather Ball turns Ice. Gen 9 snow does no chip damage the way hail
     // would, so it costs the player's team nothing just for being here - but
     // Glacia's own party is Ice and she fights her boss battle with the buff up.
+    // Glacia is the one Elite Four member NOT on the shared Victory Road
+    // tileset. She has Lapis Cave, imported from a Mystery Dungeon sheet - see
+    // the metatile block in the header for what that bought and what it cost.
+    // The theme id keeps its VICTORYROAD_ name because ThemeForFloor is a
+    // modulo over this enum and the INDEX is what lands her theme on her
+    // dungeon; renaming it would be churn with a real chance of an off-by-one.
     [DUNGEON_THEME_VICTORYROAD_GLACIA] =
     {
-        .layoutId = LAYOUT_ROGUE_DUNGEON_VRGLACIA,
+        .layoutId = LAYOUT_ROGUE_DUNGEON_LAPIS,
         .mapId = MAP_ROGUE_DUNGEON_SNOW,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
-        .floor = VICTORYROAD_METATILE_SNOW_FLOOR,
+        .floor = LAPIS_METATILE_FLOOR,
         .tallGrass = 0,
         .longGrass = 0,
-        .stairsDown = VICTORYROAD_METATILE_STAIRS_DOWN,
-        .stairsUp = VICTORYROAD_METATILE_STAIRS_UP,
-        // Five slots differ from the other three Victory Road themes: the
-        // ones whose art has cave FLOOR baked into a floor-facing edge. On a
-        // snow floor that band is the wrong colour - see the header. The rest
-        // of the table is the cave's, unchanged.
+        .stairsDown = LAPIS_METATILE_STAIRS,
+        .stairsUp = LAPIS_METATILE_STAIRS,
+        // The first table in the project where all four inside corners differ,
+        // and the first with no composed slivers - both because the sheet's own
+        // autotile legend covers cases vanilla Emerald never drew.
         .wall =
         {
-            [WALL_INTERIOR_LEFT]  = VICTORYROAD_METATILE_SNOW_INTERIOR_L,
-            [WALL_INTERIOR_MID]   = VICTORYROAD_METATILE_WALL_INTERIOR_M,
-            [WALL_INTERIOR_RIGHT] = VICTORYROAD_METATILE_SNOW_INTERIOR_R,
-            [WALL_FACE_LEFT]      = VICTORYROAD_METATILE_SNOW_FACE_L,
-            [WALL_FACE_MID]       = VICTORYROAD_METATILE_SNOW_FACE_M,
-            [WALL_FACE_RIGHT]     = VICTORYROAD_METATILE_SNOW_FACE_R,
-            [WALL_NORTH_LEFT]     = VICTORYROAD_METATILE_WALL_NORTH_L,
-            [WALL_NORTH_MID]      = VICTORYROAD_METATILE_WALL_NORTH_M,
-            [WALL_NORTH_RIGHT]    = VICTORYROAD_METATILE_WALL_NORTH_R,
-            [WALL_CORNER_OPEN_SE] = VICTORYROAD_METATILE_WALL_CORNER_NW,
-            [WALL_CORNER_OPEN_SW] = VICTORYROAD_METATILE_WALL_CORNER_NE,
-            [WALL_CORNER_OPEN_NW] = VICTORYROAD_METATILE_WALL_CORNER_S,
-            [WALL_CORNER_OPEN_NE] = VICTORYROAD_METATILE_WALL_CORNER_S,
-            [WALL_SLIVER_VERT]    = VICTORYROAD_METATILE_SLIVER_VERT,
-            [WALL_SLIVER_HORZ]    = VICTORYROAD_METATILE_SLIVER_HORZ,
-            [WALL_SLIVER_VERT_TOP]= VICTORYROAD_METATILE_SLIVER_VERT_TOP,
-            [WALL_SLIVER_VERT_BOT]= VICTORYROAD_METATILE_SLIVER_VERT_BOT,
-            [WALL_SLIVER_HORZ_L]  = VICTORYROAD_METATILE_SLIVER_HORZ_L,
-            [WALL_SLIVER_HORZ_R]  = VICTORYROAD_METATILE_SLIVER_HORZ_R,
-            [WALL_SLIVER_ISOLATED]= VICTORYROAD_METATILE_SLIVER_ISOLATED,
+            [WALL_INTERIOR_LEFT]  = LAPIS_METATILE_WALL_INTERIOR_L,
+            [WALL_INTERIOR_MID]   = LAPIS_METATILE_WALL_INTERIOR_M,
+            [WALL_INTERIOR_RIGHT] = LAPIS_METATILE_WALL_INTERIOR_R,
+            [WALL_FACE_LEFT]      = LAPIS_METATILE_WALL_FACE_L,
+            [WALL_FACE_MID]       = LAPIS_METATILE_WALL_FACE_M,
+            [WALL_FACE_RIGHT]     = LAPIS_METATILE_WALL_FACE_R,
+            [WALL_NORTH_LEFT]     = LAPIS_METATILE_WALL_NORTH_L,
+            [WALL_NORTH_MID]      = LAPIS_METATILE_WALL_NORTH_M,
+            [WALL_NORTH_RIGHT]    = LAPIS_METATILE_WALL_NORTH_R,
+            [WALL_CORNER_OPEN_SE] = LAPIS_METATILE_WALL_CORNER_SE,
+            [WALL_CORNER_OPEN_SW] = LAPIS_METATILE_WALL_CORNER_SW,
+            [WALL_CORNER_OPEN_NW] = LAPIS_METATILE_WALL_CORNER_NW,
+            [WALL_CORNER_OPEN_NE] = LAPIS_METATILE_WALL_CORNER_NE,
+            [WALL_SLIVER_VERT]    = LAPIS_METATILE_SLIVER_VERT,
+            [WALL_SLIVER_HORZ]    = LAPIS_METATILE_SLIVER_HORZ,
+            [WALL_SLIVER_VERT_TOP]= LAPIS_METATILE_SLIVER_VERT_TOP,
+            [WALL_SLIVER_VERT_BOT]= LAPIS_METATILE_SLIVER_VERT_BOT,
+            [WALL_SLIVER_HORZ_L]  = LAPIS_METATILE_SLIVER_HORZ_L,
+            [WALL_SLIVER_HORZ_R]  = LAPIS_METATILE_SLIVER_HORZ_R,
+            [WALL_SLIVER_ISOLATED]= LAPIS_METATILE_SLIVER_ISOLATED,
         },
-        // Roughly the reference field's own density: 1-in-14 of all blocks
-        // are rolled, and only floor blocks match the base, so this lands
-        // about 7% of the snow rather than 7% of the map.
-        .decor = sGlaciaDecor,
-        .decorCount = ARRAY_COUNT(sGlaciaDecor),
-        .decorRarity = 14,
+        // NO DECOR. sGlaciaDecor names 0x3A6-0x3A8, which are metatiles in the
+        // CAVE's files - correct while she ran on a cave recolour, and under
+        // this tileset they are three unrelated pieces of crystal wall. A
+        // per-theme metatile id surviving a tileset change is exactly the bug
+        // ROGUELIKE.md section 3 records three times; drawing Lapis its own
+        // drifts is the follow-up, not reusing these.
 
         .species = sGlaciaSpecies,
         .speciesCount = ARRAY_COUNT(sGlaciaSpecies),
@@ -1389,8 +1395,14 @@ static const struct RogueDungeonTheme *ThemeForFloor(u16 floor)
 //
 // EWRAM_DATA explicitly: plain statics land in IWRAM, and IWRAM is by far the
 // scarcer region here (~4 KB free against ~35 KB of EWRAM).
+// Sized for the LAND slot count because it is the larger of the two; a water
+// floor fills only the first NUM_WATER_MONS_ENCOUNTER_SLOTS of it.
 EWRAM_DATA static struct WildPokemon sDungeonWildMons[NUM_LAND_MONS_ENCOUNTER_SLOTS] = {0};
 EWRAM_DATA static struct WildPokemonInfo sDungeonWildInfo = {0};
+
+// Which branch the table above was built for. Recorded rather than re-derived
+// in the hook, so the answer cannot disagree with the table actually in RAM.
+EWRAM_DATA static u8 sDungeonWildArea = WILD_AREA_LAND;
 
 // Runtime dungeon floor generator.
 //
@@ -1757,6 +1769,22 @@ static void BuildWildEncounterTable(u16 floor)
     u8 level;
     u32 i;
 
+    // The engine gives the two branches different slot counts - twelve for
+    // land, five for water - and the theme feeds whichever one its encounter
+    // surface belongs to.
+    u32 slots = (theme->wildArea == WILD_AREA_WATER)
+              ? NUM_WATER_MONS_ENCOUNTER_SLOTS
+              : NUM_LAND_MONS_ENCOUNTER_SLOTS;
+
+    // The window is capped to the slot count for the same reason it is dealt
+    // round robin below: every species in the window is meant to be reachable
+    // on the floor it belongs to. Eight species across five slots would leave
+    // three of them unrollable on any given floor - present in the ladder,
+    // absent from the game - and which three would depend on the rotation.
+    // Narrowing the window instead keeps the retire-with-depth behaviour and
+    // makes the water pools advance a little faster, which is the honest trade.
+    u32 window = (DUNGEON_ENCOUNTER_WINDOW < slots) ? DUNGEON_ENCOUNTER_WINDOW : slots;
+
     // Clamp before narrowing to u8, or a deep enough floor wraps.
     if (scaled > MAX_LEVEL - DUNGEON_ENCOUNTER_LEVEL_SPREAD)
         scaled = MAX_LEVEL - DUNGEON_ENCOUNTER_LEVEL_SPREAD;
@@ -1766,7 +1794,7 @@ static void BuildWildEncounterTable(u16 floor)
         tiers = theme->speciesCount;
 
     // Window rather than prefix, so the weakest species retire with depth.
-    bottom = (tiers > DUNGEON_ENCOUNTER_WINDOW) ? tiers - DUNGEON_ENCOUNTER_WINDOW : 0;
+    bottom = (tiers > window) ? tiers - window : 0;
     width = tiers - bottom;
     rotation = DungeonRandom() % width;
 
@@ -1774,7 +1802,7 @@ static void BuildWildEncounterTable(u16 floor)
     // weights are steeply uneven (20/20/10/10/...), so independent draws let one
     // species take both 20% slots and dominate the floor. The rotation varies
     // which species lands in the common slots from floor to floor.
-    for (i = 0; i < NUM_LAND_MONS_ENCOUNTER_SLOTS; i++)
+    for (i = 0; i < slots; i++)
     {
         sDungeonWildMons[i].species = theme->species[bottom + (i + rotation) % width];
         sDungeonWildMons[i].minLevel = level;
@@ -1785,15 +1813,26 @@ static void BuildWildEncounterTable(u16 floor)
     // this value is only a sane fallback.
     sDungeonWildInfo.encounterRate = 10;
     sDungeonWildInfo.wildPokemon = sDungeonWildMons;
+    sDungeonWildArea = theme->wildArea;
 }
 
 // Hooked into TryGenerateWildMon. Returning NULL leaves the caller on the
 // ordinary static table.
+//
+// Every dungeon map declares LAYOUT_ROGUE_DUNGEON_FLOOR, including the four
+// that exist only to carry a weather setting, so the layout check still means
+// "the player is on a generated floor" even though the LAYOUT the generator
+// installed is the theme's own. mapLayoutId is the id the map was built with;
+// only gMapHeader.mapLayout is swapped.
+//
+// Matching on the area the table was BUILT for, not on WILD_AREA_LAND, is what
+// lets the ocean and the seafloor use this at all - they take the engine's
+// water branch, and before this they fell through to the static placeholder.
 const struct WildPokemonInfo *RogueDungeon_GetWildMonInfo(enum WildPokemonArea area)
 {
     if (gMapHeader.mapLayoutId != LAYOUT_ROGUE_DUNGEON_FLOOR)
         return NULL;
-    if (area != WILD_AREA_LAND)
+    if (area != sDungeonWildArea)
         return NULL;
 
     return &sDungeonWildInfo;

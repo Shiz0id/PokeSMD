@@ -223,6 +223,35 @@ THEMES = {
             'SLIVER_HORZ_L': 0x3A2, 'SLIVER_HORZ_R': 0x3A3,
             'SLIVER_ISOLATED': 0x3A4,
         }),
+    # Lapis Cave, Glacia's. The first theme whose tileset is neither vanilla nor
+    # a recolour of one: import_tile_sheet.py builds it from a Mystery Dungeon
+    # sheet whose own autotile legend supplied all twenty slots, so unlike every
+    # theme above it none of this table was mined - it was decoded.
+    #
+    # It is also the first with FOUR DISTINCT inside corners. Vanilla Emerald
+    # never drew them, which is why every other table here repeats one metatile
+    # across CORNER_OPEN_NW and _NE.
+    'lapis': dict(
+        primary='gTileset_General', secondary='gTileset_RogueLapisCave',
+        # 0x0A7 is gTileset_GENERAL's warp - a primary id, so it works under any
+        # pair. It is grey rock on an ice floor and it is the one thing here
+        # that does not belong; the sheet has no stairs of its own.
+        floor=0x233, stairs=0x0A7,
+        # No patch and no decor yet. The sheet's Ground Alt columns hold only a
+        # single cell each, and its Water is a surfable-looking animated block
+        # this theme must never paint - see the ocean's rule in ROGUELIKE.md.
+        rooms=8, room_min=5, room_max=10, corridor=1,
+        wall={
+            'INTERIOR_LEFT': 0x203, 'INTERIOR_MID': 0x204, 'INTERIOR_RIGHT': 0x205,
+            'FACE_LEFT': 0x206, 'FACE_MID': 0x207, 'FACE_RIGHT': 0x208,
+            'NORTH_LEFT': 0x200, 'NORTH_MID': 0x201, 'NORTH_RIGHT': 0x202,
+            'CORNER_OPEN_SE': 0x21D, 'CORNER_OPEN_SW': 0x21E,
+            'CORNER_OPEN_NW': 0x220, 'CORNER_OPEN_NE': 0x21F,
+            'SLIVER_VERT': 0x20C, 'SLIVER_HORZ': 0x20A,
+            'SLIVER_VERT_TOP': 0x210, 'SLIVER_VERT_BOT': 0x214,
+            'SLIVER_HORZ_L': 0x211, 'SLIVER_HORZ_R': 0x213,
+            'SLIVER_ISOLATED': 0x20D,
+        }),
     # Victory Road, one per Elite Four member. Identical tables - identical
     # METATILES, in fact, since these tilesets share gMetatiles_Cave - so the
     # only thing a mock can show that the cave's does not is the palette, which

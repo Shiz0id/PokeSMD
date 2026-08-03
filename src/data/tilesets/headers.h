@@ -896,6 +896,23 @@ const struct Tileset gTileset_RogueVictoryRoadDrake =
     .callback = InitTilesetAnim_Cave,
 };
 
+// Lapis Cave. Unlike the four Victory Road recolours above, this one shares
+// nothing with the cave - it has its own tiles, metatiles and attributes,
+// imported from a Mystery Dungeon sheet. .callback is NULL because the sheet's
+// only animated terrain is its water, which this theme does not paint.
+// Declared BEFORE the #else: everything after it is FRLG-only and is silently
+// absent from an Emerald build.
+const struct Tileset gTileset_RogueLapisCave =
+{
+    .isCompressed = TRUE,
+    .isSecondary = TRUE,
+    .tiles = gTilesetTiles_RogueLapisCave,
+    .palettes = gTilesetPalettes_RogueLapisCave,
+    .metatiles = gMetatiles_RogueLapisCave,
+    .metatileAttributes = gMetatileAttributes_RogueLapisCave,
+    .callback = NULL,
+};
+
 #else
 
 // FRLG tilesets

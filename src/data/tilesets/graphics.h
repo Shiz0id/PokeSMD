@@ -1729,6 +1729,34 @@ const u16 gTilesetPalettes_RogueVictoryRoadDrake[][16] =
     INCGFX_U16("data/tilesets/secondary/rogue_victory_road_drake/palettes/15.pal", ".gbapal"),
 };
 
+// Lapis Cave, imported from a Mystery Dungeon sheet by
+// tools/rogue/import_tile_sheet.py. Written longhand rather than behind a
+// macro because tileset_resolve.py finds asset paths by parsing these, and a
+// pasted symbol name would make the atlas tooling lose the tileset silently.
+// Only palettes 06 (wall), 07 (ground) and 08 (water) carry colour - a
+// secondary is loaded from NUM_PALS_IN_PRIMARY onward, so 00-05 are ignored.
+const u32 gTilesetTiles_RogueLapisCave[] = INCGFX_U32("data/tilesets/secondary/rogue_lapis_cave/tiles.png", ".4bpp.fastSmol", "-num_tiles 268 -Wnum_tiles");
+
+const u16 gTilesetPalettes_RogueLapisCave[][16] =
+{
+    INCGFX_U16("data/tilesets/secondary/rogue_lapis_cave/palettes/00.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_lapis_cave/palettes/01.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_lapis_cave/palettes/02.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_lapis_cave/palettes/03.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_lapis_cave/palettes/04.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_lapis_cave/palettes/05.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_lapis_cave/palettes/06.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_lapis_cave/palettes/07.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_lapis_cave/palettes/08.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_lapis_cave/palettes/09.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_lapis_cave/palettes/10.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_lapis_cave/palettes/11.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_lapis_cave/palettes/12.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_lapis_cave/palettes/13.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_lapis_cave/palettes/14.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_lapis_cave/palettes/15.pal", ".gbapal"),
+};
+
 #if IS_FRLG
 
 const u32 gTilesetTiles_Building_Frlg[] = INCGFX_U32("data/tilesets/primary/building_frlg/tiles.png", ".4bpp.smol");

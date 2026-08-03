@@ -210,6 +210,12 @@ const u16 gMetatileAttributes_MysteryEventsHouse[] = INCBIN_U16("data/tilesets/s
 const u16 gMetatiles_UnionRoom[] = INCBIN_U16("data/tilesets/secondary/union_room/metatiles.bin");
 const u16 gMetatileAttributes_UnionRoom[] = INCBIN_U16("data/tilesets/secondary/union_room/metatile_attributes.bin");
 
+// Written by tools/rogue/import_tile_sheet.py from a Mystery Dungeon sheet.
+// That script owns this directory and rewrites every file in it, so nothing
+// else may append here - the same rule append_metatiles.py has for the cave.
+const u16 gMetatiles_RogueLapisCave[] = INCBIN_U16("data/tilesets/secondary/rogue_lapis_cave/metatiles.bin");
+const u16 gMetatileAttributes_RogueLapisCave[] = INCBIN_U16("data/tilesets/secondary/rogue_lapis_cave/metatile_attributes.bin");
+
 #else
 
 const u16 gMetatiles_Building_Frlg[] = INCBIN_U16("data/tilesets/primary/building_frlg/metatiles.bin");
