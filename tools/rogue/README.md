@@ -16,6 +16,7 @@ of the WSL boundary. **Which side you need depends on Pillow:**
 |---|---|
 | `tileset_atlas.py`, `build_all_atlases.py` | `tileset_resolve.py` |
 | `compose_metatiles.py`, `make_woods_stairs.py` | `append_metatiles.py` |
+| `make_ocean_tiles.py` | |
 | `woods_prototype.py` | `gen_trainer_table.py`, `gen_starters.py` |
 | | `ram_budget.py`, `derive_wall_autotile.py` |
 | | `verify_*.py`, `validate_maps.py` |
@@ -34,13 +35,14 @@ their output by hand; all are idempotent.
 | `make_woods_stairs.py` | woods stairs art into `data/tilesets/secondary/rustboro/` |
 | `make_fiery_slivers.py` | composed 1-wide wall metatiles into `data/tilesets/secondary/lavaridge/` |
 | `make_mirage_slivers.py` | composed 1-wide wall metatiles into `data/tilesets/secondary/mirage_tower/` |
+| `make_ocean_tiles.py` | everything the ocean adds to `data/tilesets/secondary/mossdeep/` |
 | `compose_metatiles.py` + `append_metatiles.py` | cave sliver metatiles into `data/tilesets/secondary/cave/` |
 | `setup_dungeon_map.py` | the dungeon map's layout and `map.json` scaffolding |
 
 The tileset writers (`make_woods_stairs`, `make_fiery_slivers`,
-`make_mirage_slivers`, `compose_metatiles`+`append_metatiles`) **edit vanilla
-asset files**. Pulling upstream changes to those tilesets means taking
-upstream's file and re-running the script, not merging.
+`make_mirage_slivers`, `make_ocean_tiles`, `compose_metatiles`+`append_metatiles`)
+**edit vanilla asset files**. Pulling upstream changes to those tilesets means
+taking upstream's file and re-running the script, not merging.
 
 **Reference and analysis — read-only.**
 
@@ -74,7 +76,6 @@ tools it turns on:
 | `check_encounter_flags.py` | every theme can spawn a wild Pokemon under its **own** tileset, and no `*_METATILE_*` constant is named inside a function |
 | `check_starter_moves.py` | what each starter actually holds at `DUNGEON_STARTER_LEVEL`, and that none ends up with only status moves |
 | `verify_run_structure.py` | that every floor maps to one dungeon now the Elite Four's are half length, that bosses land on the intended floors, and that the level curve still fits each boss's party — read live out of `trainers.party` |
-| `make_ocean_slivers.py` | **writes checked-in files.** Appends the ocean theme's seven one-block-thick rock metatiles to `gTileset_Mossdeep` at 0x3C6–0x3CC. Idempotent; re-run it after pulling upstream changes to that tileset |
 | `woods_prototype.py` | renders generated woods floors; mirrors `StampCell`, including the tree base row, the long grass base and the crown above a canopy |
 
 Host-side verification over thousands of seeds is much cheaper than emulator

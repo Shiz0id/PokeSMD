@@ -31,6 +31,7 @@ static void TilesetAnim_Slateport(u16);
 static void TilesetAnim_Mauville(u16);
 static void TilesetAnim_Lavaridge(u16);
 static void TilesetAnim_EverGrande(u16);
+static void TilesetAnim_Mossdeep(u16);
 static void TilesetAnim_Pacifidlog(u16);
 static void TilesetAnim_Sootopolis(u16);
 static void TilesetAnim_BattleFrontierOutsideWest(u16);
@@ -62,6 +63,7 @@ static void BlendAnimPalette_BattleDome_FloorLightsNoBlend(u16);
 static void QueueAnimTiles_Lavaridge_Steam(u8);
 static void QueueAnimTiles_Lavaridge_Lava(u16);
 static void QueueAnimTiles_EverGrande_Flowers(u16, u8);
+static void QueueAnimTiles_Mossdeep_Whirlpool(u16);
 static void QueueAnimTiles_Pacifidlog_LogBridges(u8);
 static void QueueAnimTiles_Pacifidlog_WaterCurrents(u8);
 static void QueueAnimTiles_Sootopolis_StormyWater(u16);
@@ -484,6 +486,22 @@ const u16 *const gTilesetAnims_BikeShop_BlinkingLights[] = {
     gTilesetAnims_BikeShop_BlinkingLights_Frame1
 };
 
+// The roguelike's ocean floors descend through a whirlpool rather than the sea
+// routes' dive spot. Drawn by tools/rogue/make_ocean_tiles.py into four blank
+// Mossdeep tile slots; four frames of a two-armed spiral, which is two-fold
+// symmetric, so a quarter turn per frame closes the loop.
+const u16 gTilesetAnims_Mossdeep_Whirlpool_Frame0[] = INCGFX_U16("data/tilesets/secondary/mossdeep/anim/whirlpool/0.png", ".4bpp");
+const u16 gTilesetAnims_Mossdeep_Whirlpool_Frame1[] = INCGFX_U16("data/tilesets/secondary/mossdeep/anim/whirlpool/1.png", ".4bpp");
+const u16 gTilesetAnims_Mossdeep_Whirlpool_Frame2[] = INCGFX_U16("data/tilesets/secondary/mossdeep/anim/whirlpool/2.png", ".4bpp");
+const u16 gTilesetAnims_Mossdeep_Whirlpool_Frame3[] = INCGFX_U16("data/tilesets/secondary/mossdeep/anim/whirlpool/3.png", ".4bpp");
+
+const u16 *const gTilesetAnims_Mossdeep_Whirlpool[] = {
+    gTilesetAnims_Mossdeep_Whirlpool_Frame0,
+    gTilesetAnims_Mossdeep_Whirlpool_Frame1,
+    gTilesetAnims_Mossdeep_Whirlpool_Frame2,
+    gTilesetAnims_Mossdeep_Whirlpool_Frame3
+};
+
 const u16 gTilesetAnims_Sootopolis_StormyWater_Frame0[] = INCBIN_U16("data/tilesets/secondary/sootopolis/anim/stormy_water/0_kyogre.4bpp", "data/tilesets/secondary/sootopolis/anim/stormy_water/0_groudon.4bpp");
 const u16 gTilesetAnims_Sootopolis_StormyWater_Frame1[] = INCBIN_U16("data/tilesets/secondary/sootopolis/anim/stormy_water/1_kyogre.4bpp", "data/tilesets/secondary/sootopolis/anim/stormy_water/1_groudon.4bpp");
 const u16 gTilesetAnims_Sootopolis_StormyWater_Frame2[] = INCBIN_U16("data/tilesets/secondary/sootopolis/anim/stormy_water/2_kyogre.4bpp", "data/tilesets/secondary/sootopolis/anim/stormy_water/2_groudon.4bpp");
@@ -740,7 +758,7 @@ void InitTilesetAnim_Mossdeep(void)
 {
     sSecondaryTilesetAnimCounter = 0;
     sSecondaryTilesetAnimCounterMax = sPrimaryTilesetAnimCounterMax;
-    sSecondaryTilesetAnimCallback = NULL;
+    sSecondaryTilesetAnimCallback = TilesetAnim_Mossdeep;
 }
 
 void InitTilesetAnim_EverGrande(void)
@@ -917,6 +935,16 @@ static void TilesetAnim_EverGrande(u16 timer)
         QueueAnimTiles_EverGrande_Flowers(timer / 8, 7);
 }
 
+static void TilesetAnim_Mossdeep(u16 timer)
+{
+    // A frame every 8 ticks, so the vortex turns once in about half a second -
+    // faster than the sea's own 16, because it is the one thing on the floor
+    // the player is looking for. The counter maxes at 256, a multiple of 8, so
+    // the loop does not stutter when it wraps.
+    if (timer % 8 == 0)
+        QueueAnimTiles_Mossdeep_Whirlpool(timer / 8);
+}
+
 static void TilesetAnim_Pacifidlog(u16 timer)
 {
     if (timer % 16 == 0)
@@ -1031,6 +1059,14 @@ static void QueueAnimTiles_EverGrande_Flowers(u16 timer_div, u8 timer_mod)
     timer_div %= ARRAY_COUNT(gTilesetAnims_EverGrande_Flowers);
 
     AppendTilesetAnimToBuffer(gTilesetAnims_EverGrande_Flowers[timer_div], gTilesetAnims_EverGrande_VDests[timer_mod], 4 * TILE_SIZE_4BPP);
+}
+
+static void QueueAnimTiles_Mossdeep_Whirlpool(u16 timer)
+{
+    // Tiles 0xE9-0xEC of the secondary, and they have to stay consecutive -
+    // this is one DMA run. make_ocean_tiles.py picks and writes them.
+    u16 i = timer % ARRAY_COUNT(gTilesetAnims_Mossdeep_Whirlpool);
+    AppendTilesetAnimToBuffer(gTilesetAnims_Mossdeep_Whirlpool[i], (u16 *)(BG_VRAM + TILE_OFFSET_4BPP(NUM_TILES_IN_PRIMARY + 0xE9)), 4 * TILE_SIZE_4BPP);
 }
 
 static void QueueAnimTiles_Cave_Lava(u16 timer)

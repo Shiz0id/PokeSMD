@@ -140,18 +140,17 @@ THEMES = {
     # which is just as well, since this tileset has no one-block-thick rock.
     'ocean': dict(
         primary='gTileset_General', secondary='gTileset_Mossdeep',
-        floor=0x170, stairs=0x14E,      # 0x14E is deep water: a dive spot
+        floor=0x170, stairs=0x3D1,      # the whirlpool
         rooms=12, room_min=7, room_max=13, corridor=5,
         wall={
             'NORTH_LEFT': 0x338, 'NORTH_MID': 0x339, 'NORTH_RIGHT': 0x33A,
             'INTERIOR_LEFT': 0x340, 'INTERIOR_MID': 0x341, 'INTERIOR_RIGHT': 0x342,
             'FACE_LEFT': 0x348, 'FACE_MID': 0x349, 'FACE_RIGHT': 0x34A,
-            # No diagonal corner art exists, so the rock interior stands in -
-            # the same answer New Mauville and the jungle give.
-            'CORNER_OPEN_SE': 0x341, 'CORNER_OPEN_SW': 0x341,
-            'CORNER_OPEN_NW': 0x341, 'CORNER_OPEN_NE': 0x341,
-            # Composed by make_ocean_slivers.py - vanilla's smallest sea rock is
-            # 2x2, and a carved floor makes thin walls constantly.
+            # Vanilla's own cliff inside corners under Mossdeep's palette; the
+            # slivers below are composed by make_ocean_tiles.py, because the
+            # nine slice is convex and the smallest vanilla sea rock is 2x2.
+            'CORNER_OPEN_SE': 0x3CD, 'CORNER_OPEN_SW': 0x3CE,
+            'CORNER_OPEN_NW': 0x3CF, 'CORNER_OPEN_NE': 0x3D0,
             'SLIVER_VERT': 0x3C6, 'SLIVER_HORZ': 0x3C7,
             'SLIVER_VERT_TOP': 0x3C8, 'SLIVER_VERT_BOT': 0x3C9,
             'SLIVER_HORZ_L': 0x3CA, 'SLIVER_HORZ_R': 0x3CB,

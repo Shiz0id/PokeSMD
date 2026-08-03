@@ -406,6 +406,46 @@ Art was iterated as text art rendered over real grass tiles and compared
 side by side, then round-tripped back out of the written asset files to confirm
 what shipped is what was designed.
 
+### Art that moves: the ocean's whirlpool
+
+The ocean's way down is a whirlpool (`make_ocean_tiles.py`, `0x3D1`). It is the
+second piece of genuinely new art in the project and the first that animates, so
+it adds a few rules to the list above rather than replacing it.
+
+- **Draw it in the palette of the thing it sits in.** The spiral is primary
+  palette 4 — the sea's own — which carries whites, a foam pale and a full blue
+  ramp. Using the water's palette is what makes the vortex read as the same body
+  of water rather than a decal pasted on top.
+- **Here the top layer is right, where the stairs wanted the bottom.** Index 0 in
+  a top layer is transparent, so outside the disc the animated sea shows through
+  and the whirlpool sits *in* the water. The attribute is `COVERED`, so both
+  layers draw below the player and they surf over it.
+- **A secondary tile may use a primary palette and vice versa.** The metatile's
+  palette field indexes all sixteen loaded palettes. Vanilla already does the
+  reverse here: the sea rock's top layer is *primary* tiles under a *Mossdeep*
+  palette. The consequence is that the Mossdeep sheet looks wrong opened in an
+  editor, which is normal and not a bug.
+- **Generate the art, do not hand-place it.** Four frames of 16×16 as text art
+  would be unreasonable; the spiral is a function of radius and angle, so the
+  frames are parametric and the shape is tunable by constant.
+- **Two-fold symmetry makes four frames a seamless loop.** Two arms rotating a
+  quarter turn per frame closes exactly. Three arms at the same step would not.
+
+Wiring the animation up, in `src/tileset_anims.c`:
+
+- Mossdeep's secondary animation callback was `NULL`, so the slot was free.
+  `InitTilesetAnim_Mossdeep` now points at `TilesetAnim_Mossdeep`.
+- **The tiles must be consecutive.** `AppendTilesetAnimToBuffer` DMAs the frame
+  to VRAM in one run, so the four slots are one contiguous block
+  (`NUM_TILES_IN_PRIMARY + 0xE9`) and must not wrap the sheet row.
+- A 16×16 frame PNG converts to four tiles in TL, TR, BL, BR order, which is the
+  order the metatile references them in. `INCGFX_U16(...".4bpp")` does the
+  conversion at build time; no `.4bpp` is checked in.
+- The counter maxes at **256**, so a frame stride has to divide it or the loop
+  stutters on wrap. 8 ticks per frame gives a turn every half second.
+- The sheet still needs a copy of frame 0. The animation overwrites it within a
+  few frames of the map loading, but the map has to render before that.
+
 ---
 
 ## 6. Constraints
@@ -505,8 +545,9 @@ and answers `UNDERWATER` differently), and `FLAG_SYS_CRUISE_MODE` clear.
 
 **Nothing walkable may ever be painted on such a floor.** Step onto land and the
 player dismounts, and getting back on water *would* need the HM. So the walls
-are solid rock, and the way down is `0x14E`, a deep-water dive spot, which is
-still surfable and so does not dismount anyone who stands on it.
+are solid rock, and the way down is a **whirlpool** (`0x3D1`) which keeps the
+attribute of the deep-water dive spot it replaced — still `MB_DEEP_WATER`, still
+surfable, so it does not dismount anyone who stands on it.
 
 Three things followed that were not obvious:
 
@@ -573,7 +614,7 @@ each sliver is four quadrant copies, no hand-built entries
 The ocean needed all seven — vanilla's smallest sea rock is 2×2 — and got them
 the same cheap way, because all nine of its nine-slice pieces share **one**
 bottom layer (`41C6 41C7 41C7 41C6`) with every edge a top-layer overlay laid
-out as a regular 6×6 tile grid (`make_ocean_slivers.py`). **Check the metatile
+out as a regular 6×6 tile grid (`make_ocean_tiles.py`). **Check the metatile
 entries before deciding a splice is hard**: the cave's was fiddly and needed
 hand-built entries, and both later tilesets turned out to be pure overlay work.
 
@@ -584,18 +625,48 @@ the old names described the wall's own position, which is why `WALL_CORNER_NW`
 held the art Fiery Path calls its *south-east* corner and every table looked
 wrong until you knew that.
 
-**Concave corner art mostly does not exist, and that is not a gap to fill.**
-The ocean's corners are plain rock, and so are vanilla's: `0x2B4`, the piece
-Mossdeep uses at exactly these steps, renders as an ordinary rock texture, and
-`0x2A8`–`0x2BA` is a shaded outcrop set rather than corners. Vanilla has no
-concave corner because it never draws an irregular sea rock — across six sea
-routes the case occurs **7 to 21 times**. Composing one from the convex corners
-was tried and reverted: it drops a whole quadrant of water into a solid block,
-which reads as a hole punched in the cliff rather than a shoreline turning.
-`gTileset_General`'s cliff set does have all four (`0x07D` NW, `0x07B` NE,
-`0x089` SW, `0x074` SE, n≈365–392 each over 245 layouts), and it lives in the
-primary, so a theme that genuinely needs cliff corners should use that rather
-than splice them onto a small-rock set.
+**Know what an inside corner is FOR before hunting for art.** Its job is to
+carry the wall's dark edge from one neighbour round to the other in a continuous
+L — from `FACE_MID`'s bottom band to `INTERIOR_RIGHT`'s side band — and it is
+**solid**. No cardinal neighbour of that block is floor, so none of it may show
+any. Everything else is decoration.
+
+The ocean's sat on the rock interior for a while and the edge stopped dead at
+every room corner. Two attempts to fix it failed, both of which looked right in
+isolation:
+
+- Windows into a water-**pocket** block in `gTileset_General` (columns 6–B
+  against the convex slice's 0–5). That art is drawn from a *rounded* pocket, so
+  its corner pixels are transparent; over the sea they became a blue bite. **A
+  room corner may never show water** — the open diagonal is a full block away.
+- The same windows over an opaque rock underlay. No water, but no dark edge
+  either, so it was barely distinguishable from the plain rock it replaced.
+
+The actual answer was vanilla's, and it was already in the scan output. Running
+the corner case over every Mossdeep layout names one metatile per diagonal at
+**27–43%** — `0x074` SE, `0x089` SW, `0x07D` NW, `0x07B` NE — and those are
+`gTileset_General`'s cliff **inside corners**. They were misread as land art
+because they live in the primary and look like plain rock on a contact sheet.
+Only the palette changes, to Mossdeep's rock palette, which is the same
+recolouring vanilla already applies to the nine slice. Not composed, not drawn.
+
+Note `0x07D` and `0x07B` are not mirrors of anything — they mix the pocket block
+with a single tile of the convex slice — which is why guessing at 2×2 windows
+never landed on them.
+
+**This is the cave's answer reached the cave's way.** Granite Cave's
+`0x21B`/`0x21C`/`0x223` are native pieces found by reading the case out of a real
+layout, and putting the ocean's attempt in a 2×2 junction beside `0x21B` is what
+made the failure obvious: the cave's corner has a dark mass flowing into both
+neighbours, and the ocean's had no dark edge in it at all. **Build that junction
+first for any new theme** — corner, the two edges it must meet, and floor. It is
+four metatiles and it answers the question in one look.
+
+All four are `COVERED`, like the rock interior. Layer type would have mattered
+if they showed sea — the nine slice's north row is `NORMAL` so a near shore
+overlaps someone surfing past — but a solid corner can never overlap the player
+anyway: the only tiles you could stand on to reach it are its cardinal
+neighbours, and all four are wall.
 
 Slivers matter more here than the count suggests. At 3-wide corridors the ocean
 hit 19 of them across two mock floors and they are far more visible against open
@@ -766,6 +837,30 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
 - **Measure per-instance, not in aggregate.** An encounter-distribution check
   averaged over 3000 floors showed no problem; the bug was *per-floor* variance
   (one species taking up to 85% of a single floor's slots).
+- **Judge a wall metatile against its neighbours, never on a contact sheet.**
+  All four concave corners looked right rendered side by side. Dropped into a
+  probe floor — one rectangular room, which produces exactly one of each corner
+  case — two of them were obviously wrong, because the fault was lighting that
+  disagreed with the piece next to it. A single room is the cheapest possible
+  fixture for anything keyed on neighbours.
+- **Judge it at game scale too, not only zoomed.** The blue bite in those same
+  corners shipped because every check was run at 5× or more, where it read as a
+  shoreline turning. At 2× it reads as a hole. Render the candidate at 2× beside
+  the alternative before believing a zoomed comparison — the zoom that makes a
+  seam visible also makes a wrong pixel look deliberate.
+- **A census over metatiles does not settle what the tile sheet holds.** Twice
+  now the answer to "vanilla has no art for this" was that vanilla has no
+  *metatile* for it and the tiles were sitting there unused.
+- **Read the scan output again before deciding it found nothing.** The ocean's
+  inside corners were in the very first corner-case scan, at 27–43%, and were
+  dismissed as land art because they live in the primary tileset and look like
+  plain rock on a contact sheet. Two wrong implementations followed. When a
+  scan's top answer is rejected, say out loud what it *is* — do not just note
+  what it is not.
+- **Solve a case once, then check the theme that already solved it.** Granite
+  Cave had inside corners working from native pieces. Comparing against it
+  directly — same 2×2 junction, both tilesets side by side — settled in one look
+  what two rounds of reasoning from first principles had got wrong.
 - Long shell heredocs break on apostrophes in prose. Write patch scripts to a
   file, or use the editing tools directly.
 - `Path.write_text` on Windows emits CRLF into repo files. Pass `newline='\n'`.

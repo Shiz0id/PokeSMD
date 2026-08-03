@@ -372,9 +372,14 @@
 // dismounts, and getting back on water WOULD need the HM.
 #define OCEAN_METATILE_WATER             0x170  // MB_OCEAN_WATER, encounters
 
-// The way down is a deep-water dive spot, which is what the sea routes use.
-// Still surfable, so stepping on it does not dismount the player.
-#define OCEAN_METATILE_STAIRS            0x14E  // MB_DEEP_WATER
+// The way down is a whirlpool, drawn by make_ocean_tiles.py. It was the sea
+// routes' deep-water dive spot (0x14E), which is a flat darker square - fine as
+// scenery, poor as the one thing on the floor the player is hunting for.
+//
+// It keeps that dive spot's attribute, so it is still MB_DEEP_WATER: surfable,
+// and stepping on it does not dismount the player. It spins, on the secondary
+// tileset animation slot Mossdeep was not using - see TilesetAnim_Mossdeep.
+#define OCEAN_METATILE_WHIRLPOOL         0x3D1  // MB_DEEP_WATER, 4 frames
 
 // The rock mass, a 3x3 nine slice read off the sea routes as a grid. A
 // neighbour-mask census cannot recover it - pooled with island shores and the
@@ -389,11 +394,10 @@
 #define OCEAN_METATILE_ROCK_S            0x349
 #define OCEAN_METATILE_ROCK_SE           0x34A
 
-// Ours, appended after Mossdeep's 454 vanilla metatiles by
-// make_ocean_slivers.py. Vanilla's smallest sea rock is 2x2, and a carved floor
-// makes one-block walls constantly. All nine pieces above share one bottom
-// layer with every edge as a top-layer overlay, so each of these is four
-// quadrant copies rather than art.
+// Ours, appended after Mossdeep's 454 vanilla metatiles by make_ocean_tiles.py.
+// Vanilla's smallest sea rock is 2x2, and a carved floor makes one-block walls
+// constantly. All nine pieces above share one bottom layer with every edge as a
+// top-layer overlay, so each of these is four quadrant copies rather than art.
 #define OCEAN_METATILE_SLIVER_VERT       0x3C6
 #define OCEAN_METATILE_SLIVER_HORZ       0x3C7
 #define OCEAN_METATILE_SLIVER_VERT_TOP   0x3C8
@@ -401,6 +405,27 @@
 #define OCEAN_METATILE_SLIVER_HORZ_L     0x3CA
 #define OCEAN_METATILE_SLIVER_HORZ_R     0x3CB
 #define OCEAN_METATILE_SLIVER_ISOLATED   0x3CC
+
+// The four room corners. The nine slice above is convex throughout, so every
+// WALL_CORNER_OPEN_* slot was standing on the rock interior and the wall's dark
+// edge stopped dead at each corner of a room.
+//
+// These are vanilla's, not ours: gTileset_General's cliff set already draws all
+// four inside corners, and the corner-case scan over the Mossdeep layouts names
+// one of them for each diagonal at 27-43%. Only the palette changes, to
+// Mossdeep's rock palette - the same recolouring vanilla applies to the nine
+// slice. Same answer Granite Cave gets from 0x21B/0x21C/0x223, found the same
+// way: read the case out of a real layout rather than reasoning about it.
+//
+// An inside corner carries the dark wall edge from one neighbour round to the
+// other in a continuous L, and it is SOLID - no cardinal neighbour of this block
+// is floor, so none of it may show any. Two earlier attempts failed here: art
+// borrowed from a rounded water pocket, which put a blue bite in it, and the
+// same over an opaque underlay, which had no dark edge and read as plain rock.
+#define OCEAN_METATILE_CORNER_OPEN_SE    0x3CD
+#define OCEAN_METATILE_CORNER_OPEN_SW    0x3CE
+#define OCEAN_METATILE_CORNER_OPEN_NW    0x3CF
+#define OCEAN_METATILE_CORNER_OPEN_NE    0x3D0
 
 
 // Woods uses the same two elevations as caves.

@@ -665,8 +665,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .floor = OCEAN_METATILE_WATER,
         .tallGrass = 0,
         .longGrass = 0,
-        .stairsDown = OCEAN_METATILE_STAIRS,
-        .stairsUp = OCEAN_METATILE_STAIRS,
+        .stairsDown = OCEAN_METATILE_WHIRLPOOL,
+        .stairsUp = OCEAN_METATILE_WHIRLPOOL,
         .wall =
         {
             [WALL_NORTH_LEFT]     = OCEAN_METATILE_ROCK_NW,
@@ -679,16 +679,14 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [WALL_FACE_MID]       = OCEAN_METATILE_ROCK_S,
             [WALL_FACE_RIGHT]     = OCEAN_METATILE_ROCK_SE,
 
-            // Plain rock, which is what VANILLA does at a concave corner -
-            // 0x2B4, the piece it uses at exactly these steps, renders as an
-            // ordinary rock texture. This tileset has no concave corner art
-            // because it never draws an irregular sea rock. Composing one from
-            // the convex corners puts a whole quadrant of water into a solid
-            // block, which reads as a hole punched in the cliff.
-            [WALL_CORNER_OPEN_SE] = OCEAN_METATILE_ROCK_MID,
-            [WALL_CORNER_OPEN_SW] = OCEAN_METATILE_ROCK_MID,
-            [WALL_CORNER_OPEN_NW] = OCEAN_METATILE_ROCK_MID,
-            [WALL_CORNER_OPEN_NE] = OCEAN_METATILE_ROCK_MID,
+            // These four were plain rock, and the wall's dark edge stopped dead
+            // at every corner of every room. They are vanilla's own cliff inside
+            // corners under Mossdeep's palette - the answer the corner-case scan
+            // was already giving, and the same answer Granite Cave takes.
+            [WALL_CORNER_OPEN_SE] = OCEAN_METATILE_CORNER_OPEN_SE,
+            [WALL_CORNER_OPEN_SW] = OCEAN_METATILE_CORNER_OPEN_SW,
+            [WALL_CORNER_OPEN_NW] = OCEAN_METATILE_CORNER_OPEN_NW,
+            [WALL_CORNER_OPEN_NE] = OCEAN_METATILE_CORNER_OPEN_NE,
 
             [WALL_SLIVER_VERT]    = OCEAN_METATILE_SLIVER_VERT,
             [WALL_SLIVER_HORZ]    = OCEAN_METATILE_SLIVER_HORZ,
