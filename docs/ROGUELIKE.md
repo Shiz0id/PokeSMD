@@ -62,6 +62,13 @@ Losing wipes the run; so does winning, which is the point.
   its own palettes, so the blades match the foliage above them and the south
   fringe ends on soil. Its encounters still come only from the grass, exactly as
   they did before any of the art changed.
+- **Steven's finale has Murky Cave**, dungeon 13 — carved pillars and ochre
+  rubble over olive stone, the only imported sheet that reads as somewhere
+  *built* rather than somewhere grown, and the note to end a run on. Its walls
+  were the first block on any sheet that **did not fit a 4bpp palette**; see §5.
+  With it, **fourteen themes stand against fourteen dungeons and nothing wraps**
+  — the first arrangement in the project where every dungeon lands on the theme
+  written for it.
 - The ocean is crossed **surfing** and the seafloor **diving**. Surfing is a
   property of the floor metatile; diving is a property of the **map**, which is
   why underwater is the one theme with a map of its own — see §7.
@@ -968,6 +975,25 @@ Three things that fall out of composing rather than importing:
   only ever border dirt, but it stays one layer with no question about whether
   the player walks over or under it.
 
+#### A palette that does not fit is a thing to solve
+
+Murky Cave's walls are the first block on any sheet to want **more than the
+fifteen colours a 4bpp palette has** — seventeen — so the importer reduces
+rather than refusing.
+
+It merges the pair minimising **`distance × min(count)`**, an estimate of the
+pixel error the merge introduces, and repeats. **Ranking by error rather than by
+rarity is the entire point**, and this sheet is why: its two mossy greens are
+0.5% of the wall pixels each and would go first on rarity, taking the only green
+out of a brown wall. Weighted by distance they are 50 apart, so what goes
+instead is a near-duplicate brown 16 away and 187 pixels big — and the greens
+are then folded into *each other*, so the moss survives as one tone rather than
+two. A rare colour that is far from everything else is exactly the one worth
+keeping, because being far from everything else is what makes it a colour rather
+than a shade.
+
+Every merge is **reported**, so art quietly losing a colour is never silent.
+
 #### A blend cannot be transparent
 
 Worth its own heading because it was invisible until a terrain's own palette
@@ -1656,21 +1682,24 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
 
 ## 10. Known gaps
 
-1. Thirteen themes against fourteen dungeons. Wallace now has Ever Grande, so
-   only **dungeon 13, Steven's finale**, still wraps — to the woods. It wants
-   one of its own.
+1. ~~Themes against dungeons.~~ **CLOSED.** Fourteen themes against fourteen
+   dungeons: Steven's finale has Murky Cave, and `ThemeForFloor`'s modulo is now
+   a bounds guard rather than a routing decision. Nothing wraps.
 
-   Ever Grande turned out to need far less new art than the entry above
-   predicted: four tiles for the exit and nothing else, because the encounter
-   flowers reuse vanilla's pixels and the wall set needed no slivers composed.
-   **The prediction that a new theme needs real pixel art has now been wrong
-   twice** — check what the tileset already holds first.
+   Kept because the way it closed is the lesson. **The prediction that a new
+   theme needs real pixel art was wrong every single time.** Ever Grande needed
+   four tiles and nothing else; the Elite Four needed one palette directory
+   each; Glacia, the jungle and the finale needed *none at all*, because a
+   third-party sheet with an autotile legend supplies the whole wall vocabulary
+   and `import_tile_sheet.py` turns it into a tileset. Check what already exists
+   — vanilla's tilesets, a palette recolour, a rip — before authoring anything.
 
-   The palette-only tileset in §5 is why the Elite Four stopped being the sore
-   spot here, and it generalises: **any existing theme can spawn a recolour for
-   one palette directory.** Worth reaching for before authoring a theme, but
-   check first that what a theme paints comes from *its* palettes — the cave's
-   walls do, its sand and decor do not.
+   The two techniques that did the work are in §5: the **palette-only tileset**,
+   which lets any existing theme spawn a recolour for one directory, and
+   **sheet import**, which is now how a theme gets art. Both have the same
+   caveat in different clothes — check that what a theme paints comes from *its*
+   palettes and *its* tileset, because the ids that survive a swap are the ones
+   that stop fitting.
 1c. **Ever Grande's terrace is a path, not a region.** `0x23C`/`0x23D`/`0x23E`
    has a left edge, a fill and a right edge and **no north or south edge art at
    all** — the mask census puts continues-NSWE, SWE and NWE on the same fill. It
@@ -1697,9 +1726,10 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    floor is the one piece of the theme that does not belong. Neither sheet it is
    built from has stairs of its own; composing a pair from the crystal is the
    follow-up. Its floor and decor are settled — Mt. Freeze's snow, see §5.
-   **The jungle now owes the same debt for the same reason**: Fortree's rope
-   ladder went with the tileset and `0x0A7` replaced it, so there are two themes
-   wanting stairs drawn from their own art.
+   **The jungle and the finale now owe the same debt for the same reason**:
+   Fortree's rope ladder and Murky Cave's absence of any stairs at all both end
+   at `0x0A7`, so **three** themes want stairs drawn from their own art. It is
+   the single most repeated shortcut in the project.
 1e. **The snowfield is orphaned but still in the ROM.**
    `LAYOUT_ROGUE_DUNGEON_VRGLACIA`, `gTileset_RogueVictoryRoadGlacia` and its
    72 KB of palettes are referenced by nothing but `layouts.json` now that

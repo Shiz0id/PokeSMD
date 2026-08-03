@@ -44,7 +44,7 @@ their output by hand; all are idempotent.
 | `make_flower_fldeff.py` | the flower dungeon's wade-through overlay into `graphics/field_effects/` — derived from `long_grass.png`, so it is the one generator here whose input is another checked-in asset |
 | `make_petal_weather.py` | `WEATHER_PETALS`' two 8x8 frames and its palette into `graphics/weather/` |
 | `make_victory_road_palettes.py` | the four Victory Road palette sets into `data/tilesets/secondary/rogue_victory_road_*/` |
-| `import_tile_sheet.py` | a whole secondary tileset — tiles, metatiles, attributes and palettes — composed from one or more sheets in `tools/rogue/sheets/`, currently `data/tilesets/secondary/rogue_lapis_cave/` |
+| `import_tile_sheet.py` | a whole secondary tileset — tiles, metatiles, attributes and palettes — composed from one or more sheets in `tools/rogue/sheets/`; currently `rogue_lapis_cave/`, `rogue_howling_jungle/` and `rogue_murky_cave/` |
 | `setup_dungeon_map.py` | the dungeon map's layout and `map.json` scaffolding |
 
 The tileset writers (`make_woods_stairs`, `make_fiery_slivers`,
@@ -83,6 +83,11 @@ terrain they border. And a **`graft`** block is art on no sheet at all,
 assembled from vanilla tiles and recoloured into this tileset's palettes — the
 jungle's long grass, which cost no pixel art. Grafts run after the sheet
 palettes exist, since those are what they draw their colours from.
+
+**A palette that does not fit is reduced, not refused.** A block wanting more
+than fifteen colours has its lowest-error pairs merged — `distance × min(count)`
+— until it fits, and **every merge is printed**. Read that output: it is the
+only notice that art lost a colour. Murky Cave's walls arrive at seventeen.
 
 **`attr` is a design decision, not boilerplate.** It is the behaviour copied from
 a vanilla donor, and the ground default (`0x0008`, the cave's `MB_CAVE`) carries
