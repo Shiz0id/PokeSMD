@@ -1248,7 +1248,15 @@ static void UpdatePetalSprite(struct Sprite *sprite)
     // its flakes being off screen quickly; a petal that hangs would otherwise
     // sit at the bottom edge for a long time.
     if (sprite->y > 163)
+    {
+        // A NEW LANE, not the one it started in. tPetalId picks the 30-pixel
+        // column a petal enters from, and it is otherwise fixed for the sprite's
+        // life - so every petal would fall down the same stripe forever, which
+        // is invisible at a handful of sprites and turns into obvious vertical
+        // lanes once there are enough of them on screen to notice.
+        sprite->tPetalId = Random() & 7;
         InitPetalSpriteMovement(sprite);
+    }
 }
 
 #undef tPosY

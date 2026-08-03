@@ -19,8 +19,19 @@ enum ColorMapType
 #define NUM_SANDSTORM_SPRITES        20
 #define NUM_SWIRL_SANDSTORM_SPRITES  5
 #define NUM_SNOWFLAKE_SPRITES        16
-// Petals reuse the snowflake sprite array, so this must never exceed it.
-#define NUM_PETAL_SPRITES            10
+// Petals reuse the snowflake sprite array, so this must never exceed its 101.
+//
+// MORE than the snow's sixteen, not fewer. This was 10 on the reasoning that a
+// petal drifts four times as far sideways as a flake and so covers more ground
+// per sprite. True, and still the wrong call: it made the air look empty rather
+// than breezy, and the blossom IS this floor's character, so it wants to be
+// plainly there rather than tastefully suggested.
+//
+// Raising it costs no start-up delay. UpdateVisiblePetalSprites only spawns one
+// per 36 frames, but Petals_InitAll spins that loop until the target is met, so
+// a floor loads with all of them already up; the gradual ramp is only ever seen
+// on an in-map weather CHANGE, which a dungeon floor never does.
+#define NUM_PETAL_SPRITES            24
 
 // Controls how the weather should be changing the screen palettes.
 #define WEATHER_PAL_STATE_CHANGING_WEATHER   0
