@@ -32,6 +32,7 @@
 extern const u8 RogueDungeonFloor_EventScript_Stairs[];
 extern const u8 RogueDungeonFloor_EventScript_Trainer[];
 extern const u8 RogueDungeonFloor_EventScript_TrainerDone[];
+extern const u8 RogueDungeonFloor_EventScript_ItemBall[];
 extern const u8 RogueDungeonFloor_EventScript_BossDone[];
 extern const u8 RogueDungeonFloor_Text_TrainerIntro[];
 extern const u8 RogueDungeonFloor_Text_TrainerDefeat[];
@@ -1625,6 +1626,20 @@ EWRAM_DATA static u8 sTrainerY[DUNGEON_MAX_TRAINERS] = {0};
 EWRAM_DATA static u16 sTrainerGfx[DUNGEON_MAX_TRAINERS] = {0};
 EWRAM_DATA static u8 sTrainerCount = 0;
 
+// Item balls for this floor, indexed the same way. Contents are rolled at
+// PREPARE time and held rather than rolled when the ball is opened: preparing
+// happens on every load of a floor, including load-from-save with the stored
+// seed, so the same ball yields the same item without the pickup path having to
+// reseed anything.
+//
+// 40 bytes. The templates the balls occupy cost nothing on top - see
+// DUNGEON_MAX_ITEMS.
+EWRAM_DATA static u16 sItemIds[DUNGEON_MAX_ITEMS] = {0};
+EWRAM_DATA static u8 sItemQty[DUNGEON_MAX_ITEMS] = {0};
+EWRAM_DATA static u8 sItemX[DUNGEON_MAX_ITEMS] = {0};
+EWRAM_DATA static u8 sItemY[DUNGEON_MAX_ITEMS] = {0};
+EWRAM_DATA static u8 sItemCount = 0;
+
 // Local PRNG. Generation must not consume or perturb the global RNG - if it
 // did, the floor would depend on how many steps the player had taken, and the
 // same seed would stop reproducing the same floor.
@@ -2929,6 +2944,155 @@ static u16 PickTrainerForLevel(u8 target)
 
 // Trainers stand in rooms the player does not start in, so the first room stays
 // a safe landing spot.
+// What an item ball can hold, as a floor BAND rather than a floor minimum.
+//
+// A minimum alone is the mistake the species pool already made and had to undo:
+// entries unlocked by a prefix never retire, so Potions would still be the most
+// common find on floor 100 because they are cheap and were there first. A band
+// retires them, exactly the way the encounter window retires Zubat.
+//
+// Healing dominates the table on purpose, and gets stronger the deeper the run
+// goes - that is the whole point of the feature. The count of balls per floor
+// climbs too (see PlaceItems), so it is both better healing and more of it.
+//
+// Weights are relative among whichever entries are in band on a given floor, so
+// they do not need to sum to anything.
+struct RogueLootEntry
+{
+    u16 item;
+    u8 weight;
+    u8 minFloor;
+    u8 maxFloor;   // exclusive; 255 means to the end of the run
+    u8 quantity;
+};
+
+static const struct RogueLootEntry sLootConsumables[] =
+{
+    // The healing ladder. Bands overlap so a floor near a boundary can roll
+    // either side of it and the change reads as a drift rather than a switch.
+    { ITEM_POTION,        22,   0,  30, 2 },
+    { ITEM_SUPER_POTION,  22,  12,  60, 2 },
+    { ITEM_HYPER_POTION,  22,  40, 100, 2 },
+    // Both in twos, and that is not generosity - it is what stops the deepest
+    // floors healing for LESS than the ones above them. A Hyper Potion arrives
+    // in twos, so a single Max Potion is a downgrade in raw HP and a single
+    // Full Restore is a downgrade again. verify_loot_table.py caught both.
+    { ITEM_MAX_POTION,    20,  75, 255, 2 },
+    { ITEM_FULL_RESTORE,  14,  95, 255, 2 },
+
+    // Fainting is the thing that ends a run, so revives never retire once they
+    // arrive - only the strength of them moves.
+    { ITEM_REVIVE,        12,  20, 255, 1 },
+    { ITEM_MAX_REVIVE,     8,  80, 255, 1 },
+
+    // Status. The single-status cures are an early-run answer and are gone by
+    // the time Full Heal is common, which is the same shape as the potions.
+    { ITEM_ANTIDOTE,       8,   0,  22, 2 },
+    { ITEM_PARALYZE_HEAL,  8,   0,  22, 2 },
+    { ITEM_AWAKENING,      6,   0,  22, 2 },
+    { ITEM_FULL_HEAL,     10,  15, 255, 1 },
+
+    // PP is the quiet way a long run dies - a full team with no moves left is
+    // still a loss. Arrives late because early floors are short.
+    { ITEM_ETHER,          8,  25, 255, 1 },
+    { ITEM_MAX_ETHER,      6,  70, 255, 1 },
+    { ITEM_ELIXIR,         5,  55, 255, 1 },
+};
+
+// Rolls one consumable for the given floor. Uses the dungeon RNG, so the result
+// is part of what the floor seed determines.
+static void RollFloorItem(u16 floor, u16 *item, u8 *quantity)
+{
+    u32 total = 0;
+    u32 roll;
+    u32 i;
+
+    for (i = 0; i < ARRAY_COUNT(sLootConsumables); i++)
+    {
+        if (floor >= sLootConsumables[i].minFloor && floor < sLootConsumables[i].maxFloor)
+            total += sLootConsumables[i].weight;
+    }
+
+    // Cannot happen with the table above - floor 0 has five entries in band and
+    // every later floor has more - but a future edit that leaves a gap should
+    // hand out a Potion rather than divide by zero.
+    if (total == 0)
+    {
+        *item = ITEM_POTION;
+        *quantity = 1;
+        return;
+    }
+
+    roll = DungeonRandom() % total;
+
+    for (i = 0; i < ARRAY_COUNT(sLootConsumables); i++)
+    {
+        if (floor < sLootConsumables[i].minFloor || floor >= sLootConsumables[i].maxFloor)
+            continue;
+        if (roll < sLootConsumables[i].weight)
+        {
+            *item = sLootConsumables[i].item;
+            *quantity = sLootConsumables[i].quantity;
+            return;
+        }
+        roll -= sLootConsumables[i].weight;
+    }
+
+    *item = ITEM_POTION;
+    *quantity = 1;
+}
+
+// Scatters item balls through the floor's rooms. Called from PrepareFloor, so
+// it can see the rooms and runs before the map is painted.
+static void PlaceItems(u16 floor)
+{
+    u32 count = DUNGEON_ITEM_MIN + floor / DUNGEON_ITEM_FLOORS_PER_EXTRA;
+    u32 i, j;
+
+    sItemCount = 0;
+
+    if (sRoomCount == 0)
+        return;
+    if (count > DUNGEON_MAX_ITEMS)
+        count = DUNGEON_MAX_ITEMS;
+
+    for (i = 0; i < count; i++)
+    {
+        u32 room = DungeonRandom() % sRoomCount;
+        u8 x = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
+        u8 y = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
+
+        // Never on the exit: an item ball is solid, so one sitting on the
+        // stairs would make the floor impossible to leave.
+        if (x == sStairsX && y == sStairsY)
+            continue;
+
+        // Nor on a trainer, for the same reason in reverse - two object events
+        // on one tile stack invisibly and only the top one can be interacted
+        // with, so the floor would look like it had lost an item.
+        for (j = 0; j < sTrainerCount; j++)
+        {
+            if (sTrainerX[j] == x && sTrainerY[j] == y)
+                break;
+        }
+        if (j != sTrainerCount)
+            continue;
+
+        for (j = 0; j < sItemCount; j++)
+        {
+            if (sItemX[j] == x && sItemY[j] == y)
+                break;
+        }
+        if (j != sItemCount)
+            continue;
+
+        sItemX[sItemCount] = x;
+        sItemY[sItemCount] = y;
+        RollFloorItem(floor, &sItemIds[sItemCount], &sItemQty[sItemCount]);
+        sItemCount++;
+    }
+}
+
 static void PlaceTrainers(u16 floor)
 {
     const struct RogueDungeonTheme *theme = ThemeForFloor(floor);
@@ -3105,6 +3269,8 @@ static void PrepareFloor(u16 seed)
 
     BuildWildEncounterTable(floor);
     PlaceTrainers(floor);
+    // After the trainers, because it refuses to stack a ball on one of them.
+    PlaceItems(floor);
     sFloorPrepared = TRUE;
 }
 
@@ -3417,6 +3583,107 @@ void RogueDungeon_LoadObjectEventTemplates(void)
             templates[i].flagId = FLAG_ROGUE_OBJECT_UNUSED;
         }
     }
+
+    // Item balls. They carry no item id in the template on purpose: item_ball.c
+    // reads its contents out of gMapHeader.events->objectEvents, which is the
+    // ROM array and not the save block copy written here, so a generated item
+    // written into a template would be ignored and every ball would hand over
+    // whatever map.json happened to declare. The engine's own accessor
+    // (GetObjectEventTemplateByLocalIdAndMap) reads the save block correctly;
+    // item_ball.c is the one place that does not.
+    //
+    // Sidestepped rather than fixed: the SCRIPT pointer does come from the save
+    // block, so pointing these at our own script means that path is never
+    // entered and there is nothing upstream to patch.
+    for (i = 0; i < DUNGEON_MAX_ITEMS; i++)
+    {
+        u32 slot = DUNGEON_MAX_TRAINERS + i;
+
+        templates[slot].localId = slot + 1;
+        templates[slot].kind = OBJ_KIND_NORMAL;
+        templates[slot].elevation = elevation;
+
+        if (i < sItemCount)
+        {
+            templates[slot].graphicsId = OBJ_EVENT_GFX_ITEM_BALL;
+            templates[slot].x = sItemX[i];
+            templates[slot].y = sItemY[i];
+            templates[slot].movementType = MOVEMENT_TYPE_LOOK_AROUND;
+            templates[slot].script = RogueDungeonFloor_EventScript_ItemBall;
+            templates[slot].flagId = 0;
+        }
+        else
+        {
+            templates[slot].flagId = FLAG_ROGUE_OBJECT_UNUSED;
+        }
+    }
+}
+
+// Maps a talked-to object event back to its item ball slot, the same way
+// RogueDungeon_HasTrainerBeenBeaten maps one back to its trainer. Returns
+// DUNGEON_MAX_ITEMS when the object is not an item ball.
+static u32 FloorItemSlotOf(u16 localId)
+{
+    u32 slot;
+
+    if (localId < DUNGEON_ITEM_FIRST_LOCAL_ID)
+        return DUNGEON_MAX_ITEMS;
+
+    slot = localId - DUNGEON_ITEM_FIRST_LOCAL_ID;
+    return (slot < DUNGEON_MAX_ITEMS) ? slot : DUNGEON_MAX_ITEMS;
+}
+
+// specialvar target. Puts the ball's contents where the finditem macro expects
+// them - VAR_RESULT for the item, VAR_0x8009 for how many - matching the shape
+// of the engine's own Common_EventScript_FindItem.
+u16 RogueDungeon_PrepareFloorItem(void)
+{
+    u32 slot = FloorItemSlotOf(gSpecialVar_LastTalked);
+
+    if (slot >= sItemCount)
+    {
+        // Nothing sensible to hand over. A Potion rather than ITEM_NONE, which
+        // finditem would announce as an empty pickup.
+        gSpecialVar_0x8009 = 1;
+        return ITEM_POTION;
+    }
+
+    gSpecialVar_0x8009 = sItemQty[slot];
+    return sItemIds[slot];
+}
+
+// Called after the pickup. The ball has to stay gone for the rest of the floor,
+// and removeobject alone does not manage that - the object respawns whenever
+// the player walks far enough away and back, because the template it spawns
+// from still says it is there.
+//
+// So the template moves off the map, which is what the Battle Pyramid does with
+// its own items and for the same reason. It survives a save and reload because
+// RogueDungeon_LoadObjectEventTemplates does not run on the load-from-save
+// path - the save block copy it wrote is what comes back.
+//
+// Keyed on whether the object is still active rather than on the item having
+// reached the bag, because those are the same question asked of the thing that
+// actually happened: Std_FindItem only removes the object on success, so a full
+// bag leaves the ball standing and this correctly does nothing.
+void RogueDungeon_HideTakenFloorItem(void)
+{
+    struct ObjectEventTemplate *templates = gSaveBlock1Ptr->objectEventTemplates;
+    u32 slot = FloorItemSlotOf(gSpecialVar_LastTalked);
+    u8 objectEventId;
+
+    if (slot >= DUNGEON_MAX_ITEMS)
+        return;
+
+    // TryGet... returns TRUE when it did NOT find one, so this is "still there".
+    if (!TryGetObjectEventIdByLocalIdAndMap(gSpecialVar_LastTalked,
+                                            gSaveBlock1Ptr->location.mapNum,
+                                            gSaveBlock1Ptr->location.mapGroup,
+                                            &objectEventId))
+        return;
+
+    templates[DUNGEON_MAX_TRAINERS + slot].x = INT16_MAX;
+    templates[DUNGEON_MAX_TRAINERS + slot].y = INT16_MAX;
 }
 
 // Called by the shared trainer script. The opponent is chosen per floor rather

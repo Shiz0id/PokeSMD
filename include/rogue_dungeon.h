@@ -1298,6 +1298,11 @@ void RogueDungeon_WarpToCurrentFloor(void);     // the full ScrCmd_warp sequence
 void RogueDungeon_SetRestStopExit(void);        // the rest stop's MAP_DYNAMIC exits
 void RogueDungeon_SeedRestStopUnown(void);      // who is watching, and from where
 
+// Item balls. Prepare puts the contents where the finditem macro reads them;
+// Hide runs after the pickup and only bites if the ball actually went.
+u16 RogueDungeon_PrepareFloorItem(void);
+void RogueDungeon_HideTakenFloorItem(void);
+
 // Debug menu support. Describes a floor in one short line; see the debug warp
 // tool in src/debug.c.
 void RogueDungeon_GetDebugFloorInfo(u16 floor, u8 *dest);

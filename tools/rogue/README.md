@@ -49,6 +49,13 @@ their output by hand; all are idempotent.
 | `make_rest_stop.py` | the way-station's `map.bin`, `border.bin` and layout entry, walled by a transcription of `ApplyWallAutotiling` |
 | `make_game_room.py` | the game room's `map.bin`, `border.bin` and layout entry, assembled from rectangles lifted out of `MauvilleCity_GameCorner` |
 | `warp_tiles.py` | the way-station's two door metatiles into `data/tilesets/secondary/rogue_murky_cave/`, and the check that a map's warps can fire |
+| `check_dungeon_objects.py` | both dungeon `map.json` object event counts, against `DUNGEON_MAX_TRAINERS + DUNGEON_MAX_ITEMS` in the header |
+| `verify_loot_table.py` | that `sLootConsumables` heals harder the deeper a run goes, by floor, per ball and per floor |
+
+**`setup_dungeon_map.py` is scaffolding, not an owner.** It writes
+`object_events: []`, so re-running it now would silently drop every trainer and
+item ball slot the dungeon maps declare. `check_dungeon_objects.py` is what owns
+that count, and it will say so — run it after touching either dungeon map.
 
 The tileset writers (`make_woods_stairs`, `make_fiery_slivers`,
 `make_mirage_slivers`, `make_ocean_tiles`, `make_underwater_tiles`,

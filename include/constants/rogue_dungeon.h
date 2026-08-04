@@ -35,11 +35,26 @@
 #define ROGUE_ACE_OFFER      1
 #define ROGUE_ACE_PARTY_FULL 2
 
-// map.json must declare exactly this many object events: the engine reads
-// templates from the save block but takes the count from ROM.
+// map.json must declare exactly DUNGEON_MAX_TRAINERS + DUNGEON_MAX_ITEMS object
+// events: the engine reads templates from the save block but takes the count
+// from ROM. check_dungeon_objects.py enforces that, because the two live in
+// different files and nothing else would notice them drifting apart.
 #define DUNGEON_MAX_TRAINERS            4
 #define DUNGEON_TRAINER_FLOORS_PER_EXTRA 25
 #define DUNGEON_TRAINER_SIGHT_RANGE      4
+
+// Item balls. These cost NO new RAM: gSaveBlock1Ptr->objectEventTemplates is a
+// fixed 64 entries whether or not a map uses them, and the floor spends 4 on
+// trainers. The live-sprite limit (OBJECT_EVENTS_COUNT, 16) is the real ceiling
+// and is nowhere near - objects spawn by proximity, so what matters is how many
+// crowd one screen, not how many exist.
+#define DUNGEON_MAX_ITEMS            8
+#define DUNGEON_ITEM_MIN             2
+#define DUNGEON_ITEM_FLOORS_PER_EXTRA 20
+
+// Object event local ids are 1-based and the trainers hold the first block, so
+// item ball i is localId DUNGEON_ITEM_FIRST_LOCAL_ID + i.
+#define DUNGEON_ITEM_FIRST_LOCAL_ID (DUNGEON_MAX_TRAINERS + 1)
 
 // Run lifecycle. A run needs starters on a new game and again after a whiteout,
 // which is what makes a loss send the player back to the beginning.

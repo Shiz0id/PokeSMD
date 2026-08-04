@@ -651,3 +651,5 @@ gSpecials::
 	def_special RogueDungeon_WarpToCurrentFloor
 	def_special RogueDungeon_SetRestStopExit
 	def_special RogueDungeon_SeedRestStopUnown
+	def_special RogueDungeon_PrepareFloorItem
+	def_special RogueDungeon_HideTakenFloorItem

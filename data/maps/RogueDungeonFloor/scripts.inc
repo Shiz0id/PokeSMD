@@ -65,6 +65,22 @@ RogueDungeonFloor_EventScript_TrainerDone::
 	releaseall
 	end
 
+@ An item ball on a generated floor. Deliberately NOT Common_EventScript_FindItem:
+@ that one reads the item out of the ROM template array, which is not the copy
+@ the generator writes, so every ball would hand over the same placeholder.
+@
+@ The shape is otherwise identical to it - set the item and the amount, then let
+@ the finditem macro do the message, the fanfare, the pocket and the removeobject
+@ - so a generated ball behaves exactly like a hand-placed one.
+@
+@ The trailing special is what keeps it gone. finditem removes the OBJECT; the
+@ TEMPLATE it respawns from is still standing there until this moves it away.
+RogueDungeonFloor_EventScript_ItemBall::
+	specialvar VAR_RESULT, RogueDungeon_PrepareFloorItem
+	finditem VAR_RESULT, VAR_0x8009
+	special RogueDungeon_HideTakenFloorItem
+	end
+
 @ Boss floors have no exit until the boss falls - that is what forces the fight,
 @ since an arena has no other way out.
 @
