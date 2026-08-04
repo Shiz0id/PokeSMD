@@ -1296,6 +1296,7 @@ void RogueDungeon_ResetRun(void);
 void RogueDungeon_SetWarpToCurrentFloor(void);  // destination only, then WarpIntoMap
 void RogueDungeon_WarpToCurrentFloor(void);     // the full ScrCmd_warp sequence
 void RogueDungeon_SetRestStopExit(void);        // the rest stop's MAP_DYNAMIC exits
+void RogueDungeon_SeedRestStopUnown(void);      // who is watching, and from where
 
 // Debug menu support. Describes a floor in one short line; see the debug warp
 // tool in src/debug.c.

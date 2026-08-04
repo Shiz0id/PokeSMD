@@ -53,4 +53,17 @@
 // Handed out at the start of every run until shops exist.
 #define ROGUE_RUN_STARTING_BALLS 100
 
+// The Unown watching the way-station. map.json declares this many slots after
+// the three staff, and the seeder decides how many actually spawn and where -
+// the engine takes the object COUNT from ROM but reads the TEMPLATES out of the
+// save block, which is the same door the trainer placer goes through.
+#define REST_STOP_UNOWN_SLOTS            6
+#define REST_STOP_UNOWN_FIRST_SLOT       3   // template index, so local id 4
+
+// Two watching near the top of the run, six by the end. 24 is picked against
+// the floors a rest stop is actually reached on - 11, 21, ... 101, 106 - so the
+// count steps up every other visit or so rather than all at once.
+#define REST_STOP_UNOWN_MIN              2
+#define REST_STOP_UNOWN_FLOORS_PER_EXTRA 24
+
 #endif // GUARD_CONSTANTS_ROGUE_DUNGEON_H

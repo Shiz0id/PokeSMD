@@ -218,6 +218,50 @@ def upsert_layout(w, h):
     return 'written'
 
 
+def check_unown(plan):
+    """The Unown spots are hand-picked in C; check them against the plan.
+
+    Parsed out of rogue_dungeon.c rather than copied here, because a duplicated
+    coordinate table is a drift waiting to happen - the moment the plan gains a
+    wall the copy stops being true and nothing says so. Same reason the wall
+    slots are read off the theme table.
+    """
+    import re
+
+    src = (REPO / 'src/rogue_dungeon.c').read_text(encoding='utf-8')
+    m = re.search(r'sUnownSpots\[\]\[2\]\s*=\s*\{(.*?)\};', src, re.S)
+    if not m:
+        print('  WARNING: sUnownSpots not found in rogue_dungeon.c')
+        return
+    spots = [(int(a), int(b)) for a, b in
+             re.findall(r'\{\s*(\d+)\s*,\s*(\d+)\s*\}', m.group(1))]
+
+    # everything the room has already promised to something else
+    reserved = {}
+    mapjson = json.loads((REPO / 'data/maps/RogueRestStop/map.json')
+                         .read_text(encoding='utf-8'))
+    for o in mapjson['object_events']:
+        if 'UNOWN' not in o['graphics_id']:
+            reserved[(o['x'], o['y'])] = o['script'].split('_')[-1]
+    for w in mapjson['warp_events']:
+        reserved[(w['x'], w['y'])] = 'warp'
+    reserved[(len(plan[0]) // 2, len(plan) // 2)] = 'arrival'
+
+    bad = 0
+    for (x, y) in spots:
+        if plan[y][x] not in OPEN:
+            print(f'  UNOWN SPOT ({x},{y}) IS NOT FLOOR')
+            bad += 1
+        elif (x, y) in reserved:
+            print(f'  UNOWN SPOT ({x},{y}) COLLIDES WITH {reserved[(x, y)]}')
+            bad += 1
+    if len(set(spots)) != len(spots):
+        print('  UNOWN SPOTS CONTAIN DUPLICATES')
+        bad += 1
+    print(f'  {len(spots)} Unown spots, all clear'
+          if not bad else f'  {bad} bad Unown spot(s)')
+
+
 def main(argv):
     plan = PLAN
     if len({len(r) for r in plan}) != 1:
@@ -245,6 +289,7 @@ def main(argv):
     used = sorted({b & 0x3FF for b in blocks})
     print(f'  {len(used)} distinct metatiles: '
           + ' '.join(f'0x{m:03X}' for m in used))
+    check_unown(plan)
 
     if '--write' in argv:
         d = REPO / 'data/layouts' / NAME

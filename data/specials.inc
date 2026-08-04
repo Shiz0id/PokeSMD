@@ -650,3 +650,4 @@ gSpecials::
 	def_special RogueDungeon_ResetRun
 	def_special RogueDungeon_WarpToCurrentFloor
 	def_special RogueDungeon_SetRestStopExit
+	def_special RogueDungeon_SeedRestStopUnown

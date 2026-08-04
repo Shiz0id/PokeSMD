@@ -1920,6 +1920,87 @@ void RogueDungeon_SetRestStopExit(void)
     SetDynamicWarp(0, MAP_GROUP(map), MAP_NUM(map), WARP_ID_NONE);
 }
 
+// The way-station's floor cells that touch a wall, minus the ones already
+// spoken for: the keeper (8,3), the merchant (4,6), the archivist (12,6), the
+// descent (8,9), the alcove through to the game room (1,6) and the arrival
+// tile (8,6), which is where a bare `warp` drops the player.
+//
+// make_rest_stop.py parses this table out of here and checks all of that
+// against the floor plan, so it is allowed to be hand-picked.
+static const u8 sUnownSpots[][2] =
+{
+    { 4, 2}, { 6, 2}, {10, 2}, {12, 2},
+    { 3, 3}, {13, 3},
+    { 2, 4}, {14, 4},
+    { 2, 7}, {14, 7},
+    { 5, 9}, {11, 9},
+};
+
+// Unown form A is SPECIES_UNOWN at 201 and the other twenty-seven are one
+// contiguous run from SPECIES_UNOWN_B, which is why this is not just an add.
+static u16 UnownForm(u8 n)
+{
+    return n == 0 ? SPECIES_UNOWN : SPECIES_UNOWN_B + n - 1;
+}
+
+// The Unown are the only thing in the run that acknowledges the player, and the
+// only place the illusion shows a seam. They stand along the way-station's edge
+// and watch, and there are more of them the deeper the run has gone.
+//
+// Called from the rest stop's ON_TRANSITION, which runs after the map's
+// templates are copied out of ROM and before anything spawns from them - the
+// same window `setobjectxyperm` writes in. Only the Unown slots are touched, so
+// the three staff keep whatever map.json gave them.
+//
+// SEEDED FROM THE FLOOR, so one rest stop looks the same every time it is
+// entered - reload a save inside one and nothing shifts - while no two rest
+// stops in a run are arranged alike. Reseeding the shared RNG here is safe
+// because floor generation seeds it again before it uses it.
+void RogueDungeon_SeedRestStopUnown(void)
+{
+    struct ObjectEventTemplate *templates = gSaveBlock1Ptr->objectEventTemplates;
+    u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+    u8 order[ARRAY_COUNT(sUnownSpots)];
+    u8 i, count;
+
+    FlagSet(FLAG_ROGUE_OBJECT_UNUSED);
+    SeedDungeonRng(floor * 3 + 1);
+
+    // Shuffle the whole spot list and take a prefix, rather than rolling a spot
+    // per Unown - two Unown on one tile would stack invisibly.
+    for (i = 0; i < ARRAY_COUNT(sUnownSpots); i++)
+        order[i] = i;
+    for (i = ARRAY_COUNT(sUnownSpots) - 1; i > 0; i--)
+    {
+        u8 j = DungeonRandom() % (i + 1);
+        u8 swap = order[i];
+
+        order[i] = order[j];
+        order[j] = swap;
+    }
+
+    count = REST_STOP_UNOWN_MIN + floor / REST_STOP_UNOWN_FLOORS_PER_EXTRA;
+    if (count > REST_STOP_UNOWN_SLOTS)
+        count = REST_STOP_UNOWN_SLOTS;
+
+    for (i = 0; i < REST_STOP_UNOWN_SLOTS; i++)
+    {
+        struct ObjectEventTemplate *t = &templates[REST_STOP_UNOWN_FIRST_SLOT + i];
+
+        if (i >= count)
+        {
+            // An object event whose flagId is set is not spawned.
+            t->flagId = FLAG_ROGUE_OBJECT_UNUSED;
+            continue;
+        }
+
+        t->graphicsId = OBJ_EVENT_MON + UnownForm(DungeonRandom() % 28);
+        t->x = sUnownSpots[order[i]][0];
+        t->y = sUnownSpots[order[i]][1];
+        t->flagId = 0;
+    }
+}
+
 bool8 RogueDungeon_TryHandleWhiteOut(void)
 {
     if (gMapHeader.mapLayoutId != LAYOUT_ROGUE_DUNGEON_FLOOR)

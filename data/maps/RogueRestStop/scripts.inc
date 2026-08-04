@@ -6,10 +6,19 @@
 @ the warp the player is about to step on was last written by a different run.
 RogueRestStop_MapScripts::
 	map_script MAP_SCRIPT_ON_LOAD, RogueRestStop_OnLoad
+	map_script MAP_SCRIPT_ON_TRANSITION, RogueRestStop_OnTransition
 	.byte 0
 
 RogueRestStop_OnLoad::
 	special RogueDungeon_SetRestStopExit
+	end
+
+@ ON_TRANSITION, not ON_LOAD: the Unown seeder edits object event TEMPLATES, and
+@ that only takes effect in the window after the map's templates are copied out
+@ of ROM and before anything spawns from them. It is the same window
+@ setobjectxyperm writes in.
+RogueRestStop_OnTransition::
+	special RogueDungeon_SeedRestStopUnown
 	end
 
 @ ---------------------------------------------------------------- the keeper
@@ -180,3 +189,13 @@ RogueRestStop_Text_ArchivistOpened:
 
 RogueRestStop_Text_ArchivistNoThanks:
 	.string "It will keep.$"
+
+@ Shared by all six slots. They have nothing to say - the point is that they are
+@ looking at you, and that they are the only thing in the run that does.
+RogueRestStop_EventScript_Unown::
+	msgbox RogueRestStop_Text_Unown, MSGBOX_NPC
+	end
+
+RogueRestStop_Text_Unown:
+	.string "It does not move.\p"
+	.string "The eye follows you anyway.$"
