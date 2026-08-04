@@ -78,6 +78,20 @@ Losing wipes the run; so does winning, which is the point.
 - The ocean is crossed **surfing** and the seafloor **diving**. Surfing is a
   property of the floor metatile; diving is a property of the **map**, which is
   why underwater is the one theme with a map of its own — see §7.
+- **Floors carry loot.** Two item balls near the top of a run, seven by the end,
+  contents rolled from the floor seed off a banded table that is mostly healing
+  and gets stronger as the run deepens — 80 HP per floor to 2800. See §2 and §3;
+  the ROM-vs-save-block trap in the second of those is the interesting part.
+- **The party shares experience**, permanently and party-wide, and wild
+  encounters pay 150%. Both are engine features rather than code: the Exp Share
+  is one flag, and because `B_SPLIT_EXP` is `GEN_LATEST` it is *additive* — the
+  sent-in mon keeps its full award and the rest take half on top. Trainers are
+  deliberately not boosted; see §2's level curve for why.
+- **The ORAS dowsing machine is wired but inert.** The expansion ships the whole
+  mechanic (`src/oras_dowse.c`, its own field effect and sprite art); assigning
+  `I_ORAS_DOWSING_FLAG` a flag is what turns it on. Nothing generates hidden
+  items yet and the run hands out no Dowsing Machine, so it waits on the gap in
+  §10 — a key item that finds nothing is worse than no key item.
 - Reachable from a new game, which is slimmed to name entry only.
 
 Everything lives in `src/rogue_dungeon.c` / `include/rogue_dungeon.h` plus
@@ -172,6 +186,25 @@ Two consequences that are easy to get wrong:
 pure Water and only becomes Water/Dragon as Kingdra; Swablu is Normal/Flying
 until it evolves; Trapinch is pure Ground. All three read as dragons and none of
 them are. `src/data/pokemon/species_info/` is the answer, not memory.
+
+### A loot table is a set of bands, for the same reason
+
+`sLootConsumables` gives every entry a floor it **arrives** on and a floor it
+**leaves** on. A minimum alone would be the species-prefix mistake in a second
+costume: nothing ever retires, so Potions stay the commonest find on floor 100
+because they are cheap and were there first. A band retires them exactly the way
+the encounter window retires Zubat.
+
+The count of balls per floor climbs as well (`DUNGEON_ITEM_MIN` plus one per
+`DUNGEON_ITEM_FLOORS_PER_EXTRA`), so "more healing the deeper you go" happens by
+both routes at once — better items *and* more of them. Measured, it runs 80 HP
+per floor at the top of the run to 2800 at the bottom.
+
+**Quantity is part of the ladder, not a detail.** A Hyper Potion arrives in twos,
+so a *single* Max Potion is a downgrade in raw HP and a single Full Restore is a
+downgrade again — the deepest floors were healing for less than the ones above
+them. Both are quantity 2 for that reason alone. `verify_loot_table.py` is what
+found it, and it is the check to re-run after any edit to the table.
 
 ### Themes
 
@@ -365,12 +398,85 @@ day, now the `STAMP_BASE_L/R` and `longGrassBaseL/R` table entries.
 
 - The engine reads templates for the current map from the **save block**, but
   takes the **count** from ROM. So `map.json` must declare
-  `DUNGEON_MAX_TRAINERS` placeholders.
+  `DUNGEON_MAX_TRAINERS + DUNGEON_MAX_ITEMS` placeholders.
+  `check_dungeon_objects.py` owns that number, because it is one number written
+  in two files and **both** dungeon maps carry it — `RogueDungeonUnderwater`
+  shares the layout and the scripts but has its own `map.json`, and is exactly
+  the file that gets updated one release late.
 - An object event with a **set** `flagId` does not spawn. That is how unused
   placeholder slots are hidden.
 - **A defeated trainer object still blocks movement.** A boss standing in a
   doorway would wall the exit off permanently — which is why arenas have no exit
   at all until the boss falls, rather than a guarded chokepoint.
+- Templates cost **no RAM to use**. `gSaveBlock1Ptr->objectEventTemplates` is a
+  fixed 64 entries whether a map declares one or sixty. The real ceiling is
+  `OBJECT_EVENTS_COUNT` — 16 **live** sprites, player included — and objects
+  spawn by proximity, so what matters is how many crowd one screen, not how many
+  exist on the floor.
+
+### Item balls read their contents from ROM, not the save block
+
+`item_ball.c` looks an item up as
+`gMapHeader.events->objectEvents[localId - 1].trainerRange_berryTreeId` — the
+**ROM** template array, not the save block copy a generator writes. So an item
+written into a generated template is ignored and every ball on every floor hands
+over whatever `map.json` declared. Quantity has the same problem, out of
+`movementRangeX`, which is additionally a **4-bit field** and caps at 15.
+
+This is the one place in the engine that gets it wrong.
+`GetObjectEventTemplateByLocalIdAndMap` is the correct accessor — save block for
+the current map, ROM for any other, count from ROM — and everything else uses it.
+
+**The fix is not to patch it.** A template's `script` pointer *does* come from
+the save block, so pointing generated balls at a script of our own means that
+path is never entered:
+
+```
+RogueDungeonFloor_EventScript_ItemBall::
+	specialvar VAR_RESULT, RogueDungeon_PrepareFloorItem
+	finditem VAR_RESULT, VAR_0x8009
+	special RogueDungeon_HideTakenFloorItem
+```
+
+The shape is deliberately identical to the engine's own
+`Common_EventScript_FindItem` — set the item and the amount, then let `finditem`
+do the message, the fanfare, the pocket and the `removeobject` — so a generated
+ball behaves exactly like a hand-placed one.
+
+**`removeobject` does not keep a ball gone.** It removes the *object*; the
+*template* it spawns from still says a ball is there, so it returns as soon as
+the player walks out of range and back. The template has to move off the map
+(`x = y = INT16_MAX`), which is what the Battle Pyramid does with its own items
+and for this exact reason. It survives a save and reload because
+`RogueDungeon_LoadObjectEventTemplates` does not run on the load-from-save path,
+so the save block copy is what comes back.
+
+Key that on **whether the object is still there**, not on whether the item
+reached the bag. `Std_FindItem` only removes the object on success, so a full bag
+leaves the ball standing and the off-map move correctly does nothing — no
+special case needed.
+
+### Hidden items are BG events, and BG events are ROM only
+
+Unlike object events, `bgEvents` are **never** copied to the save block —
+`GetBackgroundEventAtPosition` reads `mapHeader->events->bgEvents` directly. So
+the template seam that carries trainers, Unown and item balls does not reach
+them at all.
+
+`gMapHeader.events` is a **pointer in a RAM struct**, though, and this project
+already writes a sibling field of it (`gMapHeader.mapLayout`, for the per-theme
+tileset swap). Building a `struct MapEvents` in EWRAM and repointing it is the
+same move. `struct BgEvent` is 12 bytes; `struct MapEvents` is four counts and
+four pointers.
+
+That one repoint also makes the dowsing machine work on generated items for
+free, because `ItemfinderCheckForHiddenItems(gMapHeader.events, …)` takes the
+events as a **parameter** rather than reaching for the global.
+
+Hidden items do still cost one flag each — the engine checks
+`hiddenItemId + FLAG_HIDDEN_ITEMS_START`, and `hiddenItemId` is 13 bits. Reserve
+a block and clear it per floor, the same lifecycle `FLAG_ROGUE_BOSS_REWARD_TAKEN`
+has.
 
 ### Map data plumbing (adding a map)
 
@@ -1711,6 +1817,11 @@ and a floor would redecorate itself on re-entry.
 All of it lives in **`tools/rogue/`** — see `tools/rogue/README.md` for the
 per-script table and which ones write checked-in files.
 
+Two of them guard invariants that live in more than one file, and both are worth
+running after any edit near what they cover: `check_dungeon_objects.py` for the
+object event count (header vs **both** dungeon `map.json`s), and
+`verify_loot_table.py` for the healing curve.
+
 **In game there is a floor warp**: R + START in the overworld → Utilities →
 *Rogue floor warp…*. It dials 1 to `DUNGEON_TOTAL_FLOORS` and shows the dungeon,
 the floor within it, the encounter level and whether the floor is an arena — so
@@ -1744,6 +1855,15 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
 - **Measure per-instance, not in aggregate.** An encounter-distribution check
   averaged over 3000 floors showed no problem; the bug was *per-floor* variance
   (one species taking up to 85% of a single floor's slots).
+- **One average over mixed categories measures nothing.** The loot check first
+  scored the whole table as "healing", which made every arrival of a cheap but
+  useful item — Full Heal, Ether — look like healing going *backwards*, because
+  anything below the running mean pulls it down. A floor that starts dropping
+  Ethers has not lost any healing. Scoring potions against potions and revives
+  against revives turned 11 failures into 2, and **both survivors were real
+  bugs**. When a check fires on something that is obviously fine, suspect the
+  metric before the data — but then go and look at what is left, because the
+  noise was hiding it.
 - **Judge a wall metatile against its neighbours, never on a contact sheet.**
   All four concave corners looked right rendered side by side. Dropped into a
   probe floor — one rectangular room, which produces exactly one of each corner
@@ -1855,6 +1975,21 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    on the edge that would be visible rather than the unedged interior, but the
    mock still hits the horizontal three ways about 11 times a floor. Composed
    art, the way `make_ocean_tiles.py` does it, would be better.
+8. **Hidden items, and the RAM `MapEvents` they need.** Item balls are in; the
+   buried half is not, and it is what the dowsing machine is waiting on. §3 has
+   the mechanism — a `struct MapEvents` in EWRAM with generated `bgEvents`, and
+   `gMapHeader.events` repointed at it, which is the same move the per-theme
+   tileset swap already makes on `gMapHeader.mapLayout`.
+
+   The intent is that hidden items carry the **held-item** tier while balls
+   carry consumables, so the machine is worth the fact that wearing it stops the
+   player running. Two things are undecided and both are balance rather than
+   engineering: whether held items are depth-gated the way healing is, and
+   whether the Dowsing Machine is handed over at run start or earned.
+
+   Note that it will be unavailable on two themes by construction — `item_use.c`
+   refuses to start dowsing while surfing or underwater, so the ocean and the
+   seafloor cannot use it. That is a cost, not a bug.
 2. Winning ends the run the same way losing does: the party and bag are wiped
    and the player is back on floor 1. Nothing is carried forward and nothing
    records that it happened, so there is no reason to have won rather than
