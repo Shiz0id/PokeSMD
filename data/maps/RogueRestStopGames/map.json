@@ -49,6 +49,13 @@
       "elevation": 3,
       "dest_map": "MAP_ROGUE_REST_STOP",
       "dest_warp_id": "1"
+    },
+    {
+      "x": 8,
+      "y": 10,
+      "elevation": 3,
+      "dest_map": "MAP_ROGUE_REST_STOP",
+      "dest_warp_id": "1"
     }
   ],
   "coord_events": [],

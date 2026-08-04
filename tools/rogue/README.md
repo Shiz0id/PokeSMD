@@ -46,6 +46,9 @@ their output by hand; all are idempotent.
 | `make_victory_road_palettes.py` | the four Victory Road palette sets into `data/tilesets/secondary/rogue_victory_road_*/` |
 | `import_tile_sheet.py` | a whole secondary tileset — tiles, metatiles, attributes and palettes — composed from one or more sheets in `tools/rogue/sheets/`; currently `rogue_lapis_cave/`, `rogue_howling_jungle/` and `rogue_murky_cave/` |
 | `setup_dungeon_map.py` | the dungeon map's layout and `map.json` scaffolding |
+| `make_rest_stop.py` | the way-station's `map.bin`, `border.bin` and layout entry, walled by a transcription of `ApplyWallAutotiling` |
+| `make_game_room.py` | the game room's `map.bin`, `border.bin` and layout entry, assembled from rectangles lifted out of `MauvilleCity_GameCorner` |
+| `warp_tiles.py` | the way-station's two door metatiles into `data/tilesets/secondary/rogue_murky_cave/`, and the check that a map's warps can fire |
 
 The tileset writers (`make_woods_stairs`, `make_fiery_slivers`,
 `make_mirage_slivers`, `make_ocean_tiles`, `make_underwater_tiles`,
@@ -59,6 +62,19 @@ everything past the vanilla 168 metatiles and rewriting the tail, so a second
 appender's entries get silently wiped the next time it runs. Anything needing a
 new Ever Grande metatile adds itself there. Same rule as `append_metatiles.py`
 has for the cave, and for the same reason.
+
+`warp_tiles.py` is the same arrangement for `gTileset_RogueMurkyCave`, with one
+extra wrinkle: `import_tile_sheet.py` owns the first 150 metatiles of that file
+and rewrites them from the sheet, so **re-importing murky drops the doors**.
+Re-run `warp_tiles.py --write` (or `make_rest_stop.py --write`, which calls it)
+afterwards. The behaviour check will say so either way.
+
+**A `warp_event` does not warp on its own.** The engine fires it only when the
+metatile under it has a warp *behaviour*, so a warp on plain floor is dead and
+nothing complains — that is how the way-station, its game room and the way out
+of the game room all shipped unreachable at once. `warp_tiles.py` checks every
+warp in both maps against the tile beneath it, and `make_rest_stop.py` and
+`make_game_room.py` run that check on `--write`.
 
 `import_tile_sheet.py` is the odd one out: it **owns** its output directory
 rather than editing a vanilla one, and rewrites every file in it on each run, so

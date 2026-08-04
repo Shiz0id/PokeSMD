@@ -26,6 +26,8 @@ import struct
 import sys
 from pathlib import Path
 
+import warp_tiles
+
 REPO = Path(__file__).resolve().parents[2]
 LAYOUTS = REPO / 'data/layouts/layouts.json'
 NAME = 'RogueRestStopGames'
@@ -71,11 +73,28 @@ ROULETTE = (
     ((0x214, 0, 3), (0x204, 0, 3), (0x215, 0, 3)),
 )
 
-PLACEMENTS = ((COUNTER, 9, 0), (SLOT_BANK, 1, 5), (ROULETTE, 11, 6))
+# the way out, vanilla (11,10)-(12,10).
+#
+# THE EXIT USED TO BE PLAIN CARPET, and so it did not work. A warp_event fires
+# only on a tile whose BEHAVIOUR is a warp behaviour, and 0x202 is MB_NORMAL, so
+# the player could stand on the warp and never leave. These two are the vanilla
+# Game Corner's own door: MB_SOUTH_ARROW_WARP, stand on it and hold down. That
+# is the same reason everything else in this file is lifted rather than composed
+# - the behaviour is the part that matters, and copying it means it cannot be
+# got wrong. It is also why it stays on the BOTTOM ROW: a south arrow is only
+# reachable by walking south.
+EXIT_DOOR = (
+    ((0x206, 0, 3), (0x207, 0, 3)),
+)
+
+PLACEMENTS = ((COUNTER, 9, 0), (SLOT_BANK, 1, 5), (ROULETTE, 11, 6),
+              (EXIT_DOOR, 7, 10))
 
 # Where the scripts have to point. Kept here so the map.json and this file
 # cannot drift apart silently - the report prints them.
-EXIT = (7, 10)
+# Both halves of the door are warps, as they are in vanilla, so the player
+# leaves from whichever one they walked onto. Warp 0 is the one they arrive at.
+EXIT, EXIT_EAST = (7, 10), (8, 10)
 CLERK_COINS, CLERK_PRIZES = (11, 2), (14, 2)
 SLOTS_EAST = [(2, y) for y in range(6, 10)]    # player sits at x=1
 SLOTS_WEST = [(3, y) for y in range(6, 10)]    # player sits at x=4
@@ -146,6 +165,7 @@ def main(argv):
     # STAND next to the thing they are talking to, and a copied assembly makes
     # that easy to get subtly wrong.
     checks = [('exit', EXIT, None),
+              ('exit east', EXIT_EAST, None),
               ('coins clerk', CLERK_COINS, None),
               ('prize clerk', CLERK_PRIZES, None)]
     for label, (x, y), _ in checks:
@@ -162,8 +182,11 @@ def main(argv):
         assert not walkable(grid, x, y), (x, y)
         assert walkable(grid, x + side, y), (x + side, y)
         print(f'  {label}   table ({x},{y}) played from ({x + side},{y})')
-    if not walkable(grid, *EXIT):
-        raise SystemExit('the exit tile is blocked')
+    for tile in (EXIT, EXIT_EAST):
+        if not walkable(grid, *tile):
+            raise SystemExit(f'the exit tile {tile} is blocked')
+        if tile[1] != H - 1:
+            raise SystemExit('a south arrow warp must be on the bottom row')
 
     if '--write' in argv:
         d = REPO / 'data/layouts' / NAME
@@ -174,6 +197,11 @@ def main(argv):
             struct.pack('<4H', *([block(WALL_TOP)] * 4)))
         print(f'  wrote {d}/map.bin and border.bin')
         print(f'  layouts.json {upsert_layout()}')
+
+        # The check that would have caught the dead exit before it was played.
+        print('  warps:')
+        if warp_tiles.check_map(NAME):
+            raise SystemExit('a warp in this map cannot fire')
 
 
 if __name__ == '__main__':

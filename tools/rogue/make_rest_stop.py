@@ -25,6 +25,8 @@ import struct
 import sys
 from pathlib import Path
 
+import warp_tiles
+
 REPO = Path(__file__).resolve().parents[2]
 LAYOUTS = REPO / 'data/layouts/layouts.json'
 NAME = 'RogueRestStop'
@@ -56,7 +58,12 @@ THEMES = {
     # descent is the cut stairwell rather than a hole, for the same reason.
     'murky': dict(
         primary='gTileset_General', secondary='gTileset_RogueMurkyCave',
-        floor=0x239, void=0x200, stairs=0x295,
+        # THE VOID IS PER-TILESET AND WAS THE BORDER BUG. 0x200 is the dark
+        # void in gTileset_Cave and NORTH_LEFT in this one - it is declared as
+        # such four lines below - so the border tiled the whole out-of-bounds
+        # area with a wall corner. 0x204 is what the generated Murky floors
+        # already use for theirs, and reads as the rock going on.
+        floor=0x239, void=0x204, stairs=0x295,
         wall=dict(
             INTERIOR_LEFT=0x203, INTERIOR_MID=0x204, INTERIOR_RIGHT=0x205,
             FACE_LEFT=0x206, FACE_MID=0x207, FACE_RIGHT=0x208,
@@ -78,6 +85,23 @@ VOID = THEMES[THEME]['void']
 STAIRS_DOWN = THEMES[THEME]['stairs']
 WALL = THEMES[THEME]['wall']
 ELEV_FLOOR, ELEV_WALL = 3, 0
+
+# THE TWO TILES THE PLAYER WARPS THROUGH ARE NOT THE ART TILES.
+#
+# A warp_event does nothing on a tile whose behaviour is not a warp behaviour,
+# and both of these were plain rock - the descent MB_NORMAL, the alcove MB_CAVE
+# - so both warps were dead the moment this layout replaced the Pokemon Center.
+# warp_tiles.py appends a clone of each with MB_NON_ANIMATED_DOOR, the
+# behaviour vanilla's own cave descent carries. Same art, same eight tiles.
+DOOR = warp_tiles.door_ids()
+DESCENT = DOOR['REST_STOP_DESCENT']
+ALCOVE = DOOR['REST_STOP_ALCOVE']
+
+# The clones must be clones OF THIS THEME'S tiles. Checked rather than assumed,
+# because the ids live in two files and a theme swap would silently point the
+# doors at whatever the murky tileset happened to have in those slots.
+assert dict(warp_tiles.DOORS)['REST_STOP_DESCENT'] == STAIRS_DOWN
+assert dict(warp_tiles.DOORS)['REST_STOP_ALCOVE'] == FLOOR
 
 # The chamber. Walls are two thick everywhere so no cell ever has floor on
 # opposite sides - the sliver slots exist for generated floors and are art this
@@ -106,10 +130,11 @@ PLAN = (
     '#################',
 )
 
-# Everything that is not wall, by plan character. The alcove is plain floor -
-# there is no door art in a tileset made of cut rock, and a one-tile notch in a
-# wall reads as a way through on its own.
-OPEN = {'.': FLOOR, 'X': STAIRS_DOWN, 'G': FLOOR}
+# Everything that is not wall, by plan character. The alcove looks like plain
+# floor - there is no door art in a tileset made of cut rock, and a one-tile
+# notch in a wall reads as a way through on its own - but it and the descent are
+# the DOOR clones, so the engine will fire their warps.
+OPEN = {'.': FLOOR, 'X': DESCENT, 'G': ALCOVE}
 
 
 def is_wall(plan, x, y):
@@ -292,14 +317,27 @@ def main(argv):
     check_unown(plan)
 
     if '--write' in argv:
+        # The doors first: the layout below is written in terms of their ids, so
+        # a run that wrote the map without them would reference metatiles that
+        # are not in the tileset.
+        print('  door metatiles:')
+        warp_tiles.append(write=True)
+
         d = REPO / 'data/layouts' / NAME
         d.mkdir(parents=True, exist_ok=True)
         (d / 'map.bin').write_bytes(struct.pack(f'<{len(blocks)}H', *blocks))
-        # 2x2 border of the cave's void, the same black the dungeon edges use
+        # 2x2 border of this theme's wall fill, so what is past the chamber
+        # reads as more rock. It is what the generated Murky floors use.
         (d / 'border.bin').write_bytes(
             struct.pack('<4H', *([block(VOID, 1, 0)] * 4)))
         print(f'  wrote {d}/map.bin and border.bin')
         print(f'  layouts.json {upsert_layout(w, h)}')
+
+        # Every warp must sit on a tile that can actually fire it. This is the
+        # check that would have caught the dead exit before it was played.
+        print('  warps:')
+        if warp_tiles.check_map(NAME):
+            raise SystemExit('a warp in this map cannot fire')
 
 
 if __name__ == '__main__':
