@@ -53,6 +53,17 @@ ITEM_BALL = {
     'flag': '0',
 }
 
+BERRY_TREE = {
+    'graphics_id': 'OBJ_EVENT_GFX_BERRY_TREE',
+    'x': 1, 'y': 1, 'elevation': 3,
+    'movement_type': 'MOVEMENT_TYPE_BERRY_TREE_GROWTH',
+    'movement_range_x': 0, 'movement_range_y': 0,
+    'trainer_type': 'TRAINER_TYPE_NONE',
+    'trainer_sight_or_berry_tree_id': '0',
+    'script': 'BerryTreeScript',
+    'flag': '0',
+}
+
 
 def constant(name):
     """Read a #define out of the header. The value is a plain integer for both
@@ -68,9 +79,10 @@ def constant(name):
 def main(argv):
     trainers = constant('DUNGEON_MAX_TRAINERS')
     items = constant('DUNGEON_MAX_ITEMS')
-    want = trainers + items
+    berries = constant('DUNGEON_MAX_BERRIES')
+    want = trainers + items + berries
     print(f'DUNGEON_MAX_TRAINERS {trainers} + DUNGEON_MAX_ITEMS {items} '
-          f'= {want} object events')
+          f'+ DUNGEON_MAX_BERRIES {berries} = {want} object events')
 
     failed = False
     for name in MAPS:
@@ -87,8 +99,11 @@ def main(argv):
             failed = True
             continue
 
+        # Order matters as well as count: the C writes slot by slot, so
+        # trainers, then item balls, then berry trees.
         doc['object_events'] = ([dict(TRAINER) for _ in range(trainers)]
-                                + [dict(ITEM_BALL) for _ in range(items)])
+                                + [dict(ITEM_BALL) for _ in range(items)]
+                                + [dict(BERRY_TREE) for _ in range(berries)])
         # newline='\n' because writing repo files from Windows otherwise emits
         # CRLF and git flags every touched file.
         with open(path, 'w', encoding='utf-8', newline='\n') as f:

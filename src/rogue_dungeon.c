@@ -21,6 +21,9 @@
 #include "constants/moves.h"
 #include "constants/vars.h"
 #include "constants/wild_encounter.h"
+#include "berry.h"
+#include "event_scripts.h"   // BerryTreeScript, the engine's own tree handler
+#include "constants/berry.h"
 #include "constants/event_bg.h"
 #include "constants/event_objects.h"
 #include "constants/trainer_types.h"
@@ -710,6 +713,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_WOODS,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        .berries = TRUE,   // open sky and soil
         .generator = DUNGEON_GEN_WOODS,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
@@ -933,6 +937,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_JUNGLE,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        .berries = TRUE,   // open sky and soil
         .generator = DUNGEON_GEN_CAVE,   // the canopy tiles 1x1, unlike the woods
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
@@ -1417,6 +1422,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     [DUNGEON_THEME_EVERGRANDE] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_EVERGRANDE,
+        .berries = TRUE,   // open sky and soil
+
         // Blossom on the wind. Weather lives in the map header, which is read
         // out of ROM by warp group and id, so it needs a map of its own the way
         // the fog and the snow do - and like those, the map is named for the
@@ -1651,6 +1658,14 @@ EWRAM_DATA static u8 sItemCount = 0;
 // sDungeonEvents is a copy of the map's ROM header with only the bg fields
 // swapped, so warps, coord events and the object event count all keep saying
 // what map.json said.
+// Berry trees for this floor. The berry is held rather than the tree planted at
+// prepare time, because planting writes the SAVE BLOCK and preparing happens on
+// every load - see PlantFloorBerryTrees.
+EWRAM_DATA static u16 sBerryItems[DUNGEON_MAX_BERRIES] = {0};
+EWRAM_DATA static u8 sBerryX[DUNGEON_MAX_BERRIES] = {0};
+EWRAM_DATA static u8 sBerryY[DUNGEON_MAX_BERRIES] = {0};
+EWRAM_DATA static u8 sBerryCount = 0;
+
 EWRAM_DATA static struct BgEvent sHiddenItems[DUNGEON_MAX_HIDDEN] = {0};
 EWRAM_DATA static struct MapEvents sDungeonEvents = {0};
 EWRAM_DATA static u8 sHiddenCount = 0;
@@ -1666,6 +1681,17 @@ STATIC_ASSERT(FLAG_HIDDEN_ITEMS_START + DUNGEON_HIDDEN_FIRST_ID == FLAG_UNUSED_0
 // is plenty of room today - the highest id is in the 700s - but the bag grows
 // every expansion release and nothing else would notice the day it does not.
 STATIC_ASSERT(ITEMS_COUNT <= (1 << 11), RogueHiddenItemIdsMustFitElevenBits);
+
+// Berry tree ids index a fixed 128-entry save block array that vanilla already
+// names 0..89 of. Running off the end would silently write over another map's
+// tree - or past the array - so the headroom is checked rather than counted by
+// hand.
+STATIC_ASSERT(DUNGEON_BERRY_FIRST_TREE_ID + DUNGEON_MAX_BERRIES <= BERRY_TREES_COUNT,
+              RogueBerryTreeIdsMustFitTheSaveBlockArray);
+
+// berryYield is a five-bit field, so a yield past 31 would wrap into a small
+// number and read as a stingy tree rather than as a mistake.
+STATIC_ASSERT(DUNGEON_BERRY_YIELD <= 31, RogueBerryYieldMustFitFiveBits);
 
 // Local PRNG. Generation must not consume or perturb the global RNG - if it
 // did, the floor would depend on how many steps the player had taken, and the
@@ -1894,6 +1920,26 @@ void RogueDungeon_GiveBossAce(void)
 // the whiteout path and by finishing the run, which differ only in how they say
 // so and in how they get back to floor one - a loss is handled from C and warps
 // itself, a win is handled from the boss script and uses the warp command.
+// Credits a finished run. Called from the boss script's run-complete branch
+// only, and pointedly NOT from inside ResetRun below - that is shared with the
+// whiteout path, and a loss crediting a win is exactly the bug this counter
+// exists to make visible.
+//
+// Runs before ResetRun, because ResetRun puts the floor counter back to 0 and
+// IsRunCompleteFloor would stop being true.
+void RogueDungeon_OnRunCompleted(void)
+{
+    u32 completed = VarGet(VAR_ROGUE_RUNS_COMPLETED);
+
+    FlagSet(FLAG_ROGUE_RUN_COMPLETED);
+
+    // A var is 16 bits and there is no sensible behaviour past the top, so it
+    // saturates rather than wrapping to zero - a player with 65535 wins should
+    // not be told they have none.
+    if (completed < 0xFFFF)
+        VarSet(VAR_ROGUE_RUNS_COMPLETED, completed + 1);
+}
+
 void RogueDungeon_ResetRun(void)
 {
     VarSet(VAR_ROGUE_DUNGEON_FLOOR, 0);
@@ -3063,6 +3109,32 @@ static const struct RogueLootEntry sLootHeld[] =
     { ITEM_LEFTOVERS,     10,  70, 255, 1 },
 };
 
+// What grows on the themes that have soil. Same banded shape as the other two,
+// and named by ITEM rather than by berry id so it reads like them and so
+// verify_loot_table.py can check the names against constants/items.h;
+// ItemIdToBerryType converts at planting time.
+//
+// Quantity is not read here - a tree hands over DUNGEON_BERRY_YIELD of whatever
+// it grew, which is the point of the feature - so it stays 1 to keep the shared
+// struct honest rather than pretending to mean something.
+static const struct RogueLootEntry sLootBerries[] =
+{
+    // In-battle healing and status cover, which is what a berry is for in a
+    // run. Oran retires the way Potions do; the rest are useful throughout.
+    { ITEM_ORAN_BERRY,     20,   0,  40, 1 },
+    { ITEM_PECHA_BERRY,    10,   0,  50, 1 },
+    { ITEM_CHERI_BERRY,    10,   0,  50, 1 },
+    { ITEM_CHESTO_BERRY,   10,   0,  50, 1 },
+    { ITEM_LEPPA_BERRY,    12,  10, 255, 1 },
+    { ITEM_SITRUS_BERRY,   20,  25, 255, 1 },
+    { ITEM_LUM_BERRY,      16,  30, 255, 1 },
+
+    // The pinch berries, which are the ones worth holding on a deep floor.
+    { ITEM_SALAC_BERRY,     8,  60, 255, 1 },
+    { ITEM_LIECHI_BERRY,    8,  65, 255, 1 },
+    { ITEM_PETAYA_BERRY,    8,  65, 255, 1 },
+};
+
 // Weighted pick from a banded table. Shared by both loot tables, because they
 // are the same shape and a second copy of this is a second place for the
 // running-total arithmetic to be wrong.
@@ -3172,6 +3244,14 @@ static void PlaceHiddenItems(u16 floor)
         if (j != sTrainerCount)
             continue;
 
+        for (j = 0; j < sBerryCount; j++)
+        {
+            if (sBerryX[j] == x && sBerryY[j] == y)
+                break;
+        }
+        if (j != sBerryCount)
+            continue;
+
         for (j = 0; j < sHiddenCount; j++)
         {
             if (sHiddenItems[j].x == x && sHiddenItems[j].y == y)
@@ -3201,6 +3281,101 @@ static void PlaceHiddenItems(u16 floor)
         sHiddenItems[sHiddenCount].bgUnion.hiddenItem.hiddenItemId =
             DUNGEON_HIDDEN_FIRST_ID + sHiddenCount;
         sHiddenCount++;
+    }
+}
+
+// Chooses where berry trees stand and what grows on them. Positions and berries
+// only - nothing is planted here, because this runs on every load of a floor
+// and planting writes the save block.
+static void PlaceBerryTrees(u16 floor)
+{
+    const struct RogueDungeonTheme *theme = ThemeForFloor(floor);
+    u32 i, j;
+
+    sBerryCount = 0;
+
+    if (sRoomCount == 0 || !theme->berries)
+        return;
+
+    for (i = 0; i < DUNGEON_MAX_BERRIES; i++)
+    {
+        u8 quantity;
+        u32 room = DungeonRandom() % sRoomCount;
+        u8 x = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
+        u8 y = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
+
+        // A berry tree is solid, so the same rule the item balls have: never on
+        // the exit, or the floor cannot be left.
+        if (x == sStairsX && y == sStairsY)
+            continue;
+
+        for (j = 0; j < sItemCount; j++)
+        {
+            if (sItemX[j] == x && sItemY[j] == y)
+                break;
+        }
+        if (j != sItemCount)
+            continue;
+
+        for (j = 0; j < sTrainerCount; j++)
+        {
+            if (sTrainerX[j] == x && sTrainerY[j] == y)
+                break;
+        }
+        if (j != sTrainerCount)
+            continue;
+
+        for (j = 0; j < sBerryCount; j++)
+        {
+            if (sBerryX[j] == x && sBerryY[j] == y)
+                break;
+        }
+        if (j != sBerryCount)
+            continue;
+
+        sBerryX[sBerryCount] = x;
+        sBerryY[sBerryCount] = y;
+        RollFromTable(sLootBerries, ARRAY_COUNT(sLootBerries), floor,
+                      &sBerryItems[sBerryCount], &quantity);
+        sBerryCount++;
+    }
+}
+
+// Plants what PlaceBerryTrees chose, into the save block.
+//
+// SEPARATE FROM PLACEMENT, AND CALLED FROM A DIFFERENT PLACE, because
+// gSaveBlock1Ptr->berryTrees is saved state and the two run on different
+// schedules. Preparing a floor happens on every load, including load-from-save;
+// planting must happen only when a genuinely new floor is rolled, or reloading
+// a save would regrow every tree the player had already picked.
+//
+// The template loader is that place - it does not run on the load-from-save
+// path, which is the same property the trainer defeat flags rely on.
+//
+// Planted straight to BERRY_STAGE_BERRIES with growth stopped, because a run is
+// not long enough to wait for anything and the growth clock is real time. The
+// yield is overwritten rather than calculated: CalcBerryYield gives the stock
+// 2-6 spread off watering that never happened here.
+static void PlantFloorBerryTrees(void)
+{
+    u32 i;
+
+    for (i = 0; i < DUNGEON_MAX_BERRIES; i++)
+    {
+        u8 id = DUNGEON_BERRY_FIRST_TREE_ID + i;
+
+        if (i >= sBerryCount)
+        {
+            // Blank it rather than leaving last floor's tree standing - the
+            // template is hidden, but a live tree in the array would be picked
+            // up by anything that scans them.
+            RemoveBerryTree(id);
+            continue;
+        }
+
+        PlantBerryTree(id, ItemIdToBerryType(sBerryItems[i]),
+                       BERRY_STAGE_BERRIES, FALSE);
+        GetBerryTreeInfo(id)->berryYield = DUNGEON_BERRY_YIELD;
     }
 }
 
@@ -3455,8 +3630,9 @@ static void PrepareFloor(u16 seed)
     PlaceTrainers(floor);
     // After the trainers, because it refuses to stack a ball on one of them.
     PlaceItems(floor);
-    // And after the balls, for the same reason - a hidden item under a ball is
-    // one the player can never be told about.
+    PlaceBerryTrees(floor);
+    // Last, so it can avoid every solid thing already placed - a hidden item
+    // under a ball or a tree is one the player can never be told about.
     PlaceHiddenItems(floor);
     sFloorPrepared = TRUE;
 }
@@ -3809,6 +3985,40 @@ void RogueDungeon_LoadObjectEventTemplates(void)
             templates[slot].y = sItemY[i];
             templates[slot].movementType = MOVEMENT_TYPE_LOOK_AROUND;
             templates[slot].script = RogueDungeonFloor_EventScript_ItemBall;
+            templates[slot].flagId = 0;
+        }
+        else
+        {
+            templates[slot].flagId = FLAG_ROGUE_OBJECT_UNUSED;
+        }
+    }
+
+    // Berry trees. The save block half has to happen here rather than at
+    // prepare time - see PlantFloorBerryTrees for why this function is the
+    // right place and PrepareFloor is not.
+    PlantFloorBerryTrees();
+
+    for (i = 0; i < DUNGEON_MAX_BERRIES; i++)
+    {
+        u32 slot = DUNGEON_MAX_TRAINERS + DUNGEON_MAX_ITEMS + i;
+
+        templates[slot].localId = slot + 1;
+        templates[slot].kind = OBJ_KIND_NORMAL;
+        templates[slot].elevation = elevation;
+
+        if (i < sBerryCount)
+        {
+            templates[slot].graphicsId = OBJ_EVENT_GFX_BERRY_TREE;
+            templates[slot].x = sBerryX[i];
+            templates[slot].y = sBerryY[i];
+            // Both of these are load-bearing rather than decorative. The
+            // movement type is how the engine recognises a tree at all - it
+            // scans for MOVEMENT_TYPE_BERRY_TREE_GROWTH - and the berry tree id
+            // shares the field the trainers use for sight range.
+            templates[slot].movementType = MOVEMENT_TYPE_BERRY_TREE_GROWTH;
+            templates[slot].trainerRange_berryTreeId =
+                DUNGEON_BERRY_FIRST_TREE_ID + i;
+            templates[slot].script = BerryTreeScript;
             templates[slot].flagId = 0;
         }
         else

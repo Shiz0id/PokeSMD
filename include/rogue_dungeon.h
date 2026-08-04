@@ -1091,6 +1091,12 @@ struct RogueDungeonTheme
     u8 roomMin, roomMax;
     u8 corridorWidth;   // odd, centred on the path; 0 or 1 is the cave's
 
+    // Berries grow here. Set on the themes that are OUTDOORS in the sense that
+    // matters - open sky and soil - which is Petalburg Woods, the Jungle and
+    // Ever Grande, and not the caves, New Mauville, the tower or the sea. Left
+    // 0 everywhere else, which is what a designated initialiser gives for free.
+    u8 berries;
+
     u16 floor;
     u16 tallGrass;   // 0 if the theme has none, in which case encounters fire
     u16 longGrass;   // anywhere rather than only in grass
@@ -1302,6 +1308,10 @@ void RogueDungeon_SeedRestStopUnown(void);      // who is watching, and from whe
 // Hide runs after the pickup and only bites if the ball actually went.
 u16 RogueDungeon_PrepareFloorItem(void);
 void RogueDungeon_HideTakenFloorItem(void);
+
+// Credits a finished run. From the boss script's run-complete branch only -
+// ResetRun is shared with the whiteout and must not count a loss as a win.
+void RogueDungeon_OnRunCompleted(void);
 
 // Debug menu support. Describes a floor in one short line; see the debug warp
 // tool in src/debug.c.

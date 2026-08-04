@@ -76,6 +76,37 @@
 // than trusting this comment.
 #define DUNGEON_HIDDEN_FIRST_ID 0x70
 
+// Berry trees, on the themes that have soil. Object events again, so like the
+// item balls they come out of the 64 templates already allocated.
+#define DUNGEON_MAX_BERRIES 4
+
+// Berry tree ids index gSaveBlock1Ptr->berryTrees[BERRY_TREES_COUNT], which is
+// 128 long and of which vanilla names 0..89. Ours start above that. Unlike the
+// hidden item flags these are not shared with anything, but they are still
+// somebody else's numbering and rogue_dungeon.c asserts the headroom.
+#define DUNGEON_BERRY_FIRST_TREE_ID 90
+
+// What a tree gives when picked. berryYield is a 5-BIT field, so 31 is the
+// ceiling, and the stock range is roughly 2-6 - this sits at the top of it
+// rather than past it, so a picked tree reads as a good tree rather than as a
+// broken one.
+#define DUNGEON_BERRY_YIELD 6
+
+// Object event local ids again: trainers, then item balls, then these.
+#define DUNGEON_BERRY_FIRST_LOCAL_ID \
+    (DUNGEON_MAX_TRAINERS + DUNGEON_MAX_ITEMS + 1)
+
+// Runs finished, and whether any ever has. The counter is what the run-complete
+// message reads back; the flag is the door for post-first-run content, which is
+// why it is a flag rather than a comparison on the counter - what unlocks
+// should not have to know the number.
+//
+// Both are vars/flags rather than SaveBlock fields, so the save layout is
+// untouched, and both survive RogueDungeon_ResetRun - which wipes the party,
+// the bag and the coins, and deliberately not these.
+#define VAR_ROGUE_RUNS_COMPLETED VAR_UNUSED_0x40F8
+#define FLAG_ROGUE_RUN_COMPLETED FLAG_UNUSED_0x91C
+
 // Run lifecycle. A run needs starters on a new game and again after a whiteout,
 // which is what makes a loss send the player back to the beginning.
 #define VAR_ROGUE_RUN_STATE      VAR_UNUSED_0x40F7

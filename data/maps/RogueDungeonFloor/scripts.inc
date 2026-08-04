@@ -150,7 +150,14 @@ RogueDungeonFloor_EventScript_BossExit::
 @ whiteout performs, and warps there - so this is reachable on a re-talk without
 @ harm, since the warp leaves the arena either way.
 RogueDungeonFloor_EventScript_RunComplete::
+	@ Before the reset, which puts the floor counter back to 0 and would stop
+	@ this floor being the run-complete one.
+	special RogueDungeon_OnRunCompleted
 	msgbox RogueDungeonFloor_Text_RunComplete, MSGBOX_DEFAULT
+	@ Read back, so the counter is something the player can see rather than a
+	@ var that has to be trusted.
+	buffernumberstring STR_VAR_1, VAR_ROGUE_RUNS_COMPLETED
+	msgbox RogueDungeonFloor_Text_RunsCompleted, MSGBOX_DEFAULT
 	special RogueDungeon_ResetRun
 	special RogueDungeon_WarpToCurrentFloor
 	waitstate
@@ -181,6 +188,11 @@ RogueDungeonFloor_Text_RunComplete:
 	.string "The run is complete!\p"
 	.string "…and somewhere far above, another\n"
 	.string "descent is already beginning.$"
+
+@ Worded to avoid a singular and a plural, since the count is buffered in and
+@ the text cannot branch on it.
+RogueDungeonFloor_Text_RunsCompleted:
+	.string "Descents completed: {STR_VAR_1}$"
 
 RogueDungeonFloor_Text_TrainerDefeat::
 	.string "I could not keep up down here.$"

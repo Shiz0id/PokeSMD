@@ -185,6 +185,7 @@ def main(argv):
               f'{per_ball:>8.1f}  {per_floor:>9.1f}')
 
     failures.extend(check_held(total_floors))
+    failures.extend(check_berries(total_floors))
 
     print()
     if failures:
@@ -193,6 +194,47 @@ def main(argv):
         raise SystemExit(f'{len(failures)} problem(s)')
     print(f'ok - potion healing rises monotonically, floor 0 to {total_floors - 1}')
     print('ok - held items always available, and the best tier never regresses')
+    print('ok - every berry is a berry, and every floor has one in band')
+
+
+def check_berries(total_floors):
+    """Berries are planted through ItemIdToBerryType, which returns
+    BERRY_ID_NONE for anything that is not a berry - so a wrong name here plants
+    a BLANK TREE rather than failing. Nothing in the build would say so, and in
+    game it looks like a patch of dirt. Hence the name test."""
+    rows = parse_table('sLootBerries')
+    known = known_items()
+    failures = []
+
+    for item, weight, lo, hi, qty in rows:
+        if item not in known:
+            failures.append(f'berry {item} is not in constants/items.h')
+        elif not item.endswith('_BERRY'):
+            failures.append(f'berry {item} is not a berry - it would plant nothing')
+        if lo >= hi:
+            failures.append(f'berry {item} band {lo}..{hi} is empty')
+        if lo >= total_floors:
+            failures.append(f'berry {item} arrives on floor {lo}, past the last floor')
+        if weight == 0:
+            failures.append(f'berry {item} has zero weight')
+    if failures:
+        return failures
+
+    samples = []
+    for floor in range(total_floors):
+        band = [r for r in rows if r[2] <= floor < r[3]]
+        if not band or sum(r[1] for r in band) == 0:
+            failures.append(f'floor {floor} has no berry in band')
+            continue
+        if floor % 20 == 0 or floor == total_floors - 1:
+            samples.append((floor, len(band)))
+
+    print()
+    print(f'{len(rows)} berry entries')
+    print('floor  in band')
+    for floor, n in samples:
+        print(f'{floor:>5}  {n:>7}')
+    return failures
 
 
 # Held items are graded rather than scored: there is no HP number to average, and

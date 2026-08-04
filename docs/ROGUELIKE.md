@@ -94,6 +94,14 @@ Losing wipes the run; so does winning, which is the point.
   own field effect and sprite art); assigning `I_ORAS_DOWSING_FLAG` a flag is
   what turns it on. The ocean and the seafloor bury nothing, because dowsing
   cannot be started while surfing or diving. See §3.
+- **Berries grow where there is soil.** Four trees per floor on the three themes
+  that are outdoors in the sense that matters — Petalburg Woods, the Jungle and
+  Ever Grande — planted already fruiting and yielding six at a time rather than
+  the stock two to six. `theme->berries` is the switch; see §3 for why planting
+  and placement happen in different functions.
+- **Finished runs are counted.** `VAR_ROGUE_RUNS_COMPLETED` and
+  `FLAG_ROGUE_RUN_COMPLETED`, the latter being the door for post-first-run
+  content. The run-complete message reads the count back.
 - Reachable from a new game, which is slimmed to name entry only.
 
 Everything lives in `src/rogue_dungeon.c` / `include/rogue_dungeon.h` plus
@@ -457,6 +465,42 @@ Key that on **whether the object is still there**, not on whether the item
 reached the bag. `Std_FindItem` only removes the object on success, so a full bag
 leaves the ball standing and the off-map move correctly does nothing — no
 special case needed.
+
+### Planting a berry tree writes SAVED state, so it cannot happen at prepare time
+
+`gSaveBlock1Ptr->berryTrees[]` is a fixed 128-entry save block array, and
+`PlantBerryTree` writes into it. That puts berry trees on a different schedule
+from everything else a floor is made of.
+
+`PrepareFloor` runs on **every** load of a floor, including load-from-save with
+the stored seed — that is the whole point of it. Plant there and reloading a
+save regrows every tree the player had already picked. So placement and planting
+are split: `PlaceBerryTrees` chooses positions and berries at prepare time and
+touches no saved state, and `PlantFloorBerryTrees` runs from
+`RogueDungeon_LoadObjectEventTemplates`, which **does not run on the
+load-from-save path** — the same property the trainer defeat flags already rely
+on.
+
+Unused slots are blanked with `RemoveBerryTree` rather than just left hidden: the
+template is invisible, but a live tree in the array would still be found by
+anything that scans them.
+
+Three more things about a generated tree:
+
+- **`MOVEMENT_TYPE_BERRY_TREE_GROWTH` is how the engine recognises one at all** —
+  it scans object events for that movement type. It is not decoration.
+- The tree id shares `trainerRange_berryTreeId`, the same field the trainers use
+  for sight range and item balls would have used for their item. Vanilla names
+  ids 0..89 of 128, so ours start at 90 and a `STATIC_ASSERT` holds the headroom.
+- Planted straight to `BERRY_STAGE_BERRIES` with `allowGrowth = FALSE`, because
+  the growth clock is real time and a run is not long enough to wait for
+  anything. `berryYield` is then **overwritten** — `CalcBerryYield` gives the
+  stock 2–6 spread off watering that never happened. It is a 5-bit field.
+
+`ItemIdToBerryType` returns `BERRY_ID_NONE` for anything that is not a berry, so
+a wrong name in the table plants a blank tree rather than failing — it looks
+like a patch of dirt in game and nothing in the build says a word.
+`verify_loot_table.py` checks the names for that reason.
 
 ### Hidden items are BG events, and BG events are ROM only
 
@@ -2023,10 +2067,18 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    The remaining balance question is untested rather than open: whether the
    held-item tiers arrive at the right depths. `verify_loot_table.py` grades
    them and checks the ceiling never drops, but grading is not play.
-2. Winning ends the run the same way losing does: the party and bag are wiped
-   and the player is back on floor 1. Nothing is carried forward and nothing
-   records that it happened, so there is no reason to have won rather than
-   stopped. A completion counter is the obvious next thing.
+2. **Winning is now recorded, but still not rewarded.** `VAR_ROGUE_RUNS_COMPLETED`
+   counts finished runs and `FLAG_ROGUE_RUN_COMPLETED` says whether any ever
+   has; the run-complete message reads the count back, so it is observable
+   rather than a var to be trusted. The party and bag are still wiped and
+   nothing is carried forward — what is missing is now *content behind the
+   flag*, not the flag.
+
+   The counter is credited from the boss script's run-complete branch and
+   **deliberately not from inside `ResetRun`**, which is shared with the
+   whiteout path: a loss crediting a win is precisely the bug a completion
+   counter exists to make visible. It is a flag rather than a comparison on the
+   counter because what unlocks should not have to know the number.
 3. A full party still loses the boss ace — there is no swap UI. It now says so
    instead of declining in silence, but being unable to take a Champion's ace
    because of a spare Zubat is still a bad moment.
