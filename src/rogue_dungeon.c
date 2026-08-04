@@ -3493,8 +3493,20 @@ void RogueDungeon_SetUpTrainerBattle(void)
     SetTrainerBattleEndScript(endScript);
 }
 
+// Run-wide settings the engine reads from flags rather than from config. Called
+// on every floor load rather than once when a run begins, because a flag set
+// only by the run-start script would never reach a save made before that script
+// gained the line - and because there is no cost to setting a set flag.
+static void ApplyRunConfig(void)
+{
+    // Party-wide Exp Share, permanently on. See FLAG_ROGUE_EXP_SHARE.
+    FlagSet(FLAG_ROGUE_EXP_SHARE);
+}
+
 void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
 {
+    ApplyRunConfig();
+
     // Normally RogueDungeon_PrepareNewFloor has already run from the template
     // loader. That loader can be skipped, and never runs on load-from-save, so
     // fall back to preparing here.

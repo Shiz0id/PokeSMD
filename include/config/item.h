@@ -1,6 +1,12 @@
 #ifndef GUARD_CONFIG_ITEM_H
 #define GUARD_CONFIG_ITEM_H
 
+// For FLAG_ROGUE_EXP_SHARE and FLAG_ROGUE_DOWSING_ACTIVE below. The flag
+// aliases live in exactly one place, the way the var aliases do; this header
+// has no includes of its own upstream, so the two features that need them
+// bring the constants in here rather than each use site remembering to.
+#include "constants/rogue_dungeon.h"
+
 // Item config
 #define I_SHINY_CHARM_ADDITIONAL_ROLLS  2           // Amount of additional shiny rolls if the player has the Shiny Charm. Set it to 0 to disable Shiny Charm's effects.
 #define I_KEY_FOSSILS                   GEN_LATEST  // In Gen4+, all Gen 3 fossils became regular items.
@@ -28,7 +34,7 @@
 // Exp. Share config
 // To use this feature, replace the 0 with the flag ID you're assigning it to.
 // Eg: Replace with FLAG_UNUSED_0x264 so you can use that flag to toggle the feature.
-#define I_EXP_SHARE_FLAG        0           // If this flag is set, every Pokémon in the party will gain experience, regardless if they participated in the battle or not.
+#define I_EXP_SHARE_FLAG        FLAG_ROGUE_EXP_SHARE  // If this flag is set, every Pokémon in the party will gain experience, regardless if they participated in the battle or not.
 #define I_EXP_SHARE_ITEM        GEN_5       // In Gen6+, the Exp. Share was changed from a held item to a Key item that toggles the effect described above.
 
 // Repel/Lure config
@@ -41,7 +47,7 @@
 #define I_SHOW_NO_ID_TRAINER        DISABLED_ON_RELEASE   // If TRUE, object events with a trainer type but no visible trainer id will be shown with a question mark. You may want to add vsseeker_rematchid TRAINER_ID as the top of the script to let the VS seeker know what reaction it's supposed to show.
 
 // ORAS Dowsing Machine
-#define I_ORAS_DOWSING_FLAG         0           // Replace 0 with an unused flag to enable the Dowsing Machine mechanic from ORAS.
+#define I_ORAS_DOWSING_FLAG         FLAG_ROGUE_DOWSING_ACTIVE  // Replace 0 with an unused flag to enable the Dowsing Machine mechanic from ORAS.
 #define I_ORAS_DOWSING_SOUNDS       TRUE        // If TRUE, the Dowsing Machine will make sounds based on how far away the hidden item is.
 #define I_ORAS_DOWSING_COLOR_PAL    15          // The color within the palette that will change based on proximity to the item.
 // Color values for the ORAS dowsing distances/anims

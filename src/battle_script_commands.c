@@ -59,6 +59,7 @@
 #include "constants/battle_string_ids.h"
 #include "constants/battle_partner.h"
 #include "constants/items.h"
+#include "constants/rogue_dungeon.h"
 #include "constants/item_effects.h"
 #include "constants/moves.h"
 #include "constants/party_menu.h"
@@ -3943,6 +3944,13 @@ static void Cmd_getexp(void)
 
             if (GetConfig(B_TRAINER_EXP_MULTIPLIER) <= GEN_7 && gBattleTypeFlags & BATTLE_TYPE_TRAINER)
                 calculatedExp = (calculatedExp * 150) / 100;
+
+            // Wild encounters only, and deliberately so - see
+            // ROGUE_WILD_EXP_PERCENT. Applied after the trainer multiplier
+            // rather than folded into it because the two are mutually exclusive
+            // by construction and stacking them would be a silent double boost.
+            if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
+                calculatedExp = (calculatedExp * ROGUE_WILD_EXP_PERCENT) / 100;
 
             if (GetConfig(B_SPLIT_EXP) < GEN_6)
             {

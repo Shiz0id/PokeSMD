@@ -53,6 +53,38 @@
 // Handed out at the start of every run until shops exist.
 #define ROGUE_RUN_STARTING_BALLS 100
 
+// Exp Share, party-wide and permanent. The expansion already implements this -
+// I_EXP_SHARE_FLAG in config/item.h means "every party mon gains experience
+// while this flag is set" - so the whole feature is a flag, not code.
+//
+// It costs participants NOTHING, which is worth knowing before tuning anything
+// else. B_SPLIT_EXP is GEN_LATEST, so the branch that runs gives the sent-in
+// mon the full award and the rest half on top; it is additive, not a split.
+// That is the Gen 7 behaviour rather than the Gen 5 one.
+//
+// Set on every dungeon floor load rather than once at run start, because a save
+// made before this existed would never pass through the run-start script again.
+#define FLAG_ROGUE_EXP_SHARE FLAG_UNUSED_0x91A
+
+// The ORAS dowsing machine's ACTIVE state - it is a mode the player toggles by
+// using the Itemfinder, not a compile-time enable. The engine ships the whole
+// mechanic (src/oras_dowse.c); assigning it a flag is what turns it on.
+//
+// Note what being in that mode costs: field_player_avatar.c refuses to run
+// while it is set, and item_use.c refuses to start it at all while surfing or
+// underwater - so it is unavailable on the ocean and seafloor themes.
+#define FLAG_ROGUE_DOWSING_ACTIVE FLAG_UNUSED_0x91B
+
+// Wild encounter experience, as a percentage. Trainers are deliberately NOT
+// boosted: the level curve is fitted to the stock bosses' unscaled parties, and
+// the trainers on a floor are scaled to the curve, so multiplying those would
+// move both sides of a comparison the curve depends on.
+//
+// 150 rather than 200 because the Exp Share above is itself a large increase to
+// PARTY experience, and the two compound. This is the knob to turn once play
+// says which way it is wrong.
+#define ROGUE_WILD_EXP_PERCENT 150
+
 // The Unown watching the way-station. map.json declares this many slots after
 // the three staff, and the seeder decides how many actually spawn and where -
 // the engine takes the object COUNT from ROM but reads the TEMPLATES out of the
