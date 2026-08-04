@@ -21,6 +21,22 @@
 // dungeon. Purely cosmetic: deliberately absent from the overworld-to-battle
 // weather switch in battle_util.c, so it never reaches gBattleWeather.
 #define WEATHER_PETALS                  16
+// Downpour's rain with the lightning cut out - the jungle dungeon's, and the
+// weather vanilla turns out not to have. WEATHER_DOWNPOUR looks exactly right
+// for a jungle (24 raindrops against rain's 10, falling faster and steeper)
+// but its Main is Thunderstorm_Main, so it flashes and thunders on a 360-720
+// frame cycle; isDownpour gates only sprite motion and nothing in the bolt
+// machine reads it. WEATHER_RAIN is the only stock rain without bolts, and it
+// is also the lightest one.
+//
+// So this is Downpour_InitVars' settings driven by Rain_Main: the same first
+// three states, and then it stops instead of walking into
+// THUNDER_STATE_INIT_CYCLE_1. No new art, no new sprites, no new palette.
+//
+// IT REACHES BATTLE, unlike the petals - it is in battle_util.c's switch and
+// sets B_WEATHER_RAIN_NORMAL like every other rain. Being a rain that vanilla
+// has never heard of is the expensive part; see IsWeatherRainy.
+#define WEATHER_MONSOON                 17
 #define WEATHER_ROUTE119_CYCLE          20
 #define WEATHER_ROUTE123_CYCLE          21
 #define WEATHER_FOG                     22  // Aggregate of WEATHER_FOG_HORIZONTAL and WEATHER_FOG_DIAGONAL

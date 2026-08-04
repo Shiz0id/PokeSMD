@@ -2766,6 +2766,13 @@ bool32 TryFieldEffects(enum FieldEffectCases caseId)
             case WEATHER_RAIN:
             case WEATHER_RAIN_THUNDERSTORM:
             case WEATHER_DOWNPOUR:
+            // The jungle dungeon's rain, and the line that makes it mechanical.
+            // WEATHER_PETALS is deliberately absent from this switch and is
+            // cosmetic because of it; a monsoon being here is the same decision
+            // made the other way. Note the terrain branch above keys on
+            // WEATHER_RAIN_THUNDERSTORM alone, so a monsoon correctly sets no
+            // Electric Terrain - it has no lightning to justify one.
+            case WEATHER_MONSOON:
                 if (!(gBattleWeather & B_WEATHER_RAIN))
                 {
                     gBattleWeather = B_WEATHER_RAIN_NORMAL;

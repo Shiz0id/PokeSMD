@@ -5833,6 +5833,7 @@ enum Type GetDynamicMoveType(struct Pokemon *mon, enum Move move, enum BattlerId
             case WEATHER_RAIN:
             case WEATHER_RAIN_THUNDERSTORM:
             case WEATHER_DOWNPOUR:
+            case WEATHER_MONSOON:
                 if (holdEffect != HOLD_EFFECT_UTILITY_UMBRELLA)
                     return TYPE_WATER;
                 break;

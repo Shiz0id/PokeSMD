@@ -49,7 +49,7 @@ their output by hand; all are idempotent.
 | `make_rest_stop.py` | the way-station's `map.bin`, `border.bin` and layout entry, walled by a transcription of `ApplyWallAutotiling` |
 | `make_game_room.py` | the game room's `map.bin`, `border.bin` and layout entry, assembled from rectangles lifted out of `MauvilleCity_GameCorner` |
 | `warp_tiles.py` | the way-station's two door metatiles into `data/tilesets/secondary/rogue_murky_cave/`, and the check that a map's warps can fire |
-| `check_dungeon_objects.py` | both dungeon `map.json` object event counts, against `DUNGEON_MAX_TRAINERS + DUNGEON_MAX_ITEMS` in the header |
+| `check_dungeon_objects.py` | the object event count of **every** `map.json` sharing `LAYOUT_ROGUE_DUNGEON_FLOOR`, against `DUNGEON_MAX_TRAINERS + DUNGEON_MAX_ITEMS + DUNGEON_MAX_BERRIES`. The map list is **derived** from the layout rather than written down: it used to name two maps by hand, and the three weather maps added later passed the check by not being in it — spawning no item balls and no berry trees for as long as they existed |
 | `verify_loot_table.py` | that `sLootConsumables` heals harder the deeper a run goes, by floor, per ball and per floor |
 
 **`setup_dungeon_map.py` is scaffolding, not an owner.** It writes
@@ -196,7 +196,7 @@ tools it turns on:
 | `check_encounter_flags.py` | every theme can spawn a wild Pokemon under its **own** tileset; that its `mapId` is registered in `wild_encounters.json` with a full-length table for the branch its surface actually reads; and no `*_METATILE_*` constant is named inside a function |
 | `check_starter_moves.py` | what each starter actually holds at `DUNGEON_STARTER_LEVEL`, and that none ends up with only status moves |
 | `verify_run_structure.py` | that every floor maps to one dungeon now the Elite Four's are half length, that bosses land on the intended floors, and that the level curve still fits each boss's party — read live out of `trainers.party` |
-| `woods_prototype.py` | renders generated woods floors; mirrors `StampCell`, including the tree base row, the long grass base and the crown above a canopy |
+| `woods_prototype.py` | renders generated woods floors; mirrors `StampCell`, including the tree base row, the long grass base and the crown above a canopy, and now `ApplyDecor` + `DecorHash` — `decorRarity` is the only knob and what it controls is a density, which is a thing to count rather than eyeball a floor at a time |
 
 Host-side verification over thousands of seeds is much cheaper than emulator
 testing and catches different bugs. Prefer it.

@@ -140,6 +140,19 @@ static const u16 sWoodsSpecies[] =
     SPECIES_NUZLEAF, SPECIES_LOMBRE,    SPECIES_SWELLOW,   SPECIES_BRELOOM,
 };
 
+// The woods' whole cosmetic vocabulary, and the first thing this theme has ever
+// had beyond grass, tall grass and trees - the generator used to return from
+// WriteFloorBlocks before the decor pass could see it.
+//
+// Only the plain floor is a base. Tall grass is deliberately left alone: it is
+// the encounter surface, so a variant scattered through it would make the
+// player read where battles fire off a texture that has nothing to do with it,
+// and this tileset has no MB_TALL_GRASS variant to use anyway.
+static const struct RogueDecor sWoodsDecor[] =
+{
+    { WOODS_METATILE_GRASS, WOODS_METATILE_FLOWER_BUSH },
+};
+
 // New Mauville runs on generators, so the pool is electric with the steel and
 // magnet types the facility already houses.
 static const u16 sNewMauvilleSpecies[] =
@@ -737,6 +750,15 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [STAMP_BASE_L] = WOODS_METATILE_TREE_BASE_L,
             [STAMP_BASE_R] = WOODS_METATILE_TREE_BASE_R,
         },
+
+        // Sparser than any other theme's - one variant against the cave's two
+        // or three, and a woods floor is far more open than a cave's, so the
+        // same rarity would put the same bush everywhere and read as wallpaper
+        // rather than as scatter.
+        .decor = sWoodsDecor,
+        .decorCount = ARRAY_COUNT(sWoodsDecor),
+        .decorRarity = 28,
+
         .species = sWoodsSpecies,
         .speciesCount = ARRAY_COUNT(sWoodsSpecies),
     },
@@ -936,7 +958,21 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     [DUNGEON_THEME_JUNGLE] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_JUNGLE,
-        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+
+        // The fourth weather map, and the first that is not an Elite Four's.
+        // Rain is what a jungle is missing once the art is right, and weather
+        // cannot ride the tileset swap - see RogueDungeonRain/scripts.inc.
+        //
+        // It carries WEATHER_MONSOON, which is ours: vanilla's three rains are
+        // one light one and two that throw lightning, and a ten-floor dungeon
+        // wants the heavy rain without the bolts.
+        //
+        // IT IS MECHANICAL. Every rain sets B_WEATHER_RAIN_NORMAL, so all ten
+        // floors are fought in rain. Chosen rather than inherited - a new
+        // weather reaches battle only if it is added to that switch, and
+        // WEATHER_PETALS is the one deliberately left out.
+        .mapId = MAP_ROGUE_DUNGEON_RAIN,
+
         .berries = TRUE,   // open sky and soil
         .generator = DUNGEON_GEN_CAVE,   // the canopy tiles 1x1, unlike the woods
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
@@ -2685,16 +2721,28 @@ static void ApplyWallAutotiling(u16 *map, const struct RogueDungeonTheme *theme)
             SetBlock(map, x, y, MakeBlock(metatile, 1, theme->elevationWall));
         }
     }
+}
 
-    // All three are cosmetic and belong here rather than at the call sites:
-    // arena floors return early from WriteFloorBlocks, and this is the one
-    // point every cave-generator path passes through. Running before the stairs
-    // are placed also means none of them can paint over the exit.
-    //
-    // Order matters. Patches lay the floor region down first, then a wall's own
-    // skirt paints over it where a theme has both, then decor swaps individual
-    // blocks. Decor keys on the painted metatile, so it sees patch tiles as
-    // their own thing and will not put a floor variant on a sand drift.
+// The three cosmetic passes, in the one order they may run in.
+//
+// These used to sit at the bottom of ApplyWallAutotiling, on the reasoning that
+// it was the single point every cave-generator path passed through. That was
+// true and still left the WOODS with none of them: DUNGEON_GEN_WOODS stamps
+// whole 2x2 cells, needs no autotiling, and returned from WriteFloorBlocks
+// before any of this - so for one theme out of fourteen, patches, skirts and
+// decor silently did not exist. A pass hosted inside the function that happens
+// to precede it is only reachable by the callers of THAT function.
+//
+// Every caller must still run this BEFORE placing the stairs, which is what
+// stops a decoration painting over the exit. That is now a rule the call sites
+// keep rather than one the nesting enforced for them.
+//
+// Order matters. Patches lay the floor region down first, then a wall's own
+// skirt paints over it where a theme has both, then decor swaps individual
+// blocks. Decor keys on the painted metatile, so it sees patch tiles as their
+// own thing and will not put a floor variant on a sand drift.
+static void ApplyCosmeticPasses(u16 *map, const struct RogueDungeonTheme *theme)
+{
     ApplyFloorPatches(map, theme, VarGet(VAR_ROGUE_DUNGEON_SEED));
     ApplySkirts(map, theme);
     ApplyDecor(map, theme, VarGet(VAR_ROGUE_DUNGEON_SEED));
@@ -3805,10 +3853,14 @@ static void WriteFloorBlocks(u16 *backupMapData)
     gBackupMapLayout.width = DUNGEON_WIDTH + MAP_OFFSET_W;
     gBackupMapLayout.height = DUNGEON_HEIGHT + MAP_OFFSET_H;
 
-    // Woods stamps whole 2x2 cells and needs no autotile pass at all.
+    // Woods stamps whole 2x2 cells and needs no autotile pass at all. It still
+    // wants the cosmetic ones, which is why they are no longer inside it: the
+    // decor swap works a block at a time and is indifferent to the fact that
+    // the ground under it was laid two blocks square.
     if (theme->generator == DUNGEON_GEN_WOODS)
     {
         WriteWoodsBlocks(backupMapData, theme);
+        ApplyCosmeticPasses(backupMapData, theme);
         if (sRoomCount != 0 && !RogueDungeon_IsBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
             SetBlock(backupMapData, sStairsX, sStairsY,
                      MakeBlock(sStairsMetatile, 0, theme->elevationFloor));
@@ -3839,6 +3891,7 @@ static void WriteFloorBlocks(u16 *backupMapData)
             SetBlock(backupMapData, sTrainerX[0], sTrainerY[0], wallBlock);
 
         ApplyWallAutotiling(backupMapData, theme);
+        ApplyCosmeticPasses(backupMapData, theme);
         return;
     }
 
@@ -3855,6 +3908,7 @@ static void WriteFloorBlocks(u16 *backupMapData)
     // Runs last, but only rewrites blocks whose collision bit is set, so the
     // stairs tile placed below is left alone.
     ApplyWallAutotiling(backupMapData, theme);
+    ApplyCosmeticPasses(backupMapData, theme);
 
     if (sRoomCount != 0)
         SetBlock(backupMapData, sStairsX, sStairsY,

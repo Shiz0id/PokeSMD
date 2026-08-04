@@ -11,9 +11,20 @@ This reads the header and checks them, rather than trusting a comment to be
 noticed - the same reason make_rest_stop.py parses the Unown spots out of the C
 instead of keeping its own copy.
 
-Both dungeon maps are checked. RogueDungeonUnderwater shares the layout and the
-scripts but is its own map.json, so it is exactly the file that would be updated
-one release late.
+THE LIST OF MAPS IS DERIVED, NOT WRITTEN DOWN, and that is the whole point. It
+used to name RogueDungeonFloor and RogueDungeonUnderwater, which was right while
+those were the only two - and then three more arrived that exist purely to carry
+a weather setting, each one a copy of the four TRAINER slots and nothing else.
+All three passed this check by not being in it, and every one of them spawned no
+item balls and no berry trees for as long as it existed: Phoebe's fog and
+Glacia's snow floors had no loot at all, and Ever Grande declares .berries but
+had nowhere to put a tree. The same shape as the wild_encounters registration
+that cost five themes their Pokemon - a new map inherits the generator and none
+of the declarations, and nothing anywhere says so.
+
+So the maps are every map.json whose layout is LAYOUT_ROGUE_DUNGEON_FLOOR, which
+is exactly the condition overworld.c dispatches the generator on. A weather map
+added tomorrow is covered without anyone remembering this file exists.
 
 Run:  python3 tools/rogue/check_dungeon_objects.py            # report
       python3 tools/rogue/check_dungeon_objects.py --write    # pad or trim
@@ -25,7 +36,10 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 HEADER = REPO / 'include/constants/rogue_dungeon.h'
-MAPS = ('RogueDungeonFloor', 'RogueDungeonUnderwater')
+
+# The layout overworld.c keys the generator dispatch on, in both the map-load
+# and the load-from-save branch. Sharing it IS what makes a map a dungeon floor.
+DUNGEON_LAYOUT = 'LAYOUT_ROGUE_DUNGEON_FLOOR'
 
 # What the generator writes into a trainer slot and an item slot. Only the COUNT
 # reaches the game - every field here is overwritten by
@@ -76,6 +90,20 @@ def constant(name):
     return int(m.group(1))
 
 
+def dungeon_maps():
+    """Every map.json that shares the dungeon layout, sorted for a stable
+    report. Raises if there are none: an empty list would make this script pass
+    silently, which is the failure mode it exists to prevent."""
+    found = []
+    for path in sorted((REPO / 'data/maps').glob('*/map.json')):
+        doc = json.loads(path.read_text(encoding='utf-8'))
+        if doc.get('layout') == DUNGEON_LAYOUT:
+            found.append((doc['name'], path))
+    if not found:
+        raise SystemExit(f'no map.json uses {DUNGEON_LAYOUT} - has it been renamed?')
+    return found
+
+
 def main(argv):
     trainers = constant('DUNGEON_MAX_TRAINERS')
     items = constant('DUNGEON_MAX_ITEMS')
@@ -85,8 +113,7 @@ def main(argv):
           f'+ DUNGEON_MAX_BERRIES {berries} = {want} object events')
 
     failed = False
-    for name in MAPS:
-        path = REPO / 'data/maps' / name / 'map.json'
+    for name, path in dungeon_maps():
         doc = json.loads(path.read_text(encoding='utf-8'))
         have = len(doc['object_events'])
 

@@ -138,6 +138,31 @@
 #define WOODS_METATILE_ABOVE_TREE_TALL_L 0x1C6
 #define WOODS_METATILE_ABOVE_TREE_TALL_R 0x1C7
 
+// A flowering shrub standing in open grass - the woods' only decoration, and
+// the ONLY thing this tileset pair offers for the job. Censused across all
+// eight vanilla General+Rustboro layouts: 53 placements, 9 of them with grass
+// on three or more sides, and COLLISION 0 IN EVERY ONE. Passable is what makes
+// it usable, because ApplyDecor copies the base block's collision and would
+// otherwise leave a shrub you walk straight through - or, worse, a solid one
+// where the generator promised open floor.
+//
+// It is one entry rather than three because two obvious-looking candidates did
+// not survive the census, and both failures are the familiar one:
+//
+//   0x002 reads as a paler grass variant on a contact sheet and is nothing of
+//   the kind - it carries a dark brown band across its top row, so it is a
+//   transition INTO something, and scattering it through a field would draw
+//   26 stray edges of a feature that is not there.
+//
+//   0x00E is passable in all 88 of its placements, but only 2 of those stand
+//   in open grass; the rest sit at the foot of the canopy hedge 0x0C6/0x0C7,
+//   which is what it is FOR. 0x00F is byte-identical to it, so it is not a
+//   second variant either.
+//
+// Same lesson as the long grass above, in its third costume: what a metatile
+// looks like alone is not what it is. Ask what vanilla puts next to it.
+#define WOODS_METATILE_FLOWER_BUSH 0x004
+
 // New Mauville, under gTileset_General + gTileset_BikeShop. Mined from
 // NewMauville_Inside_Layout with tools/rogue/derive_wall_table.py and read off
 // the layout directly; validated with tools/rogue/theme_mock.py.

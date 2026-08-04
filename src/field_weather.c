@@ -143,7 +143,26 @@ static const struct WeatherCallbacks sWeatherFuncs[] =
     [WEATHER_DOWNPOUR]           = {Downpour_InitVars,      Thunderstorm_Main,  Downpour_InitAll,      Thunderstorm_Finish},
     [WEATHER_UNDERWATER_BUBBLES] = {Bubbles_InitVars,       Bubbles_Main,       Bubbles_InitAll,       Bubbles_Finish},
     [WEATHER_PETALS]             = {Petals_InitVars,        Petals_Main,        Petals_InitAll,        Petals_Finish},
+    // Downpour's init against Rain's main and finish - the whole of the monsoon
+    // is this one row. See Monsoon_InitVars for why the two loops can be
+    // swapped, and constants/weather.h for why the weather exists at all.
+    [WEATHER_MONSOON]            = {Monsoon_InitVars,       Rain_Main,          Monsoon_InitAll,       Rain_Finish},
 };
+
+// Every rain, asked in one place. Vanilla asks it in nine and answers by
+// enumerating the three it knows, which is why adding a fourth touches so much:
+// each of those nine is a place where a weather that is a rain but is not on
+// the list behaves as though it were dry, silently and differently every time.
+//
+// This is the OVERWORLD side. B_WEATHER_RAIN is the battle flag and is already
+// an aggregate; the overworld never had one.
+bool8 IsWeatherRainy(u32 weather)
+{
+    return weather == WEATHER_RAIN
+        || weather == WEATHER_RAIN_THUNDERSTORM
+        || weather == WEATHER_DOWNPOUR
+        || weather == WEATHER_MONSOON;
+}
 
 void (*const gWeatherPalStateFuncs[])(void) =
 {
@@ -228,7 +247,7 @@ void StartWeather(void)
 
 void SetNextWeather(u8 weather)
 {
-    if (weather != WEATHER_RAIN && weather != WEATHER_RAIN_THUNDERSTORM && weather != WEATHER_DOWNPOUR)
+    if (!IsWeatherRainy(weather))
     {
         PlayRainStoppingSoundEffect();
     }
@@ -366,6 +385,7 @@ static void FadeInScreenWithWeather(void)
     case WEATHER_RAIN:
     case WEATHER_RAIN_THUNDERSTORM:
     case WEATHER_DOWNPOUR:
+    case WEATHER_MONSOON:
     case WEATHER_SHADE:
         if (FadeInScreen_RainShowShade() == FALSE)
         {
@@ -772,6 +792,7 @@ void FadeSelectedPals(u8 mode, s8 delay, u32 selectedPalettes)
     case WEATHER_RAIN:
     case WEATHER_RAIN_THUNDERSTORM:
     case WEATHER_DOWNPOUR:
+    case WEATHER_MONSOON:
     case WEATHER_FOG_HORIZONTAL:
     case WEATHER_SHADE:
     case WEATHER_DROUGHT:
@@ -1215,6 +1236,7 @@ static const u8 sWeatherNames[WEATHER_COUNT][24] = {
     [WEATHER_DOWNPOUR]           = _("DOWNPOUR"),
     [WEATHER_UNDERWATER_BUBBLES] = _("UNDERWATER BUBBLES"),
     [WEATHER_PETALS]             = _("PETALS"),
+    [WEATHER_MONSOON]            = _("MONSOON"),
     [WEATHER_ABNORMAL]           = _("ABNORMAL(NOT WORKING)"),
     [WEATHER_ROUTE119_CYCLE]     = _("ROUTE119 CYCLE"),
     [WEATHER_ROUTE123_CYCLE]     = _("ROUTE123 CYCLE"),

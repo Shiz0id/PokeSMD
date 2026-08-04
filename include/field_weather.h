@@ -225,10 +225,23 @@ void Drought_InitAll(void);
 bool8 Drought_Finish(void);
 void Downpour_InitVars(void);
 void Downpour_InitAll(void);
+void Monsoon_InitVars(void);
+void Monsoon_InitAll(void);
 void Bubbles_InitVars(void);
 void Bubbles_Main(void);
 void Bubbles_InitAll(void);
 bool8 Bubbles_Finish(void);
+
+// Whether an OVERWORLD weather value is one of the rains. Vanilla asks this
+// question in nine places and answers it nine times by enumerating the three it
+// knows about, which is fine until there is a fourth - and then a monsoon is a
+// rain that plays the rain-STOPPING sound on arrival, fades in through the
+// wrong palette path, and turns Weather Ball Normal. Each of those is silent
+// and none of them is near the others.
+//
+// Distinct from B_WEATHER_RAIN, which is the BATTLE flag and already an
+// aggregate. This is the overworld side, which never had one.
+bool8 IsWeatherRainy(u32 weather);
 
 u8 GetSavedWeather(void);
 void SetSavedWeather(u32 weather);

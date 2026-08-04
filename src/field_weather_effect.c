@@ -526,9 +526,7 @@ bool8 Rain_Finish(void)
     switch (gWeatherPtr->finishStep)
     {
     case 0:
-        if (gWeatherPtr->nextWeather == WEATHER_RAIN
-         || gWeatherPtr->nextWeather == WEATHER_RAIN_THUNDERSTORM
-         || gWeatherPtr->nextWeather == WEATHER_DOWNPOUR)
+        if (IsWeatherRainy(gWeatherPtr->nextWeather))
         {
             gWeatherPtr->finishStep = 0xFF;
             return FALSE;
@@ -1349,6 +1347,42 @@ void Downpour_InitAll(void)
         Thunderstorm_Main();
 }
 
+//------------------------------------------------------------------------------
+// WEATHER_MONSOON
+//------------------------------------------------------------------------------
+
+// The downpour, minus the lightning. Everything visible about the rain is the
+// downpour's - 24 sprites falling fast and steep, SE_DOWNPOUR under them - and
+// the only difference is which Main drives it.
+//
+// THAT SUBSTITUTION IS THE WHOLE WEATHER, and it works because Rain_Main's
+// states 0, 1 and 2 are numerically THUNDER_STATE_LOAD_RAIN, _CREATE_RAIN and
+// _INIT_RAIN. The two loops agree exactly for as long as there is rain to set
+// up, and part at state 3: Thunderstorm_Main goes on to THUNDER_STATE_WAIT_
+// CHANGE and the bolt cycle, while Rain_Main falls off the end of its switch
+// and does nothing further. A monsoon is a downpour that stops after the setup
+// the two share.
+//
+// It leans on that agreement rather than restating it, because a restatement is
+// a second copy to keep true. Inserting a state at the front of either enum
+// breaks this loudly - the rain never loads at all - rather than quietly, which
+// is the right failure mode for a coincidence being relied on.
+void Monsoon_InitVars(void)
+{
+    Downpour_InitVars();
+    // Redundant today, Downpour_InitVars having set THUNDER_STATE_LOAD_RAIN and
+    // that being 0. Written anyway: Rain_Main is what reads this field now, so
+    // it should say the number Rain_Main means by it.
+    gWeatherPtr->initStep = 0;
+}
+
+void Monsoon_InitAll(void)
+{
+    Monsoon_InitVars();
+    while (gWeatherPtr->weatherGfxLoaded == FALSE)
+        Rain_Main();
+}
+
 // In a given cycle, there will be some shorter bolts of lightning, potentially
 // followed by a longer bolt. As a "regex", the pattern is:
 //   (SHORT_BOLT){1,2}(LONG_BOLT)?
@@ -1479,9 +1513,7 @@ bool8 Thunderstorm_Finish(void)
         Thunderstorm_Main();
         if (gWeatherPtr->thunderAllowEnd)
         {
-            if (gWeatherPtr->nextWeather == WEATHER_RAIN
-             || gWeatherPtr->nextWeather == WEATHER_RAIN_THUNDERSTORM
-             || gWeatherPtr->nextWeather == WEATHER_DOWNPOUR)
+            if (IsWeatherRainy(gWeatherPtr->nextWeather))
                 return FALSE;
 
             gWeatherPtr->targetRainSpriteCount = 0;
@@ -2971,6 +3003,7 @@ static u8 TranslateWeatherNum(u8 weather)
     case WEATHER_UNDERWATER_BUBBLES: return WEATHER_UNDERWATER_BUBBLES;
     case WEATHER_ABNORMAL:           return WEATHER_ABNORMAL;
     case WEATHER_PETALS:             return WEATHER_PETALS;
+    case WEATHER_MONSOON:            return WEATHER_MONSOON;
     case WEATHER_ROUTE119_CYCLE:     return sWeatherCycleRoute119[gSaveBlock1Ptr->weatherCycleStage];
     case WEATHER_ROUTE123_CYCLE:     return sWeatherCycleRoute123[gSaveBlock1Ptr->weatherCycleStage];
     case WEATHER_DYNAMIC:            return GetDynamicWeather();

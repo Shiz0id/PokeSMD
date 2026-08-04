@@ -23,6 +23,18 @@ LONG_BASE = (0x016, 0x017)             # NOT a long grass base - see the header
 ABOVE_TREE = (0x1CE, 0x1CF)            # a tree's crown over plain grass
 ABOVE_TREE_TALL = (0x1C6, 0x1C7)       # ... and over tall grass
 
+# The decor pass, which the woods only started reaching once the three cosmetic
+# passes were lifted out of ApplyWallAutotiling - the woods generator returns
+# before that function ever runs and so had none of them.
+#
+# Mirrored here rather than eyeballed on hardware because decorRarity is the
+# only knob and what it controls is a DENSITY: one variant repeated too often
+# reads as wallpaper, too rarely as an accident. That is a thing to count, and
+# counting it in an emulator means one floor at a time.
+FLOWER_BUSH = 0x004                    # passable in all 53 vanilla placements
+DECOR = [(GRASS, FLOWER_BUSH)]         # (base, variant), mirroring sWoodsDecor
+DECOR_RARITY = 28
+
 CELL_PLAIN, CELL_TALL, CELL_LONG, CELL_TREE = 0, 1, 2, 3
 CELL_METATILE = {CELL_PLAIN: GRASS, CELL_TALL: TALL, CELL_LONG: LONG}
 
@@ -97,18 +109,12 @@ def generate(seed):
     return open_, rooms, grass
 
 
-def render(open_, grass, scale=2):
-    cache = {}
-
-    def tile(mid):
-        if mid not in cache:
-            cache[mid] = ta.render_metatile(PAIR, mid, 1)
-        return cache[mid]
-
-    im = Image.new('RGB', (CELLS_W * 32, CELLS_H * 32))
+def paint(open_, grass):
+    """The block grid StampCell would leave behind, before any cosmetic pass."""
+    blocks = [[0] * (CELLS_W * 2) for _ in range(CELLS_H * 2)]
     for cy in range(CELLS_H):
         for cx in range(CELLS_W):
-            px, py = cx * 32, cy * 32
+            x, y = cx * 2, cy * 2
             below_open = open_[cy + 1][cx] if cy + 1 < CELLS_H else False
             # Distinct from `not below_open`, which is also true off the bottom
             # edge, where there is no tree to draw the crown of.
@@ -129,30 +135,86 @@ def render(open_, grass, scale=2):
                 elif grass[cy][cx] == CELL_LONG and below_open:
                     lower_l, lower_r = LONG_BASE
 
-                im.paste(tile(mid), (px, py))
-                im.paste(tile(mid), (px + 16, py))
-                im.paste(tile(lower_l), (px, py + 16))
-                im.paste(tile(lower_r), (px + 16, py + 16))
+                top_l = top_r = mid
             else:
                 # Where a tree mass ends, the bottom row is ground contact
                 # rather than the trunk, which vanilla never leaves exposed.
-                bl, br = TREE_BASE if below_open else (TREE[2], TREE[3])
-                im.paste(tile(TREE[0]), (px, py))
-                im.paste(tile(TREE[1]), (px + 16, py))
-                im.paste(tile(bl), (px, py + 16))
-                im.paste(tile(br), (px + 16, py + 16))
+                top_l, top_r = TREE[0], TREE[1]
+                lower_l, lower_r = TREE_BASE if below_open else (TREE[2], TREE[3])
+
+            blocks[y][x], blocks[y][x + 1] = top_l, top_r
+            blocks[y + 1][x], blocks[y + 1][x + 1] = lower_l, lower_r
+    return blocks
+
+
+def decor_hash(seed, x, y):
+    """DecorHash(), 32-bit. Position and seed, never the dungeon RNG: the pass
+    runs in WriteFloorBlocks, which repaints a floor the player re-enters."""
+    M = 0xFFFFFFFF
+    h = (seed * 2654435761) & M
+    h ^= ((x + 1) * 40503) & M
+    h ^= ((y + 1) * 24593) & M
+    h ^= h >> 13
+    h = (h * 2246822519) & M
+    h ^= h >> 15
+    return h & 0xFFFF
+
+
+def apply_decor(blocks, seed):
+    """ApplyDecor(), for the single-wide case the woods table uses. Returns how
+    many landed, which is the number the rarity is really chosen against."""
+    placed = 0
+    for y in range(CELLS_H * 2):
+        for x in range(CELLS_W * 2):
+            h = decor_hash(seed, x, y)
+            if h % DECOR_RARITY != 0:
+                continue
+            matches = [v for base, v in DECOR if base == blocks[y][x]]
+            if not matches:
+                continue
+            blocks[y][x] = matches[(h >> 8) % len(matches)]
+            placed += 1
+    return placed
+
+
+def render(blocks, scale=2):
+    cache = {}
+
+    def tile(mid):
+        if mid not in cache:
+            cache[mid] = ta.render_metatile(PAIR, mid, 1)
+        return cache[mid]
+
+    im = Image.new('RGB', (CELLS_W * 32, CELLS_H * 32))
+    for y in range(CELLS_H * 2):
+        for x in range(CELLS_W * 2):
+            im.paste(tile(blocks[y][x]), (x * 16, y * 16))
     return im.resize((im.width * scale, im.height * scale), Image.NEAREST) if scale != 1 else im
 
 
 def main():
     panels = []
+    bushes = []
     for seed in (3, 7):
         open_, rooms, grass = generate(seed)
         tall = sum(r.count(CELL_TALL) for r in grass)
         long_ = sum(r.count(CELL_LONG) for r in grass)
+        blocks = paint(open_, grass)
+        placed = apply_decor(blocks, seed)
+        bushes.append(placed)
         print(f'seed {seed}: {len(rooms)} clearings, {tall} tall-grass cells, '
-              f'{long_} long-grass cells')
-        panels.append((seed, len(rooms), render(open_, grass, 1)))
+              f'{long_} long-grass cells, {placed} flower bushes')
+        panels.append((seed, len(rooms), render(blocks, 1)))
+
+    # Over many seeds, because two floors say nothing about a density.
+    counts = []
+    for seed in range(1, 401):
+        open_, _, grass = generate(seed)
+        counts.append(apply_decor(paint(open_, grass), seed))
+    counts.sort()
+    print(f'flower bushes over 400 seeds: min {counts[0]}, '
+          f'median {counts[len(counts)//2]}, max {counts[-1]}, '
+          f'mean {sum(counts)/len(counts):.1f}')
 
     w = panels[0][2].width
     out = Image.new('RGB', (w * 2 + 20, panels[0][2].height + 26), (20, 20, 26))

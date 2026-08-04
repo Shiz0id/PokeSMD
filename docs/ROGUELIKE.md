@@ -407,12 +407,32 @@ day, now the `STAMP_BASE_L/R` and `longGrassBaseL/R` table entries.
 ### Object events
 
 - The engine reads templates for the current map from the **save block**, but
-  takes the **count** from ROM. So `map.json` must declare
-  `DUNGEON_MAX_TRAINERS + DUNGEON_MAX_ITEMS` placeholders.
-  `check_dungeon_objects.py` owns that number, because it is one number written
-  in two files and **both** dungeon maps carry it — `RogueDungeonUnderwater`
-  shares the layout and the scripts but has its own `map.json`, and is exactly
-  the file that gets updated one release late.
+  takes the **count** from ROM (`gMapHeader.events->objectEventCount`, read by
+  `TrySpawnObjectEvents`). So `map.json` must declare
+  `DUNGEON_MAX_TRAINERS + DUNGEON_MAX_ITEMS + DUNGEON_MAX_BERRIES` placeholders,
+  and `check_dungeon_objects.py` owns that number because it is one number
+  written in several files.
+- **Every map that shares the layout carries that count, and three of them
+  silently did not.** `check_dungeon_objects.py` named two maps by hand, which
+  was right while there were two. Then `RogueDungeonFog`, `RogueDungeonSnow` and
+  `RogueDungeonPetals` were added as copies of the four **trainer** slots and
+  nothing else, and they passed the check by not being in it. For as long as
+  they existed, those three themes spawned **no item balls and no berry trees**:
+  Phoebe's and Glacia's floors had no loot at all, and Ever Grande declares
+  `.berries` but had nowhere to put a tree. Twelve of sixteen slots, on three of
+  fourteen themes, and nothing anywhere reports it.
+
+  Exactly the shape of the `wild_encounters` registration that cost five themes
+  their Pokémon, and for the same reason: **a new map that shares
+  `LAYOUT_ROGUE_DUNGEON_FLOOR` inherits the generator and none of the
+  declarations.** The generator dispatch is keyed on the layout; nothing else
+  is.
+
+  The fix is that the tool now **derives** its map list from that same
+  condition — every `map.json` whose `layout` is `LAYOUT_ROGUE_DUNGEON_FLOOR` —
+  rather than listing names. The next weather map is covered without anyone
+  remembering the file exists. A hand-maintained list of "the maps that are
+  really the dungeon" is the bug, not the omission from it.
 - An object event with a **set** `flagId` does not spawn. That is how unused
   placeholder slots are hidden.
 - **A defeated trainer object still blocks movement.** A boss standing in a
@@ -1580,6 +1600,60 @@ is ±4 pixels and reads as a wobble; petals use `/ 16`, so the sideways travel
 *is* the motion. Snow also starts every flake at wave index 0, so they all swing
 in step — petals randomise it.
 
+#### A weather that joins a FAMILY costs nine places, not four
+
+`WEATHER_MONSOON` is the second new one, and the table above turned out to
+describe only half its cost. Petals are unlike anything else in the game, so
+four places were genuinely all of it. A monsoon **is a rain**, and vanilla has
+no idea what a rain is — it asks the question nine separate times by
+**enumerating the three it knows**:
+
+| where | what it decides | how it fails without you |
+|---|---|---|
+| `field_weather.c` `SetNextWeather` | play the rain-*stopping* SFX | the rain-stop sound fires as the rain *starts* |
+| `field_weather.c` `FadeInScreenWithWeather` | `FadeInScreen_RainShowShade` | fades in through the wrong path, wrong colour map |
+| `field_weather.c` (palette select) | `useWeatherPal = TRUE` | the weather palette is not used |
+| `field_weather_effect.c` `Rain_Finish` | keep the sprites across a change | raindrops torn down and rebuilt |
+| `field_weather_effect.c` `Thunderstorm_Finish` | as above | as above |
+| `battle_util.c` overworld→battle | `B_WEATHER_RAIN_NORMAL` | **the weather is cosmetic** |
+| `battle_main.c` Weather Ball | `TYPE_WATER` | Weather Ball stays Normal in the rain |
+| `pokemon.c` `IF_WEATHER` | rain-conditional evolutions | they do not fire |
+| `TranslateWeatherNum` | existing at all | nothing happens, silently |
+
+Every one is silent and none is near the others. **Grep the weather you are
+deriving from before writing anything** — `WEATHER_DOWNPOUR` is the whole map.
+
+Four of those are `switch` labels and take a `case`. The five that were
+if-chains now call **`IsWeatherRainy()`**, added for this, so the *next* rain is
+free. The overworld had no such predicate; `B_WEATHER_RAIN` is the battle-side
+aggregate and already existed, which is exactly why the gap was easy to miss.
+
+`gWeatherStartsStringIds` in `battle_message.c` is the one rain site
+deliberately left alone: it is **declared and referenced nowhere**. It sizes
+itself to its largest designated index, so adding an entry would be harmless and
+omitting one is not a bug — there is no read to be out of bounds.
+
+**The derivation itself was one row.** A monsoon is `Downpour_InitVars` — 24
+raindrops against `WEATHER_RAIN`'s 10, falling faster and steeper, `SE_DOWNPOUR`
+under them — driven by **`Rain_Main` instead of `Thunderstorm_Main`**. That
+substitution works because `Rain_Main`'s states 0/1/2 *are* numerically
+`THUNDER_STATE_LOAD_RAIN`, `_CREATE_RAIN` and `_INIT_RAIN`: the two loops agree
+for exactly as long as there is rain to set up, then part at state 3, where the
+thunderstorm walks on into the bolt cycle and `Rain_Main` falls off the end of
+its switch. No new art, no new sprites, no new palette, no `PALTAG_WEATHER_2`.
+
+**`WEATHER_DOWNPOUR` throws lightning, and nothing about it says so.** It reads
+as the calm heavy rain — the thunderstorm is a *different constant* — but
+`sWeatherFuncs` gives it `Thunderstorm_Main`, and `isDownpour` gates only
+raindrop speed and angle. Nothing in the bolt machine reads it. `WEATHER_RAIN`
+is the only stock rain without bolts, and it is also the lightest, so "heavy
+rain, no lightning" simply did not exist. **Read the row in `sWeatherFuncs`, not
+the name of the constant.**
+
+One happy consequence of being a separate constant: the `B_THUNDERSTORM_TERRAIN`
+branch keys on `WEATHER_RAIN_THUNDERSTORM` alone, so a monsoon sets no Electric
+Terrain — correct, since it has no lightning to justify one.
+
 ### Openness
 
 `roomCount`, `roomMin`, `roomMax` and `corridorWidth` let a theme carve more
@@ -2084,14 +2158,84 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    because of a spare Zubat is still a bad moment.
 4. The rest stop has only a nurse. It reuses `LAYOUT_POKEMON_CENTER_1F` and is
    ready for a mart and game corner.
-5. The woods still gets none of the cosmetic passes — `DUNGEON_GEN_WOODS`
-   returns before `ApplyWallAutotiling`, so patches, skirts and decor never run
-   for it. Everything decorative it does have is inside `StampCell`. That is
-   fine while the only variety is per-cell, but a woods theme wanting scattered
-   props or ground patches would need the passes lifted out of the cave path.
-6. **The jungle has no rain** — but the open question in this entry is answered
-   and the pattern has been used twice, so this is now a table entry rather than
-   a design decision.
+5. ~~The woods gets none of the cosmetic passes.~~ **CLOSED for decor, and the
+   patch half turns out not to be closeable.** `ApplyFloorPatches`,
+   `ApplySkirts` and `ApplyDecor` are lifted out of `ApplyWallAutotiling` into
+   `ApplyCosmeticPasses`, which all three generator paths now call; the woods
+   scatters a flowering shrub through its clearings, median 15 a floor.
+
+   **The structural lesson is where the passes lived.** They sat at the bottom
+   of `ApplyWallAutotiling` on the reasoning that it was the one point every
+   cave path went through — true, and it still left one theme of fourteen with
+   none of them, because the woods needs no autotiling and returned before it.
+   *A pass hosted inside the function that happens to precede it is reachable
+   only by the callers of that function.* Every call site must still run it
+   before placing the stairs, which is what stops a decoration painting over the
+   exit; that is now a rule the three sites keep rather than one the nesting
+   kept for them.
+
+   **The content half is one metatile, and that is not a shortcut.** Censused
+   across all eight vanilla General+Rustboro layouts, `0x004` is the only thing
+   the pair offers: 53 placements, 9 of them with grass on three or more sides,
+   **collision 0 in every one** — which is what makes it usable, since
+   `ApplyDecor` copies the base block's collision. Two candidates that looked
+   obvious did not survive:
+
+   - **`0x002` reads as a paler grass variant on a contact sheet and is not
+     one.** It carries a dark brown band across its top row: it is a transition
+     *into* something, and scattering it would draw 26 stray edges of a feature
+     that is not there.
+   - **`0x00E` is passable in all 88 placements but free-standing in 2.** The
+     rest sit at the foot of the canopy hedge `0x0C6/0x0C7`, which is what it is
+     for. `0x00F` is **byte-identical** to it, so it is not a second variant
+     either.
+
+   Third outing for the same lesson as the long grass and the tree crown: what a
+   metatile looks like alone is not what it is. Ask what vanilla puts next to it.
+
+   **There is no floor patch for this theme and there cannot be one from
+   vanilla.** The only region material in `gTileset_General` with nine-slice
+   edges is `0x068`–`0x0AE`, and that is Route 116's *elevated* terrain —
+   `MB_MOUNTAIN_TOP`, with cliff shadow baked into the edge art. Laid as a patch
+   it draws a plateau in the middle of a flat wood. A woods ground patch needs
+   composed art, the way `make_ocean_tiles.py` does it; it is not a table entry.
+
+   Skirts have nothing to add either: `StampCell` already draws the tree mass's
+   ground-contact row, which is the job a skirt would do.
+
+   `woods_prototype.py` mirrors the decor pass and `DecorHash` now, because
+   `decorRarity` is the only knob and what it controls is a **density** — one
+   variant repeated too often reads as wallpaper, too rarely as an accident.
+   That is a thing to count, and counting it in an emulator means a floor at a
+   time. 28 gives min 4, median 15, max 35 over 400 seeds.
+6. ~~The jungle has no rain.~~ **CLOSED**, by `MAP_ROGUE_DUNGEON_RAIN` — one
+   `map.json`, an empty `scripts.inc`, an include, a `wild_encounters` entry and
+   one `.mapId`, exactly as the entry predicted. The two `overworld.c` branches
+   needed no edit at all, because the new map shares `LAYOUT_ROGUE_DUNGEON_FLOOR`
+   like the other three.
+
+   Two things the prediction did not contain.
+
+   **The weather it wanted does not exist in vanilla.** `WEATHER_DOWNPOUR` is
+   the right rain to look at and it *throws lightning* — its `sWeatherFuncs` row
+   is `Thunderstorm_Main`, and `isDownpour` gates only raindrop speed and angle.
+   `WEATHER_RAIN` is the only stock rain without bolts and is also the lightest.
+   So the jungle carries **`WEATHER_MONSOON`**, ours: the downpour's rain driven
+   by `Rain_Main`. See §5 — including why a weather joining an existing family
+   costs nine places rather than the four that section used to list, and the
+   `IsWeatherRainy()` predicate added so the next one costs one.
+
+   **It is mechanical**, by decision. Every rain sets `B_WEATHER_RAIN_NORMAL`,
+   so all ten jungle floors are fought in rain — Water boosted, Fire halved,
+   Thunder and Hurricane unable to miss, Solar Beam halved, Swift Swim live. A
+   new weather reaches battle only if it is added to that switch;
+   `WEATHER_PETALS` is the one deliberately left out.
+
+   **Append the map at the END of `gMapGroup_Rogue`, not beside its siblings.**
+   Position in that list *is* `MAP_NUM`, so inserting after `RogueDungeonPetals`
+   would renumber `RogueRestStop` and `RogueRestStopGames`, and a save storing
+   `location.mapNum` would resolve to a different map on load. Tidy grouping is
+   not worth breaking playtest saves.
 
    Weather is per-map for the same reason diving is: `GetCurrentMapType` and the
    weather loader read the ROM header by warp group and id, not `gMapHeader`, so
@@ -2103,8 +2247,14 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    They are named for the **weather**, not for Phoebe and Glacia, and that is
    the answer: a map per weather, shared by every theme that points
    `theme->mapId` at it. `MAP_ROGUE_DUNGEON_PETALS` is the third, for Ever
-   Grande, and a rain map for the jungle would be the fourth — one `map.json`
-   and an empty `scripts.inc` each.
+   Grande, and `MAP_ROGUE_DUNGEON_RAIN` the fourth, for the jungle — one
+   `map.json` and an empty `scripts.inc` each.
+
+   **A weather map is not free, though, and the bill is not in this section.**
+   Each one is another map that shares the layout, and therefore another
+   `wild_encounters.json` entry (§3) and another set of sixteen object event
+   slots (§3) — both of which three of these four got wrong, in different
+   commits, for the same reason.
 
    Every warp path picks the change up on its own, because they all go through
    one accessor that returns `ThemeForFloor(floor)->mapId`. That is why the
