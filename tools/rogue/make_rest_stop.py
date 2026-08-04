@@ -29,24 +29,54 @@ REPO = Path(__file__).resolve().parents[2]
 LAYOUTS = REPO / 'data/layouts/layouts.json'
 NAME = 'RogueRestStop'
 LAYOUT_ID = 'LAYOUT_ROGUE_REST_STOP'
-PRIMARY, SECONDARY = 'gTileset_General', 'gTileset_Cave'
+# Both tables are copied slot for slot from the .wall arrays in
+# rogue_dungeon.c - DUNGEON_THEME_CAVE and DUNGEON_THEME_MURKYCAVE - so the same
+# source of truth feeds the chamber and the generated floors. Never derive these
+# from the header's names alone: the cave points BOTH north corner slots at one
+# metatile, and the murky one does not.
+THEMES = {
+    # vanilla's cave, the rock Granite Cave is cut from. Lumpy and natural.
+    'cave': dict(
+        primary='gTileset_General', secondary='gTileset_Cave',
+        floor=0x201, void=0x200, stairs=0x214,
+        wall=dict(
+            INTERIOR_LEFT=0x210, INTERIOR_MID=0x211, INTERIOR_RIGHT=0x212,
+            FACE_LEFT=0x218, FACE_MID=0x219, FACE_RIGHT=0x21A,
+            NORTH_LEFT=0x220, NORTH_MID=0x209, NORTH_RIGHT=0x222,
+            # the cave draws both north corners the same; the murky one does not
+            CORNER_OPEN_SE=0x21B, CORNER_OPEN_SW=0x21C,
+            CORNER_OPEN_NW=0x223, CORNER_OPEN_NE=0x223,
+            SLIVER_VERT=0x39E, SLIVER_HORZ=0x39F,
+            SLIVER_VERT_TOP=0x3A0, SLIVER_VERT_BOT=0x3A1,
+            SLIVER_HORZ_L=0x3A2, SLIVER_HORZ_R=0x3A3,
+            SLIVER_ISOLATED=0x3A4,
+        )),
+    # Steven's finale. Carved pillars and worked stone - the one tileset in the
+    # project that reads as somewhere BUILT, which is what a way-station is. Its
+    # descent is the cut stairwell rather than a hole, for the same reason.
+    'murky': dict(
+        primary='gTileset_General', secondary='gTileset_RogueMurkyCave',
+        floor=0x239, void=0x200, stairs=0x295,
+        wall=dict(
+            INTERIOR_LEFT=0x203, INTERIOR_MID=0x204, INTERIOR_RIGHT=0x205,
+            FACE_LEFT=0x206, FACE_MID=0x207, FACE_RIGHT=0x208,
+            NORTH_LEFT=0x200, NORTH_MID=0x201, NORTH_RIGHT=0x202,
+            CORNER_OPEN_SE=0x21D, CORNER_OPEN_SW=0x21E,
+            CORNER_OPEN_NW=0x220, CORNER_OPEN_NE=0x21F,
+            SLIVER_VERT=0x20C, SLIVER_HORZ=0x20A,
+            SLIVER_VERT_TOP=0x210, SLIVER_VERT_BOT=0x214,
+            SLIVER_HORZ_L=0x211, SLIVER_HORZ_R=0x213,
+            SLIVER_ISOLATED=0x20D,
+        )),
+}
+THEME = 'murky'
 
-# gTileset_Cave's slots, copied from DUNGEON_THEME_CAVE's .wall table in
-# rogue_dungeon.c. Same source of truth as the generator; see rogue_dungeon.h.
-FLOOR, VOID = 0x201, 0x200
-STAIRS_DOWN = 0x214
-WALL = dict(
-    INTERIOR_LEFT=0x210, INTERIOR_MID=0x211, INTERIOR_RIGHT=0x212,
-    FACE_LEFT=0x218, FACE_MID=0x219, FACE_RIGHT=0x21A,
-    NORTH_LEFT=0x220, NORTH_MID=0x209, NORTH_RIGHT=0x222,
-    # named for the OPEN diagonal, and the cave draws both north cases the same
-    CORNER_OPEN_SE=0x21B, CORNER_OPEN_SW=0x21C,
-    CORNER_OPEN_NW=0x223, CORNER_OPEN_NE=0x223,
-    SLIVER_VERT=0x39E, SLIVER_HORZ=0x39F,
-    SLIVER_VERT_TOP=0x3A0, SLIVER_VERT_BOT=0x3A1,
-    SLIVER_HORZ_L=0x3A2, SLIVER_HORZ_R=0x3A3,
-    SLIVER_ISOLATED=0x3A4,
-)
+PRIMARY = THEMES[THEME]['primary']
+SECONDARY = THEMES[THEME]['secondary']
+FLOOR = THEMES[THEME]['floor']
+VOID = THEMES[THEME]['void']
+STAIRS_DOWN = THEMES[THEME]['stairs']
+WALL = THEMES[THEME]['wall']
 ELEV_FLOOR, ELEV_WALL = 3, 0
 
 # The chamber. Walls are two thick everywhere so no cell ever has floor on
@@ -59,6 +89,7 @@ ELEV_FLOOR, ELEV_WALL = 3, 0
 # So the centre must be open floor, and everything is laid out around it.
 #
 #   #  wall        .  floor       X  the descent out
+#   G  the alcove cut west into the rock, through to the game room
 PLAN = (
     '#################',
     '#################',
@@ -66,7 +97,7 @@ PLAN = (
     '###...........###',
     '##.............##',
     '##.............##',
-    '##.............##',
+    '#G.............##',
     '##.............##',
     '###...........###',
     '####....X....####',
@@ -75,8 +106,10 @@ PLAN = (
     '#################',
 )
 
-# Everything that is not wall, by plan character.
-OPEN = {'.': FLOOR, 'X': STAIRS_DOWN}
+# Everything that is not wall, by plan character. The alcove is plain floor -
+# there is no door art in a tileset made of cut rock, and a one-tile notch in a
+# wall reads as a way through on its own.
+OPEN = {'.': FLOOR, 'X': STAIRS_DOWN, 'G': FLOOR}
 
 
 def is_wall(plan, x, y):
@@ -205,7 +238,9 @@ def main(argv):
     for y, row in enumerate(plan):
         for x, c in enumerate(row):
             if c == 'X':
-                print(f'  descent at ({x},{y})  -> warp_event goes here')
+                print(f'  descent   at ({x},{y})  -> warp_event goes here')
+            elif c == 'G':
+                print(f'  games door at ({x},{y})  -> warp_event goes here')
 
     used = sorted({b & 0x3FF for b in blocks})
     print(f'  {len(used)} distinct metatiles: '

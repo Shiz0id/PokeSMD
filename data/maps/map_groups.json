@@ -1168,6 +1168,7 @@
     "RogueDungeonFog",
     "RogueDungeonSnow",
     "RogueDungeonPetals",
-    "RogueRestStop"
+    "RogueRestStop",
+    "RogueRestStopGames"
   ]
 }

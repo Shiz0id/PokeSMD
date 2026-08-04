@@ -1,4 +1,5 @@
 #include "global.h"
+#include "coins.h"
 #include "event_data.h"
 #include "fieldmap.h"
 #include "random.h"
@@ -1861,6 +1862,12 @@ void RogueDungeon_ResetRun(void)
     // Otherwise the run-start item grant stacks with whatever survived the last
     // run, and a few losses leave the player with hundreds of balls.
     ClearBag();
+
+    // Coins live in the save block rather than the bag, so ClearBag does not
+    // reach them and a wipe would otherwise leave the rest stop's game room
+    // bankrolled by every previous run. The Coin Case is an item and goes with
+    // the bag; the clerk hands out another one.
+    SetCoins(0);
 }
 
 // Which map a floor's theme lives on. Almost always MAP_ROGUE_DUNGEON_FLOOR;

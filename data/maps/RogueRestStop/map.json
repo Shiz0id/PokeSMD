@@ -62,6 +62,13 @@
       "elevation": 0,
       "dest_map": "MAP_DYNAMIC",
       "dest_warp_id": "WARP_ID_DYNAMIC"
+    },
+    {
+      "x": 1,
+      "y": 6,
+      "elevation": 3,
+      "dest_map": "MAP_ROGUE_REST_STOP_GAMES",
+      "dest_warp_id": "0"
     }
   ],
   "coord_events": [],
