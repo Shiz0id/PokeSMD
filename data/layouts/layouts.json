@@ -9473,6 +9473,16 @@
       "secondary_tileset": "gTileset_RogueMurkyCave",
       "border_filepath": "data/layouts/RogueDungeonMurkyCave/border.bin",
       "blockdata_filepath": "data/layouts/RogueDungeonMurkyCave/map.bin"
+    },
+    {
+      "id": "LAYOUT_ROGUE_REST_STOP",
+      "name": "RogueRestStop_Layout",
+      "width": 17,
+      "height": 13,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_Cave",
+      "border_filepath": "data/layouts/RogueRestStop/border.bin",
+      "blockdata_filepath": "data/layouts/RogueRestStop/map.bin"
     }
   ]
 }
