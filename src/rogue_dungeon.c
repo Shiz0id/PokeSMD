@@ -1994,16 +1994,54 @@ void RogueDungeon_ResetRun(void)
     SetCoins(0);
 }
 
-// Which map a floor's theme lives on. Almost always MAP_ROGUE_DUNGEON_FLOOR;
-// see theme->mapId for why underwater cannot share it.
+// Maps that replace a theme's own for the last few floors of its dungeon. See
+// struct RogueFloorMapOverride for why this is a table.
+//
+// Glacia's arena and its approach are a blizzard rather than the steady snow of
+// the three floors before them, so her weather closes in as the player reaches
+// her instead of being the room they have been walking through since floor 91.
+// Two floors is deliberately short: the point is a change the player notices,
+// and a change is only visible against the thing it changed from.
+static const struct RogueFloorMapOverride sFloorMapOverrides[] =
+{
+    { DUNGEON_THEME_VICTORYROAD_GLACIA, 2, MAP_ROGUE_DUNGEON_BLIZZARD },
+};
+
+// Which map a floor lives on. Almost always MAP_ROGUE_DUNGEON_FLOOR; see
+// theme->mapId for why underwater cannot share it.
 //
 // EVERY path that puts the player on a dungeon floor has to go through this.
 // Warping to the wrong one of the two maps is not a visual glitch: the map type
 // is what decides whether the player arrives diving or walking, so a floor
 // reached by the wrong route would be underwater art walked over on foot.
+//
+// Which is also why the override is applied HERE rather than at the warp sites.
+// There are five paths onto a floor and they all come through this accessor;
+// that is what made the underwater problem a one-line fix once, and it is what
+// makes a per-floor map cost nothing to reach every one of them.
 static u16 MapForFloor(u16 floor)
 {
-    return ThemeForFloor(floor)->mapId;
+    const struct RogueDungeonTheme *theme = ThemeForFloor(floor);
+    u32 dungeon = DungeonIndexOf(floor);
+    u32 within = DungeonFloorWithin(floor);
+    u32 i;
+
+    for (i = 0; i < ARRAY_COUNT(sFloorMapOverrides); i++)
+    {
+        // Compared through ThemeForFloor rather than against DungeonIndexOf, so
+        // this holds no second copy of the floor-to-dungeon routing. The Elite
+        // Four's theme indices equal their dungeon indices by construction (see
+        // enum DungeonThemeId), and that is a relationship to READ, not restate.
+        if (theme != &sDungeonThemes[sFloorMapOverrides[i].themeId])
+            continue;
+
+        // Counted back from the dungeon's end, the way IsDungeonBossFloor is, so
+        // a change to DUNGEON_SHORT_FLOORS moves this with it.
+        if (within + sFloorMapOverrides[i].lastFloors >= DungeonLengthOf(dungeon))
+            return sFloorMapOverrides[i].mapId;
+    }
+
+    return theme->mapId;
 }
 
 static void SetWarpDestinationToFloor(u16 floor)

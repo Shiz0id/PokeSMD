@@ -193,9 +193,9 @@ tools it turns on:
 | `verify_dungeon_gen.py` | connectivity, reachability, no out-of-bounds writes |
 | `verify_seeding.py` | determinism, and that floors do not correlate |
 | `validate_maps.py` | the map.bin codec against vanilla layouts |
-| `check_encounter_flags.py` | every theme can spawn a wild Pokemon under its **own** tileset; that its `mapId` is registered in `wild_encounters.json` with a full-length table for the branch its surface actually reads; and no `*_METATILE_*` constant is named inside a function |
+| `check_encounter_flags.py` | every theme can spawn a wild Pokemon under its **own** tileset; that its `mapId` — **and every map `sFloorMapOverrides` swaps in for its last floors** — is registered in `wild_encounters.json` with a full-length table for the branch its surface actually reads; and no `*_METATILE_*` constant is named inside a function |
 | `check_starter_moves.py` | what each starter actually holds at `DUNGEON_STARTER_LEVEL`, and that none ends up with only status moves |
-| `verify_run_structure.py` | that every floor maps to one dungeon now the Elite Four's are half length, that bosses land on the intended floors, and that the level curve still fits each boss's party — read live out of `trainers.party` |
+| `verify_run_structure.py` | that every floor maps to one dungeon now the Elite Four's are half length, that bosses land on the intended floors, that the level curve still fits each boss's party — read live out of `trainers.party` — and that each `sFloorMapOverrides` entry covers a contiguous run of exactly `lastFloors` floors ending on its dungeon's boss floor |
 | `woods_prototype.py` | renders generated woods floors; mirrors `StampCell`, including the tree base row, the long grass base and the crown above a canopy, and now `ApplyDecor` + `DecorHash` — `decorRarity` is the only knob and what it controls is a density, which is a thing to count rather than eyeball a floor at a time |
 
 Host-side verification over thousands of seeds is much cheaper than emulator

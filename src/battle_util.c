@@ -2797,6 +2797,11 @@ bool32 TryFieldEffects(enum FieldEffectCases caseId)
                 }
                 break;
             case WEATHER_SNOW:
+            // Glacia's last two floors. Omitting this would not have left the
+            // blizzard cosmetic, it would have REMOVED the Ice-type Defence
+            // boost her snow gives on the three floors before it - a weather
+            // upgrade that quietly weakens her own arena.
+            case WEATHER_BLIZZARD:
                 if (!(gBattleWeather & B_WEATHER_ICY_ANY))
                 {
                     if (B_OVERWORLD_SNOW >= GEN_9)

@@ -3,6 +3,7 @@
 #include "battle_pike.h"
 #include "battle_pyramid.h"
 #include "event_data.h"
+#include "field_weather.h"   // IsWeatherSnowy, for Snow Cloak
 #include "fieldmap.h"
 #include "fishing.h"
 #include "follower_npc.h"
@@ -665,7 +666,7 @@ static bool8 WildEncounterCheck(u32 encounterRate, bool8 ignoreAbility)
             encounterRate *= 2;
         else if (ability == ABILITY_SAND_VEIL && gSaveBlock1Ptr->weather == WEATHER_SANDSTORM)
             encounterRate /= 2;
-        else if (ability == ABILITY_SNOW_CLOAK && gSaveBlock1Ptr->weather == WEATHER_SNOW)
+        else if (ability == ABILITY_SNOW_CLOAK && IsWeatherSnowy(gSaveBlock1Ptr->weather))
             encounterRate /= 2;
         else if (ability == ABILITY_QUICK_FEET)
             encounterRate /= 2;

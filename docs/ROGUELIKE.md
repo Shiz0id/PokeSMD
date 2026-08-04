@@ -1654,6 +1654,56 @@ One happy consequence of being a separate constant: the `B_THUNDERSTORM_TERRAIN`
 branch keys on `WEATHER_RAIN_THUNDERSTORM` alone, so a monsoon sets no Electric
 Terrain — correct, since it has no lightning to justify one.
 
+#### `WEATHER_BLIZZARD`, and the case where cosmetic-by-default is a regression
+
+The third new one, and cheaper than the monsoon at **six** places: snow had
+only ever had *one* member, so nothing enumerated a family and there was no
+`isDownpour`-shaped trap to find. `sWeatherFuncs`, `sWeatherNames`,
+`TranslateWeatherNum`, the battle switch, Weather Ball's type, and Snow Cloak's
+encounter-rate halving in `wild_encounter.c`. The fade-in switch needs nothing —
+`WEATHER_SNOW` shares the `default:` group.
+
+`IsWeatherSnowy()` was added even though only **one** of those six is an
+if-chain. Not for today's saving, but because `IsWeatherRainy` now exists, and
+someone checking for a snow predicate, finding none, and concluding that
+enumeration is the house style is a very cheap bug to prevent.
+
+**The new part is that omitting the battle switch would not have made it
+cosmetic — it would have made it a nerf.** `WEATHER_SNOW` is already in that
+switch, and Glacia's dungeon runs on it, so her floors hand every Ice type 1.5×
+Defence. Swapping her last two floors to a blizzard that *wasn't* in the switch
+would have quietly removed that on the two floors where she matters most. When a
+new weather **replaces a mechanical one**, the default is not neutral. Ask what
+the floor had before, not just what the new weather should have.
+
+**Sideways motion is not a wider wobble.** Every falling weather in the game
+moves horizontally by writing `sprite->x2` from `gSineTable` — snow at `/64` is
+a 4-pixel shiver, petals at `/16` a 16-pixel sway — and *an oscillation has no
+net travel however wide you make it*. Driving snow has to cross the screen, so
+`UpdateBlizzardSprite` moves `sprite->x` itself and leaves `x2` at zero
+permanently. `x2` is applied at draw time and takes no part in the wrap test, so
+a flake carried out of frame on it would never come back.
+
+Two details that fall out of moving `x` for real:
+
+- **Accumulate the sub-pixel remainder, not the position.** The y axis uses a
+  Q7 `tPos` accumulator, and copying that for x would overflow: `sprite->x` is
+  stored relative to `gSpriteCoordOffsetX`, which grows without bound as the
+  camera scrolls, and `x * 128` in an `s16` will not survive a large map. Adding
+  whole pixels to `x` and keeping only the fraction bounds the accumulator to
+  0–127 forever, and leaves `x` as the single authority the wrap can rewrite.
+- **The snow's horizontal wrap becomes the main event.** Snow only exercises it
+  when the *camera* moves; a blizzard hits it several times per flake. It needs
+  a vertical respawn as well, which snow does not: wrapping sideways keeps a
+  flake alive indefinitely, so without one every flake ends up in the bottom
+  band and the top of the screen empties.
+
+It reuses the snow's template, art, `PALTAG_WEATHER`, storage and counters, so
+unlike the petals it needed no palette and no `PALTAG_WEATHER_2`. Thirty
+sprites against snow's twenty — chosen against `MAX_SPRITES` (64, for the whole
+screen, and a floor can have sixteen object events plus the player) rather than
+against the 101-entry array.
+
 ### Openness
 
 `roomCount`, `roomMin`, `roomMax` and `corridorWidth` let a theme carve more
@@ -2255,6 +2305,40 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    `wild_encounters.json` entry (§3) and another set of sixteen object event
    slots (§3) — both of which three of these four got wrong, in different
    commits, for the same reason.
+
+   **`MAP_ROGUE_DUNGEON_BLIZZARD` is the fifth, and the first that is not a
+   whole theme's.** The other four are reached because a theme points
+   `theme->mapId` at them, which makes them the weather for all five or ten
+   floors of a dungeon. This one is the last **two** floors of Glacia's — her
+   arena and its approach — so the weather closes in as the player reaches her
+   rather than being the room they have walked through since floor 91.
+
+   That needed the first mechanism in the project that varies by **floor**
+   rather than by theme: `sFloorMapOverrides`, a table of
+   `{theme, lastFloors, map}` that `MapForFloor` consults before falling back on
+   `theme->mapId`. Three things about it:
+
+   - **It goes in `MapForFloor`, not at the warp sites.** Five paths put the
+     player on a floor and every one of them comes through that accessor —
+     the same property that made the underwater five-paths problem a one-line
+     fix.
+   - **It counts back from the dungeon's end**, in the same terms
+     `IsDungeonBossFloor` uses, so a change to `DUNGEON_SHORT_FLOORS` moves it
+     rather than stranding it. `lastFloors = 2` means the boss's floor and the
+     one before it.
+   - **It matches the theme through `ThemeForFloor`, not through
+     `DungeonIndexOf`**, so it holds no second copy of the floor-to-dungeon
+     routing. That the Elite Four's theme indices equal their dungeon indices is
+     a relationship to *read*, not to restate.
+
+   **An override map is the least testable thing in the build**, reachable only
+   on two floors ninety deep in a run, so both tools were taught about it rather
+   than left to playtesting: `check_encounter_flags.py` parses the table and
+   holds every map in it to the *same* registration check as a theme's `mapId`
+   (one function, shared, because two would diverge), and
+   `verify_run_structure.py` checks the override covers a contiguous run of
+   exactly `lastFloors` floors ending **on** the boss floor. Both were run
+   against deliberately broken tables before being trusted.
 
    Every warp path picks the change up on its own, because they all go through
    one accessor that returns `ThemeForFloor(floor)->mapId`. That is why the

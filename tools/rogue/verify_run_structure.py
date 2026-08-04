@@ -13,9 +13,18 @@ src/rogue_dungeon.c and checks:
   3. mini bosses exist only in ten-floor dungeons, never in an Elite Four one
   4. the level curve never goes backwards
   5. the curve lands near each boss's actual stock party average
+  6. every sFloorMapOverride covers a contiguous run of exactly lastFloors
+     floors, ending ON its dungeon's boss floor
 
 The party levels are read out of src/data/trainers.party rather than typed in,
 so this notices if a boss is swapped for one at a different level.
+
+Check 6 is here rather than in check_encounter_flags.py because this is the file
+that already mirrors the floor arithmetic. That tool asks whether an override's
+MAP is registered; this one asks whether the override lands on the FLOORS it
+was meant to. `within + lastFloors >= length_of(dungeon)` is the kind of
+comparison that is off by one in silence - it would simply weather the wrong
+floor, on the far side of ninety floors of run.
 """
 import re
 import sys
@@ -112,6 +121,28 @@ def party_levels():
     return out
 
 
+def floor_map_overrides():
+    """(theme name, lastFloors, map) from sFloorMapOverrides in the C.
+
+    The Elite Four's theme index IS their dungeon index - that is what
+    ThemeForFloor's modulo relies on and what MapForFloor compares through - so
+    the theme name resolves to a dungeon by its position in enum DungeonThemeId.
+    Both are parsed rather than assumed, so a reordered enum shows up here.
+    """
+    text = (REPO / 'src/rogue_dungeon.c').read_text(errors='replace')
+    enum = re.search(r'enum DungeonThemeId\s*\{(.*?)\n\};', text, re.S)
+    order = [n for n in re.findall(r'^\s*(DUNGEON_THEME_\w+)\s*,', enum.group(1), re.M)
+             if n != 'DUNGEON_THEME_COUNT']
+    table = re.search(r'sFloorMapOverrides\[\]\s*=\s*\{(.*?)\n\};', text, re.S)
+    if not table:
+        return []
+    out = []
+    for theme, last, mapped in re.findall(
+            r'\{\s*(DUNGEON_THEME_\w+)\s*,\s*(\d+)\s*,\s*(MAP_\w+)\s*\}', table.group(1)):
+        out.append((theme, order.index(theme), int(last), mapped))
+    return out
+
+
 def main():
     fails = []
 
@@ -193,6 +224,32 @@ def main():
           f"{target_level(rival_floor):>6} {rgap:>+5.1f}")
     check(abs(rgap) <= TOLERANCE,
           f"floor {rival_floor + 1}: rival is {rgap:+.1f} off the curve")
+
+    # 6. per-floor map overrides land where they were meant to.
+    overrides = floor_map_overrides()
+    if overrides:
+        print()
+        for theme, dungeon, last, mapped in overrides:
+            # MapForFloor's own condition, transcribed.
+            covered = [f for f in range(TOTAL_FLOORS)
+                       if index_of(f) == dungeon
+                       and within(f) + last >= length_of(dungeon)]
+            shown = [f + 1 for f in covered]
+            print(f"{mapped} covers floors {shown} ({theme})")
+
+            check(len(covered) == last,
+                  f"{mapped} covers {len(covered)} floors, table says {last}")
+            check(covered == list(range(covered[0], covered[-1] + 1)) if covered
+                  else False,
+                  f"{mapped} covers a non-contiguous set of floors: {shown}")
+            # The tail of a dungeon ends on its boss, so the last covered floor
+            # must be one - and none of the earlier ones may be. If this drifts,
+            # the weather stops at the arena door or starts inside it.
+            check(covered and is_boss_floor(covered[-1]),
+                  f"{mapped}'s last floor {shown[-1] if shown else '-'} "
+                  f"is not a boss floor")
+            check(not any(is_boss_floor(f) for f in covered[:-1]),
+                  f"{mapped} covers a boss floor that is not its last")
 
     print(f"\nrun: {TOTAL_FLOORS} floors, {DUNGEON_COUNT} dungeons, "
           f"levels {target_level(0)} to {target_level(TOTAL_FLOORS - 1)}")

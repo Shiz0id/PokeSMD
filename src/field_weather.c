@@ -147,6 +147,9 @@ static const struct WeatherCallbacks sWeatherFuncs[] =
     // is this one row. See Monsoon_InitVars for why the two loops can be
     // swapped, and constants/weather.h for why the weather exists at all.
     [WEATHER_MONSOON]            = {Monsoon_InitVars,       Rain_Main,          Monsoon_InitAll,       Rain_Finish},
+    // Its own Main, unlike the monsoon: driving snow is not a snow with
+    // different numbers in it, it is a different motion. See UpdateBlizzardSprite.
+    [WEATHER_BLIZZARD]           = {Blizzard_InitVars,      Blizzard_Main,      Blizzard_InitAll,      Blizzard_Finish},
 };
 
 // Every rain, asked in one place. Vanilla asks it in nine and answers by
@@ -162,6 +165,14 @@ bool8 IsWeatherRainy(u32 weather)
         || weather == WEATHER_RAIN_THUNDERSTORM
         || weather == WEATHER_DOWNPOUR
         || weather == WEATHER_MONSOON;
+}
+
+// Snow became a family the moment there were two of them. See the header for
+// why this exists at one call site rather than being inlined there.
+bool8 IsWeatherSnowy(u32 weather)
+{
+    return weather == WEATHER_SNOW
+        || weather == WEATHER_BLIZZARD;
 }
 
 void (*const gWeatherPalStateFuncs[])(void) =
@@ -1237,6 +1248,7 @@ static const u8 sWeatherNames[WEATHER_COUNT][24] = {
     [WEATHER_UNDERWATER_BUBBLES] = _("UNDERWATER BUBBLES"),
     [WEATHER_PETALS]             = _("PETALS"),
     [WEATHER_MONSOON]            = _("MONSOON"),
+    [WEATHER_BLIZZARD]           = _("BLIZZARD"),
     [WEATHER_ABNORMAL]           = _("ABNORMAL(NOT WORKING)"),
     [WEATHER_ROUTE119_CYCLE]     = _("ROUTE119 CYCLE"),
     [WEATHER_ROUTE123_CYCLE]     = _("ROUTE123 CYCLE"),

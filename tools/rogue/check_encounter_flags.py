@@ -162,6 +162,46 @@ def themes(defs):
     return out
 
 
+def floor_map_overrides():
+    """Parse sFloorMapOverrides into {theme name: [map, ...]}.
+
+    These are maps a theme's LAST FEW FLOORS use instead of its own mapId. They
+    need every registration the mapId needs, and they are reachable on two
+    floors deep inside a run - so a missing entry would be found by playing to
+    the Elite Four, if at all. Parsed from the table the game itself reads,
+    rather than listed here, for the reason make_rest_stop.py parses the Unown
+    spots: a duplicated table stops being true the moment the original moves.
+    """
+    text = (REPO / 'src/rogue_dungeon.c').read_text(errors='replace')
+    m = re.search(r'sFloorMapOverrides\[\]\s*=\s*\{(.*?)\n\};', text, re.S)
+    if not m:
+        return {}
+    out = {}
+    for theme, _last, mapped in re.findall(
+            r'\{\s*(DUNGEON_THEME_\w+)\s*,\s*(\d+)\s*,\s*(MAP_\w+)\s*\}', m.group(1)):
+        out.setdefault(theme, []).append(mapped)
+    return out
+
+
+def check_registration(mapped, table, derived, slots, registered):
+    """The one place a map is held to its wild_encounters.json entry.
+
+    Shared by a theme's own mapId and by its floor overrides deliberately. Two
+    code paths checking the same property will eventually check it differently,
+    and the override maps are precisely the ones nobody would notice drifting.
+    """
+    if mapped not in registered:
+        return 1, (f'FAIL: {mapped} has no wild_encounters.json entry, so '
+                   f'GetCurrentMapWildMonHeaderId returns HEADER_NONE')
+    if table not in registered[mapped]:
+        return 1, (f'FAIL: {mapped} has no {table}, so the {derived} branch '
+                   f'reads NULL and returns')
+    if registered[mapped][table] != slots[derived]:
+        return 1, (f'FAIL: {mapped} {table} has {registered[mapped][table]} '
+                   f'mons, need exactly {slots[derived]}')
+    return 0, f'{mapped} {table} [{registered[mapped][table]} slots]'
+
+
 def layout_tilesets():
     data = json.loads((REPO / 'data/layouts/layouts.json').read_text(encoding='utf-8'))
     return {L['id']: (L['primary_tileset'], L['secondary_tileset'])
@@ -233,9 +273,20 @@ def main():
     slots = slot_counts()
     registered = registered_maps()
     resolver = TilesetResolver(REPO)
+    overrides = floor_map_overrides()
 
     failures = 0
-    for theme, entry in themes(defs).items():
+    all_themes = themes(defs)
+
+    # A typo'd theme id in sFloorMapOverrides does not fail to compile - the
+    # enum is a u8 field - it just names a theme the loop below never matches,
+    # and the override silently never fires. Caught here rather than never.
+    for theme in overrides:
+        if theme not in all_themes:
+            print(f'sFloorMapOverrides names {theme}, which is not a theme')
+            failures += 1
+
+    for theme, entry in all_themes.items():
         layout = entry.get('layoutId')
         if layout not in tilesets:
             print(f'{theme}: cannot resolve layout {layout}')
@@ -281,21 +332,19 @@ def main():
         if declared != derived:
             print(f'    FAIL: .wildArea says {declared} but the surface is {derived}')
             failures += 1
-        if mapped not in registered:
-            print(f'    FAIL: {mapped} has no wild_encounters.json entry, so '
-                  f'GetCurrentMapWildMonHeaderId returns HEADER_NONE')
-            failures += 1
-        elif table not in registered[mapped]:
-            print(f'    FAIL: {mapped} has no {table}, so the {derived} branch '
-                  f'reads NULL and returns')
-            failures += 1
-        elif registered[mapped][table] != slots[derived]:
-            print(f'    FAIL: {mapped} {table} has {registered[mapped][table]} '
-                  f'mons, need exactly {slots[derived]}')
-            failures += 1
-        else:
-            print(f'    {"table":10} {mapped} {table} '
-                  f'[{registered[mapped][table]} slots]')
+
+        bad, line = check_registration(mapped, table, derived, slots, registered)
+        failures += bad
+        print(f'    {"table":10} {line}' if not bad else f'    {line}')
+
+        # ... and every map this theme's last floors swap in, held to the same
+        # standard by the same function. They inherit the theme's SURFACE, so
+        # they inherit its branch and slot count too - an override does not
+        # change what the floor is painted with, only which header carries it.
+        for extra in overrides.get(theme, []):
+            bad, line = check_registration(extra, table, derived, slots, registered)
+            failures += bad
+            print(f'    {"override":10} {line}' if not bad else f'    {line}')
 
     print()
     print('generator reads the theme table')

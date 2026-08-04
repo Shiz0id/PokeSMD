@@ -610,6 +610,7 @@ gStdScripts_End::
 	.include "data/maps/RogueDungeonSnow/scripts.inc"
 	.include "data/maps/RogueDungeonPetals/scripts.inc"
 	.include "data/maps/RogueDungeonRain/scripts.inc"
+	.include "data/maps/RogueDungeonBlizzard/scripts.inc"
 	.include "data/maps/RogueRestStop/scripts.inc"
 	.include "data/maps/RogueRestStopGames/scripts.inc"
 

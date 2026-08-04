@@ -42,6 +42,17 @@ enum ColorMapType
 // a floor loads with all of them already up; the gradual ramp is only ever seen
 // on an in-map weather CHANGE, which a dungeon floor never does.
 #define NUM_PETAL_SPRITES            24
+// The blizzard reuses the same array, so this shares the 101 ceiling - but the
+// real limit is MAX_SPRITES, which is 64 for the WHOLE screen. A dungeon floor
+// can already have sixteen object events plus the player up at once, so thirty
+// is chosen against that budget rather than against the array: 30 + 17 leaves
+// seventeen slots for field effects, which is comfortable but not generous.
+//
+// Half again as many as the snow, because the blizzard has to read as a
+// different weather from across the room - the two run on adjacent floors of
+// the same dungeon and a player who cannot tell them apart has been told
+// nothing. Density is half of that; the other half is the streak.
+#define NUM_BLIZZARD_SPRITES         30
 
 // Controls how the weather should be changing the screen palettes.
 #define WEATHER_PAL_STATE_CHANGING_WEATHER   0

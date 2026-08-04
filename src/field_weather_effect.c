@@ -1267,6 +1267,233 @@ static void UpdatePetalSprite(struct Sprite *sprite)
 #undef tFallDeltaY
 
 //------------------------------------------------------------------------------
+// WEATHER_BLIZZARD
+//------------------------------------------------------------------------------
+//
+// Driving snow across the last two floors of Glacia's dungeon. The snow's own
+// sprites, art, storage and counters, given genuine horizontal VELOCITY.
+//
+// That is the whole difference and it is not a bigger version of the wobble.
+// Every falling weather in this game moves sideways by writing sprite->x2 from
+// gSineTable - snow at /64 is a 4-pixel shiver, petals at /16 a 16-pixel sway -
+// and an oscillation has no net travel however wide you make it. A blizzard has
+// to actually CROSS the screen, so it moves sprite->x itself.
+//
+// Cheaper than the petals were: they needed PALTAG_WEATHER_2 and their own
+// palette, and this is snow, so PALTAG_WEATHER is already the right one and
+// gWeatherSnow1Tiles is already the right art. No new asset of any kind.
+//
+// MECHANICAL, and here that is not a free choice. WEATHER_SNOW is already in
+// battle_util.c's switch, so Glacia's floors hand every Ice type 1.5x Defence -
+// and floors 93 and 94 are hers. A blizzard left out of that switch would
+// quietly REMOVE her weather advantage on her own arena. A new weather is
+// cosmetic until it is put in that switch; when it replaces a mechanical one,
+// the default is a regression rather than a neutral omission.
+
+static void UpdateBlizzardSprite(struct Sprite *);
+static bool8 UpdateVisibleBlizzardSprites(void);
+static bool8 CreateBlizzardSprite(void);
+static bool8 DestroyBlizzardSprite(void);
+static void InitBlizzardSpriteMovement(struct Sprite *);
+
+void Blizzard_InitVars(void)
+{
+    gWeatherPtr->initStep = 0;
+    gWeatherPtr->weatherGfxLoaded = FALSE;
+    gWeatherPtr->targetColorMapIndex = 0;
+    gWeatherPtr->colorMapStepDelay = 20;
+    gWeatherPtr->targetSnowflakeSpriteCount = NUM_BLIZZARD_SPRITES;
+    gWeatherPtr->snowflakeVisibleCounter = 0;
+    Weather_SetBlendCoeffs(8, BASE_SHADOW_INTENSITY); // preserve shadow darkness
+    gWeatherPtr->noShadows = FALSE;
+}
+
+void Blizzard_InitAll(void)
+{
+    u16 i;
+
+    Blizzard_InitVars();
+    // The spin is what stops all thirty arriving in a band across the top.
+    // UpdateVisibleBlizzardSprites creates one per 36 counter ticks and this
+    // loop ticks once per iteration, so the first flake is updated a thousand
+    // times before the last is created and the field is already spread by the
+    // time the floor is drawn. Straight from Snow_InitAll, and load-bearing for
+    // the same reason.
+    while (gWeatherPtr->weatherGfxLoaded == FALSE)
+    {
+        Blizzard_Main();
+        for (i = 0; i < gWeatherPtr->snowflakeSpriteCount; i++)
+            UpdateBlizzardSprite(gWeatherPtr->sprites.s1.snowflakeSprites[i]);
+    }
+}
+
+void Blizzard_Main(void)
+{
+    if (gWeatherPtr->initStep == 0 && !UpdateVisibleBlizzardSprites())
+    {
+        gWeatherPtr->weatherGfxLoaded = TRUE;
+        gWeatherPtr->initStep++;
+    }
+}
+
+bool8 Blizzard_Finish(void)
+{
+    switch (gWeatherPtr->finishStep)
+    {
+    case 0:
+        gWeatherPtr->targetSnowflakeSpriteCount = 0;
+        gWeatherPtr->snowflakeVisibleCounter = 0;
+        gWeatherPtr->finishStep++;
+        // fall through
+    case 1:
+        if (!UpdateVisibleBlizzardSprites())
+        {
+            gWeatherPtr->finishStep++;
+            return FALSE;
+        }
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static bool8 UpdateVisibleBlizzardSprites(void)
+{
+    if (gWeatherPtr->snowflakeSpriteCount == gWeatherPtr->targetSnowflakeSpriteCount)
+        return FALSE;
+
+    if (++gWeatherPtr->snowflakeVisibleCounter > 36)
+    {
+        gWeatherPtr->snowflakeVisibleCounter = 0;
+        if (gWeatherPtr->snowflakeSpriteCount < gWeatherPtr->targetSnowflakeSpriteCount)
+            CreateBlizzardSprite();
+        else
+            DestroyBlizzardSprite();
+    }
+
+    return gWeatherPtr->snowflakeSpriteCount != gWeatherPtr->targetSnowflakeSpriteCount;
+}
+
+// The snow's template with this weather's callback on it. Everything else -
+// PALTAG_WEATHER, the two 8x8 frames, the priority - is the snow's and correct.
+static const struct SpriteTemplate sBlizzardSpriteTemplate =
+{
+    .tileTag = TAG_NONE,
+    .paletteTag = PALTAG_WEATHER,
+    .oam = &sSnowflakeSpriteOamData,
+    .anims = sSnowflakeAnimCmds,
+    .images = sSnowflakeSpriteImages,
+    .callback = UpdateBlizzardSprite,
+};
+
+#define tPosY        data[0]
+#define tDeltaY      data[1]
+#define tSubX        data[2]
+#define tDeltaX      data[3]
+#define tBlizzardId  data[4]
+
+static bool8 CreateBlizzardSprite(void)
+{
+    u8 spriteId = CreateSpriteAtEnd(&sBlizzardSpriteTemplate, 0, 0, 78);
+    if (spriteId == MAX_SPRITES)
+        return FALSE;
+
+    gSprites[spriteId].tBlizzardId = gWeatherPtr->snowflakeSpriteCount;
+    InitBlizzardSpriteMovement(&gSprites[spriteId]);
+    gSprites[spriteId].coordOffsetEnabled = TRUE;
+    gWeatherPtr->sprites.s1.snowflakeSprites[gWeatherPtr->snowflakeSpriteCount++] = &gSprites[spriteId];
+    return TRUE;
+}
+
+static bool8 DestroyBlizzardSprite(void)
+{
+    if (gWeatherPtr->snowflakeSpriteCount)
+    {
+        DestroySprite(gWeatherPtr->sprites.s1.snowflakeSprites[--gWeatherPtr->snowflakeSpriteCount]);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static void InitBlizzardSpriteMovement(struct Sprite *sprite)
+{
+    u16 rand;
+    u16 x = ((sprite->tBlizzardId * 5) & 7) * 30 + (Random() % 30);
+
+    sprite->y = -3 - (gSpriteCoordOffsetY + sprite->centerToCornerVecY);
+    sprite->x = x - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
+    sprite->tPosY = sprite->y * 128;
+    // Zeroed and never written again. x2 is how every other falling weather
+    // moves sideways, and a blizzard must not use it: it is an offset applied at
+    // draw time and takes no part in the wrap test below, so a flake carried out
+    // of frame on x2 would never be brought back.
+    sprite->x2 = 0;
+    rand = Random();
+
+    // Falls about twice as fast as snow's 64-79 and travels sideways six times
+    // faster than that again - 3 to 4.5 pixels a frame, against the snow's four
+    // pixels of shiver TOTAL. The angle is what makes it read as driven rather
+    // than heavy, so the horizontal figure is the one to tune first.
+    sprite->tDeltaY = (rand & 3) * 16 + 96;
+    // Drawn independently of the fall speed, so the field has flakes crossing
+    // at different angles rather than a sheet of parallel lines.
+    sprite->tDeltaX = ((rand >> 2) & 3) * 64 + 384;
+    sprite->tSubX = 0;
+    StartSpriteAnim(sprite, (rand & 1) ? 0 : 1);
+}
+
+static void UpdateBlizzardSprite(struct Sprite *sprite)
+{
+    s16 x;
+
+    sprite->tPosY += sprite->tDeltaY;
+    sprite->y = sprite->tPosY >> 7;
+
+    // WHOLE PIXELS INTO x, FRACTION KEPT IN tSubX - deliberately not the Q7
+    // accumulator the y axis uses. sprite->x is stored relative to
+    // gSpriteCoordOffsetX, which grows without bound as the camera scrolls, so
+    // an x * 128 accumulator in an s16 would overflow on a large map. Keeping
+    // only the sub-pixel remainder bounds tSubX to 0..127 forever, and leaves
+    // sprite->x as the single authority the wrap below can rewrite freely.
+    sprite->tSubX += sprite->tDeltaX;
+    sprite->x += sprite->tSubX >> 7;
+    sprite->tSubX &= 0x7F;
+
+    x = (sprite->x + sprite->centerToCornerVecX + gSpriteCoordOffsetX) & 0x1FF;
+    if (x & 0x100)
+        x |= -0x100;
+
+    // The snow's wrap, unchanged, and it is why the blizzard needs no respawn
+    // of its own: a flake blown off the right edge re-enters on the left and
+    // keeps the field full. The snow only ever exercises this when the CAMERA
+    // moves; here it is the main event, several times per flake per crossing.
+    if (x < -3)
+        sprite->x = 242 - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
+    else if (x > 242)
+        sprite->x = -3 - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
+
+    // Off the bottom, back to the top with a fresh angle. Wrapping sideways
+    // keeps a flake alive indefinitely, so without this every flake would end up
+    // in the bottom band and the upper screen would empty out - which the snow
+    // never has to think about, its flakes leaving downward almost immediately.
+    if (sprite->y > 163)
+    {
+        // A new entry lane too, for the reason the petals re-roll theirs:
+        // tBlizzardId picks the 30-pixel column and is otherwise fixed for the
+        // sprite's life, so keeping it would file every flake down one stripe.
+        sprite->tBlizzardId = Random() & 7;
+        InitBlizzardSpriteMovement(sprite);
+    }
+}
+
+#undef tPosY
+#undef tDeltaY
+#undef tSubX
+#undef tDeltaX
+#undef tBlizzardId
+
+//------------------------------------------------------------------------------
 // WEATHER_RAIN_THUNDERSTORM
 //------------------------------------------------------------------------------
 
@@ -3004,6 +3231,7 @@ static u8 TranslateWeatherNum(u8 weather)
     case WEATHER_ABNORMAL:           return WEATHER_ABNORMAL;
     case WEATHER_PETALS:             return WEATHER_PETALS;
     case WEATHER_MONSOON:            return WEATHER_MONSOON;
+    case WEATHER_BLIZZARD:           return WEATHER_BLIZZARD;
     case WEATHER_ROUTE119_CYCLE:     return sWeatherCycleRoute119[gSaveBlock1Ptr->weatherCycleStage];
     case WEATHER_ROUTE123_CYCLE:     return sWeatherCycleRoute123[gSaveBlock1Ptr->weatherCycleStage];
     case WEATHER_DYNAMIC:            return GetDynamicWeather();

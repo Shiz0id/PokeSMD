@@ -227,6 +227,10 @@ void Downpour_InitVars(void);
 void Downpour_InitAll(void);
 void Monsoon_InitVars(void);
 void Monsoon_InitAll(void);
+void Blizzard_InitVars(void);
+void Blizzard_Main(void);
+void Blizzard_InitAll(void);
+bool8 Blizzard_Finish(void);
 void Bubbles_InitVars(void);
 void Bubbles_Main(void);
 void Bubbles_InitAll(void);
@@ -242,6 +246,14 @@ bool8 Bubbles_Finish(void);
 // Distinct from B_WEATHER_RAIN, which is the BATTLE flag and already an
 // aggregate. This is the overworld side, which never had one.
 bool8 IsWeatherRainy(u32 weather);
+
+// The same question for snow, and it exists for a reason the rain's does not:
+// snow only ever had ONE member, so every site tested it with ==, and there was
+// nothing to notice. Adding WEATHER_BLIZZARD makes it a family. Two of the three
+// sites are switch labels and take a case; this is for the third, and for the
+// next person, who will look for a predicate because the rain has one and would
+// otherwise conclude from its absence that enumerating is the house style.
+bool8 IsWeatherSnowy(u32 weather);
 
 u8 GetSavedWeather(void);
 void SetSavedWeather(u32 weather);

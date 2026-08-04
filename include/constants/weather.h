@@ -37,6 +37,17 @@
 // sets B_WEATHER_RAIN_NORMAL like every other rain. Being a rain that vanilla
 // has never heard of is the expensive part; see IsWeatherRainy.
 #define WEATHER_MONSOON                 17
+// Driving snow, for the last two floors of Glacia's dungeon - her arena and the
+// approach to it. The snow's sprites and storage, given real horizontal
+// velocity instead of the sine wobble, so it streaks across the screen rather
+// than drifting down it. See Blizzard_InitVars.
+//
+// MECHANICAL, and it has to be: WEATHER_SNOW already gives every Ice type 1.5x
+// Defence on Glacia's floors, so a blizzard missing from battle_util.c's switch
+// would silently TAKE THAT AWAY on the two floors where she matters most. A new
+// weather being cosmetic by default is the trap; here the default is also a
+// regression.
+#define WEATHER_BLIZZARD                18
 #define WEATHER_ROUTE119_CYCLE          20
 #define WEATHER_ROUTE123_CYCLE          21
 #define WEATHER_FOG                     22  // Aggregate of WEATHER_FOG_HORIZONTAL and WEATHER_FOG_DIAGONAL

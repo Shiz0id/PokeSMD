@@ -1199,6 +1199,29 @@ struct RogueDungeonTheme
     u8 wildArea;
 };
 
+// A map used for the LAST FEW FLOORS of one theme's dungeon, instead of that
+// theme's own. The first thing in this project that varies by floor rather than
+// by theme, and it exists because weather is per-map: a theme has exactly one
+// mapId, so without this the only weathers available are ones that last a whole
+// dungeon.
+//
+// Expressed as a table rather than a test inside MapForFloor for the usual
+// reason - a table is data the tooling can read. check_encounter_flags.py parses
+// this one and holds every map named here to the same registration it holds a
+// theme's mapId to, which matters more here than anywhere: an override map is
+// reachable ONLY on two floors deep in a run, so a missing wild encounter entry
+// would be found by playtesting some time around the Elite Four, if at all.
+//
+// `lastFloors` counts back from the dungeon's end, so it is stated in the same
+// terms IsDungeonBossFloor is and survives a change to DUNGEON_SHORT_FLOORS. A
+// value of 2 means the boss's floor and the one before it.
+struct RogueFloorMapOverride
+{
+    u8 themeId;     // enum DungeonThemeId - which dungeon's tail this covers
+    u8 lastFloors;  // how many floors back from the boss, inclusive
+    u16 mapId;
+};
+
 // Half-resolution grid for DUNGEON_GEN_WOODS, so a cell is one 2x2 stamp.
 #define DUNGEON_CELLS_W (DUNGEON_WIDTH / 2)
 #define DUNGEON_CELLS_H (DUNGEON_HEIGHT / 2)
