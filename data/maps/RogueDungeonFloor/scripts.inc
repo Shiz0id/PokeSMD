@@ -22,6 +22,10 @@ RogueDungeonFloor_EventScript_ChooseStarters::
 	msgbox RogueDungeonFloor_Text_PickSecond, MSGBOX_DEFAULT
 	call RogueDungeonFloor_EventScript_PickStarter
 	additem ITEM_ULTRA_BALL, ROGUE_RUN_STARTING_BALLS
+	@ A tool rather than a prize. Held items are buried rather than left in
+	@ balls, so without this the whole hidden half of the floor is unreachable
+	@ and the player has no way to know it is there.
+	additem ITEM_DOWSING_MACHINE, 1
 	setvar VAR_ROGUE_RUN_STATE, ROGUE_RUN_ACTIVE
 	releaseall
 	end

@@ -87,11 +87,13 @@ Losing wipes the run; so does winning, which is the point.
   is one flag, and because `B_SPLIT_EXP` is `GEN_LATEST` it is *additive* — the
   sent-in mon keeps its full award and the rest take half on top. Trainers are
   deliberately not boosted; see §2's level curve for why.
-- **The ORAS dowsing machine is wired but inert.** The expansion ships the whole
-  mechanic (`src/oras_dowse.c`, its own field effect and sprite art); assigning
-  `I_ORAS_DOWSING_FLAG` a flag is what turns it on. Nothing generates hidden
-  items yet and the run hands out no Dowsing Machine, so it waits on the gap in
-  §10 — a key item that finds nothing is worse than no key item.
+- **And floors bury things.** Hidden items carry the **held-item** tier where
+  balls carry consumables, so the Dowsing Machine — handed over at run start, a
+  tool rather than a prize — is worth the fact that wearing it stops the player
+  running. The expansion ships the whole ORAS mechanic (`src/oras_dowse.c`, its
+  own field effect and sprite art); assigning `I_ORAS_DOWSING_FLAG` a flag is
+  what turns it on. The ocean and the seafloor bury nothing, because dowsing
+  cannot be started while surfing or diving. See §3.
 - Reachable from a new game, which is slimmed to name entry only.
 
 Everything lives in `src/rogue_dungeon.c` / `include/rogue_dungeon.h` plus
@@ -465,18 +467,43 @@ them at all.
 
 `gMapHeader.events` is a **pointer in a RAM struct**, though, and this project
 already writes a sibling field of it (`gMapHeader.mapLayout`, for the per-theme
-tileset swap). Building a `struct MapEvents` in EWRAM and repointing it is the
-same move. `struct BgEvent` is 12 bytes; `struct MapEvents` is four counts and
-four pointers.
+tileset swap). So `ApplyDungeonEvents` copies the ROM header's events wholesale,
+swaps only `bgEvents` and `bgEventCount`, and repoints at the copy — warps,
+coord events and the object event count all keep saying what `map.json` said.
+`struct BgEvent` is 12 bytes; `struct MapEvents` is four counts and four
+pointers.
+
+It has to run **on every load**, because `gMapHeader` is assigned wholesale from
+ROM each time (`overworld.c`, in both dispatch branches). That is also what
+makes it free to undo: warp anywhere else and the pointer is ROM's again.
 
 That one repoint also makes the dowsing machine work on generated items for
 free, because `ItemfinderCheckForHiddenItems(gMapHeader.events, …)` takes the
 events as a **parameter** rather than reaching for the global.
 
-Hidden items do still cost one flag each — the engine checks
-`hiddenItemId + FLAG_HIDDEN_ITEMS_START`, and `hiddenItemId` is 13 bits. Reserve
-a block and clear it per floor, the same lifecycle `FLAG_ROGUE_BOSS_REWARD_TAKEN`
-has.
+Three things about writing the events themselves:
+
+- **`elevation` must be `ELEVATION_TRANSITION`.** `GetBackgroundEventAtPosition`
+  matches when the event's elevation equals the *player's* or is transition, so
+  transition matches whatever the player is standing at. A per-theme elevation
+  hard-coded here is the recurring bug in this project, and it already bit the
+  trainers once on the ocean.
+- **`underfoot` must be FALSE.** Emerald's step-on path for buried items is not
+  wired up — `underfoot` is read in exactly one place and only to *reject* — so
+  TRUE buries the item permanently.
+- **`item` is an 11-bit field**, so an id past 2047 truncates into a different
+  item silently. There is room today and a `STATIC_ASSERT` holds it.
+
+Hidden items cost one flag each — the engine checks
+`hiddenItemId + FLAG_HIDDEN_ITEMS_START`, and `hiddenItemId` is 13 bits.
+Vanilla's block ends at `0x6F` and `0x1F4 + 0x70` lands exactly on
+`FLAG_UNUSED_0x264`, so ours start there; a second `STATIC_ASSERT` holds that,
+because a collision would mark a *vanilla* hidden item collected.
+
+Clear those flags where a genuinely **new floor is rolled**, not on every load.
+Per load would resurrect everything the player had already dug up as soon as
+they saved and reloaded on the same floor — the same reasoning
+`FLAG_ROGUE_BOSS_REWARD_TAKEN` already carries.
 
 ### Map data plumbing (adding a map)
 
@@ -1975,21 +2002,27 @@ takes tiles from `condominiums_frlg` but metatiles from `silph_co_frlg`). Parse
    on the edge that would be visible rather than the unedged interior, but the
    mock still hits the horizontal three ways about 11 times a floor. Composed
    art, the way `make_ocean_tiles.py` does it, would be better.
-8. **Hidden items, and the RAM `MapEvents` they need.** Item balls are in; the
-   buried half is not, and it is what the dowsing machine is waiting on. §3 has
-   the mechanism — a `struct MapEvents` in EWRAM with generated `bgEvents`, and
-   `gMapHeader.events` repointed at it, which is the same move the per-theme
-   tileset swap already makes on `gMapHeader.mapLayout`.
+8. ~~Hidden items.~~ **CLOSED.** Buried held items, a `struct MapEvents` in
+   EWRAM with `gMapHeader.events` repointed at it, and the Dowsing Machine
+   handed over at run start so it is a tool rather than a prize. 220 bytes of
+   EWRAM, which is the only RAM the whole item system costs.
 
-   The intent is that hidden items carry the **held-item** tier while balls
-   carry consumables, so the machine is worth the fact that wearing it stops the
-   player running. Two things are undecided and both are balance rather than
-   engineering: whether held items are depth-gated the way healing is, and
-   whether the Dowsing Machine is handed over at run start or earned.
+   Kept for two things it settled. **Held items band differently from
+   consumables, and for a different reason.** A potion retires because a better
+   one replaces it; a held item retires because it stops being worth a slot —
+   so the cheap ones close and the ones that stay good (Leftovers, the Choice
+   items) have no upper bound at all. Same mechanism, opposite intent.
 
-   Note that it will be unavailable on two themes by construction — `item_use.c`
-   refuses to start dowsing while surfing or underwater, so the ocean and the
-   seafloor cannot use it. That is a cost, not a bug.
+   And **nothing is buried where it cannot be found.** `item_use.c` refuses to
+   start dowsing while surfing or underwater, so the ocean and the seafloor get
+   no hidden items — a buried item there would be reachable only by pressing A
+   on the right tile with no way to know it was there. The two theme tests that
+   mean "surfing or diving" are `elevationFloor == DUNGEON_ELEVATION_WATER` and
+   `mapId == MAP_ROGUE_DUNGEON_UNDERWATER`; each is unique to its theme.
+
+   The remaining balance question is untested rather than open: whether the
+   held-item tiers arrive at the right depths. `verify_loot_table.py` grades
+   them and checks the ceiling never drops, but grading is not play.
 2. Winning ends the run the same way losing does: the party and bag are wiped
    and the player is back on floor 1. Nothing is carried forward and nothing
    records that it happened, so there is no reason to have won rather than

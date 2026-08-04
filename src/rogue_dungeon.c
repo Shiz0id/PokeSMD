@@ -21,6 +21,7 @@
 #include "constants/moves.h"
 #include "constants/vars.h"
 #include "constants/wild_encounter.h"
+#include "constants/event_bg.h"
 #include "constants/event_objects.h"
 #include "constants/trainer_types.h"
 #include "constants/battle_setup.h"
@@ -1640,6 +1641,32 @@ EWRAM_DATA static u8 sItemX[DUNGEON_MAX_ITEMS] = {0};
 EWRAM_DATA static u8 sItemY[DUNGEON_MAX_ITEMS] = {0};
 EWRAM_DATA static u8 sItemCount = 0;
 
+// Hidden items, and the events header that points at them.
+//
+// These are held in their FINAL FORM - real struct BgEvents, ready for the
+// engine to read - rather than as coordinates a builder turns into events
+// later, because the engine reads them straight out of the array through
+// gMapHeader.events and there is no later.
+//
+// sDungeonEvents is a copy of the map's ROM header with only the bg fields
+// swapped, so warps, coord events and the object event count all keep saying
+// what map.json said.
+EWRAM_DATA static struct BgEvent sHiddenItems[DUNGEON_MAX_HIDDEN] = {0};
+EWRAM_DATA static struct MapEvents sDungeonEvents = {0};
+EWRAM_DATA static u8 sHiddenCount = 0;
+
+// A wrong id here would clear or read a VANILLA hidden item's flag. Checked at
+// compile time because the two constants live in different headers and the
+// relationship between them is arithmetic nobody would re-derive by eye.
+STATIC_ASSERT(FLAG_HIDDEN_ITEMS_START + DUNGEON_HIDDEN_FIRST_ID == FLAG_UNUSED_0x264,
+              RogueHiddenItemIdsMustStartAtTheFirstFreeFlag);
+
+// A bg event stores its item in an ELEVEN BIT field, so an item id past 2047
+// would be silently truncated into a different item rather than failing. There
+// is plenty of room today - the highest id is in the 700s - but the bag grows
+// every expansion release and nothing else would notice the day it does not.
+STATIC_ASSERT(ITEMS_COUNT <= (1 << 11), RogueHiddenItemIdsMustFitElevenBits);
+
 // Local PRNG. Generation must not consume or perturb the global RNG - if it
 // did, the floor would depend on how many steps the player had taken, and the
 // same seed would stop reproducing the same floor.
@@ -2999,23 +3026,62 @@ static const struct RogueLootEntry sLootConsumables[] =
     { ITEM_ELIXIR,         5,  55, 255, 1 },
 };
 
-// Rolls one consumable for the given floor. Uses the dungeon RNG, so the result
-// is part of what the floor seed determines.
-static void RollFloorItem(u16 floor, u16 *item, u8 *quantity)
+// What is BURIED, as opposed to what is left in a ball. Held items rather than
+// consumables, so the dowsing machine is worth the fact that wearing it stops
+// the player running.
+//
+// Banded like the consumables, but the bands mean something different. A potion
+// retires because a better one replaces it; a held item retires because it stops
+// being worth a slot. So the cheap ones close and the ones that stay good never
+// do - Leftovers and the Choice items have no upper bound because there is no
+// floor deep enough for them to be a bad find.
+static const struct RogueLootEntry sLootHeld[] =
+{
+    // Tier 1 - things that help a level-10 starter survive to floor 10.
+    { ITEM_QUICK_CLAW,    14,   0,  45, 1 },
+    { ITEM_SHELL_BELL,    12,   0,  45, 1 },
+    { ITEM_SITRUS_BERRY,  14,   0,  60, 1 },
+
+    // Tier 2 - the first items that reward a plan rather than patching a
+    // weakness. Eviolite closes early because a run's unevolved mon do not stay
+    // unevolved, and it is dead weight once they have.
+    { ITEM_EVIOLITE,      10,   5,  70, 1 },
+    { ITEM_MUSCLE_BAND,   12,  10,  70, 1 },
+    { ITEM_WISE_GLASSES,  12,  10,  70, 1 },
+    { ITEM_SCOPE_LENS,    10,  25,  80, 1 },
+
+    // Tier 3 - competitively real, and none of them ever retire.
+    { ITEM_FOCUS_SASH,    10,  20, 255, 1 },
+    { ITEM_ROCKY_HELMET,  10,  30, 255, 1 },
+    { ITEM_EXPERT_BELT,   10,  35, 255, 1 },
+    { ITEM_AIR_BALLOON,    8,  35, 255, 1 },
+    { ITEM_CHOICE_SCARF,   9,  45, 255, 1 },
+    { ITEM_CHOICE_BAND,    9,  50, 255, 1 },
+    { ITEM_CHOICE_SPECS,   9,  50, 255, 1 },
+    { ITEM_ASSAULT_VEST,   9,  60, 255, 1 },
+    { ITEM_LIFE_ORB,       8,  65, 255, 1 },
+    { ITEM_LEFTOVERS,     10,  70, 255, 1 },
+};
+
+// Weighted pick from a banded table. Shared by both loot tables, because they
+// are the same shape and a second copy of this is a second place for the
+// running-total arithmetic to be wrong.
+static void RollFromTable(const struct RogueLootEntry *table, u32 count,
+                          u16 floor, u16 *item, u8 *quantity)
 {
     u32 total = 0;
     u32 roll;
     u32 i;
 
-    for (i = 0; i < ARRAY_COUNT(sLootConsumables); i++)
+    for (i = 0; i < count; i++)
     {
-        if (floor >= sLootConsumables[i].minFloor && floor < sLootConsumables[i].maxFloor)
-            total += sLootConsumables[i].weight;
+        if (floor >= table[i].minFloor && floor < table[i].maxFloor)
+            total += table[i].weight;
     }
 
-    // Cannot happen with the table above - floor 0 has five entries in band and
-    // every later floor has more - but a future edit that leaves a gap should
-    // hand out a Potion rather than divide by zero.
+    // Cannot happen with either table as written, and verify_loot_table.py
+    // fails if an edit ever makes it possible - but a gap should hand over
+    // something rather than divide by zero.
     if (total == 0)
     {
         *item = ITEM_POTION;
@@ -3025,21 +3091,138 @@ static void RollFloorItem(u16 floor, u16 *item, u8 *quantity)
 
     roll = DungeonRandom() % total;
 
-    for (i = 0; i < ARRAY_COUNT(sLootConsumables); i++)
+    for (i = 0; i < count; i++)
     {
-        if (floor < sLootConsumables[i].minFloor || floor >= sLootConsumables[i].maxFloor)
+        if (floor < table[i].minFloor || floor >= table[i].maxFloor)
             continue;
-        if (roll < sLootConsumables[i].weight)
+        if (roll < table[i].weight)
         {
-            *item = sLootConsumables[i].item;
-            *quantity = sLootConsumables[i].quantity;
+            *item = table[i].item;
+            *quantity = table[i].quantity;
             return;
         }
-        roll -= sLootConsumables[i].weight;
+        roll -= table[i].weight;
     }
 
     *item = ITEM_POTION;
     *quantity = 1;
+}
+
+// Buries hidden items through the floor's rooms.
+//
+// Runs after PlaceItems so it can avoid a tile that already has an item ball on
+// it - not because the two would collide, they are different systems entirely,
+// but because a hidden item under a ball is one the player can never be told
+// about: the ball takes the interaction.
+static void PlaceHiddenItems(u16 floor)
+{
+    u32 count = DUNGEON_HIDDEN_MIN + floor / DUNGEON_HIDDEN_FLOORS_PER_EXTRA;
+    const struct RogueDungeonTheme *theme = ThemeForFloor(floor);
+    u32 i, j;
+
+    sHiddenCount = 0;
+
+    if (sRoomCount == 0)
+        return;
+
+    // NOTHING BURIED WHERE IT CANNOT BE FOUND. item_use.c refuses to start the
+    // dowsing machine while surfing or underwater, so on the ocean and the
+    // seafloor a buried item would be invisible in the strict sense - reachable
+    // only by pressing A on the right tile with no way to know it was there.
+    //
+    // These two tests are what "surfing or diving" means in theme terms: the
+    // ocean is the only theme that walks at water elevation, and underwater is
+    // the only one with a map of its own.
+    if (theme->elevationFloor == DUNGEON_ELEVATION_WATER
+     || theme->mapId == MAP_ROGUE_DUNGEON_UNDERWATER)
+        return;
+
+    if (count > DUNGEON_MAX_HIDDEN)
+        count = DUNGEON_MAX_HIDDEN;
+
+    for (i = 0; i < count; i++)
+    {
+        u16 item;
+        u8 quantity;
+        u8 x = 0, y = 0;
+        u32 room = DungeonRandom() % sRoomCount;
+
+        x = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
+        y = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
+
+        // The exit, an item ball, a trainer or another buried item - anything
+        // that owns the interaction on that tile, or that the player cannot
+        // stand on to search it.
+        if (x == sStairsX && y == sStairsY)
+            continue;
+
+        for (j = 0; j < sItemCount; j++)
+        {
+            if (sItemX[j] == x && sItemY[j] == y)
+                break;
+        }
+        if (j != sItemCount)
+            continue;
+
+        for (j = 0; j < sTrainerCount; j++)
+        {
+            if (sTrainerX[j] == x && sTrainerY[j] == y)
+                break;
+        }
+        if (j != sTrainerCount)
+            continue;
+
+        for (j = 0; j < sHiddenCount; j++)
+        {
+            if (sHiddenItems[j].x == x && sHiddenItems[j].y == y)
+                break;
+        }
+        if (j != sHiddenCount)
+            continue;
+
+        RollFromTable(sLootHeld, ARRAY_COUNT(sLootHeld), floor, &item, &quantity);
+
+        sHiddenItems[sHiddenCount].x = x;
+        sHiddenItems[sHiddenCount].y = y;
+        // ELEVATION_TRANSITION, not the theme's floor elevation.
+        // GetBackgroundEventAtPosition matches a bg event when its elevation
+        // equals the PLAYER'S or is ELEVATION_TRANSITION, so transition matches
+        // whatever the player is standing at and cannot be wrong. A per-theme
+        // elevation hard-coded here is the recurring bug in this project, and
+        // it already bit the trainers once on the ocean.
+        sHiddenItems[sHiddenCount].elevation = ELEVATION_TRANSITION;
+        sHiddenItems[sHiddenCount].kind = BG_EVENT_HIDDEN_ITEM;
+        sHiddenItems[sHiddenCount].bgUnion.hiddenItem.item = item;
+        sHiddenItems[sHiddenCount].bgUnion.hiddenItem.quantity = quantity;
+        // Interacted with rather than stepped on. Emerald's step-on path for
+        // buried items is not wired up - underfoot is read in exactly one place
+        // and only to REJECT - so a TRUE here would bury the item forever.
+        sHiddenItems[sHiddenCount].bgUnion.hiddenItem.underfoot = FALSE;
+        sHiddenItems[sHiddenCount].bgUnion.hiddenItem.hiddenItemId =
+            DUNGEON_HIDDEN_FIRST_ID + sHiddenCount;
+        sHiddenCount++;
+    }
+}
+
+// Points gMapHeader at a bg event list of our own.
+//
+// gMapHeader is a RAM copy assigned wholesale from ROM on every map load
+// (overworld.c, in both of the dispatch branches this project already knows
+// about), so this has to run on every load and undoes itself for free the
+// moment the player warps anywhere else.
+//
+// Everything except the bg fields is copied from what the ROM header said, so
+// warps still work and the object event COUNT - which the engine reads from
+// here while reading the templates from the save block - is untouched.
+static void ApplyDungeonEvents(void)
+{
+    if (gMapHeader.events == NULL)
+        return;
+
+    sDungeonEvents = *gMapHeader.events;
+    sDungeonEvents.bgEvents = sHiddenItems;
+    sDungeonEvents.bgEventCount = sHiddenCount;
+    gMapHeader.events = &sDungeonEvents;
 }
 
 // Scatters item balls through the floor's rooms. Called from PrepareFloor, so
@@ -3088,7 +3271,8 @@ static void PlaceItems(u16 floor)
 
         sItemX[sItemCount] = x;
         sItemY[sItemCount] = y;
-        RollFloorItem(floor, &sItemIds[sItemCount], &sItemQty[sItemCount]);
+        RollFromTable(sLootConsumables, ARRAY_COUNT(sLootConsumables), floor,
+                      &sItemIds[sItemCount], &sItemQty[sItemCount]);
         sItemCount++;
     }
 }
@@ -3271,6 +3455,9 @@ static void PrepareFloor(u16 seed)
     PlaceTrainers(floor);
     // After the trainers, because it refuses to stack a ball on one of them.
     PlaceItems(floor);
+    // And after the balls, for the same reason - a hidden item under a ball is
+    // one the player can never be told about.
+    PlaceHiddenItems(floor);
     sFloorPrepared = TRUE;
 }
 
@@ -3506,9 +3693,21 @@ static void WriteFloorBlocks(u16 *backupMapData)
 static u16 RollNewFloorSeed(void)
 {
     u16 seed = Random();
+    u32 i;
 
     VarSet(VAR_ROGUE_DUNGEON_SEED, seed);
     FlagClear(FLAG_ROGUE_BOSS_REWARD_TAKEN);
+
+    // Buried items are marked collected by FLAG, and the ids repeat every
+    // floor, so last floor's finds would read as already taken on this one.
+    //
+    // Cleared HERE, where a genuinely NEW floor is rolled, and deliberately not
+    // on every load: doing it per load would resurrect everything the player
+    // had already dug up as soon as they saved and reloaded on the same floor.
+    // Same reasoning as FLAG_ROGUE_BOSS_REWARD_TAKEN above it.
+    for (i = 0; i < DUNGEON_MAX_HIDDEN; i++)
+        FlagClear(FLAG_HIDDEN_ITEMS_START + DUNGEON_HIDDEN_FIRST_ID + i);
+
     return seed;
 }
 
@@ -3797,6 +3996,11 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
 
         PrepareFloor(seed);
     }
+
+    // After PrepareFloor, which is what decides the hidden items, and on every
+    // load rather than only on new floors - gMapHeader is re-copied from ROM
+    // each time, so the pointer has to be put back each time too.
+    ApplyDungeonEvents();
 
     WriteFloorBlocks(backupMapData);
 

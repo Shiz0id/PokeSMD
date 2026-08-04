@@ -56,6 +56,26 @@
 // item ball i is localId DUNGEON_ITEM_FIRST_LOCAL_ID + i.
 #define DUNGEON_ITEM_FIRST_LOCAL_ID (DUNGEON_MAX_TRAINERS + 1)
 
+// Hidden items. A DIFFERENT SEAM ENTIRELY: these are bg events, which the
+// engine never copies to the save block, so the template door the trainers,
+// the Unown and the item balls all go through does not reach them. They are
+// generated into EWRAM and gMapHeader.events is repointed at them.
+//
+// This is the only part of the item system that costs real RAM - 12 bytes per
+// placement - and it is what the dowsing machine has been waiting for.
+#define DUNGEON_MAX_HIDDEN              16
+#define DUNGEON_HIDDEN_MIN               2
+#define DUNGEON_HIDDEN_FLOORS_PER_EXTRA 16
+
+// The engine derives a hidden item's flag as
+// hiddenItemId + FLAG_HIDDEN_ITEMS_START, so the ids we choose ARE flags and
+// have to be ones nothing else owns. Vanilla's block runs 0x00..0x6F, and
+// 0x1F4 + 0x70 lands exactly on FLAG_UNUSED_0x264 with a long free run after
+// it. A collision here would mark a vanilla hidden item collected on a save
+// that never visited Hoenn, so rogue_dungeon.c asserts the arithmetic rather
+// than trusting this comment.
+#define DUNGEON_HIDDEN_FIRST_ID 0x70
+
 // Run lifecycle. A run needs starters on a new game and again after a whiteout,
 // which is what makes a loss send the player back to the beginning.
 #define VAR_ROGUE_RUN_STATE      VAR_UNUSED_0x40F7

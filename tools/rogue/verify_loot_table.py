@@ -78,12 +78,12 @@ def constant(name, default=None):
     return int(m.group(1))
 
 
-def parse_table():
+def parse_table(name='sLootConsumables'):
     """-> [(item, weight, minFloor, maxFloor, quantity)] from the C initialiser."""
     text = SOURCE.read_text(encoding='utf-8')
-    m = re.search(r'sLootConsumables\[\]\s*=\s*\{(.*?)\n\};', text, re.S)
+    m = re.search(rf'{name}\[\]\s*=\s*\{{(.*?)\n\}};', text, re.S)
     if not m:
-        raise SystemExit('cannot find sLootConsumables in rogue_dungeon.c')
+        raise SystemExit(f'cannot find {name} in rogue_dungeon.c')
 
     rows = []
     for line in m.group(1).splitlines():
@@ -184,12 +184,72 @@ def main(argv):
         print(f'{floor:>5}  {np_:>3}  {nr:>3}  {nu:>4}  {balls:>5}  '
               f'{per_ball:>8.1f}  {per_floor:>9.1f}')
 
+    failures.extend(check_held(total_floors))
+
     print()
     if failures:
         for f in failures:
             print(f'FAIL  {f}')
         raise SystemExit(f'{len(failures)} problem(s)')
     print(f'ok - potion healing rises monotonically, floor 0 to {total_floors - 1}')
+    print('ok - held items always available, and the best tier never regresses')
+
+
+# Held items are graded rather than scored: there is no HP number to average, and
+# inventing one would be the same mistake the potion metric already made. What
+# has to hold is that a floor always has SOMETHING worth picking up and that the
+# ceiling never drops - a run should not pass a floor where the best possible
+# find is worse than one it already walked through.
+HELD_TIER = {
+    'ITEM_QUICK_CLAW': 1, 'ITEM_SHELL_BELL': 1, 'ITEM_SITRUS_BERRY': 1,
+    'ITEM_EVIOLITE': 2, 'ITEM_MUSCLE_BAND': 2, 'ITEM_WISE_GLASSES': 2,
+    'ITEM_SCOPE_LENS': 2,
+    'ITEM_FOCUS_SASH': 3, 'ITEM_ROCKY_HELMET': 3, 'ITEM_EXPERT_BELT': 3,
+    'ITEM_AIR_BALLOON': 3, 'ITEM_CHOICE_SCARF': 3, 'ITEM_CHOICE_BAND': 3,
+    'ITEM_CHOICE_SPECS': 3, 'ITEM_ASSAULT_VEST': 3, 'ITEM_LIFE_ORB': 3,
+    'ITEM_LEFTOVERS': 3,
+}
+
+
+def check_held(total_floors):
+    rows = parse_table('sLootHeld')
+    known = known_items()
+    failures = []
+
+    for item, weight, lo, hi, qty in rows:
+        if item not in known:
+            failures.append(f'held {item} is not in constants/items.h')
+        if item not in HELD_TIER:
+            failures.append(f'held {item} is ungraded in this script')
+        if lo >= hi:
+            failures.append(f'held {item} band {lo}..{hi} is empty')
+        if lo >= total_floors:
+            failures.append(f'held {item} arrives on floor {lo}, past the last floor')
+        if weight == 0 or qty == 0:
+            failures.append(f'held {item} has zero weight or quantity')
+    if failures:
+        return failures
+
+    best_seen = 0
+    samples = []
+    for floor in range(total_floors):
+        band = [r for r in rows if r[2] <= floor < r[3]]
+        if not band or sum(r[1] for r in band) == 0:
+            failures.append(f'floor {floor} has no held item in band')
+            continue
+        best = max(HELD_TIER[r[0]] for r in band)
+        if best < best_seen:
+            failures.append(f'floor {floor}: best held tier fell {best_seen} -> {best}')
+        best_seen = max(best_seen, best)
+        if floor % 20 == 0 or floor == total_floors - 1:
+            samples.append((floor, len(band), best))
+
+    print()
+    print(f'{len(rows)} held entries')
+    print('floor  in band  best tier')
+    for floor, n, best in samples:
+        print(f'{floor:>5}  {n:>7}  {best:>9}')
+    return failures
 
 
 if __name__ == '__main__':
