@@ -495,22 +495,32 @@ static const struct LevelUpMove sPichuLevelUpLearnset[] = {
 };
 #endif //P_GEN_2_CROSS_EVOS
 
+// ROGUELIKE OVERRIDE - not the vanilla Gen 9 learnset. Pikachu's attacking
+// ladder was already fine and is untouched from Feint onwards; what was wrong
+// was the opening. Nine moves at level 1 meant only the last four survived the
+// initial moveset, and a level 10 Pikachu started on Thunder Shock plus three
+// status moves with Nuzzle and Quick Attack shoved out of his own list.
+//
+// Cut to four, and Electro Ball and Double Team swapped so the level 8 slot is
+// an attack rather than evasion. That lands him on Nuzzle, Thunder Shock,
+// Thunder Wave and Electro Ball - three Electric attacks, and Electro Ball is
+// the one that most wants his Speed 90 behind it.
+//
+// Charm, Sweet Kiss, Play Nice and Tail Whip are what went. Nasty Plot is too
+// good to lose so it moved to 24 alongside Agility, where a setup move belongs
+// anyway.
 static const struct LevelUpMove sPikachuLevelUpLearnset[] = {
-    LEVEL_UP_MOVE( 1, MOVE_NUZZLE),
-    LEVEL_UP_MOVE( 1, MOVE_NASTY_PLOT),
-    LEVEL_UP_MOVE( 1, MOVE_CHARM),
-    LEVEL_UP_MOVE( 1, MOVE_SWEET_KISS),
-    LEVEL_UP_MOVE( 1, MOVE_PLAY_NICE),
-    LEVEL_UP_MOVE( 1, MOVE_QUICK_ATTACK),
-    LEVEL_UP_MOVE( 1, MOVE_TAIL_WHIP),
-    LEVEL_UP_MOVE( 1, MOVE_THUNDER_SHOCK),
     LEVEL_UP_MOVE( 1, MOVE_GROWL),
+    LEVEL_UP_MOVE( 1, MOVE_QUICK_ATTACK),
+    LEVEL_UP_MOVE( 1, MOVE_NUZZLE),
+    LEVEL_UP_MOVE( 1, MOVE_THUNDER_SHOCK),
     LEVEL_UP_MOVE( 4, MOVE_THUNDER_WAVE),
-    LEVEL_UP_MOVE( 8, MOVE_DOUBLE_TEAM),
-    LEVEL_UP_MOVE(12, MOVE_ELECTRO_BALL),
+    LEVEL_UP_MOVE( 8, MOVE_ELECTRO_BALL),
+    LEVEL_UP_MOVE(12, MOVE_DOUBLE_TEAM),
     LEVEL_UP_MOVE(16, MOVE_FEINT),
     LEVEL_UP_MOVE(20, MOVE_SPARK),
     LEVEL_UP_MOVE(24, MOVE_AGILITY),
+    LEVEL_UP_MOVE(24, MOVE_NASTY_PLOT),
     LEVEL_UP_MOVE(28, MOVE_IRON_TAIL),
     LEVEL_UP_MOVE(32, MOVE_DISCHARGE),
     LEVEL_UP_MOVE(36, MOVE_THUNDERBOLT),
