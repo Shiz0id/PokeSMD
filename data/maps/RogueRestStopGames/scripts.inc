@@ -16,12 +16,15 @@
 	.set REST_PRIZE_RESTORE_COST, 200
 	.set REST_PRIZE_REVIVE_COST,  500
 
-	@ The Moon Stone is the counter's one evolution item, and it is here
-	@ because Clefairy evolves by stone and by nothing else - the buried
-	@ drop is chance, this is the way to go and BUY one. Priced under the
-	@ Max Revive because it is useless to most picks and a Clefairy run
-	@ should not have to choose between evolving and staying alive.
-	.set REST_PRIZE_MOON_STONE_COST, 400
+	@ Every evolution stone costs the same, deliberately. A stone is worth
+	@ exactly one thing - the pick that needs it - and pricing them by how
+	@ good the resulting Pokemon is would tax a player for their starter
+	@ choice. One number, ten stones, no exceptions.
+	@
+	@ Set above the Max Revive because a stone is permanent and the buried
+	@ drop already hands them out for free; this is the counter for a run
+	@ that got unlucky, not the cheap way to get one.
+	.set REST_PRIZE_STONE_COST, 1000
 
 RogueRestStopGames_MapScripts::
 	.byte 0
@@ -113,13 +116,41 @@ RogueRestStopGames_EventScript_PrizeClerk::
 	message RogueRestStopGames_Text_PrizeOffer
 	waitmessage
 	showcoinsbox 1, 6
-	dynmultichoice 0, 0, TRUE, 4, 0, DYN_MULTICHOICE_CB_NONE, RogueRestStopGames_Text_PrizeCandy, RogueRestStopGames_Text_PrizeRestore, RogueRestStopGames_Text_PrizeRevive, RogueRestStopGames_Text_PrizeMoonStone, RogueRestStopGames_Text_PrizeNothing
+	dynmultichoice 0, 0, TRUE, 4, 0, DYN_MULTICHOICE_CB_NONE, RogueRestStopGames_Text_PrizeCandy, RogueRestStopGames_Text_PrizeRestore, RogueRestStopGames_Text_PrizeRevive, RogueRestStopGames_Text_PrizeStones, RogueRestStopGames_Text_PrizeNothing
 	switch VAR_RESULT
 	case 0, RogueRestStopGames_EventScript_PrizeCandy
 	case 1, RogueRestStopGames_EventScript_PrizeRestore
 	case 2, RogueRestStopGames_EventScript_PrizeRevive
-	case 3, RogueRestStopGames_EventScript_PrizeMoonStone
+	case 3, RogueRestStopGames_EventScript_PrizeStoneMenu
 	goto RogueRestStopGames_EventScript_PrizeDone
+	end
+
+@ The ten evolution stones, behind one entry so the top menu stays four items
+@ long. The item is DERIVED from the menu index rather than branched on:
+@ ITEM_FIRE_STONE + index, which is why the order below is item order and not
+@ any prettier arrangement. rogue_dungeon.c STATIC_ASSERTs that the ten are
+@ still contiguous in exactly this order, because nothing in this file can
+@ check itself and a silent off-by-one here sells the wrong stone.
+RogueRestStopGames_EventScript_PrizeStoneMenu::
+	message RogueRestStopGames_Text_StoneOffer
+	waitmessage
+	dynmultichoice 0, 0, TRUE, 4, 0, DYN_MULTICHOICE_CB_NONE, RogueRestStopGames_Text_StoneFire, RogueRestStopGames_Text_StoneWater, RogueRestStopGames_Text_StoneThunder, RogueRestStopGames_Text_StoneLeaf, RogueRestStopGames_Text_StoneIce, RogueRestStopGames_Text_StoneSun, RogueRestStopGames_Text_StoneMoon, RogueRestStopGames_Text_StoneShiny, RogueRestStopGames_Text_StoneDusk, RogueRestStopGames_Text_StoneDawn, RogueRestStopGames_Text_PrizeNothing
+	@ 10 is the Nothing row; B returns MULTI_B_PRESSED, which is also >= 10.
+	goto_if_ge VAR_RESULT, 10, RogueRestStopGames_EventScript_PrizeDone
+	copyvar VAR_TEMP_2, VAR_RESULT
+	addvar VAR_TEMP_2, ITEM_FIRE_STONE
+	goto RogueRestStopGames_EventScript_BuyStone
+	end
+
+RogueRestStopGames_EventScript_BuyStone::
+	checkcoins VAR_TEMP_1
+	goto_if_lt VAR_TEMP_1, REST_PRIZE_STONE_COST, RogueRestStopGames_EventScript_NotEnoughCoins
+	checkitemspace VAR_TEMP_2, 1
+	goto_if_eq VAR_RESULT, FALSE, RogueRestStopGames_EventScript_NoRoom
+	removecoins REST_PRIZE_STONE_COST
+	updatecoinsbox 1, 6
+	giveitem VAR_TEMP_2
+	goto RogueRestStopGames_EventScript_PrizeGiven
 	end
 
 RogueRestStopGames_EventScript_PrizeCandy::
@@ -152,17 +183,6 @@ RogueRestStopGames_EventScript_PrizeRevive::
 	removecoins REST_PRIZE_REVIVE_COST
 	updatecoinsbox 1, 6
 	giveitem ITEM_MAX_REVIVE
-	goto RogueRestStopGames_EventScript_PrizeGiven
-	end
-
-RogueRestStopGames_EventScript_PrizeMoonStone::
-	checkcoins VAR_TEMP_1
-	goto_if_lt VAR_TEMP_1, REST_PRIZE_MOON_STONE_COST, RogueRestStopGames_EventScript_NotEnoughCoins
-	checkitemspace ITEM_MOON_STONE
-	goto_if_eq VAR_RESULT, FALSE, RogueRestStopGames_EventScript_NoRoom
-	removecoins REST_PRIZE_MOON_STONE_COST
-	updatecoinsbox 1, 6
-	giveitem ITEM_MOON_STONE
 	goto RogueRestStopGames_EventScript_PrizeGiven
 	end
 
@@ -308,8 +328,43 @@ RogueRestStopGames_Text_PrizeRestore:
 RogueRestStopGames_Text_PrizeRevive:
 	.string "Max Revive - 500$"
 
-RogueRestStopGames_Text_PrizeMoonStone:
-	.string "Moon Stone - 400$"
+RogueRestStopGames_Text_PrizeStones:
+	.string "Evolution stones$"
+
+RogueRestStopGames_Text_StoneOffer:
+	.string "Every stone, same price.\p"
+	.string "Which one is yours?$"
+
+@ Order matters - see RogueRestStopGames_EventScript_PrizeStoneMenu.
+RogueRestStopGames_Text_StoneFire:
+	.string "Fire Stone - 1000$"
+
+RogueRestStopGames_Text_StoneWater:
+	.string "Water Stone - 1000$"
+
+RogueRestStopGames_Text_StoneThunder:
+	.string "Thunder Stone - 1000$"
+
+RogueRestStopGames_Text_StoneLeaf:
+	.string "Leaf Stone - 1000$"
+
+RogueRestStopGames_Text_StoneIce:
+	.string "Ice Stone - 1000$"
+
+RogueRestStopGames_Text_StoneSun:
+	.string "Sun Stone - 1000$"
+
+RogueRestStopGames_Text_StoneMoon:
+	.string "Moon Stone - 1000$"
+
+RogueRestStopGames_Text_StoneShiny:
+	.string "Shiny Stone - 1000$"
+
+RogueRestStopGames_Text_StoneDusk:
+	.string "Dusk Stone - 1000$"
+
+RogueRestStopGames_Text_StoneDawn:
+	.string "Dawn Stone - 1000$"
 
 RogueRestStopGames_Text_PrizeNothing:
 	.string "Nothing$"

@@ -516,6 +516,16 @@ static const struct LevelUpMove sPikachuLevelUpLearnset[] = {
     LEVEL_UP_MOVE(36, MOVE_THUNDERBOLT),
     LEVEL_UP_MOVE(40, MOVE_LIGHT_SCREEN),
     LEVEL_UP_MOVE(44, MOVE_THUNDER),
+    // ROGUELIKE ADDITION - vanilla makes Volt Tackle a Pichu egg move, which
+    // needs breeding and a Light Ball, and a run has neither. It is Pikachu's
+    // signature everywhere it appears, so it is his by level here.
+    //
+    // Deliberately NOT on Raichu's list. That is the whole point: staying
+    // unevolved is what buys it. The trade is real rather than a formality,
+    // because holding a 320 BST stage 1 all the way to level 48 costs a large
+    // stretch of a run where every other pick is around 530 - and evolving
+    // afterwards keeps the move, so the cost is the waiting, not the choice.
+    LEVEL_UP_MOVE(48, MOVE_VOLT_TACKLE),
     LEVEL_UP_END
 };
 

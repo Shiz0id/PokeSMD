@@ -3229,6 +3229,41 @@ static const struct RogueLootEntry sLootHeld[] =
     { ITEM_LEFTOVERS,     10,  70, 255, 1 },
 };
 
+// What can be buried that is not a held item. Deliberately just the two the
+// starter roster needs - Clefairy and Pikachu both evolve by stone and by
+// nothing else - because this list is picked from UNIFORMLY and every entry
+// added divides the rate of the ones already here. The rest stop's counter
+// stocks all ten stones instead, where a wide shelf costs nobody anything.
+//
+// No bands and no weights: a stone does not get better with depth and does not
+// retire, so the banded struct the three loot tables share would be four
+// fields of pretending. See DUNGEON_STONE_ODDS.
+static const u16 sBuriedStones[] =
+{
+    ITEM_MOON_STONE,        // Clefairy -> Clefable
+    ITEM_THUNDER_STONE,     // Pikachu -> Raichu, and Eevee -> Jolteon
+};
+
+// The rest stop's stone counter has no table of its own: it derives the item
+// from the menu row, ITEM_FIRE_STONE + index, so its eleven-entry
+// dynmultichoice costs one line instead of ten near-identical buy scripts.
+// That only holds while the ten stones stay contiguous and in this order.
+//
+// A .inc cannot check itself and nothing else reads it, so the arithmetic is
+// asserted here rather than trusted to the comment beside it - the same reason
+// DUNGEON_HIDDEN_FIRST_ID is asserted above. Reordering items.h would
+// otherwise silently sell the wrong stone, which is the kind of bug that
+// survives a playthrough.
+STATIC_ASSERT(ITEM_WATER_STONE   == ITEM_FIRE_STONE + 1, RogueStoneOrderWater);
+STATIC_ASSERT(ITEM_THUNDER_STONE == ITEM_FIRE_STONE + 2, RogueStoneOrderThunder);
+STATIC_ASSERT(ITEM_LEAF_STONE    == ITEM_FIRE_STONE + 3, RogueStoneOrderLeaf);
+STATIC_ASSERT(ITEM_ICE_STONE     == ITEM_FIRE_STONE + 4, RogueStoneOrderIce);
+STATIC_ASSERT(ITEM_SUN_STONE     == ITEM_FIRE_STONE + 5, RogueStoneOrderSun);
+STATIC_ASSERT(ITEM_MOON_STONE    == ITEM_FIRE_STONE + 6, RogueStoneOrderMoon);
+STATIC_ASSERT(ITEM_SHINY_STONE   == ITEM_FIRE_STONE + 7, RogueStoneOrderShiny);
+STATIC_ASSERT(ITEM_DUSK_STONE    == ITEM_FIRE_STONE + 8, RogueStoneOrderDusk);
+STATIC_ASSERT(ITEM_DAWN_STONE    == ITEM_FIRE_STONE + 9, RogueStoneOrderDawn);
+
 // What grows on the themes that have soil. Same banded shape as the other two,
 // and named by ITEM rather than by berry id so it reads like them and so
 // verify_loot_table.py can check the names against constants/items.h;
@@ -3311,17 +3346,19 @@ static void PlaceHiddenItems(u16 floor)
     u32 count = DUNGEON_HIDDEN_MIN + floor / DUNGEON_HIDDEN_FLOORS_PER_EXTRA;
     const struct RogueDungeonTheme *theme = ThemeForFloor(floor);
     u32 i, j;
-    bool32 buryMoonStone;
+    bool32 buryStone;
+    u16 stone;
 
     sHiddenCount = 0;
 
-    // Rolled before the early returns and before the loop, so the draw is one
-    // fixed step of the floor's stream rather than a step that depends on how
-    // many placements collided. The floor test comes second for the same
-    // reason: && would short-circuit past the draw on floors 1-3 and shift
-    // every later roll on those floors.
-    buryMoonStone = ((DungeonRandom() % DUNGEON_MOONSTONE_ODDS) == 0)
-                 && (floor >= DUNGEON_MOONSTONE_FIRST_FLOOR);
+    // Both draws happen before the early returns and before the loop, so they
+    // are two fixed steps of the floor's stream rather than steps that depend
+    // on how many placements collided. The floor test comes second in the
+    // condition for the same reason: && would short-circuit past the draw on
+    // floors 1-3 and shift every later roll on those floors.
+    buryStone = ((DungeonRandom() % DUNGEON_STONE_ODDS) == 0)
+             && (floor >= DUNGEON_STONE_FIRST_FLOOR);
+    stone = sBuriedStones[DungeonRandom() % ARRAY_COUNT(sBuriedStones)];
 
     if (sRoomCount == 0)
         return;
@@ -3391,9 +3428,9 @@ static void PlaceHiddenItems(u16 floor)
 
         // sHiddenCount rather than i, so a floor whose first few candidate
         // positions collided still buries the stone rather than losing it.
-        if (buryMoonStone && sHiddenCount == 0)
+        if (buryStone && sHiddenCount == 0)
         {
-            item = ITEM_MOON_STONE;
+            item = stone;
             quantity = 1;
         }
         else

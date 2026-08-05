@@ -3952,12 +3952,22 @@ const struct SpeciesInfo gSpeciesInfoGen1[] =
 
     [SPECIES_RAICHU] =
     {
-        .baseHP        = 60,
+        // ROGUELIKE OVERRIDE - not vanilla, and the same treatment Clefable
+        // got, for the same reason: Pikachu is a starter pick, Raichu is a
+        // single stone evolution with no second stage, and 485 sat 40-50 short
+        // of the trio-final band of 525-535. 485 -> 530.
+        //
+        // Every point goes into bulk - HP 60 -> 80, Defense 55 -> 70,
+        // SpDefense 80 -> 90 - because Speed 110 and the two 90 offences were
+        // already at or above what a starter final has. What Raichu lacked was
+        // any ability to take a hit, which in a mode where losing ends the run
+        // is the stat that decides whether a pick is usable.
+        .baseHP        = 80,
         .baseAttack    = 90,
-        .baseDefense   = 55,
-        .baseSpeed     = P_UPDATED_STATS >= GEN_6 ? 110 : 100,
+        .baseDefense   = 70,
+        .baseSpeed     = 110,
         .baseSpAttack  = 90,
-        .baseSpDefense = P_UPDATED_STATS >= GEN_2 ? 80 : 90,
+        .baseSpDefense = 90,
         .types = MON_TYPES(TYPE_ELECTRIC),
         .catchRate = 75,
         .expYield = RAICHU_EXP_YIELD,
@@ -4035,12 +4045,24 @@ const struct SpeciesInfo gSpeciesInfoGen1[] =
 #if P_ALOLAN_FORMS
     [SPECIES_RAICHU_ALOLA] =
     {
-        .baseHP        = 60,
+        // ROGUELIKE OVERRIDE - see SPECIES_RAICHU. 485 -> 530, the same +20 HP
+        // / +15 Defense / +10 SpDefense, so the two forms stay siblings rather
+        // than one being a trap. Their split is preserved exactly: Kanto keeps
+        // the 5 Attack and 5 Defense, Alolan keeps the 5 SpAttack and 5
+        // SpDefense.
+        //
+        // Note this form is NOT reachable by evolving here - the vanilla
+        // {IF_REGION, REGION_ALOLA} condition on Pikachu is untouched and the
+        // dungeon maps are Hoenn, so a Thunder Stone always gives Kanto
+        // Raichu. It is boosted anyway because a form-change NPC is planned,
+        // and stats that only get fixed when something is finally reachable
+        // are stats that get forgotten.
+        .baseHP        = 80,
         .baseAttack    = 85,
-        .baseDefense   = 50,
+        .baseDefense   = 65,
         .baseSpeed     = 110,
         .baseSpAttack  = 95,
-        .baseSpDefense = 85,
+        .baseSpDefense = 95,
         .types = MON_TYPES(TYPE_ELECTRIC, TYPE_PSYCHIC),
         .catchRate = 75,
         .expYield = (P_UPDATED_EXP_YIELDS >= GEN_8) ? 243 : 218,

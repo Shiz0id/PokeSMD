@@ -67,19 +67,26 @@
 #define DUNGEON_HIDDEN_MIN               2
 #define DUNGEON_HIDDEN_FLOORS_PER_EXTRA 16
 
-// The Moon Stone is the one buried thing that is not a held item, so it does
-// not live in sLootHeld: that table is graded by tier and checked for a
-// ceiling that never drops, and an evolution stone has no place on that ladder.
-// It gets a slot of its own instead - at most the first buried item on a floor,
-// one floor in DUNGEON_MOONSTONE_ODDS, from DUNGEON_MOONSTONE_FIRST_FLOOR.
+// Evolution stones are the one buried thing that is not a held item, so they
+// do not live in sLootHeld: that table is graded by tier and checked for a
+// ceiling that never drops, and a stone has no place on that ladder. They get
+// a slot of their own instead - at most the first buried item on a floor, one
+// floor in DUNGEON_STONE_ODDS, from DUNGEON_STONE_FIRST_FLOOR.
 //
-// It is here because Clefairy evolves by stone and by nothing else, so without
-// this a Clefairy pick is locked at a stage-1 statline for all 115 floors. The
-// odds are deliberately generous rather than precious - the stone is dead
-// weight to most picks, and a Clefairy run that never finds one is the whole
-// bug this closes.
-#define DUNGEON_MOONSTONE_FIRST_FLOOR    4
-#define DUNGEON_MOONSTONE_ODDS          14
+// They are here because Clefairy and Pikachu evolve by stone and by nothing
+// else, so without this those picks are locked at a stage-1 statline for all
+// 115 floors. The odds are deliberately generous rather than precious - a
+// stone is dead weight to most picks, and a Clefairy run that never finds one
+// is the whole bug this closes.
+//
+// ODDS IS PER FLOOR, NOT PER STONE, and sBuriedStones is picked from
+// uniformly - so adding a stone to that table DIVIDES the rate of every stone
+// already in it. Two stones at 1-in-7 is what keeps each of them at the
+// 1-in-14 the Clefairy fix was measured against; the shop stocks all ten
+// because a shelf can be wide without changing anyone's odds of finding the
+// one thing that makes their pick work.
+#define DUNGEON_STONE_FIRST_FLOOR    4
+#define DUNGEON_STONE_ODDS           7
 
 // The engine derives a hidden item's flag as
 // hiddenItemId + FLAG_HIDDEN_ITEMS_START, so the ids we choose ARE flags and
