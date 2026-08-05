@@ -3311,8 +3311,17 @@ static void PlaceHiddenItems(u16 floor)
     u32 count = DUNGEON_HIDDEN_MIN + floor / DUNGEON_HIDDEN_FLOORS_PER_EXTRA;
     const struct RogueDungeonTheme *theme = ThemeForFloor(floor);
     u32 i, j;
+    bool32 buryMoonStone;
 
     sHiddenCount = 0;
+
+    // Rolled before the early returns and before the loop, so the draw is one
+    // fixed step of the floor's stream rather than a step that depends on how
+    // many placements collided. The floor test comes second for the same
+    // reason: && would short-circuit past the draw on floors 1-3 and shift
+    // every later roll on those floors.
+    buryMoonStone = ((DungeonRandom() % DUNGEON_MOONSTONE_ODDS) == 0)
+                 && (floor >= DUNGEON_MOONSTONE_FIRST_FLOOR);
 
     if (sRoomCount == 0)
         return;
@@ -3380,7 +3389,17 @@ static void PlaceHiddenItems(u16 floor)
         if (j != sHiddenCount)
             continue;
 
-        RollFromTable(sLootHeld, ARRAY_COUNT(sLootHeld), floor, &item, &quantity);
+        // sHiddenCount rather than i, so a floor whose first few candidate
+        // positions collided still buries the stone rather than losing it.
+        if (buryMoonStone && sHiddenCount == 0)
+        {
+            item = ITEM_MOON_STONE;
+            quantity = 1;
+        }
+        else
+        {
+            RollFromTable(sLootHeld, ARRAY_COUNT(sLootHeld), floor, &item, &quantity);
+        }
 
         sHiddenItems[sHiddenCount].x = x;
         sHiddenItems[sHiddenCount].y = y;

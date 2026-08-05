@@ -789,53 +789,67 @@ static const struct LevelUpMove sCleffaLevelUpLearnset[] = {
 };
 #endif //P_GEN_2_CROSS_EVOS
 
+// ROGUELIKE OVERRIDE - not the vanilla Gen 9 learnset. Clefairy is a starter
+// pick here, and vanilla gives her no new attack at all between Stored Power at
+// 4 and Meteor Mash at 32: a 28-level dead zone covering most of a run. The
+// ladder below is the starter cadence instead, something new every three
+// levels, ending on the same Moonblast.
+//
+// The level-1 list is cut from nine moves to four, because only the LAST four
+// survive the initial moveset. With nine, Disarming Voice was pushed out and a
+// level 10 Clefairy started with three status moves and 20 BP of Stored Power.
+// Splash, Sweet Kiss, Defense Curl, Copycat and Gravity are what went. Sing,
+// Metronome, Moonlight, Cosmic Power, Follow Me, After You, Life Dew and
+// Healing Wish all stay, because those are the ones that make her Clefairy.
 static const struct LevelUpMove sClefairyLevelUpLearnset[] = {
     LEVEL_UP_MOVE( 1, MOVE_POUND),
     LEVEL_UP_MOVE( 1, MOVE_GROWL),
-    LEVEL_UP_MOVE( 1, MOVE_SING),
-    LEVEL_UP_MOVE( 1, MOVE_DEFENSE_CURL),
-    LEVEL_UP_MOVE( 1, MOVE_DISARMING_VOICE),
-    LEVEL_UP_MOVE( 1, MOVE_SPLASH),
-    LEVEL_UP_MOVE( 1, MOVE_SWEET_KISS),
     LEVEL_UP_MOVE( 1, MOVE_CHARM),
-    LEVEL_UP_MOVE( 1, MOVE_COPYCAT),
-    LEVEL_UP_MOVE( 4, MOVE_STORED_POWER),
-    LEVEL_UP_MOVE( 8, MOVE_ENCORE),
-    LEVEL_UP_MOVE(12, MOVE_AFTER_YOU),
+    LEVEL_UP_MOVE( 1, MOVE_DISARMING_VOICE),
+    LEVEL_UP_MOVE( 4, MOVE_SING),
+    LEVEL_UP_MOVE( 7, MOVE_STORED_POWER),
+    LEVEL_UP_MOVE(10, MOVE_SWIFT),
+    LEVEL_UP_MOVE(13, MOVE_DRAINING_KISS),
     LEVEL_UP_MOVE(16, MOVE_LIFE_DEW),
-    LEVEL_UP_MOVE(20, MOVE_METRONOME),
-    LEVEL_UP_MOVE(24, MOVE_MOONLIGHT),
-    LEVEL_UP_MOVE(28, MOVE_GRAVITY),
-    LEVEL_UP_MOVE(32, MOVE_METEOR_MASH),
-    LEVEL_UP_MOVE(36, MOVE_FOLLOW_ME),
-    LEVEL_UP_MOVE(40, MOVE_COSMIC_POWER),
-    LEVEL_UP_MOVE(44, MOVE_MOONBLAST),
+    LEVEL_UP_MOVE(19, MOVE_ENCORE),
+    LEVEL_UP_MOVE(22, MOVE_DAZZLING_GLEAM),
+    LEVEL_UP_MOVE(25, MOVE_MOONLIGHT),
+    LEVEL_UP_MOVE(28, MOVE_METRONOME),
+    LEVEL_UP_MOVE(31, MOVE_COSMIC_POWER),
+    LEVEL_UP_MOVE(34, MOVE_METEOR_MASH),
+    LEVEL_UP_MOVE(37, MOVE_FOLLOW_ME),
+    LEVEL_UP_MOVE(40, MOVE_MOONBLAST),
+    LEVEL_UP_MOVE(44, MOVE_AFTER_YOU),
     LEVEL_UP_MOVE(48, MOVE_HEALING_WISH),
     LEVEL_UP_END
 };
 
+// ROGUELIKE OVERRIDE - see above. Vanilla puts every Clefable move at level 1,
+// which means evolving grants nothing: the game teaches moves whose level
+// equals the mon's current level, and nothing here was ever above 1. Meteor
+// Mash, Moonblast, Follow Me and Healing Wish now sit at the same levels
+// Clefairy would have reached them, so a Moon Stone used early still pays out
+// as she levels rather than being a one-off stat jump.
 static const struct LevelUpMove sClefableLevelUpLearnset[] = {
     LEVEL_UP_MOVE( 1, MOVE_POUND),
     LEVEL_UP_MOVE( 1, MOVE_GROWL),
-    LEVEL_UP_MOVE( 1, MOVE_SING),
-    LEVEL_UP_MOVE( 1, MOVE_DEFENSE_CURL),
-    LEVEL_UP_MOVE( 1, MOVE_SPLASH),
-    LEVEL_UP_MOVE( 1, MOVE_SWEET_KISS),
     LEVEL_UP_MOVE( 1, MOVE_CHARM),
+    LEVEL_UP_MOVE( 1, MOVE_SING),
     LEVEL_UP_MOVE( 1, MOVE_ENCORE),
     LEVEL_UP_MOVE( 1, MOVE_MOONLIGHT),
-    LEVEL_UP_MOVE( 1, MOVE_FOLLOW_ME),
-    LEVEL_UP_MOVE( 1, MOVE_COSMIC_POWER),
-    LEVEL_UP_MOVE( 1, MOVE_GRAVITY),
-    LEVEL_UP_MOVE( 1, MOVE_HEALING_WISH),
-    LEVEL_UP_MOVE( 1, MOVE_COPYCAT),
-    LEVEL_UP_MOVE( 1, MOVE_AFTER_YOU),
-    LEVEL_UP_MOVE( 1, MOVE_STORED_POWER),
-    LEVEL_UP_MOVE( 1, MOVE_DISARMING_VOICE),
     LEVEL_UP_MOVE( 1, MOVE_METRONOME),
-    LEVEL_UP_MOVE( 1, MOVE_METEOR_MASH),
-    LEVEL_UP_MOVE( 1, MOVE_MOONBLAST),
     LEVEL_UP_MOVE( 1, MOVE_LIFE_DEW),
+    LEVEL_UP_MOVE( 1, MOVE_STORED_POWER),
+    LEVEL_UP_MOVE( 1, MOVE_SWIFT),
+    LEVEL_UP_MOVE( 1, MOVE_DRAINING_KISS),
+    LEVEL_UP_MOVE( 1, MOVE_COSMIC_POWER),
+    LEVEL_UP_MOVE( 1, MOVE_AFTER_YOU),
+    LEVEL_UP_MOVE( 1, MOVE_DISARMING_VOICE),
+    LEVEL_UP_MOVE( 1, MOVE_DAZZLING_GLEAM),
+    LEVEL_UP_MOVE(34, MOVE_METEOR_MASH),
+    LEVEL_UP_MOVE(37, MOVE_FOLLOW_ME),
+    LEVEL_UP_MOVE(40, MOVE_MOONBLAST),
+    LEVEL_UP_MOVE(48, MOVE_HEALING_WISH),
     LEVEL_UP_END
 };
 #endif //P_FAMILY_CLEFAIRY

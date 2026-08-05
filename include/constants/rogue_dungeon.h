@@ -67,6 +67,20 @@
 #define DUNGEON_HIDDEN_MIN               2
 #define DUNGEON_HIDDEN_FLOORS_PER_EXTRA 16
 
+// The Moon Stone is the one buried thing that is not a held item, so it does
+// not live in sLootHeld: that table is graded by tier and checked for a
+// ceiling that never drops, and an evolution stone has no place on that ladder.
+// It gets a slot of its own instead - at most the first buried item on a floor,
+// one floor in DUNGEON_MOONSTONE_ODDS, from DUNGEON_MOONSTONE_FIRST_FLOOR.
+//
+// It is here because Clefairy evolves by stone and by nothing else, so without
+// this a Clefairy pick is locked at a stage-1 statline for all 115 floors. The
+// odds are deliberately generous rather than precious - the stone is dead
+// weight to most picks, and a Clefairy run that never finds one is the whole
+// bug this closes.
+#define DUNGEON_MOONSTONE_FIRST_FLOOR    4
+#define DUNGEON_MOONSTONE_ODDS          14
+
 // The engine derives a hidden item's flag as
 // hiddenItemId + FLAG_HIDDEN_ITEMS_START, so the ids we choose ARE flags and
 // have to be ones nothing else owns. Vanilla's block runs 0x00..0x6F, and

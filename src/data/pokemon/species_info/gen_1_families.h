@@ -5062,12 +5062,20 @@ const struct SpeciesInfo gSpeciesInfoGen1[] =
 
     [SPECIES_CLEFAIRY] =
     {
+        // ROGUELIKE OVERRIDE - these are not vanilla numbers. Clefairy is a
+        // starter pick here, the Pokemon Pink half of the single-partner nod,
+        // so the line is raised to starter power: 323 -> 340, ahead of every
+        // trio stage 1 (307-320) and level with Eevee's 325. The gain goes to
+        // SpAttack and Speed, her two worst stats for the role, and leaves the
+        // HP and SpDefense bulk that is the reason to pick her. The ternaries
+        // are gone because these values no longer track a vanilla generation.
+        // Clefable takes the larger share - see there.
         .baseHP        = 70,
         .baseAttack    = 45,
-        .baseDefense   = 48,
-        .baseSpeed     = 35,
-        .baseSpAttack  = 60,
-        .baseSpDefense = P_UPDATED_STATS >= GEN_2 ? 65 : 60,
+        .baseDefense   = 50,
+        .baseSpeed     = 40,
+        .baseSpAttack  = 70,
+        .baseSpDefense = 65,
         .types = CLEFAIRY_FAMILY_TYPES,
         .catchRate = 150,
         .expYield = (P_UPDATED_EXP_YIELDS >= GEN_5) ? 113 : 68,
@@ -5136,12 +5144,19 @@ const struct SpeciesInfo gSpeciesInfoGen1[] =
 
     [SPECIES_CLEFABLE] =
     {
+        // ROGUELIKE OVERRIDE - see SPECIES_CLEFAIRY. 483 -> 530, which lands
+        // inside the trio-final band of 525-535 rather than 45 short of it.
+        // Speed 60 -> 70 clears the band's floor, SpAttack 95 -> 110 makes her
+        // the special attacker the Fairy typing implies, and Defense 73 -> 85
+        // firms up the one side of her bulk that lagged. No stat exceeds
+        // SPECIES_CLEFABLE_MEGA's, which is the ceiling this line should not
+        // pass unaided; HP and Speed now equal it, the rest stay under.
         .baseHP        = 95,
-        .baseAttack    = 70,
-        .baseDefense   = 73,
-        .baseSpeed     = 60,
-        .baseSpAttack  = P_UPDATED_STATS >= GEN_6 ? 95 : 85,
-        .baseSpDefense = P_UPDATED_STATS >= GEN_2 ? 90 : 85,
+        .baseAttack    = 75,
+        .baseDefense   = 85,
+        .baseSpeed     = 70,
+        .baseSpAttack  = 110,
+        .baseSpDefense = 95,
         .types = CLEFAIRY_FAMILY_TYPES,
         .catchRate = 25,
     #if P_UPDATED_EXP_YIELDS >= GEN_8

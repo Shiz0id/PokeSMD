@@ -16,6 +16,13 @@
 	.set REST_PRIZE_RESTORE_COST, 200
 	.set REST_PRIZE_REVIVE_COST,  500
 
+	@ The Moon Stone is the counter's one evolution item, and it is here
+	@ because Clefairy evolves by stone and by nothing else - the buried
+	@ drop is chance, this is the way to go and BUY one. Priced under the
+	@ Max Revive because it is useless to most picks and a Clefairy run
+	@ should not have to choose between evolving and staying alive.
+	.set REST_PRIZE_MOON_STONE_COST, 400
+
 RogueRestStopGames_MapScripts::
 	.byte 0
 
@@ -106,11 +113,12 @@ RogueRestStopGames_EventScript_PrizeClerk::
 	message RogueRestStopGames_Text_PrizeOffer
 	waitmessage
 	showcoinsbox 1, 6
-	dynmultichoice 0, 0, TRUE, 4, 0, DYN_MULTICHOICE_CB_NONE, RogueRestStopGames_Text_PrizeCandy, RogueRestStopGames_Text_PrizeRestore, RogueRestStopGames_Text_PrizeRevive, RogueRestStopGames_Text_PrizeNothing
+	dynmultichoice 0, 0, TRUE, 4, 0, DYN_MULTICHOICE_CB_NONE, RogueRestStopGames_Text_PrizeCandy, RogueRestStopGames_Text_PrizeRestore, RogueRestStopGames_Text_PrizeRevive, RogueRestStopGames_Text_PrizeMoonStone, RogueRestStopGames_Text_PrizeNothing
 	switch VAR_RESULT
 	case 0, RogueRestStopGames_EventScript_PrizeCandy
 	case 1, RogueRestStopGames_EventScript_PrizeRestore
 	case 2, RogueRestStopGames_EventScript_PrizeRevive
+	case 3, RogueRestStopGames_EventScript_PrizeMoonStone
 	goto RogueRestStopGames_EventScript_PrizeDone
 	end
 
@@ -144,6 +152,17 @@ RogueRestStopGames_EventScript_PrizeRevive::
 	removecoins REST_PRIZE_REVIVE_COST
 	updatecoinsbox 1, 6
 	giveitem ITEM_MAX_REVIVE
+	goto RogueRestStopGames_EventScript_PrizeGiven
+	end
+
+RogueRestStopGames_EventScript_PrizeMoonStone::
+	checkcoins VAR_TEMP_1
+	goto_if_lt VAR_TEMP_1, REST_PRIZE_MOON_STONE_COST, RogueRestStopGames_EventScript_NotEnoughCoins
+	checkitemspace ITEM_MOON_STONE
+	goto_if_eq VAR_RESULT, FALSE, RogueRestStopGames_EventScript_NoRoom
+	removecoins REST_PRIZE_MOON_STONE_COST
+	updatecoinsbox 1, 6
+	giveitem ITEM_MOON_STONE
 	goto RogueRestStopGames_EventScript_PrizeGiven
 	end
 
@@ -288,6 +307,9 @@ RogueRestStopGames_Text_PrizeRestore:
 
 RogueRestStopGames_Text_PrizeRevive:
 	.string "Max Revive - 500$"
+
+RogueRestStopGames_Text_PrizeMoonStone:
+	.string "Moon Stone - 400$"
 
 RogueRestStopGames_Text_PrizeNothing:
 	.string "Nothing$"
