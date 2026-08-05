@@ -727,6 +727,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_WOODS,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        .mapSecId = MAPSEC_ROGUE_WOODS,
         .berries = TRUE,   // open sky and soil
         .generator = DUNGEON_GEN_WOODS,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
@@ -767,6 +768,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_FLOOR,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        .mapSecId = MAPSEC_ROGUE_CAVE,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
@@ -808,6 +810,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_NEWMAUVILLE,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        .mapSecId = MAPSEC_ROGUE_NEWMAUVILLE,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
@@ -865,6 +868,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_FIERYPATH,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        .mapSecId = MAPSEC_ROGUE_FIERYPATH,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
@@ -912,6 +916,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_MIRAGETOWER,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        .mapSecId = MAPSEC_ROGUE_MIRAGETOWER,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
@@ -973,6 +978,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         // weather reaches battle only if it is added to that switch, and
         // WEATHER_PETALS is the one deliberately left out.
         .mapId = MAP_ROGUE_DUNGEON_RAIN,
+        .mapSecId = MAPSEC_ROGUE_JUNGLE,
 
         .berries = TRUE,   // open sky and soil
         .generator = DUNGEON_GEN_CAVE,   // the canopy tiles 1x1, unlike the woods
@@ -1041,6 +1047,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_OCEAN,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        .mapSecId = MAPSEC_ROGUE_OCEAN,
         .generator = DUNGEON_GEN_CAVE,   // the rock nine slice tiles 1x1
         // NOT DUNGEON_ELEVATION_FLOOR. Water is elevation 1 - see the note by
         // the constant. The walls are ordinary rock and stay at 0.
@@ -1123,6 +1130,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         // a map-header property and the header is read out of ROM, so it cannot
         // be faked the way the tileset swap is. See theme->mapId.
         .mapId = MAP_ROGUE_DUNGEON_UNDERWATER,
+        .mapSecId = MAPSEC_ROGUE_UNDERWATER,
 
         .generator = DUNGEON_GEN_CAVE,
 
@@ -1248,6 +1256,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_VRSIDNEY,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        .mapSecId = MAPSEC_ROGUE_VR_SIDNEY,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
@@ -1296,6 +1305,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_VRPHOEBE,
         .mapId = MAP_ROGUE_DUNGEON_FOG,
+        .mapSecId = MAPSEC_ROGUE_VR_PHOEBE,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
@@ -1349,6 +1359,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_LAPIS,
         .mapId = MAP_ROGUE_DUNGEON_SNOW,
+        .mapSecId = MAPSEC_ROGUE_VR_GLACIA,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
@@ -1399,6 +1410,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_VRDRAKE,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        .mapSecId = MAPSEC_ROGUE_VR_DRAKE,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
@@ -1466,6 +1478,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         // the fog and the snow do - and like those, the map is named for the
         // WEATHER rather than for this theme, so a later one can point here too.
         .mapId = MAP_ROGUE_DUNGEON_PETALS,
+        .mapSecId = MAPSEC_ROGUE_EVERGRANDE,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
@@ -1518,6 +1531,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_MURKYCAVE,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        .mapSecId = MAPSEC_ROGUE_MURKYCAVE,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
@@ -3713,6 +3727,14 @@ static void PrepareFloor(u16 seed)
     // initialises, so this is what swaps the dungeon between cave and woods.
     // mapLayoutId is deliberately left alone - every dispatch keys on it.
     gMapHeader.mapLayout = GetMapLayout(theme->layoutId);
+
+    // And the name on the banner, for the same reason and by the same trick.
+    // The section is a property of the MAP in map.json, but the themes share a
+    // map, so declaring it there named every non-override floor GRANITE CAVE -
+    // the woods, New Mauville, Fiery Path, Mirage Tower, the jungle and Ever
+    // Grande included. Patching the RAM header per floor is what lets fourteen
+    // themes have fourteen names without fourteen maps.
+    gMapHeader.regionMapSectionId = theme->mapSecId;
 
     SeedDungeonRng(seed);
     sRoomCount = 0;

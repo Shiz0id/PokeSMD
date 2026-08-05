@@ -1100,6 +1100,18 @@ struct RogueDungeonTheme
     // valid map id and a silent wrong map is a very confusing bug.
     u16 mapId;
 
+    // What the floor-entry banner calls this place. Written into
+    // gMapHeader.regionMapSectionId on every generate rather than declared in
+    // map.json, because almost every theme shares MAP_ROGUE_DUNGEON_FLOOR and a
+    // map declares exactly ONE section - so the json can only ever name one of
+    // them, and it named GRANITE CAVE for six themes that are not caves.
+    //
+    // Set it on EVERY theme rather than relying on a default: a designated
+    // initialiser leaves 0, and 0 is MAPSEC_LITTLEROOT_TOWN - a wrong answer
+    // that looks like a deliberate one. check_dungeon_names.py fails on any
+    // theme that does not name itself.
+    u8 mapSecId;
+
     u8 generator;
     u8 elevationFloor;
     u8 elevationWall;

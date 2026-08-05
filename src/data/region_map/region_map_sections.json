@@ -1630,6 +1630,118 @@
       "y": 4,
       "width": 1,
       "height": 1
+    },
+    {
+      "id": "MAPSEC_ROGUE_WOODS",
+      "name": "VERDANT WOOD",
+      "x": 0,
+      "y": 0,
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "MAPSEC_ROGUE_CAVE",
+      "name": "GRANITE DEPTHS",
+      "x": 0,
+      "y": 0,
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "MAPSEC_ROGUE_NEWMAUVILLE",
+      "name": "MAUVILLE RUINS",
+      "x": 0,
+      "y": 0,
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "MAPSEC_ROGUE_FIERYPATH",
+      "name": "SCORCHED PATH",
+      "x": 0,
+      "y": 0,
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "MAPSEC_ROGUE_MIRAGETOWER",
+      "name": "MIRAGE SPIRE",
+      "x": 0,
+      "y": 0,
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "MAPSEC_ROGUE_JUNGLE",
+      "name": "HOWLING JUNGLE",
+      "x": 0,
+      "y": 0,
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "MAPSEC_ROGUE_OCEAN",
+      "name": "TIDECREST SEA",
+      "x": 0,
+      "y": 0,
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "MAPSEC_ROGUE_UNDERWATER",
+      "name": "SEAFLOOR TRENCH",
+      "x": 0,
+      "y": 0,
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "MAPSEC_ROGUE_VR_SIDNEY",
+      "name": "DUSKFALL ROAD",
+      "x": 0,
+      "y": 0,
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "MAPSEC_ROGUE_VR_PHOEBE",
+      "name": "SHROUDED ROAD",
+      "x": 0,
+      "y": 0,
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "MAPSEC_ROGUE_VR_GLACIA",
+      "name": "FROSTBOUND ROAD",
+      "x": 0,
+      "y": 0,
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "MAPSEC_ROGUE_VR_DRAKE",
+      "name": "CINDERFALL ROAD",
+      "x": 0,
+      "y": 0,
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "MAPSEC_ROGUE_EVERGRANDE",
+      "name": "BLOSSOM TERRACE",
+      "x": 0,
+      "y": 0,
+      "width": 1,
+      "height": 1
+    },
+    {
+      "id": "MAPSEC_ROGUE_MURKYCAVE",
+      "name": "MURKWATER DEEP",
+      "x": 0,
+      "y": 0,
+      "width": 1,
+      "height": 1
     }
   ]
 }
