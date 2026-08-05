@@ -6,6 +6,7 @@
 #include "script.h"
 #include "string_util.h"
 #include "pokemon.h"
+#include "move.h"                   // GetMoveType/GetMoveCategory, for the starter fallback
 #include "wild_encounter.h"
 #include "battle_setup.h"
 #include "event_object_movement.h"
@@ -1823,7 +1824,9 @@ void RogueDungeon_GiveChosenStarter(void)
     u32 index = gSpecialVar_Result;
     u32 slot = CalculatePlayerPartyCount();
     struct Pokemon *mon;
-    u32 i;
+    u32 i, fallback, freeSlot, statusSlot;
+    bool32 known, hasOwnTypeAttack;
+    enum Type type1, type2;
 
     if (index >= ARRAY_COUNT(sRogueDungeonStarters) || slot >= PARTY_SIZE)
         return;
@@ -1833,31 +1836,62 @@ void RogueDungeon_GiveChosenStarter(void)
                            DUNGEON_STARTER_LEVEL, MAX_PER_STAT_IVS);
 
     // The elemental attack is a FALLBACK, not a guarantee to be forced in. With
-    // Gen 9 learnsets at level 10, 21 of the 27 starters already know it, and
+    // Gen 9 learnsets at level 10, 23 of the 30 picks already know it, and
     // adding it again both wasted a slot and - once all four were full, which
-    // the clamp below used to paper over - overwrote a real move with a
-    // duplicate. Squirtle lost Rapid Spin for a second Water Gun.
+    // an old clamp papered over - overwrote a real move with a duplicate.
+    // Squirtle lost Rapid Spin for a second Water Gun.
     //
-    // So: skip it if the species already knows it, and never displace an
-    // existing move to make room. Every starter reaches level 10 with a
-    // damaging move of its own type under these learnsets, so nothing is left
-    // unable to fight.
+    // So, in order: skip it if the species already knows it; otherwise take a
+    // free slot; otherwise displace a status move, but ONLY for a pick that
+    // would be left with no damaging move of its own type at all.
+    //
+    // That last case is not hypothetical and is why the rule is not simply
+    // "never displace". Clefairy learns Disarming Voice at level 1, but enough
+    // other level-1 moves follow it that the initial-moveset window keeps
+    // Charm, Copycat, Stored Power and Encore instead - three status moves and
+    // a 20 BP Psychic one that scales off boosts a level 10 does not have.
+    // With no free slot the fallback could never land, so the one Fairy-type
+    // that fights with a Fairy move arrived unable to use it. Every other pick
+    // in the table reaches level 10 holding a damaging move of its own type
+    // and so never reaches this branch. check_starter_moves.py grades all of
+    // it; run it after touching this table, DUNGEON_STARTER_LEVEL or
+    // P_LVL_UP_LEARNSETS.
+    fallback = sRogueDungeonStarters[index].move;
+    freeSlot = statusSlot = MAX_MON_MOVES;
+    known = hasOwnTypeAttack = FALSE;
+    type1 = GetSpeciesType(sRogueDungeonStarters[index].species, 0);
+    type2 = GetSpeciesType(sRogueDungeonStarters[index].species, 1);
+
     for (i = 0; i < MAX_MON_MOVES; i++)
     {
-        if (GetMonData(mon, MON_DATA_MOVE1 + i, NULL)
-            == sRogueDungeonStarters[index].move)
-            break;
-    }
-    if (i == MAX_MON_MOVES)
-    {
-        for (i = 0; i < MAX_MON_MOVES; i++)
+        u32 move = GetMonData(mon, MON_DATA_MOVE1 + i, NULL);
+
+        if (move == MOVE_NONE)
         {
-            if (GetMonData(mon, MON_DATA_MOVE1 + i, NULL) == MOVE_NONE)
-            {
-                SetMonMoveSlot(mon, sRogueDungeonStarters[index].move, i);
-                break;
-            }
+            if (freeSlot == MAX_MON_MOVES)
+                freeSlot = i;
         }
+        else if (move == fallback)
+        {
+            known = TRUE;
+        }
+        else if (GetMoveCategory(move) == DAMAGE_CATEGORY_STATUS)
+        {
+            if (statusSlot == MAX_MON_MOVES)
+                statusSlot = i;
+        }
+        else if (GetMoveType(move) == type1 || GetMoveType(move) == type2)
+        {
+            hasOwnTypeAttack = TRUE;
+        }
+    }
+
+    if (!known)
+    {
+        if (freeSlot != MAX_MON_MOVES)
+            SetMonMoveSlot(mon, fallback, freeSlot);
+        else if (!hasOwnTypeAttack && statusSlot != MAX_MON_MOVES)
+            SetMonMoveSlot(mon, fallback, statusSlot);
     }
 
     CalculateMonStats(mon);
