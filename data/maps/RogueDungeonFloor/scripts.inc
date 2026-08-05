@@ -165,10 +165,34 @@ RogueDungeonFloor_EventScript_RunComplete::
 
 @ Beating the gym leader ends the dungeon. The floor counter advances here, so
 @ leaving the rest stop generates the first floor of the next dungeon.
+@
+@ THE COORDINATES ARE NOT DECORATION. This was a bare `warp MAP_ROGUE_REST_STOP`
+@ - the only argument-less warp in the whole tree, against 140 that pass
+@ something - and bare is the one form that does not work.
+@
+@ formatwarp fills the missing x and y with -1, meaning "no coords given, use
+@ the map centre". ScrCmd_warp then runs those through VarGet, and
+@ VarGet(0xFFFF) is out of bounds: it indexes gSpecialVars[32767] on an array
+@ of 22 pointers, reads a pointer 131068 bytes past its end - out of
+@ event_scripts.o's own script data - and dereferences it. x and y come back as
+@ whatever was there.
+@
+@ SetWarpDestination then narrows them to s8. Negative, and the intended
+@ map-centre fallback still happens and nothing looks wrong; non-negative, and
+@ the player is placed at a junk tile outside a 17x13 room and stands in an
+@ endless field of border metatile with the music playing. Which one you get is
+@ FIXED FOR A GIVEN BUILD, because that address holds ordinary script data - so
+@ this hides indefinitely and then appears because an unrelated script grew and
+@ moved the bytes underneath it.
+@
+@ 8,6 is the centre of LAYOUT_ROGUE_REST_STOP and the arrival tile
+@ make_rest_stop.py already checks is open floor. Two arguments after the map
+@ are read as an x/y pair, and small literals survive VarGet because anything
+@ below VARS_START is returned as itself.
 RogueDungeonFloor_EventScript_ToRestStop::
 	msgbox RogueDungeonFloor_Text_GymCleared, MSGBOX_DEFAULT
 	addvar VAR_ROGUE_DUNGEON_FLOOR, 1
-	warp MAP_ROGUE_REST_STOP
+	warp MAP_ROGUE_REST_STOP, 8, 6
 	waitstate
 	end
 
