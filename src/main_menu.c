@@ -246,7 +246,7 @@ static void Task_NewGameBirchSpeech_ReturnFromNamingScreenShowTextbox(u8);
 static void MainMenu_FormatSavegamePlayer(void);
 static void MainMenu_FormatSavegamePokedex(void);
 static void MainMenu_FormatSavegameTime(void);
-static void MainMenu_FormatSavegameBadges(void);
+static void MainMenu_FormatSavegameRuns(void);
 
 // .rodata
 
@@ -277,7 +277,10 @@ static const u8 gText_MysteryEventsCantUse[] = _("MYSTERY EVENTS can't be used w
 static const u8 gText_ContinueMenuPlayer[] = _("PLAYER");
 static const u8 gText_ContinueMenuTime[] = _("TIME");
 static const u8 gText_ContinueMenuPokedex[] = _("POKéDEX");
-static const u8 gText_ContinueMenuBadges[] = _("BADGES");
+// Was BADGES. RogueDungeon_ApplyNewGameUnlocks sets all eight badge flags at
+// run start so high-level Pokemon obey, which made that field read 8 on every
+// save that has ever existed - a slot that could never say anything.
+static const u8 gText_ContinueMenuRuns[] = _("CLEARED");
 
 #define MENU_LEFT 2
 #define MENU_TOP_WIN0 1
@@ -2189,7 +2192,7 @@ static void MainMenu_FormatSavegameText(void)
     MainMenu_FormatSavegamePlayer();
     MainMenu_FormatSavegamePokedex();
     MainMenu_FormatSavegameTime();
-    MainMenu_FormatSavegameBadges();
+    MainMenu_FormatSavegameRuns();
 }
 
 static void MainMenu_FormatSavegamePlayer(void)
@@ -2230,20 +2233,29 @@ static void MainMenu_FormatSavegamePokedex(void)
     }
 }
 
-static void MainMenu_FormatSavegameBadges(void)
+// Finished runs, in the slot the badge count used to occupy. See
+// gText_ContinueMenuRuns for why that slot was free.
+//
+// This reads the save directly and needs nothing new to do it:
+// VAR_ROGUE_RUNS_COMPLETED lives in gSaveBlock1Ptr->vars[], LoadGameSave runs
+// during the intro before this screen exists, and VarGet is a plain
+// dereference with no dependency on being in the overworld.
+//
+// It survives a run ending, too - RogueDungeon_ResetRun clears the floor, the
+// party, the bag and the coins, but not the var block - so the number is a
+// property of the save file rather than of the run in progress, which is the
+// only reason it belongs on a save-select screen at all.
+//
+// Five digits because the counter saturates at 0xFFFF rather than wrapping,
+// and left-align because the printer right-aligns the result itself; leading
+// zeros here would print 00007.
+static void MainMenu_FormatSavegameRuns(void)
 {
     u8 str[0x20];
-    u8 badgeCount = 0;
-    u32 i;
 
-    for (i = FLAG_BADGE01_GET; i < FLAG_BADGE01_GET + NUM_BADGES; i++)
-    {
-        if (FlagGet(i))
-            badgeCount++;
-    }
-    StringExpandPlaceholders(gStringVar4, gText_ContinueMenuBadges);
+    StringExpandPlaceholders(gStringVar4, gText_ContinueMenuRuns);
     AddTextPrinterParameterized3(2, FONT_NORMAL, 0x6C, 33, sTextColor_MenuInfo, TEXT_SKIP_DRAW, gStringVar4);
-    ConvertIntToDecimalStringN(str, badgeCount, STR_CONV_MODE_LEADING_ZEROS, 1);
+    ConvertIntToDecimalStringN(str, VarGet(VAR_ROGUE_RUNS_COMPLETED), STR_CONV_MODE_LEFT_ALIGN, 5);
     AddTextPrinterParameterized3(2, FONT_NORMAL, GetStringRightAlignXOffset(FONT_NORMAL, str, 0xD0), 33, sTextColor_MenuInfo, TEXT_SKIP_DRAW, str);
 }
 
