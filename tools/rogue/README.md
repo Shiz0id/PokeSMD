@@ -144,8 +144,11 @@ ids held still. It also prints the tile count, which has to be copied into the
 
 `make_glacia_snow.py` wrote Glacia's snowfield, which **nothing uses any more** —
 she moved to the imported Lapis Cave tileset, orphaning the snow art along with
-`LAYOUT_ROGUE_DUNGEON_VRGLACIA` and `gTileset_RogueVictoryRoadGlacia`. Kept for
-now because the tiles are still in the cave sheet. It writes tiles but **not**
+`LAYOUT_ROGUE_DUNGEON_VRGLACIA` and `gTileset_RogueVictoryRoadGlacia`. **Kept
+deliberately, not pending removal** — the whole orphan is ~5.1 KB of a ROM with
+6.9 MB free, it moves neither RAM figure, and the tiles sit in the cave sheet
+that five live tilesets share. The measurement is under "Settled" in the skill's
+`roguelike-state.md`; do not re-derive it. It writes tiles but **not**
 metatiles:
 `append_metatiles.py` is the only appender to that tileset and imports the snow
 entries, because it stays idempotent by truncating everything past the vanilla
