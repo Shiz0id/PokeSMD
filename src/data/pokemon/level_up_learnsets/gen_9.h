@@ -4009,11 +4009,27 @@ static const struct LevelUpMove sDittoLevelUpLearnset[] = {
 #endif //P_FAMILY_DITTO
 
 #if P_FAMILY_EEVEE
+// ROGUELIKE OVERRIDE - the mildest of the three level-1 trims, and worth
+// saying so. Eevee had five moves at level 1 rather than Clefairy's or
+// Pikachu's nine, and already arrived with two attacks, so this buys one
+// attack rather than rescuing a broken opener: Helping Hand out of the window,
+// Tackle back into it.
+//
+// Helping Hand is moved to 30 rather than dropped. It does nothing in a single
+// battle, but TRAINER_TATE_AND_LIZA_1 is a boss and a double battle, so it is
+// not dead weight - just wrong at level 1.
+//
+// What this CANNOT fix: everything Eevee has before Bite at 25 is Normal, so
+// his early trouble is coverage, not move count. A level-1 trim has no answer
+// to that; the stones do, by ending the Normal stage entirely.
+//
+// MOVE_BABY_DOLL_EYES at 15 is load-bearing - it is the only Fairy move Eevee
+// learns by level, and Sylveon's evolution reads IF_KNOWS_MOVE_TYPE TYPE_FAIRY.
+// Removing or delaying it past a player's evolution window closes that branch.
 static const struct LevelUpMove sEeveeLevelUpLearnset[] = {
-    LEVEL_UP_MOVE( 1, MOVE_TACKLE),
-    LEVEL_UP_MOVE( 1, MOVE_TAIL_WHIP),
     LEVEL_UP_MOVE( 1, MOVE_GROWL),
-    LEVEL_UP_MOVE( 1, MOVE_HELPING_HAND),
+    LEVEL_UP_MOVE( 1, MOVE_TAIL_WHIP),
+    LEVEL_UP_MOVE( 1, MOVE_TACKLE),
     LEVEL_UP_MOVE( 1, MOVE_COVET),
     LEVEL_UP_MOVE( 5, MOVE_SAND_ATTACK),
     LEVEL_UP_MOVE(10, MOVE_QUICK_ATTACK),
@@ -4021,6 +4037,7 @@ static const struct LevelUpMove sEeveeLevelUpLearnset[] = {
     LEVEL_UP_MOVE(20, MOVE_SWIFT),
     LEVEL_UP_MOVE(25, MOVE_BITE),
     LEVEL_UP_MOVE(30, MOVE_COPYCAT),
+    LEVEL_UP_MOVE(30, MOVE_HELPING_HAND),
     LEVEL_UP_MOVE(35, MOVE_BATON_PASS),
     LEVEL_UP_MOVE(40, MOVE_TAKE_DOWN),
     LEVEL_UP_MOVE(45, MOVE_CHARM),
