@@ -45,11 +45,31 @@ int main(int argc, char *argv[])
     switch (option)
     {
         case FRAME_WRITE:
-            //  Not implemented yet
-            fprintf(stderr, "Frame writing isn't implemented yet\n");
-            settings.useFrames = true;
-            option = WRITE;
-            return 1;
+            //  -fw in out frameSize framesPerChunk
+            //
+            //  Both sizes have to be given rather than inferred: a flat 4bpp
+            //  file carries no notion of where one frame ends, and guessing
+            //  from the file size would silently produce a container whose
+            //  frames are offset by a tile row.
+            if (argc > 5)
+            {
+                input = argv[2];
+                output = argv[3];
+                if (!isNumber(argv[4]) || !isNumber(argv[5]))
+                {
+                    fprintf(stderr, "Frame size and chunk size must be numbers\n");
+                    return 1;
+                }
+                settings.useFrames = true;
+                settings.frameSize = strtoul(argv[4], nullptr, 10);
+                settings.framesPerComponent = strtoul(argv[5], nullptr, 10);
+                option = WRITE;
+            }
+            else
+            {
+                printUsage = true;
+            }
+            break;
         case WRITE:
             if (argc > 3)
             {
@@ -110,8 +130,14 @@ int main(int argc, char *argv[])
                     - If the raw symbols in the compression can be tANS encoded.\n\
                     - If the compression instructions can be delta encoded.\n\
                     - If the raw symbols in the compression ca be delta encoded.\n\
+                %s -fw \"path/to/some/frames.4bpp\" \"path/to/some/frames.4bpp.fsmol\" frameSize framesPerChunk\n\
+                    Compresses a stack of equally sized frames into a frame container, in which\n\
+                    each group of framesPerChunk frames is independently decodable. frameSize is\n\
+                    one frame in bytes. framesPerChunk trades ROM for the size of the smallest\n\
+                    unit that has to be decoded to reach a frame.\n\
                 %s -d \"path/to/some/file.4bpp.smol\" \"path/to/some/file.4bpp\"\n\
-                    Decompresses the first argument and writes it to the second argument.", argv[0], argv[0]);
+                    Decompresses the first argument and writes it to the second argument.\n\
+                    Frame containers decode back to the flat frame stack they were built from.", argv[0], argv[0], argv[0]);
 
         return 0;
     }
@@ -151,7 +177,15 @@ int main(int argc, char *argv[])
                 return 0;
             }
             std::vector<unsigned short> image4bpp;
-            readRawDataVecs(&inData, &image4bpp);
+            if (isFrameContainer(&inData))
+            {
+                if (!readFrameContainer(&inData, &image4bpp))
+                    return 1;
+            }
+            else
+            {
+                readRawDataVecs(&inData, &image4bpp);
+            }
             std::vector<unsigned char> charVec(image4bpp.size()*2);
             for (size_t i = 0; i < image4bpp.size(); i++)
             {

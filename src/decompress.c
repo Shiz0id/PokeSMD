@@ -311,6 +311,75 @@ void DecompressDataWithHeaderWram(const u32 *src, void *dest)
     }
 }
 
+//  Frame containers, mode 7. See the block comment on struct SpriteSheetHeader.
+//
+//  Note what is NOT here: a function that decodes a whole container. There is
+//  no useful one. A 29 frame 64x64 sprite decodes to 59 KB, half the heap, and
+//  the cost model puts it at over two video frames of work - so a caller that
+//  wanted one frame would pay all of that to get 2 KB of it. Frames are reached
+//  a chunk at a time or not at all.
+
+bool32 IsSmolFrameContainer(const u32 *src)
+{
+    union CompressionHeader header;
+    CpuCopy32(src, &header, 8);
+    return header.frameContainer.mode == IS_FRAME_CONTAINER;
+}
+
+u32 GetSmolFrameCount(const u32 *src)
+{
+    union CompressionHeader header;
+    CpuCopy32(src, &header, 8);
+    return header.frameContainer.totalFrames;
+}
+
+u32 GetSmolFrameSize(const u32 *src)
+{
+    union CompressionHeader header;
+    CpuCopy32(src, &header, 8);
+    return header.frameContainer.frameSize;
+}
+
+//  How large a buffer DecompressSmolChunk needs. This is the size of a FULL
+//  chunk, which the short final chunk does not fill - sizing off the final
+//  chunk instead would overrun on every other one.
+u32 GetSmolChunkSize(const u32 *src)
+{
+    union CompressionHeader header;
+    CpuCopy32(src, &header, 8);
+    return header.frameContainer.framesPerComponent * header.frameContainer.frameSize;
+}
+
+u32 GetSmolFrameChunk(const u32 *src, u32 frame)
+{
+    union CompressionHeader header;
+    CpuCopy32(src, &header, 8);
+    return frame / header.frameContainer.framesPerComponent;
+}
+
+u32 GetSmolFrameOffsetInChunk(const u32 *src, u32 frame)
+{
+    union CompressionHeader header;
+    CpuCopy32(src, &header, 8);
+    return (frame % header.frameContainer.framesPerComponent) * header.frameContainer.frameSize;
+}
+
+void DecompressSmolChunk(const u32 *src, void *dest, u32 chunk)
+{
+    union CompressionHeader header;
+    CpuCopy32(src, &header, 8);
+    if (header.frameContainer.mode != IS_FRAME_CONTAINER
+     || chunk >= header.frameContainer.numComponents)
+    {
+        DecompressionError(src, HEADER_ERROR);
+        return;
+    }
+    //  A chunk is an ordinary blob and picks its own mode, so it goes back
+    //  through the normal dispatch rather than straight to SmolDecompressData.
+    //  Chunks of one container need not agree on a mode.
+    DecompressDataWithHeaderWram(&src[src[FRAME_CONTAINER_HEADER_WORDS + chunk]], dest);
+}
+
 #define REP0(X)
 #define REP1(X) X
 #define REP2(X) REP1(X) X
@@ -1337,6 +1406,12 @@ u32 GetDecompressedDataSize(const u32 *ptr)
         return header->lz77.size;
     case IS_TILEMAP:
         return header->smolTilemap.tilemapSize;
+    case IS_FRAME_CONTAINER:
+        //  Every frame together. No single call produces this - see
+        //  DecompressSmolChunk - but it is what the container represents, and
+        //  the default branch below would otherwise read numComponents as an
+        //  image size and return a confidently wrong number.
+        return header->frameContainer.totalFrames * header->frameContainer.frameSize;
     default:
         return header->smol.imageSize*SMOL_IMAGE_SIZE_MULTIPLIER;
     }
@@ -1361,7 +1436,10 @@ bool32 IsCompressedData(const u32 *ptr)
             return TRUE;
         break;
     case IS_FRAME_CONTAINER:
-        // No implemented yet
+        //  Deliberately FALSE. The one caller uses this to decide whether to
+        //  decompress a whole sprite sheet in one call, and a container cannot
+        //  be. Anything holding one has to go through the chunk API instead, so
+        //  reaching here at all means the data was handed to the wrong path.
     case IS_TILEMAP:
         // Has to use another assumption
     default:

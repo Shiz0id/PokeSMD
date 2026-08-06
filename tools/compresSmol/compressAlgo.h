@@ -9,6 +9,7 @@
 #include <thread>
 #include <string>
 #include <bitset>
+#include <algorithm>
 #include "fileDispatcher.h"
 #include "tANS.h"
 
@@ -25,7 +26,13 @@
 #define NUM_SHORT_BITS          0xf
 #define LENGTH_MOD_MASK         0xf
 #define INITIAL_STATE_MASK      0x3f
-#define MODE_MASK               0x1f
+//  FOUR bits, not five. The mode field is mode:4 on both sides of the pipeline
+//  and 0x1f reaches one bit into whatever follows it. For an ordinary blob that
+//  is imageSize/IMAGE_SIZE_MODIFIER, and 4bpp data is always a whole number of
+//  32 byte tiles, so that bit was always zero and the extra bit never showed.
+//  A frame container puts numComponents there instead, so an odd chunk count
+//  read back as mode 23 and the container was decoded as a flat blob.
+#define MODE_MASK               0xf
 #define IMAGE_SIZE_MASK         0x3fff
 #define IMAGE_SIZE_OFFSET       4
 #define SYM_SIZE_MASK           0x3fff
@@ -36,6 +43,27 @@
 #define LO_SIZE_OFFSET          19
 
 #define IMAGE_SIZE_MODIFIER     4
+
+//  Frame container header, mode 7. Two words, then one u32 word-offset per
+//  chunk, then the chunks themselves as ordinary smol blobs.
+//
+//    word 0:  mode:4 | numComponents:12 | framesPerComponent:16
+//    word 1:  frameSize:16 | totalFrames:16
+//    word 2..2+numComponents-1: offset of each chunk, in WORDS from word 0
+//
+//  A chunk is a complete standalone blob - its own header, its own frequency
+//  tables, its own bitstream - so decoding frame N touches only the chunk that
+//  holds it. That is the entire point of the format, and it is why a chunk may
+//  not contain copies that reach back into an earlier chunk.
+#define NUM_COMPONENTS_MASK     0xfff
+#define NUM_COMPONENTS_OFFSET   4
+#define FRAMES_PER_COMP_MASK    0xffff
+#define FRAMES_PER_COMP_OFFSET  16
+#define FRAME_SIZE_MASK         0xffff
+#define FRAME_SIZE_OFFSET       0
+#define TOTAL_FRAMES_MASK       0xffff
+#define TOTAL_FRAMES_OFFSET     16
+#define FRAME_CONTAINER_HEADER_WORDS 2
 
 enum CompressionMode {
     LZ77 = 0,
@@ -93,6 +121,12 @@ struct InputSettings {
     bool canEncodeSyms = true;
     bool canDeltaSyms = true;
     bool useFrames = false;
+    //  Frame containers only. frameSize is one frame in bytes; framesPerComponent
+    //  is how many consecutive frames share one independently decodable blob.
+    //  1 gives pure random access at the worst compression ratio, and the whole
+    //  frame count gives todays single blob, which cannot be randomly accessed.
+    size_t frameSize = 0;
+    size_t framesPerComponent = 1;
     InputSettings();
     InputSettings(bool canEncodeLO, bool canEncodeSyms, bool canDeltaSyms);
 };
@@ -129,6 +163,9 @@ std::vector<unsigned short> decodeBytesShort(std::vector<unsigned char> *pLoVec,
 std::vector<unsigned short> decodeImageShort(CompressedImage *pInput);
 DataVecs decodeDataVectorsNew(CompressedImage *pInput);
 bool compareVectorsShort(std::vector<unsigned short> *pVec1, std::vector<unsigned short> *pVec2);
+
+bool isFrameContainer(std::vector<unsigned int> *pInput);
+bool readFrameContainer(std::vector<unsigned int> *pInput, std::vector<unsigned short> *pOutput);
 
 bool verifyCompressionShort(CompressedImage *pInput, std::vector<unsigned short> *pImage);
 

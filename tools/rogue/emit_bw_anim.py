@@ -38,6 +38,8 @@ import downscale_bw as D
 
 VIDEO_FRAME_MS = 1000.0 / 59.7275
 MAX_FRAMES = 96          # under the size that crashes compresSmol
+MON_PIC_WIDTH = 64       # must match include/constants/pokemon.h
+MON_PIC_HEIGHT = 64
 
 # The species this is being proved on. Roxanne is floor 10 and reachable in
 # minutes; Tate and Liza are the double battle, which is the worst case the
@@ -82,6 +84,51 @@ def species_ids(repo):
     return out
 
 
+def stock_bbox(repo, stem):
+    """Bounding box of the shipped 64x64 front sprite's first frame.
+
+    Read as INDEXED with palette entry 0 as the transparent one, which is the
+    GBA's rule. Converting to RGBA and taking the alpha channel looks equivalent
+    and is not: these PNGs need carry no tRNS chunk, so every pixel comes back
+    opaque and the box is the whole 64x64 - which silently centres every sprite
+    and is only visible as a mon standing slightly wrong in game.
+    """
+    p = repo / 'graphics/pokemon' / stem / 'anim_front.png'
+    if not p.exists():
+        return None
+    im = Image.open(p)
+    if im.mode != 'P':
+        return None
+    px = im.load()
+    x0, y0, x1, y1 = im.width, im.height, 0, 0
+    for y in range(min(MON_PIC_HEIGHT, im.height)):
+        for x in range(im.width):
+            if px[x, y] != 0:
+                x0, y0 = min(x0, x), min(y0, y)
+                x1, y1 = max(x1, x + 1), max(y1, y + 1)
+    return None if x1 <= x0 else (x0, y0, x1, y1)
+
+
+def stock_placement(repo, stem, w, h):
+    """Where in the 64x64 box to put a w x h frame.
+
+    Matched to the sprite the game already draws, on CENTRE X and BOTTOM Y.
+    Bottom rather than centre because a battler is positioned by its feet - the
+    engine's y offsets assume the mon stands on the bottom of its box - so
+    centring vertically would sink or float it relative to the static sprite it
+    replaces, and the swap happens in front of the player at switch-in.
+    """
+    box = stock_bbox(repo, stem)
+    if box is None:
+        # Nothing to match: centre horizontally, stand on the bottom.
+        return (MON_PIC_WIDTH - w) // 2, MON_PIC_HEIGHT - h
+    x0, _y0, x1, y1 = box
+    ox = round((x0 + x1) / 2 - w / 2)
+    oy = y1 - h
+    return (max(0, min(MON_PIC_WIDTH - w, ox)),
+            max(0, min(MON_PIC_HEIGHT - h, oy)))
+
+
 def emit_species(repo, gif_path, stem):
     built = D.build_species(str(gif_path))
     if not built:
@@ -97,11 +144,21 @@ def emit_species(repo, gif_path, stem):
         frames = frames[:MAX_FRAMES]
 
     w, h = frames[0].size
-    tw, th = (w + 7) // 8 * 8, (h + 7) // 8 * 8
+    if w > MON_PIC_WIDTH or h > MON_PIC_HEIGHT:
+        return None, f'{w}x{h} exceeds the {MON_PIC_WIDTH}x{MON_PIC_HEIGHT} OBJ limit'
+
+    # EVERY frame is padded to the full 64x64, not cropped to its own content.
+    # A battle sprite is always MON_PIC_SIZE and the engine tiles it as 8 tiles
+    # across; a 48 wide sheet is 6 tiles across, so writing one into a battler's
+    # VRAM shifts every tile row and produces a diagonal smear rather than a
+    # sprite. It is also what makes frameSize the same 2048 for every species,
+    # which is what lets one chunk buffer size serve all of them.
+    tw, th = MON_PIC_WIDTH, MON_PIC_HEIGHT
+    ox, oy = stock_placement(repo, stem, w, h)
 
     sheet = Image.new('RGBA', (tw, th * len(frames)), (0, 0, 0, 0))
     for i, f in enumerate(frames):
-        sheet.paste(f, (0, i * th), f)
+        sheet.paste(f, (ox, i * th + oy), f)
 
     got = sheet.getcolors(300000) or []
     # Index 0 is the transparent slot; magenta so a bug shows up loudly rather
@@ -165,15 +222,18 @@ def write_header(repo, built, ids):
         '// hold is in VIDEO FRAMES, converted from the source gif\'s',
         '// milliseconds at emit time so nothing divides at runtime.',
         '//',
-        '// The frames of a species are ONE blob rather than one asset each:',
-        '// that is what lets the compressor exploit redundancy between them,',
-        '// which is most of the saving (8-26% of raw measured, against ~28%',
-        '// for a lone frame).',
+        '// The frames of a species are a mode 7 frame CONTAINER, not one',
+        '// asset each and not one flat blob. Frames share a blob in groups so',
+        '// the compressor can still copy across a frame boundary - most of the',
+        '// saving - while any one group stays reachable on its own. One flat',
+        '// blob is 2.25x smaller than one asset per frame but has to be decoded',
+        '// whole, which for a 29 frame sprite is 59 KB and two video frames of',
+        '// work to reach 2 KB of it.',
         '',
     ]
     for b in built:
         L.append(f'const u32 gBwAnimGfx_{b["sym"]}[] = INCGFX_U32('
-                 f'"graphics/pokemon/{b["stem"]}/bw_anim.png", ".4bpp.smol");')
+                 f'"graphics/pokemon/{b["stem"]}/bw_anim.png", ".4bpp.fsmol");')
         L.append(f'const u16 gBwAnimPal_{b["sym"]}[] = INCGFX_U16('
                  f'"graphics/pokemon/{b["stem"]}/bw_anim.png", ".gbapal");')
     L.append('')
@@ -209,12 +269,53 @@ def write_header(repo, built, ids):
     return p
 
 
+def write_rules(repo, built, chunk):
+    """Emit the make rules that turn each frame stack into a container.
+
+    These have to be explicit and per species because the container needs the
+    frame size, and a flat 4bpp file does not carry one. scaninc still writes
+    the png -> 4bpp rule on its own from the INCGFX reference; only the
+    4bpp -> fsmol step is here.
+
+    A species missing from this file fails the build with "no rule to make
+    target", which is the failure worth having. The alternative - a generic
+    %.fsmol pattern that guessed - would produce a container whose frames were
+    offset by a tile row, and that is a garbled sprite rather than an error.
+    """
+    L = [
+        '# GENERATED by tools/rogue/emit_bw_anim.py - do not edit by hand.',
+        '#',
+        '# BW animation frame containers. One rule per species, because -fw',
+        '# takes the frame size in bytes and the frames per chunk, and neither',
+        '# is recoverable from the 4bpp file.',
+        '#',
+        f'# Chunk size is {chunk}. Raising it shrinks ROM and lowers average CPU,',
+        '# since a caller holding the decoded chunk decodes once per chunk',
+        '# rather than once per frame - but it raises the one-off spike when a',
+        '# chunk does have to be decoded, and the scratch buffer with it.',
+        '',
+    ]
+    for b in sorted(built, key=lambda b: b['stem']):
+        asset = f'$(ASSETS_DIR_NAME)/graphics/pokemon/{b["stem"]}/bw_anim.png.4bpp'
+        L.append(f'{asset}.fsmol: {asset}')
+        L.append(f'\t$(SMOL) -fw $< $@ {b["w"] * b["h"] // 2} {chunk}')
+        L.append('')
+
+    p = repo / 'graphics/pokemon/bw_anim_rules.mk'
+    p.write_text('\n'.join(L), encoding='utf-8', newline='\n')
+    return p
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--gifs', required=True)
     ap.add_argument('--repo', default=str(Path(__file__).resolve().parents[2]))
     ap.add_argument('--species')
     ap.add_argument('--preset')
+    #  4 is where the measured curve stops paying: it fits Gen 1-5 in ROM at
+    #  5.12 MB against ~6.9 MB free, and holds one decode inside half a video
+    #  frame. 8 saves another 0.7 MB but spends 80% of a frame in one go.
+    ap.add_argument('--chunk', type=int, default=4)
     args = ap.parse_args()
 
     repo = Path(args.repo)
@@ -246,6 +347,8 @@ def main():
     if built:
         p = write_header(repo, built, species_ids(repo))
         print(f'\nwrote {p}')
+        r = write_rules(repo, built, args.chunk)
+        print(f'wrote {r}')
         print(f'wrote {len(built)} x graphics/pokemon/<name>/bw_anim.png')
 
 

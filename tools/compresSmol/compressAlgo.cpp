@@ -1172,11 +1172,179 @@ CompressedImage processImage(std::string fileName, InputSettings settings)
     return image;
 }
 
-//  Not implemented yet
+//  Compress a stack of equally sized frames into a mode 7 frame container.
+//
+//  WHY THIS EXISTS. Compressing the whole stack as one blob is much smaller -
+//  measured over nine animated sprites it is 5,457 B per species against 12,308
+//  for one blob per frame - because the compressor can copy across the frame
+//  boundary, and consecutive frames of an animation are nearly identical. But
+//  the decoder has no way to start in the middle of a bitstream, so a single
+//  blob means decoding every frame to reach any frame: 59 KB of output and over
+//  two video frames of work for one 64x64 sprite.
+//
+//  The container splits the difference and makes the split a parameter.
+//  framesPerComponent consecutive frames share a blob, so copies still cross
+//  frame boundaries inside a chunk while a chunk is reachable on its own. The
+//  measured curve, as a fraction of the single-blob size:
+//
+//      k=1  225%     k=2  180%     k=4  154%     k=8  133%     k=16  113%
+//
+//  Chunking is not purely a ROM-for-CPU trade, which is the counterintuitive
+//  part: a caller that keeps the decoded chunk pays one decode per k frames
+//  rather than one per frame, so average CPU FALLS as k rises. Only the
+//  worst-case spike grows.
 CompressedImage processImageFrames(std::string fileName, InputSettings settings)
 {
     CompressedImage image;
+    std::vector<unsigned char> input;
+
+    if (!readFileAsUC(fileName, &input))
+    {
+        fprintf(stderr, "ERROR: Couldn't read file %s\n", fileName.c_str());
+        return image;
+    }
+    if (settings.frameSize == 0 || settings.framesPerComponent == 0)
+    {
+        fprintf(stderr, "ERROR: Frame container needs a frame size and a chunk size\n");
+        return image;
+    }
+    if (settings.frameSize % 4 != 0)
+    {
+        fprintf(stderr, "ERROR: Frame size %zu is not a multiple of 4\n", settings.frameSize);
+        return image;
+    }
+    if (input.size() % settings.frameSize != 0)
+    {
+        fprintf(stderr, "ERROR: File %s is %zu bytes, not a whole number of %zu byte frames\n",
+                fileName.c_str(), input.size(), settings.frameSize);
+        return image;
+    }
+
+    size_t totalFrames = input.size() / settings.frameSize;
+    size_t perChunk = settings.framesPerComponent;
+    size_t numChunks = (totalFrames + perChunk - 1) / perChunk;
+
+    if (totalFrames > TOTAL_FRAMES_MASK || numChunks > NUM_COMPONENTS_MASK
+     || perChunk > FRAMES_PER_COMP_MASK || settings.frameSize > FRAME_SIZE_MASK)
+    {
+        fprintf(stderr, "ERROR: Frame container header fields would overflow for %s\n", fileName.c_str());
+        return image;
+    }
+
+    //  Each chunk is compressed exactly as a standalone image would be, so it
+    //  picks its own mode and its own minimum code length. Chunks of the same
+    //  sprite do not have to agree on either.
+    std::vector<std::vector<unsigned int>> chunks;
+    for (size_t chunk = 0; chunk < numChunks; chunk++)
+    {
+        size_t first = chunk * perChunk * settings.frameSize;
+        //  The last chunk is short whenever the frame count is not a multiple
+        //  of the chunk size. It is left short rather than padded: padding
+        //  would decode to frames that do not exist and the caller would have
+        //  to know to ignore them.
+        size_t last = std::min(first + perChunk * settings.frameSize, input.size());
+
+        std::vector<unsigned char> chunkData(input.begin() + first, input.begin() + last);
+        CompressedImage chunkImage;
+        InputSettings chunkSettings = settings;
+        chunkSettings.useFrames = false;
+
+        if (!processImageData(&chunkData, &chunkImage, chunkSettings, fileName))
+        {
+            fprintf(stderr, "ERROR: No valid compression for chunk %zu of %s\n", chunk, fileName.c_str());
+            return image;
+        }
+        chunks.push_back(chunkImage.writeVec);
+    }
+
+    size_t tableWords = FRAME_CONTAINER_HEADER_WORDS + numChunks;
+    std::vector<unsigned int> out(tableWords);
+
+    out[0] = (unsigned int)IS_FRAME_CONTAINER
+           + ((unsigned int)numChunks << NUM_COMPONENTS_OFFSET)
+           + ((unsigned int)perChunk << FRAMES_PER_COMP_OFFSET);
+    out[1] = ((unsigned int)settings.frameSize << FRAME_SIZE_OFFSET)
+           + ((unsigned int)totalFrames << TOTAL_FRAMES_OFFSET);
+
+    for (size_t chunk = 0; chunk < numChunks; chunk++)
+    {
+        out[FRAME_CONTAINER_HEADER_WORDS + chunk] = (unsigned int)out.size();
+        out.insert(out.end(), chunks[chunk].begin(), chunks[chunk].end());
+    }
+
+    image.fileName = fileName;
+    image.mode = IS_FRAME_CONTAINER;
+    image.rawNumBytes = input.size();
+    image.compressedSize = out.size() * 4;
+    image.writeVec = out;
+    image.isValid = true;
     return image;
+}
+
+bool isFrameContainer(std::vector<unsigned int> *pInput)
+{
+    return pInput->size() > FRAME_CONTAINER_HEADER_WORDS
+        && ((*pInput)[0] & MODE_MASK) == IS_FRAME_CONTAINER;
+}
+
+//  Decode a whole container back to the flat frame stack it was built from.
+//
+//  This exists so the format can be verified on the host, against the original
+//  4bpp, without building a ROM and running an emulator. Every chunk is decoded
+//  in order and concatenated, which is exactly what the container must NOT
+//  require at runtime - the point there is decoding one chunk - but it is the
+//  right shape for a round-trip check.
+bool readFrameContainer(std::vector<unsigned int> *pInput, std::vector<unsigned short> *pOutput)
+{
+    if (!isFrameContainer(pInput))
+    {
+        fprintf(stderr, "ERROR: Not a frame container\n");
+        return false;
+    }
+
+    size_t numChunks = ((*pInput)[0] >> NUM_COMPONENTS_OFFSET) & NUM_COMPONENTS_MASK;
+    size_t perChunk = ((*pInput)[0] >> FRAMES_PER_COMP_OFFSET) & FRAMES_PER_COMP_MASK;
+    size_t frameSize = ((*pInput)[1] >> FRAME_SIZE_OFFSET) & FRAME_SIZE_MASK;
+    size_t totalFrames = ((*pInput)[1] >> TOTAL_FRAMES_OFFSET) & TOTAL_FRAMES_MASK;
+
+    if (pInput->size() < FRAME_CONTAINER_HEADER_WORDS + numChunks)
+    {
+        fprintf(stderr, "ERROR: Container is too short for its own offset table\n");
+        return false;
+    }
+
+    pOutput->clear();
+    for (size_t chunk = 0; chunk < numChunks; chunk++)
+    {
+        size_t offset = (*pInput)[FRAME_CONTAINER_HEADER_WORDS + chunk];
+        if (offset >= pInput->size())
+        {
+            fprintf(stderr, "ERROR: Chunk %zu offset %zu is past the end of the container\n", chunk, offset);
+            return false;
+        }
+        std::vector<unsigned int> chunkData(pInput->begin() + offset, pInput->end());
+        std::vector<unsigned short> chunkOut;
+        readRawDataVecs(&chunkData, &chunkOut);
+
+        //  A chunk decodes to a whole number of frames, and only the last one
+        //  is allowed to be short.
+        size_t framesHere = std::min(perChunk, totalFrames - chunk * perChunk);
+        if (chunkOut.size() * 2 != framesHere * frameSize)
+        {
+            fprintf(stderr, "ERROR: Chunk %zu decoded to %zu bytes, expected %zu\n",
+                    chunk, chunkOut.size() * 2, framesHere * frameSize);
+            return false;
+        }
+        pOutput->insert(pOutput->end(), chunkOut.begin(), chunkOut.end());
+    }
+
+    if (pOutput->size() * 2 != totalFrames * frameSize)
+    {
+        fprintf(stderr, "ERROR: Container decoded to %zu bytes, expected %zu\n",
+                pOutput->size() * 2, totalFrames * frameSize);
+        return false;
+    }
+    return true;
 }
 
 bool processImageData(std::vector<unsigned char> *pInput, CompressedImage *pImage, InputSettings settings, std::string fileName)

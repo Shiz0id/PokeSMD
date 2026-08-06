@@ -6339,3 +6339,117 @@ TEST("Compression test: tilemap large fastLZ VRAM")
     EXPECT_EQ(areEqual, TRUE);
 }
 */
+
+//  Frame containers, mode 7.
+//
+//  These run against real animated sprites rather than a purpose-made fixture,
+//  because the case that breaks is the SHORT FINAL CHUNK and it only exists
+//  when the frame count is not a multiple of the chunk size. Claydol is 29
+//  frames at 4 per chunk, so its last chunk holds one; Torchic is 16, an exact
+//  four chunks, and is the control that says a failure is about the short chunk
+//  rather than about containers at all.
+
+//  Walk the frames of a container and compare each against the flat frame stack
+//  it was built from. `stride` chooses the ORDER: 1 walks forwards, which
+//  decodes each chunk once in sequence, and anything else jumps, which is what
+//  actually exercises random access - the arithmetic that picks a chunk and an
+//  offset inside it is the same either way, but only a jumping walk revisits a
+//  chunk it has already left.
+static bool32 CheckFrameContainer(const u32 *container, const u32 *orgImg, u32 orgSize, u32 stride)
+{
+    u32 frameSize = GetSmolFrameSize(container);
+    u32 frameCount = GetSmolFrameCount(container);
+    u32 lastChunk = 0xFFFFFFFF;
+    bool32 areEqual = TRUE;
+    u8 *buffer;
+
+    //  The frame count is checked against the RAW asset rather than trusted,
+    //  and this is not belt and braces. Everything below loops to frameCount,
+    //  so a container that under-reports it walks fewer frames, compares every
+    //  one of them correctly, and passes - which is precisely what happened
+    //  when the writer was broken on purpose to see whether these tests would
+    //  notice. The size of the flat frame stack is the one figure the container
+    //  header cannot influence.
+    if (frameSize == 0 || frameCount * frameSize != orgSize)
+        return FALSE;
+
+    buffer = Alloc(GetSmolChunkSize(container));
+
+    for (u32 n = 0; n < frameCount && areEqual; n++)
+    {
+        u32 frame = (n * stride) % frameCount;
+        u32 chunk = GetSmolFrameChunk(container, frame);
+        const u8 *want = (const u8 *)orgImg + frame * frameSize;
+        const u8 *got;
+
+        //  This is the caching the format exists for: a chunk is decoded only
+        //  when the frame wanted is not already in the buffer.
+        if (chunk != lastChunk)
+        {
+            DecompressSmolChunk(container, buffer, chunk);
+            lastChunk = chunk;
+        }
+        got = buffer + GetSmolFrameOffsetInChunk(container, frame);
+
+        for (u32 i = 0; i < frameSize; i++)
+        {
+            if (want[i] != got[i])
+            {
+                areEqual = FALSE;
+                break;
+            }
+        }
+    }
+
+    Free(buffer);
+    return areEqual;
+}
+
+TEST("Compression test: frame container header")
+{
+    static const u32 compFile[] = INCGFX_U32("graphics/pokemon/claydol/bw_anim.png", ".4bpp.fsmol");
+
+    EXPECT_EQ(IsSmolFrameContainer(compFile), TRUE);
+    EXPECT_EQ(GetSmolFrameCount(compFile), 29);
+    EXPECT_EQ(GetSmolFrameSize(compFile), 64 * 64 / 2);
+    EXPECT_EQ(GetSmolChunkSize(compFile), 4 * 64 * 64 / 2);
+    //  The whole stack, which no single call produces - see DecompressSmolChunk.
+    EXPECT_EQ(GetDecompressedDataSize(compFile), 29 * 64 * 64 / 2);
+
+    //  Frame 6 is the third frame of chunk 1; frame 28 is the only frame of the
+    //  short final chunk.
+    EXPECT_EQ(GetSmolFrameChunk(compFile, 6), 1);
+    EXPECT_EQ(GetSmolFrameOffsetInChunk(compFile, 6), 2 * 64 * 64 / 2);
+    EXPECT_EQ(GetSmolFrameChunk(compFile, 28), 7);
+    EXPECT_EQ(GetSmolFrameOffsetInChunk(compFile, 28), 0);
+}
+
+TEST("Compression test: frame container sequential")
+{
+    static const u32 origFile[] = INCGFX_U32("graphics/pokemon/claydol/bw_anim.png", ".4bpp");
+    static const u32 compFile[] = INCGFX_U32("graphics/pokemon/claydol/bw_anim.png", ".4bpp.fsmol");
+
+    bool32 areEqual = CheckFrameContainer(compFile, origFile, sizeof(origFile), 1);
+    EXPECT_EQ(areEqual, TRUE);
+}
+
+TEST("Compression test: frame container random access")
+{
+    static const u32 origFile[] = INCGFX_U32("graphics/pokemon/claydol/bw_anim.png", ".4bpp");
+    static const u32 compFile[] = INCGFX_U32("graphics/pokemon/claydol/bw_anim.png", ".4bpp.fsmol");
+
+    //  29 is prime, so a stride of 7 visits every frame exactly once and lands
+    //  in a different chunk almost every step.
+    bool32 areEqual = CheckFrameContainer(compFile, origFile, sizeof(origFile), 7);
+    EXPECT_EQ(areEqual, TRUE);
+}
+
+TEST("Compression test: frame container with no short chunk")
+{
+    static const u32 origFile[] = INCGFX_U32("graphics/pokemon/torchic/bw_anim.png", ".4bpp");
+    static const u32 compFile[] = INCGFX_U32("graphics/pokemon/torchic/bw_anim.png", ".4bpp.fsmol");
+
+    EXPECT_EQ(GetSmolFrameCount(compFile), 16);
+    bool32 areEqual = CheckFrameContainer(compFile, origFile, sizeof(origFile), 1);
+    EXPECT_EQ(areEqual, TRUE);
+}

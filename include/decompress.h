@@ -29,11 +29,29 @@ struct SmolHeader {
     u32 loSize:13;
 };
 
+//  Frame container, mode 7. A stack of equally sized frames in which every
+//  group of framesPerComponent consecutive frames is a complete standalone smol
+//  blob, so reaching frame N decodes only the chunk holding it.
+//
+//  Header, then one u32 word-offset per chunk, then the chunks:
+//
+//      word 0                  this struct, first word
+//      word 1                  this struct, second word
+//      word 2 .. 2+numComponents-1     chunk offsets, in WORDS from word 0
+//      ...                     the chunks
+//
+//  numComponents is the chunk count and framesPerComponent the frames in each;
+//  only the last chunk may hold fewer, which is why totalFrames is carried
+//  rather than derived.
 struct SpriteSheetHeader {
     u32 mode:4;
     u32 numComponents:12;
     u32 framesPerComponent:16;
+    u32 frameSize:16;
+    u32 totalFrames:16;
 };
+
+#define FRAME_CONTAINER_HEADER_WORDS 2
 
 struct SmolTilemapHeader {
     u32 mode:4;
@@ -46,6 +64,7 @@ union CompressionHeader {
     struct LZ77Header lz77;
     struct SmolHeader smol;
     struct SmolTilemapHeader smolTilemap;
+    struct SpriteSheetHeader frameContainer;
 };
 
 enum CompressionMode {
@@ -62,6 +81,28 @@ enum CompressionMode {
 
 void DecompressDataWithHeaderVram(const u32 *src, void *dest);
 void DecompressDataWithHeaderWram(const u32 *src, void *dest);
+
+//  Frame containers. These are the whole API for mode 7 - the two wrappers
+//  above deliberately reject it, because a container has no single destination
+//  size and decoding one is a per-chunk operation.
+//
+//  A caller that keeps the last decoded chunk pays one decode per chunk rather
+//  than one per frame, which is the reason the format exists. The usual shape:
+//
+//      chunk = GetSmolFrameChunk(src, frame);
+//      if (chunk != cachedChunk)
+//      {
+//          DecompressSmolChunk(src, buffer, chunk);   // buffer is
+//          cachedChunk = chunk;                       // GetSmolChunkSize(src)
+//      }
+//      frameData = buffer + GetSmolFrameOffsetInChunk(src, frame);
+bool32 IsSmolFrameContainer(const u32 *src);
+u32 GetSmolFrameCount(const u32 *src);
+u32 GetSmolFrameSize(const u32 *src);
+u32 GetSmolChunkSize(const u32 *src);
+u32 GetSmolFrameChunk(const u32 *src, u32 frame);
+u32 GetSmolFrameOffsetInChunk(const u32 *src, u32 frame);
+void DecompressSmolChunk(const u32 *src, void *dest, u32 chunk);
 
 // Lucky's fast lz decompression function
 void FastLZ77UnCompWram(const u32 *src, void *dest);

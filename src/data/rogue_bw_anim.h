@@ -10,28 +10,31 @@
 // hold is in VIDEO FRAMES, converted from the source gif's
 // milliseconds at emit time so nothing divides at runtime.
 //
-// The frames of a species are ONE blob rather than one asset each:
-// that is what lets the compressor exploit redundancy between them,
-// which is most of the saving (8-26% of raw measured, against ~28%
-// for a lone frame).
+// The frames of a species are a mode 7 frame CONTAINER, not one
+// asset each and not one flat blob. Frames share a blob in groups so
+// the compressor can still copy across a frame boundary - most of the
+// saving - while any one group stays reachable on its own. One flat
+// blob is 2.25x smaller than one asset per frame but has to be decoded
+// whole, which for a 29 frame sprite is 59 KB and two video frames of
+// work to reach 2 KB of it.
 
-const u32 gBwAnimGfx_Geodude[] = INCGFX_U32("graphics/pokemon/geodude/bw_anim.png", ".4bpp.smol");
+const u32 gBwAnimGfx_Geodude[] = INCGFX_U32("graphics/pokemon/geodude/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Geodude[] = INCGFX_U16("graphics/pokemon/geodude/bw_anim.png", ".gbapal");
-const u32 gBwAnimGfx_Xatu[] = INCGFX_U32("graphics/pokemon/xatu/bw_anim.png", ".4bpp.smol");
+const u32 gBwAnimGfx_Xatu[] = INCGFX_U32("graphics/pokemon/xatu/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Xatu[] = INCGFX_U16("graphics/pokemon/xatu/bw_anim.png", ".gbapal");
-const u32 gBwAnimGfx_Treecko[] = INCGFX_U32("graphics/pokemon/treecko/bw_anim.png", ".4bpp.smol");
+const u32 gBwAnimGfx_Treecko[] = INCGFX_U32("graphics/pokemon/treecko/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Treecko[] = INCGFX_U16("graphics/pokemon/treecko/bw_anim.png", ".gbapal");
-const u32 gBwAnimGfx_Torchic[] = INCGFX_U32("graphics/pokemon/torchic/bw_anim.png", ".4bpp.smol");
+const u32 gBwAnimGfx_Torchic[] = INCGFX_U32("graphics/pokemon/torchic/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Torchic[] = INCGFX_U16("graphics/pokemon/torchic/bw_anim.png", ".gbapal");
-const u32 gBwAnimGfx_Mudkip[] = INCGFX_U32("graphics/pokemon/mudkip/bw_anim.png", ".4bpp.smol");
+const u32 gBwAnimGfx_Mudkip[] = INCGFX_U32("graphics/pokemon/mudkip/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Mudkip[] = INCGFX_U16("graphics/pokemon/mudkip/bw_anim.png", ".gbapal");
-const u32 gBwAnimGfx_Nosepass[] = INCGFX_U32("graphics/pokemon/nosepass/bw_anim.png", ".4bpp.smol");
+const u32 gBwAnimGfx_Nosepass[] = INCGFX_U32("graphics/pokemon/nosepass/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Nosepass[] = INCGFX_U16("graphics/pokemon/nosepass/bw_anim.png", ".gbapal");
-const u32 gBwAnimGfx_Lunatone[] = INCGFX_U32("graphics/pokemon/lunatone/bw_anim.png", ".4bpp.smol");
+const u32 gBwAnimGfx_Lunatone[] = INCGFX_U32("graphics/pokemon/lunatone/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Lunatone[] = INCGFX_U16("graphics/pokemon/lunatone/bw_anim.png", ".gbapal");
-const u32 gBwAnimGfx_Solrock[] = INCGFX_U32("graphics/pokemon/solrock/bw_anim.png", ".4bpp.smol");
+const u32 gBwAnimGfx_Solrock[] = INCGFX_U32("graphics/pokemon/solrock/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Solrock[] = INCGFX_U16("graphics/pokemon/solrock/bw_anim.png", ".gbapal");
-const u32 gBwAnimGfx_Claydol[] = INCGFX_U32("graphics/pokemon/claydol/bw_anim.png", ".4bpp.smol");
+const u32 gBwAnimGfx_Claydol[] = INCGFX_U32("graphics/pokemon/claydol/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Claydol[] = INCGFX_U16("graphics/pokemon/claydol/bw_anim.png", ".gbapal");
 
 static const struct BwAnimStep sBwSeq_Geodude[] =
@@ -671,7 +674,7 @@ static const struct BwAnim sBwAnims[] =
         .frameCount = 35,
         .seqLength = 43,
         .width = 64,
-        .height = 48,
+        .height = 64,
     },
     {
         .species = SPECIES_XATU,   // 178
@@ -680,7 +683,7 @@ static const struct BwAnim sBwAnims[] =
         .seq = sBwSeq_Xatu,
         .frameCount = 19,
         .seqLength = 49,
-        .width = 48,
+        .width = 64,
         .height = 64,
     },
     {
@@ -690,7 +693,7 @@ static const struct BwAnim sBwAnims[] =
         .seq = sBwSeq_Treecko,
         .frameCount = 26,
         .seqLength = 77,
-        .width = 48,
+        .width = 64,
         .height = 64,
     },
     {
@@ -700,8 +703,8 @@ static const struct BwAnim sBwAnims[] =
         .seq = sBwSeq_Torchic,
         .frameCount = 16,
         .seqLength = 88,
-        .width = 40,
-        .height = 48,
+        .width = 64,
+        .height = 64,
     },
     {
         .species = SPECIES_MUDKIP,   // 258
@@ -710,8 +713,8 @@ static const struct BwAnim sBwAnims[] =
         .seq = sBwSeq_Mudkip,
         .frameCount = 28,
         .seqLength = 76,
-        .width = 48,
-        .height = 56,
+        .width = 64,
+        .height = 64,
     },
     {
         .species = SPECIES_NOSEPASS,   // 299
@@ -720,8 +723,8 @@ static const struct BwAnim sBwAnims[] =
         .seq = sBwSeq_Nosepass,
         .frameCount = 6,
         .seqLength = 10,
-        .width = 48,
-        .height = 48,
+        .width = 64,
+        .height = 64,
     },
     {
         .species = SPECIES_LUNATONE,   // 337
@@ -730,7 +733,7 @@ static const struct BwAnim sBwAnims[] =
         .seq = sBwSeq_Lunatone,
         .frameCount = 17,
         .seqLength = 84,
-        .width = 48,
+        .width = 64,
         .height = 64,
     },
     {
@@ -741,7 +744,7 @@ static const struct BwAnim sBwAnims[] =
         .frameCount = 29,
         .seqLength = 112,
         .width = 64,
-        .height = 56,
+        .height = 64,
     },
     {
         .species = SPECIES_CLAYDOL,   // 344
