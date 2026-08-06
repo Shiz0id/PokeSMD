@@ -1348,8 +1348,14 @@ struct RogueFloorMapOverride
 // The species pool is a window that SLIDES with depth rather than a prefix that
 // only grows. A prefix keeps the weakest species in play forever, which is why
 // Zubat was everywhere; with a window they retire as stronger ones unlock.
-#define DUNGEON_ENCOUNTER_STARTING_TIER 6
-#define DUNGEON_ENCOUNTER_TIER_FLOORS   3
+//
+// THE RAMP IS PER DUNGEON, so these are floors WITHIN a dungeon - see
+// BuildWildEncounterTable. A ten floor dungeon therefore runs tiers 7..16 and a
+// five floor one 7..11, which is what makes a sixteen entry pool fully
+// reachable in the first and an eleven entry pool in the second. Lengthen a
+// pool past that and the tail is dead; check_species_pools.py fails on it.
+#define DUNGEON_ENCOUNTER_STARTING_TIER 7
+#define DUNGEON_ENCOUNTER_TIER_FLOORS   1
 #define DUNGEON_ENCOUNTER_WINDOW        8
 
 void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition);

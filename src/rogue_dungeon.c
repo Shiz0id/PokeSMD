@@ -458,67 +458,88 @@ static const u16 sUnderwaterSpecies[] =
 
 // The Elite Four's pools, each the type its member specialises in.
 //
-// EIGHT entries, not sixteen like the gym pools, and that is deliberate.
-// BuildWildEncounterTable clamps `tiers` to speciesCount and then takes the top
-// DUNGEON_ENCOUNTER_WINDOW (8) of the ladder, so on any floor past about 30
-// every entry beyond the last eight has already retired. These themes are only
-// ever reached at floor 81 and later. Sixteen would mean writing eight species
-// that can never appear.
+// ELEVEN entries, and the number is arithmetic rather than taste. The ramp is
+// per dungeon now, so an Elite Four dungeon of DUNGEON_SHORT_FLOORS runs tiers
+// STARTING_TIER..STARTING_TIER + SHORT - 1, which is 7..11 - so eleven is
+// exactly what is reachable. Fewer leaves the window of eight unfilled and a
+// floor repeats species across its slots; more leaves a tail nothing can roll.
+// check_species_pools.py fails on either, so this number follows the run
+// structure rather than having to be remembered.
+//
+// It used to be EIGHT, for a reason that was correct then and is not now: the
+// ramp keyed off the ABSOLUTE floor, these dungeons start at floor 81, so
+// `tiers` was pinned at the pool length and only the top eight could ever show.
+// Steven's is sixteen rather than eleven because his dungeon is a full
+// DUNGEON_LONG_FLOORS.
 //
 // Still sorted weakest to strongest, because the window is a window: the
 // ordering is what the tier machinery reads, and it stays correct if these
 // pools are ever pointed at a shallower dungeon.
 //
-// Kept to Gen 1-3, like every other pool here, and kept off the pseudo
-// legendaries. Tyranitar, Dragonite and Salamence are all type-appropriate and
-// all sit at 600 BST; at one-of-eight they would be a fifth of the encounters
-// on their floor rather than a rare, and Drake's ace would stop meaning
-// anything. Their pre-evolutions are absent for the same reason in reverse -
-// there is no level 53 Bagon.
+// STILL OFF THE PSEUDO LEGENDARIES, which is the part of the original note that
+// survives unchanged. Tyranitar, Dragonite, Salamence, Garchomp and Metagross
+// are all type-appropriate and all sit at 600 BST; inside a window of eight they
+// would be a fifth of the encounters on their floor rather than a rare, and the
+// member's own ace would stop meaning anything - Metagross IS Steven's ace.
+// Their pre-evolutions are absent for the same reason in reverse: there is no
+// level 53 Bagon. Haxorus is in because 540 is not that tier, and Zweilous
+// because it is a MIDDLE stage, so Hydreigon stays out.
+//
+// Gen 4 and 5 are drawn on now, and that is what makes eleven reachable without
+// reaching outside the type. Gen 1-3 alone could not fill some of these: Phoebe
+// was stuck at seven because Gen 1-3 has ten Ghosts and three are too weak for
+// level 49, and Drake at six because Dragon was deliberately rare before Gen 4.
 
 // Sidney, Dark. Mightyena through Houndoom is his own party plus the rest of
 // Hoenn's Dark types; Sneasel and Houndoom come from Gen 2, which is where the
-// type's depth is.
+// type's depth is, and Murkrow, Honchkrow and Weavile from Gen 4 - Honchkrow and
+// Weavile being the evolutions of two entries already here.
 static const u16 sSidneySpecies[] =
 {
-    SPECIES_MIGHTYENA, SPECIES_SNEASEL,  SPECIES_SHARPEDO, SPECIES_ABSOL,
-    SPECIES_CRAWDAUNT, SPECIES_CACTURNE, SPECIES_SHIFTRY,  SPECIES_HOUNDOOM,
+    SPECIES_MURKROW, SPECIES_SNEASEL, SPECIES_MIGHTYENA,
+    SPECIES_CACTURNE, SPECIES_CRAWDAUNT, SPECIES_SHIFTRY,
+    SPECIES_SHARPEDO, SPECIES_ABSOL, SPECIES_HONCHKROW,
+    SPECIES_HOUNDOOM, SPECIES_WEAVILE,
 };
 
-// Phoebe, Ghost. SEVEN, because Gen 1-3 has only ten Ghosts in total and three
-// of them - Gastly, Shuppet, Duskull - are too weak to belong at level 49.
-// Padding it to eight would mean reaching outside the type or outside the
-// generation, and neither is worth one slot. Shedinja is a free catch at this
-// depth and is in anyway: it is one of the most distinctive things in the
-// generation and it is exactly what a Ghost floor is for.
+// Phoebe, Ghost. Gen 1-3 has ten Ghosts and three - Gastly, Shuppet, Duskull -
+// are too weak to belong at level 49, which is why this was the shortest pool
+// in the run at seven. Gen 4 and 5 close it without leaving the type: Drifblim,
+// Mismagius, Dusknoir and Chandelure. Shedinja stays at the bottom as a free
+// catch; it is one of the most distinctive things in Gen 3 and exactly what a
+// Ghost floor is for.
 static const u16 sPhoebeSpecies[] =
 {
-    SPECIES_SHEDINJA, SPECIES_SABLEYE,  SPECIES_HAUNTER, SPECIES_MISDREAVUS,
-    SPECIES_BANETTE,  SPECIES_DUSCLOPS, SPECIES_GENGAR,
+    SPECIES_SHEDINJA, SPECIES_MISDREAVUS, SPECIES_SABLEYE,
+    SPECIES_HAUNTER, SPECIES_DRIFBLIM, SPECIES_BANETTE,
+    SPECIES_MISMAGIUS, SPECIES_DUSCLOPS, SPECIES_CHANDELURE,
+    SPECIES_GENGAR, SPECIES_DUSKNOIR,
 };
 
 // Glacia, Ice. Sealeo, Glalie and Walrein are her own three. This is the pool
 // that actually interacts with the floor: MAP_ROGUE_DUNGEON_SNOW puts
-// B_WEATHER_SNOW up in every battle, so all eight of these get 1.5x Defense.
+// B_WEATHER_SNOW up in every battle, so every one of these gets 1.5x Defense -
+// which is worth remembering before adding an Ice type that is already bulky.
 static const u16 sGlaciaSpecies[] =
 {
-    SPECIES_SEALEO, SPECIES_PILOSWINE, SPECIES_JYNX,   SPECIES_DEWGONG,
-    SPECIES_GLALIE, SPECIES_CLOYSTER,  SPECIES_WALREIN, SPECIES_LAPRAS,
+    SPECIES_SEALEO, SPECIES_DEWGONG, SPECIES_JYNX, SPECIES_PILOSWINE,
+    SPECIES_GLALIE, SPECIES_CLOYSTER, SPECIES_FROSLASS, SPECIES_BEARTIC,
+    SPECIES_ABOMASNOW, SPECIES_WALREIN, SPECIES_LAPRAS,
 };
 
-// Drake, Dragon. SIX, the thinnest pool here, and it is the whole of what Gen
-// 1-3 offers once the pseudo legendaries are out: Dragon was deliberately rare
-// until Gen 4. Everything else in the neighbourhood only looks like it belongs -
-// Seadra is pure Water and only becomes Water/Dragon as Kingdra, Swablu is
-// Normal/Flying until it evolves, Trapinch is pure Ground. Checked rather than
-// assumed, because all three read as dragons and none of them are.
+// Drake, Dragon. This was the thinnest pool in the run at six, and that was the
+// whole of what Gen 1-3 offers once the pseudo legendaries are out - Dragon was
+// deliberately rare until Gen 4, which is exactly the gap Gen 4 and 5 fill.
 //
-// Six divides the twelve encounter slots exactly, so this floor is the most
-// evenly spread in the run rather than the least varied.
+// Everything in the neighbourhood that only LOOKS like it belongs is still out,
+// and it was checked rather than assumed because all three read as dragons and
+// none of them are: Seadra is pure Water and becomes Water/Dragon only as
+// Kingdra, Swablu is Normal/Flying until it evolves, Trapinch is pure Ground.
 static const u16 sDrakeSpecies[] =
 {
-    SPECIES_VIBRAVA, SPECIES_DRAGONAIR, SPECIES_SHELGON,
-    SPECIES_ALTARIA, SPECIES_FLYGON,    SPECIES_KINGDRA,
+    SPECIES_VIBRAVA, SPECIES_DRAGONAIR, SPECIES_GABITE, SPECIES_SHELGON,
+    SPECIES_ALTARIA, SPECIES_DRUDDIGON, SPECIES_FRAXURE, SPECIES_FLYGON,
+    SPECIES_KINGDRA, SPECIES_ZWEILOUS, SPECIES_HAXORUS,
 };
 
 // Seaweed, laid in blobs the way vanilla lays it. Every slot is the same id
@@ -571,8 +592,10 @@ static const struct RoguePatchLayer sUnderwaterPatch[] =
 // what fills the sixth slot.
 static const u16 sEverGrandeSpecies[] =
 {
-    SPECIES_VICTREEBEL, SPECIES_SUNFLORA, SPECIES_VENOMOTH,
-    SPECIES_JUMPLUFF,   SPECIES_BELLOSSOM, SPECIES_VILEPLUME,
+    SPECIES_SUNFLORA, SPECIES_BELLOSSOM, SPECIES_CHERRIM,
+    SPECIES_JUMPLUFF, SPECIES_VILEPLUME, SPECIES_WHIMSICOTT,
+    SPECIES_VICTREEBEL, SPECIES_VENOMOTH, SPECIES_LILLIGANT,
+    SPECIES_TANGROWTH, SPECIES_ROSERADE,
 };
 
 // Steven, Steel, and the deepest floors in the run. EIGHT, like the Elite Four
@@ -593,8 +616,11 @@ static const u16 sEverGrandeSpecies[] =
 // meaning out of meeting it.
 static const u16 sStevenSpecies[] =
 {
-    SPECIES_METANG,     SPECIES_LAIRON,   SPECIES_MAGNETON, SPECIES_FORRETRESS,
-    SPECIES_SKARMORY,   SPECIES_SCIZOR,   SPECIES_STEELIX,  SPECIES_AGGRON,
+    SPECIES_MAGNETON, SPECIES_LAIRON, SPECIES_METANG, SPECIES_FORRETRESS,
+    SPECIES_PROBOPASS, SPECIES_BRONZONG, SPECIES_SKARMORY,
+    SPECIES_KLINKLANG, SPECIES_ESCAVALIER, SPECIES_FERROTHORN,
+    SPECIES_EXCADRILL, SPECIES_STEELIX, SPECIES_SCIZOR, SPECIES_MAGNEZONE,
+    SPECIES_AGGRON, SPECIES_LUCARIO,
 };
 
 // Six wall variants and two floor ones, all paired out of the sheet's legend.
@@ -1654,6 +1680,31 @@ static const struct RogueDungeonTheme *ThemeForFloor(u16 floor)
 // Sized for the LAND slot count because it is the larger of the two; a water
 // floor fills only the first NUM_WATER_MONS_ENCOUNTER_SLOTS of it.
 EWRAM_DATA static struct WildPokemon sDungeonWildMons[NUM_LAND_MONS_ENCOUNTER_SLOTS] = {0};
+
+// What the floor's deal was made from, kept so the water branch can re-deal it.
+//
+// WHY WATER RE-DEALS AND LAND DOES NOT. The engine gives water five encounter
+// slots against land's twelve, and the slots are the ceiling on how many species
+// can be present AT ONCE - not on how many a floor may offer. TryGenerateWildMon
+// asks for the table at the moment of each roll and uses it inside that one
+// call, so re-dealing there is atomic: the species, its level and the
+// ability-influenced scans (Magnet Pull, Static) all read one consistent deal.
+// Rotating between rolls therefore lifts a water floor from five species to the
+// whole window, with no extra slots and nothing for the player to notice.
+//
+// It also fixes the uneven-weight problem rather than working around it. Slot
+// weights run 20/20/10/10/..., so a species dealt into slot 0 dominates a floor
+// whose table never changes; rotating gives every species in the window its turn
+// in the common slots.
+//
+// Land is left alone deliberately: twelve slots already exceed the window, so
+// every species is reachable on every roll and re-dealing would buy nothing.
+EWRAM_DATA static const struct RogueDungeonTheme *sWildTheme = NULL;
+EWRAM_DATA static u8 sWildBottom = 0;
+EWRAM_DATA static u8 sWildWidth = 0;
+EWRAM_DATA static u8 sWildRotation = 0;
+EWRAM_DATA static u8 sWildLevel = 0;
+EWRAM_DATA static u8 sWildSlots = 0;
 EWRAM_DATA static struct WildPokemonInfo sDungeonWildInfo = {0};
 
 // Which branch the table above was built for. Recorded rather than re-derived
@@ -2251,16 +2302,49 @@ bool8 RogueDungeon_TryHandleWhiteOut(void)
     return TRUE;
 }
 
-// Must be called from generation, after SeedDungeonRng, so the table is
-// reproducible for a given floor.
+// Deals `slots` entries from the theme's pool, starting the round robin at
+// `rotation`. Split out of BuildWildEncounterTable because the water branch
+// re-deals per roll - see RogueDungeon_GetWildMonInfo.
+static void DealWildSlots(const struct RogueDungeonTheme *theme, u32 slots,
+                          u32 bottom, u32 width, u32 rotation, u8 level)
+{
+    u32 i;
+
+    // Dealt round-robin, not drawn independently per slot. Encounter slot
+    // weights are steeply uneven (20/20/10/10/...), so independent draws let one
+    // species take both 20% slots and dominate the floor. The rotation varies
+    // which species lands in the common slots.
+    for (i = 0; i < slots; i++)
+    {
+        sDungeonWildMons[i].species = theme->species[bottom + (i + rotation) % width];
+        sDungeonWildMons[i].minLevel = level;
+        sDungeonWildMons[i].maxLevel = level + DUNGEON_ENCOUNTER_LEVEL_SPREAD;
+    }
+}
+
+// Must be called from generation, after SeedDungeonRng, so a given floor always
+// opens on the same table. The WATER branch then re-deals it per roll, which is
+// deliberate and is explained at sWildRotation.
 static void BuildWildEncounterTable(u16 floor)
 {
     const struct RogueDungeonTheme *theme = ThemeForFloor(floor);
     u32 scaled = FloorTargetLevel(floor);
-    u32 tiers = DUNGEON_ENCOUNTER_STARTING_TIER + floor / DUNGEON_ENCOUNTER_TIER_FLOORS;
+
+    // THE RAMP IS RELATIVE TO THE DUNGEON, NOT THE RUN, and that is a
+    // correctness point rather than a tuning one. Every theme has its OWN pool,
+    // written for its own depth - so keying the tier on the absolute floor made
+    // a theme read its pool from wherever its dungeon happened to sit. The
+    // underwater pool starts at floor 71, so only its top five entries were ever
+    // reachable and eleven curated species could not appear at all. Counting
+    // from the floor within the dungeon makes every theme read its pool the same
+    // way, which is also what lets a pool be lengthened without touching this.
+    //
+    // Difficulty does not come from here. FloorTargetLevel is still absolute, so
+    // a deep dungeon still sends high-level Pokemon; this decides only WHICH.
+    u32 tiers = DUNGEON_ENCOUNTER_STARTING_TIER
+              + DungeonFloorWithin(floor) / DUNGEON_ENCOUNTER_TIER_FLOORS;
     u32 bottom, width, rotation;
     u8 level;
-    u32 i;
 
     // The engine gives the two branches different slot counts - twelve for
     // land, five for water - and the theme feeds whichever one its encounter
@@ -2269,14 +2353,12 @@ static void BuildWildEncounterTable(u16 floor)
               ? NUM_WATER_MONS_ENCOUNTER_SLOTS
               : NUM_LAND_MONS_ENCOUNTER_SLOTS;
 
-    // The window is capped to the slot count for the same reason it is dealt
-    // round robin below: every species in the window is meant to be reachable
-    // on the floor it belongs to. Eight species across five slots would leave
-    // three of them unrollable on any given floor - present in the ladder,
-    // absent from the game - and which three would depend on the rotation.
-    // Narrowing the window instead keeps the retire-with-depth behaviour and
-    // makes the water pools advance a little faster, which is the honest trade.
-    u32 window = (DUNGEON_ENCOUNTER_WINDOW < slots) ? DUNGEON_ENCOUNTER_WINDOW : slots;
+    // The window is NO LONGER capped to the slot count. It used to be, because
+    // eight species across five slots leaves three unrollable on a floor whose
+    // table is dealt once - present in the ladder, absent from the game. The
+    // water branch now re-deals per roll, so every species in the window is
+    // reachable on the floor regardless of how few slots exist at any instant.
+    u32 window = DUNGEON_ENCOUNTER_WINDOW;
 
     // Clamp before narrowing to u8, or a deep enough floor wraps.
     if (scaled > MAX_LEVEL - DUNGEON_ENCOUNTER_LEVEL_SPREAD)
@@ -2289,18 +2371,23 @@ static void BuildWildEncounterTable(u16 floor)
     // Window rather than prefix, so the weakest species retire with depth.
     bottom = (tiers > window) ? tiers - window : 0;
     width = tiers - bottom;
+
+    // THIS DRAW MUST HAPPEN HERE whatever the water branch does with it later.
+    // BuildWildEncounterTable runs before PlaceTrainers, PlaceItems,
+    // PlaceBerryTrees and the hidden item, all of which draw from this same
+    // seeded stream - so not consuming a value here would shift every one of
+    // them. The layout would be byte-identical and every object on the floor
+    // would move, which is not a failure anything checks for.
     rotation = DungeonRandom() % width;
 
-    // Dealt round-robin, not drawn independently per slot. Encounter slot
-    // weights are steeply uneven (20/20/10/10/...), so independent draws let one
-    // species take both 20% slots and dominate the floor. The rotation varies
-    // which species lands in the common slots from floor to floor.
-    for (i = 0; i < slots; i++)
-    {
-        sDungeonWildMons[i].species = theme->species[bottom + (i + rotation) % width];
-        sDungeonWildMons[i].minLevel = level;
-        sDungeonWildMons[i].maxLevel = level + DUNGEON_ENCOUNTER_LEVEL_SPREAD;
-    }
+    sWildBottom = bottom;
+    sWildWidth = width;
+    sWildRotation = rotation;
+    sWildLevel = level;
+    sWildSlots = slots;
+    sWildTheme = theme;
+
+    DealWildSlots(theme, slots, bottom, width, rotation, level);
 
     // encounterRate is read straight off the static table, not from here, so
     // this value is only a sane fallback.
@@ -2327,6 +2414,20 @@ const struct WildPokemonInfo *RogueDungeon_GetWildMonInfo(enum WildPokemonArea a
         return NULL;
     if (area != sDungeonWildArea)
         return NULL;
+
+    // Water re-deals per roll; see sWildTheme for why, and why land does not.
+    //
+    // Advanced by ONE so the rotation walks the window rather than jumping
+    // around it - over consecutive rolls every species passes through the
+    // common slots exactly once per lap. Deliberately NOT DungeonRandom():
+    // that stream belongs to floor generation and is not live at roll time, and
+    // drawing from it here would make encounters depend on generation order.
+    if (sDungeonWildArea == WILD_AREA_WATER && sWildTheme != NULL && sWildWidth != 0)
+    {
+        sWildRotation = (sWildRotation + 1) % sWildWidth;
+        DealWildSlots(sWildTheme, sWildSlots, sWildBottom, sWildWidth,
+                      sWildRotation, sWildLevel);
+    }
 
     return &sDungeonWildInfo;
 }
