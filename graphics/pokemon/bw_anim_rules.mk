@@ -15,10 +15,22 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/abra/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NA
 $(ASSETS_DIR_NAME)/graphics/pokemon/abra/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/abra/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/absol/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/absol/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/absol/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/absol/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/aerodactyl/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/aerodactyl/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/aerodactyl/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/aerodactyl/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/aggron/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/aggron/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/aggron/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/aggron/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/aipom/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/aipom/bw_anim.png.4bpp
@@ -33,10 +45,22 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/alakazam/bw_anim.png.4bpp.fsmol: $(ASSETS_DI
 $(ASSETS_DIR_NAME)/graphics/pokemon/alakazam/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/alakazam/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/altaria/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/altaria/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/altaria/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/altaria/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/ampharos/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/ampharos/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/ampharos/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/ampharos/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/anorith/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/anorith/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/anorith/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/anorith/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/arbok/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/arbok/bw_anim.png.4bpp
@@ -57,6 +81,18 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/ariados/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR
 $(ASSETS_DIR_NAME)/graphics/pokemon/ariados/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/ariados/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/armaldo/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/armaldo/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/armaldo/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/armaldo/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/aron/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/aron/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/aron/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/aron/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/articuno/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/articuno/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
@@ -69,16 +105,58 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/azumarill/bw_anim.png.4bpp.fsmol: $(ASSETS_D
 $(ASSETS_DIR_NAME)/graphics/pokemon/azumarill/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/azumarill/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/azurill/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/azurill/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/azurill/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/azurill/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/bagon/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/bagon/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/bagon/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/bagon/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/baltoy/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/baltoy/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/baltoy/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/baltoy/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/banette/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/banette/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/banette/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/banette/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/barboach/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/barboach/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/barboach/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/barboach/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/bayleef/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/bayleef/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/bayleef/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/bayleef/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/beautifly/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/beautifly/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/beautifly/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/beautifly/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/beedrill/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/beedrill/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/beedrill/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/beedrill/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/beldum/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/beldum/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/beldum/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/beldum/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/bellossom/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/bellossom/bw_anim.png.4bpp
@@ -99,10 +177,22 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/blastoise/bw_anim.png.4bpp.fsmol: $(ASSETS_D
 $(ASSETS_DIR_NAME)/graphics/pokemon/blastoise/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/blastoise/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/blaziken/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/blaziken/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/blaziken/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/blaziken/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/blissey/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/blissey/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/blissey/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/blissey/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/breloom/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/breloom/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/breloom/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/breloom/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/bulbasaur/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/bulbasaur/bw_anim.png.4bpp
@@ -115,6 +205,42 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/butterfree/bw_anim.png.4bpp.fsmol: $(ASSETS_
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/butterfree/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/butterfree/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/cacnea/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/cacnea/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/cacnea/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/cacnea/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/cacturne/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/cacturne/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/cacturne/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/cacturne/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/camerupt/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/camerupt/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/camerupt/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/camerupt/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/carvanha/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/carvanha/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/carvanha/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/carvanha/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/cascoon/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/cascoon/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/cascoon/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/cascoon/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/castform/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/castform/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/castform/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/castform/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/caterpie/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/caterpie/bw_anim.png.4bpp
@@ -159,10 +285,22 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/chikorita/bw_anim.png.4bpp.fsmol: $(ASSETS_D
 $(ASSETS_DIR_NAME)/graphics/pokemon/chikorita/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/chikorita/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/chimecho/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/chimecho/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/chimecho/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/chimecho/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/chinchou/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/chinchou/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/chinchou/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/chinchou/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/clamperl/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/clamperl/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/clamperl/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/clamperl/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/claydol/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/claydol/bw_anim.png.4bpp
@@ -195,10 +333,34 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/cloyster/bw_anim.png.4bpp.fsmol: $(ASSETS_DI
 $(ASSETS_DIR_NAME)/graphics/pokemon/cloyster/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/cloyster/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/combusken/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/combusken/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/combusken/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/combusken/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/corphish/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/corphish/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/corphish/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/corphish/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/corsola/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/corsola/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/corsola/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/corsola/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/cradily/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/cradily/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/cradily/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/cradily/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/crawdaunt/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/crawdaunt/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/crawdaunt/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/crawdaunt/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/crobat/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/crobat/bw_anim.png.4bpp
@@ -225,10 +387,22 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/cyndaquil/bw_anim.png.4bpp.fsmol: $(ASSETS_D
 $(ASSETS_DIR_NAME)/graphics/pokemon/cyndaquil/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/cyndaquil/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/delcatty/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/delcatty/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/delcatty/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/delcatty/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/delibird/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/delibird/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/delibird/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/delibird/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/deoxys/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/deoxys/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/deoxys/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/deoxys/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/dewgong/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/dewgong/bw_anim.png.4bpp
@@ -303,6 +477,24 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/dunsparce/bw_anim.png.4bpp.fsmol: $(ASSETS_D
 $(ASSETS_DIR_NAME)/graphics/pokemon/dunsparce/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/dunsparce/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/dusclops/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/dusclops/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/dusclops/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/dusclops/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/duskull/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/duskull/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/duskull/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/duskull/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/dustox/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/dustox/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/dustox/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/dustox/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/eevee/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/eevee/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
@@ -319,6 +511,12 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/electabuzz/bw_anim.png.4bpp.fsmol: $(ASSETS_
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/electabuzz/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/electabuzz/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/electrike/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/electrike/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/electrike/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/electrike/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/electrode/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/electrode/bw_anim.png.4bpp
@@ -357,6 +555,12 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/exeggutor/bw_anim.png.4bpp.fsmol: $(ASSETS_D
 $(ASSETS_DIR_NAME)/graphics/pokemon/exeggutor/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/exeggutor/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/exploud/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/exploud/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/exploud/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/exploud/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/farfetchd/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/farfetchd/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
@@ -367,6 +571,12 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/fearow/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/fearow/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/fearow/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/feebas/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/feebas/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/feebas/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/feebas/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/feraligatr/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/feraligatr/bw_anim.png.4bpp
@@ -387,6 +597,12 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/flareon/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR
 $(ASSETS_DIR_NAME)/graphics/pokemon/flareon/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/flareon/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/flygon/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/flygon/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/flygon/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/flygon/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/forretress/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/forretress/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
@@ -397,6 +613,12 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/furret/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/furret/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/furret/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/gardevoir/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/gardevoir/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/gardevoir/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/gardevoir/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/gastly/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/gastly/bw_anim.png.4bpp
@@ -421,6 +643,12 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/girafarig/bw_anim.png.4bpp.fsmol: $(ASSETS_D
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/girafarig/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/girafarig/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/glalie/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/glalie/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/glalie/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/glalie/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/gligar/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/gligar/bw_anim.png.4bpp
@@ -459,6 +687,12 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/golem/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_N
 $(ASSETS_DIR_NAME)/graphics/pokemon/golem/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/golem/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/gorebyss/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/gorebyss/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/gorebyss/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/gorebyss/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/granbull/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/granbull/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
@@ -477,16 +711,46 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/grimer/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_
 $(ASSETS_DIR_NAME)/graphics/pokemon/grimer/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/grimer/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/groudon/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/groudon/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/groudon/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/groudon/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/grovyle/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/grovyle/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/grovyle/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/grovyle/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/growlithe/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/growlithe/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/growlithe/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/growlithe/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/grumpig/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/grumpig/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/grumpig/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/grumpig/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/gulpin/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/gulpin/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/gulpin/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/gulpin/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/gyarados/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/gyarados/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/gyarados/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/gyarados/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/hariyama/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/hariyama/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/hariyama/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/hariyama/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/haunter/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/haunter/bw_anim.png.4bpp
@@ -555,6 +819,12 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/houndour/bw_anim.png.4bpp.fsmol: $(ASSETS_DI
 $(ASSETS_DIR_NAME)/graphics/pokemon/houndour/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/houndour/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/huntail/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/huntail/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/huntail/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/huntail/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/hypno/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/hypno/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
@@ -567,6 +837,12 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/igglybuff/bw_anim.png.4bpp.fsmol: $(ASSETS_D
 $(ASSETS_DIR_NAME)/graphics/pokemon/igglybuff/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/igglybuff/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/illumise/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/illumise/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/illumise/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/illumise/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/ivysaur/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/ivysaur/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
@@ -577,6 +853,12 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/jigglypuff/bw_anim.png.4bpp.fsmol: $(ASSETS_
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/jigglypuff/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/jigglypuff/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/jirachi/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/jirachi/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/jirachi/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/jirachi/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/jolteon/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/jolteon/bw_anim.png.4bpp
@@ -627,6 +909,12 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/kangaskhan/bw_anim.png.4bpp.fsmol: $(ASSETS_
 $(ASSETS_DIR_NAME)/graphics/pokemon/kangaskhan/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/kangaskhan/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/kecleon/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/kecleon/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/kecleon/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/kecleon/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/kingdra/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/kingdra/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
@@ -639,6 +927,12 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/kingler/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR
 $(ASSETS_DIR_NAME)/graphics/pokemon/kingler/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/kingler/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/kirlia/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/kirlia/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/kirlia/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/kirlia/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/koffing/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/koffing/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
@@ -649,6 +943,18 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/krabby/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/krabby/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/krabby/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/kyogre/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/kyogre/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/kyogre/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/kyogre/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/lairon/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/lairon/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/lairon/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/lairon/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/lanturn/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/lanturn/bw_anim.png.4bpp
@@ -669,6 +975,18 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/larvitar/bw_anim.png.4bpp.fsmol: $(ASSETS_DI
 $(ASSETS_DIR_NAME)/graphics/pokemon/larvitar/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/larvitar/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/latias/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/latias/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/latias/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/latias/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/latios/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/latios/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/latios/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/latios/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/ledian/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/ledian/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
@@ -687,6 +1005,42 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/lickitung/bw_anim.png.4bpp.fsmol: $(ASSETS_D
 $(ASSETS_DIR_NAME)/graphics/pokemon/lickitung/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/lickitung/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/lileep/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/lileep/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/lileep/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/lileep/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/linoone/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/linoone/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/linoone/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/linoone/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/lombre/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/lombre/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/lombre/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/lombre/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/lotad/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/lotad/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/lotad/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/lotad/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/loudred/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/loudred/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/loudred/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/loudred/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/ludicolo/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/ludicolo/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/ludicolo/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/ludicolo/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/lugia/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/lugia/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
@@ -697,6 +1051,12 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/lunatone/bw_anim.png.4bpp.fsmol: $(ASSETS_DI
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/lunatone/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/lunatone/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/luvdisc/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/luvdisc/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/luvdisc/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/luvdisc/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/machamp/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/machamp/bw_anim.png.4bpp
@@ -753,6 +1113,18 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/magneton/bw_anim.png.4bpp.fsmol: $(ASSETS_DI
 $(ASSETS_DIR_NAME)/graphics/pokemon/magneton/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/magneton/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/makuhita/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/makuhita/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/makuhita/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/makuhita/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/manectric/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/manectric/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/manectric/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/manectric/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/mankey/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/mankey/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
@@ -783,6 +1155,36 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/marowak/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR
 $(ASSETS_DIR_NAME)/graphics/pokemon/marowak/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/marowak/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/marshtomp/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/marshtomp/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/marshtomp/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/marshtomp/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/masquerain/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/masquerain/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/masquerain/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/masquerain/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/mawile/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/mawile/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/mawile/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/mawile/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/medicham/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/medicham/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/medicham/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/medicham/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/meditite/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/meditite/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/meditite/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/meditite/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/meganium/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/meganium/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
@@ -793,6 +1195,18 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/meowth/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/meowth/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/meowth/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/metagross/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/metagross/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/metagross/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/metagross/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/metang/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/metang/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/metang/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/metang/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/metapod/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/metapod/bw_anim.png.4bpp
@@ -813,10 +1227,28 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/mewtwo/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_
 $(ASSETS_DIR_NAME)/graphics/pokemon/mewtwo/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/mewtwo/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/mightyena/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/mightyena/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/mightyena/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/mightyena/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/milotic/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/milotic/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/milotic/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/milotic/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/miltank/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/miltank/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/miltank/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/miltank/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/minun/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/minun/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/minun/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/minun/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/misdreavus/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/misdreavus/bw_anim.png.4bpp
@@ -897,10 +1329,22 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/nidorino/bw_anim.png.4bpp.fsmol: $(ASSETS_DI
 $(ASSETS_DIR_NAME)/graphics/pokemon/nidorino/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/nidorino/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/nincada/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/nincada/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/nincada/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/nincada/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/ninetales/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/ninetales/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/ninetales/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/ninetales/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/ninjask/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/ninjask/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/ninjask/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/ninjask/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/noctowl/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/noctowl/bw_anim.png.4bpp
@@ -913,6 +1357,18 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/nosepass/bw_anim.png.4bpp.fsmol: $(ASSETS_DI
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/nosepass/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/nosepass/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/numel/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/numel/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/numel/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/numel/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/nuzleaf/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/nuzleaf/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/nuzleaf/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/nuzleaf/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/octillery/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/octillery/bw_anim.png.4bpp
@@ -955,6 +1411,12 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/parasect/bw_anim.png.4bpp.fsmol: $(ASSETS_DI
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/parasect/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/parasect/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/pelipper/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/pelipper/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/pelipper/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/pelipper/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/persian/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/persian/bw_anim.png.4bpp
@@ -1017,6 +1479,12 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/pinsir/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_
 $(ASSETS_DIR_NAME)/graphics/pokemon/pinsir/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/pinsir/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/plusle/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/plusle/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/plusle/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/plusle/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/politoed/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/politoed/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
@@ -1045,6 +1513,12 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/ponyta/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/ponyta/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/ponyta/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/poochyena/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/poochyena/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/poochyena/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/poochyena/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/porygon/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/porygon/bw_anim.png.4bpp
@@ -1107,6 +1581,12 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/raikou/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_
 $(ASSETS_DIR_NAME)/graphics/pokemon/raikou/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/raikou/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/ralts/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/ralts/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/ralts/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/ralts/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/rapidash/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/rapidash/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
@@ -1123,6 +1603,36 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/rattata/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/rattata/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/rattata/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/rayquaza/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/rayquaza/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/rayquaza/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/rayquaza/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/regice/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/regice/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/regice/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/regice/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/regirock/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/regirock/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/regirock/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/regirock/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/registeel/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/registeel/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/registeel/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/registeel/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/relicanth/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/relicanth/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/relicanth/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/relicanth/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/remoraid/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/remoraid/bw_anim.png.4bpp
@@ -1143,6 +1653,24 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/rhyhorn/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR
 $(ASSETS_DIR_NAME)/graphics/pokemon/rhyhorn/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/rhyhorn/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/roselia/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/roselia/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/roselia/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/roselia/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/sableye/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/sableye/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/sableye/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/sableye/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/salamence/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/salamence/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/salamence/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/salamence/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/sandshrew/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/sandshrew/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
@@ -1153,6 +1681,12 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/sandslash/bw_anim.png.4bpp.fsmol: $(ASSETS_D
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/sandslash/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/sandslash/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/sceptile/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/sceptile/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/sceptile/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/sceptile/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/scizor/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/scizor/bw_anim.png.4bpp
@@ -1179,6 +1713,18 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/seaking/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR
 $(ASSETS_DIR_NAME)/graphics/pokemon/seaking/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/seaking/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/sealeo/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/sealeo/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/sealeo/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/sealeo/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/seedot/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/seedot/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/seedot/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/seedot/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/seel/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/seel/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
@@ -1191,16 +1737,64 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/sentret/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR
 $(ASSETS_DIR_NAME)/graphics/pokemon/sentret/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/sentret/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/seviper/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/seviper/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/seviper/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/seviper/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/sharpedo/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/sharpedo/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/sharpedo/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/sharpedo/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/shedinja/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/shedinja/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/shedinja/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/shedinja/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/shelgon/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/shelgon/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/shelgon/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/shelgon/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/shellder/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/shellder/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/shellder/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/shellder/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/shiftry/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/shiftry/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/shiftry/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/shiftry/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/shroomish/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/shroomish/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/shroomish/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/shroomish/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/shuckle/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/shuckle/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/shuckle/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/shuckle/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/shuppet/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/shuppet/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/shuppet/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/shuppet/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/silcoon/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/silcoon/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/silcoon/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/silcoon/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/skarmory/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/skarmory/bw_anim.png.4bpp
@@ -1213,6 +1807,24 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/skiploom/bw_anim.png.4bpp.fsmol: $(ASSETS_DI
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/skiploom/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/skiploom/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/skitty/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/skitty/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/skitty/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/skitty/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/slaking/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/slaking/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/slaking/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/slaking/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/slakoth/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/slakoth/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/slakoth/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/slakoth/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/slowbro/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/slowbro/bw_anim.png.4bpp
@@ -1263,6 +1875,12 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/snorlax/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR
 $(ASSETS_DIR_NAME)/graphics/pokemon/snorlax/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/snorlax/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/snorunt/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/snorunt/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/snorunt/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/snorunt/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/snubbull/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/snubbull/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
@@ -1281,10 +1899,28 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/spearow/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR
 $(ASSETS_DIR_NAME)/graphics/pokemon/spearow/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/spearow/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/spheal/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/spheal/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/spheal/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/spheal/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/spinarak/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/spinarak/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/spinarak/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/spinarak/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/spinda/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/spinda/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/spinda/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/spinda/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/spoink/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/spoink/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/spoink/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/spoink/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/squirtle/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/squirtle/bw_anim.png.4bpp
@@ -1341,10 +1977,46 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/sunkern/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR
 $(ASSETS_DIR_NAME)/graphics/pokemon/sunkern/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/sunkern/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/surskit/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/surskit/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/surskit/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/surskit/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/swablu/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/swablu/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/swablu/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/swablu/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/swalot/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/swalot/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/swalot/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/swalot/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/swampert/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/swampert/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/swampert/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/swampert/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/swellow/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/swellow/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/swellow/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/swellow/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/swinub/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/swinub/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/swinub/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/swinub/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/taillow/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/taillow/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/taillow/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/taillow/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/tangela/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/tangela/bw_anim.png.4bpp
@@ -1395,16 +2067,34 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/torchic/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR
 $(ASSETS_DIR_NAME)/graphics/pokemon/torchic/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/torchic/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/torkoal/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/torkoal/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/torkoal/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/torkoal/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/totodile/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/totodile/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/totodile/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/totodile/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/trapinch/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/trapinch/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/trapinch/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/trapinch/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/treecko/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/treecko/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/treecko/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/treecko/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/tropius/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/tropius/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/tropius/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/tropius/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/typhlosion/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/typhlosion/bw_anim.png.4bpp
@@ -1467,16 +2157,34 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/venusaur/bw_anim.png.4bpp.fsmol: $(ASSETS_DI
 $(ASSETS_DIR_NAME)/graphics/pokemon/venusaur/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/venusaur/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/vibrava/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/vibrava/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/vibrava/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/vibrava/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/victreebel/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/victreebel/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/victreebel/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/victreebel/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/vigoroth/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/vigoroth/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/vigoroth/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/vigoroth/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/vileplume/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/vileplume/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/vileplume/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/vileplume/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/volbeat/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/volbeat/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/volbeat/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/volbeat/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/voltorb/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/voltorb/bw_anim.png.4bpp
@@ -1489,6 +2197,24 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/vulpix/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/vulpix/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/vulpix/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/wailmer/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/wailmer/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/wailmer/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/wailmer/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/wailord/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/wailord/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/wailord/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/wailord/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/walrein/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/walrein/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/walrein/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/walrein/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/wartortle/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/wartortle/bw_anim.png.4bpp
@@ -1515,10 +2241,28 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/weezing/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR
 $(ASSETS_DIR_NAME)/graphics/pokemon/weezing/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/weezing/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/whiscash/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/whiscash/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/whiscash/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/whiscash/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/whismur/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/whismur/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/whismur/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/whismur/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/wigglytuff/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/wigglytuff/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/wigglytuff/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/wigglytuff/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/wingull/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/wingull/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/wingull/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/wingull/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/wobbuffet/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/wobbuffet/bw_anim.png.4bpp
@@ -1533,6 +2277,18 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/wooper/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_
 $(ASSETS_DIR_NAME)/graphics/pokemon/wooper/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/wooper/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/wurmple/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/wurmple/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/wurmple/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/wurmple/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/wynaut/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/wynaut/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/wynaut/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/wynaut/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/xatu/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/xatu/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
@@ -1545,10 +2301,22 @@ $(ASSETS_DIR_NAME)/graphics/pokemon/yanma/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_N
 $(ASSETS_DIR_NAME)/graphics/pokemon/yanma/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/yanma/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
+$(ASSETS_DIR_NAME)/graphics/pokemon/zangoose/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/zangoose/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/zangoose/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/zangoose/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
 $(ASSETS_DIR_NAME)/graphics/pokemon/zapdos/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/zapdos/bw_anim.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/zapdos/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/zapdos/bw_anim_back.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/zigzagoon/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/zigzagoon/bw_anim.png.4bpp
+	$(SMOL) -fw $< $@ 2048 2
+
+$(ASSETS_DIR_NAME)/graphics/pokemon/zigzagoon/bw_anim_back.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/zigzagoon/bw_anim_back.png.4bpp
 	$(SMOL) -fw $< $@ 2048 2
 
 $(ASSETS_DIR_NAME)/graphics/pokemon/zubat/bw_anim.png.4bpp.fsmol: $(ASSETS_DIR_NAME)/graphics/pokemon/zubat/bw_anim.png.4bpp
