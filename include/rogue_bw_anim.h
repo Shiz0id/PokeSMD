@@ -61,4 +61,9 @@ void RogueBwAnim_Tick(void);
 // Called from FreeMonSpritesGfx. Releases the chunk buffers.
 void RogueBwAnim_Free(void);
 
+// Whether a frame published now would reach VRAM for this battler. For tests -
+// a frozen sprite is not otherwise observable, because the tick and the buffer
+// writes carry on exactly as normal and only the VRAM copy stops.
+bool32 RogueBwAnim_WouldPublish(u32 battler);
+
 #endif // GUARD_ROGUE_BW_ANIM_H

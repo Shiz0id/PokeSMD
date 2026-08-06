@@ -162,3 +162,29 @@ DOUBLE_BATTLE_TEST("BW anim: four sprites animate at once")
         TURN { }
     }
 }
+
+// A KO animation trashes the winner's sprite scratch data and never restores
+// it: Task_HandleMonAnimation saves data[2] from a sprite another animation may
+// already have cleared, so the opponent comes back stamped 1 instead of its
+// species. That used to freeze the sprite for the rest of the battle - the tick
+// carried on and every frame landed in the buffer, but none of them reached
+// VRAM. It looked like it recovered on opening the Bag or the party menu,
+// because those recreate the sprite and restamp it.
+//
+// FORCE_MOVE_ANIM is load bearing. Headless swaps sMonAnimFunctions out for
+// WaitAnimEnd, which restores cleanly, so without it this test passes against
+// the bug it exists to catch.
+SINGLE_BATTLE_TEST("BW anim: a KO animation does not freeze the winner")
+{
+    GIVEN {
+        FORCE_MOVE_ANIM(TRUE);
+        PLAYER(SPECIES_WOBBUFFET) { HP(1); }
+        PLAYER(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_GEODUDE);
+    } WHEN {
+        TURN { MOVE(opponent, MOVE_TACKLE); SEND_OUT(player, 1); }
+        TURN { }
+    } THEN {
+        EXPECT_EQ(RogueBwAnim_WouldPublish(B_POSITION_OPPONENT_LEFT), TRUE);
+    }
+}

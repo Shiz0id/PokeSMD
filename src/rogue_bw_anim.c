@@ -60,6 +60,11 @@ const struct BwAnim *GetBwAnim(u16 species, bool32 isBack)
 static EWRAM_DATA u8 *sBwChunkBuf[MAX_BATTLERS_COUNT] = {NULL};
 static EWRAM_DATA const struct BwAnim *sBwAnim[MAX_BATTLERS_COUNT] = {NULL};
 
+// The sprite id we have already proved is this battler's mon sprite, latched so
+// the proof does not have to be repeated against a stamp that does not survive.
+// See IsBattlerMonSprite.
+static EWRAM_DATA u8 sBwSpriteId[MAX_BATTLERS_COUNT] = {0};
+
 #define BW_NO_CHUNK 0xFF
 
 static void ClearBwState(u32 battler)
@@ -67,6 +72,7 @@ static void ClearBwState(u32 battler)
     struct BattleSpriteInfo *info = &gBattleSpritesDataPtr->battlerData[battler];
 
     sBwAnim[battler] = NULL;
+    sBwSpriteId[battler] = SPRITE_NONE;
     info->bwStep = 0;
     info->bwHold = 0;
     info->bwChunk = BW_NO_CHUNK;
@@ -87,6 +93,27 @@ static void ClearBwState(u32 battler)
 //
 // The engine stamps data[0] and data[2] on a battler's mon sprite the moment it
 // creates one, so checking both is the discriminator, and it costs two loads.
+// THE STAMP DOES NOT SURVIVE A MON ANIMATION, so it is proof of identity only
+// the first time and a latch carries it afterwards. Task_HandleMonAnimation
+// zeroes data[0] and data[2..7] while an animation runs and restores them from
+// what it saved - but it saves data[0] as oam.paletteNum, and it saves data[2]
+// from a sprite whose data another animation may already have cleared. After a
+// KO animation, which is the two-frame victory animation played by the winner,
+// the opponent's data[2] comes back as 1 rather than its species.
+//
+// That is a permanent freeze rather than a glitch: the stamp never becomes
+// right again on its own, so every later frame is written into the buffer and
+// none of them is copied to VRAM. Anything that recreates the sprite fixes it,
+// which is why going to the Bag or the party menu appeared to restart the
+// animation.
+//
+// Latching keeps every protection the stamp was there to provide. At load time
+// the mon sprite does not exist yet and the latch is cleared, so a stale id is
+// still rejected. If gBattlerSpriteIds[battler] is re-pointed at a TRAINER
+// sprite - which the slide code really does - it no longer equals the latch and
+// no longer matches the stamp, so that is still rejected too. Only the case
+// this bug is about, the same sprite we already verified with its scratch data
+// since trampled, now passes.
 static bool32 IsBattlerMonSprite(u32 battler, u16 species)
 {
     u32 spriteId = gBattlerSpriteIds[battler];
@@ -94,8 +121,14 @@ static bool32 IsBattlerMonSprite(u32 battler, u16 species)
     if (spriteId == SPRITE_NONE || spriteId >= MAX_SPRITES)
         return FALSE;
 
-    return gSprites[spriteId].data[0] == (s16)battler
-        && gSprites[spriteId].data[2] == (s16)species;
+    if (gSprites[spriteId].data[0] == (s16)battler
+     && gSprites[spriteId].data[2] == (s16)species)
+    {
+        sBwSpriteId[battler] = spriteId;
+        return TRUE;
+    }
+
+    return spriteId == sBwSpriteId[battler];
 }
 
 // Put a frame where the engine will draw it.
@@ -252,5 +285,18 @@ void RogueBwAnim_Free(void)
             sBwChunkBuf[battler] = NULL;
         }
         sBwAnim[battler] = NULL;
+        sBwSpriteId[battler] = SPRITE_NONE;
     }
+}
+
+// Whether a frame published now would actually reach VRAM. Exists so the freeze
+// this guards against is testable: the tick keeps running and the buffer keeps
+// updating either way, so nothing else about a frozen sprite is observable from
+// a test.
+bool32 RogueBwAnim_WouldPublish(u32 battler)
+{
+    if (battler >= MAX_BATTLERS_COUNT || sBwAnim[battler] == NULL)
+        return FALSE;
+
+    return IsBattlerMonSprite(battler, sBwAnim[battler]->species);
 }
