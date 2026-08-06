@@ -46,6 +46,17 @@ VIDEO_FRAME_MS = 1000.0 / 59.7275
 # crashed it cannot arise. 255 is now the real ceiling, and it comes from
 # frameCount and seqLength being u8 in the C table.
 MAX_FRAMES = 255
+
+# Marks the one emit failure that is worth retrying rather than reporting: a
+# sequence longer than the u8 seqLength field. Raising the hold floor merges
+# steps and shortens the sequence, so the animation survives slightly coarser
+# instead of being dropped. Matched as a prefix, so it must stay first.
+U8_OVERFLOW = 'u8-overflow'
+
+# The ceiling on that retry. A hold of 8 video frames is 7.5 fps, which is the
+# bottom of the range the BW rips actually use - past it the result is not the
+# animation any more, and dropping the species is the honest outcome.
+MAX_MIN_HOLD = 8
 MON_PIC_WIDTH = 64       # must match include/constants/pokemon.h
 MON_PIC_HEIGHT = 64
 
@@ -81,6 +92,38 @@ PRESETS = {
              'treecko', 'torchic', 'mudkip'],    # only as opponents
 }
 
+# National dex bounds per generation, checked against the enum at run time
+# rather than trusted. Gens 1-7 are exactly the base dex with no form entries
+# interleaved, which is what makes a plain id range a safe way to name a
+# generation.
+#
+# GEN 8 AND 9 ARE DELIBERATELY ABSENT. The enum stops being contiguous there:
+# the alternate forms sit between the end of gen 8 and SPECIES_SPRIGATITO,
+# which is 1289 rather than 906. A range over that region would quietly emit
+# Megas and Gmaxes as if they were base species, and the roster would look
+# right in the count. Name those species explicitly with --species instead.
+GEN_RANGES = {
+    1: (1, 151), 2: (152, 251), 3: (252, 386),
+    4: (387, 493), 5: (494, 649), 6: (650, 721), 7: (722, 809),
+}
+
+
+def gen_species(ids, gen):
+    """Every base species of one generation, in enum order.
+
+    Taken from the enum rather than written out, so it cannot drift and so the
+    awkward names come out right without being special-cased. The count is
+    asserted because a range that silently returns the wrong set is the exact
+    failure this table exists to avoid.
+    """
+    lo, hi = GEN_RANGES[gen]
+    got = [s for s, i in sorted(ids.items(), key=lambda t: t[1]) if lo <= i <= hi]
+    if len(got) != hi - lo + 1:
+        raise SystemExit(
+            f'gen {gen}: ids {lo}-{hi} name {len(got)} species, expected '
+            f'{hi - lo + 1}. The enum has moved; fix GEN_RANGES before emitting.')
+    return [base_name(s).replace('_', '') for s in got]
+
 
 def c_name(stem):
     return ''.join(p.capitalize() for p in stem.replace('-', '_').split('_'))
@@ -108,6 +151,26 @@ def species_ids(repo):
     return out
 
 
+def base_name(species):
+    """SPECIES_ constant -> the name both the gif set and the repo use.
+
+    A species that HAS alternate forms names its own base form with a _NORMAL
+    suffix in the enum - SPECIES_CASTFORM_NORMAL, SPECIES_DEOXYS_NORMAL - and
+    the bare SPECIES_CASTFORM is an alias with no value of its own, so it never
+    reaches ids. Neither the gif set nor the repo carries that suffix: both
+    call the directory "castform".
+
+    Getting this wrong is quiet twice over, which is why it is one function
+    rather than two rules. The gif lookup misses and the species is skipped;
+    and if it did not, the repo path would be graphics/pokemon/castform_normal,
+    a directory BESIDE the real one, where stock_placement finds no
+    anim_front.png and silently centres the sprite instead of matching the one
+    the game already draws.
+    """
+    name = species[len('SPECIES_'):].lower()
+    return name[:-len('_normal')] if name.endswith('_normal') else name
+
+
 def stem_to_species(ids):
     """gif directory name -> SPECIES_ constant.
 
@@ -120,7 +183,7 @@ def stem_to_species(ids):
     """
     out = {}
     for species in ids:
-        stem = species[len('SPECIES_'):].lower().replace('_', '')
+        stem = base_name(species).replace('_', '')
         # First one wins, matching the enum order, so a later alias cannot
         # steal a base species' directory.
         out.setdefault(stem, species)
@@ -322,7 +385,8 @@ def emit_species(repo, gif_path, stem, dirname, back=False, min_hold=DEFAULT_MIN
     # seqLength and frameCount are u8 in the C table, so a sequence longer than
     # 255 steps would wrap and play a fragment of itself forever.
     if len(steps) > 255 or len(frames) > 255:
-        return None, f'{len(frames)} frames / {len(steps)} steps exceeds the u8 table fields'
+        return None, (f'{U8_OVERFLOW}: {len(frames)} frames / {len(steps)} '
+                      f'steps exceeds the u8 table fields')
 
     # Back symbols carry a suffix: a species may have both, and without it the
     # two would declare the same gBwAnimGfx_<Name> twice.
@@ -474,17 +538,35 @@ def main():
     gifs = Path(args.gifs)
 
     ids = species_ids(repo)
+    #  --preset takes a LIST, because emitting replaces the roster rather than
+    #  extending it - so growing the roster by a generation means naming every
+    #  generation already in it. `--preset gen1,gen2,test` is the whole roster,
+    #  not the delta. Bare `gen1` still means what it always did.
     names = []
-    if args.preset == 'gen1':
-        # Taken from the enum rather than written out, so it cannot drift and
-        # so the awkward names come out right without being special-cased.
-        names = [s[len('SPECIES_'):].lower().replace('_', '')
-                 for s, i in sorted(ids.items(), key=lambda t: t[1])
-                 if 1 <= i <= 151]
-    elif args.preset:
-        names = PRESETS[args.preset]
+    for token in (args.preset or '').split(','):
+        token = token.strip()
+        if not token:
+            continue
+        if token.startswith('gen') and token[3:].isdigit():
+            gen = int(token[3:])
+            if gen not in GEN_RANGES:
+                raise SystemExit(
+                    f'no range for {token}: gens 8 and 9 are not contiguous in '
+                    f'the enum, name those species with --species')
+            names += gen_species(ids, gen)
+        elif token in PRESETS:
+            names += PRESETS[token]
+        else:
+            raise SystemExit(f'unknown preset {token!r}')
     if args.species:
         names += [s.strip() for s in args.species.split(',') if s.strip()]
+
+    #  A species named twice - gen2 and test both carry Xatu - would emit its
+    #  sheet twice and put a DUPLICATE KEY in a table that is bisected at
+    #  runtime, which a binary search cannot resolve. write_header sorts by
+    #  species id, so order here does not matter; uniqueness does.
+    seen = set()
+    names = [n for n in names if not (n in seen or seen.add(n))]
 
     jobs = [(n, gifs / n / f'{n}.gif', False) for n in names]
 
@@ -508,6 +590,7 @@ def main():
 
     byStem = stem_to_species(ids)
     built = []
+    skipped = []
     for n, gp, back in jobs:
         side = 'back' if back else 'front'
         species = byStem.get(n)
@@ -515,22 +598,50 @@ def main():
             # Skipped rather than fatal: at 151 species one unrecognised
             # directory should not throw away the other 300 containers.
             print(f'{n:12s} {side:5s} SKIPPED: no species matches that directory')
+            skipped.append((n, side, 'no species matches that directory'))
             continue
-        dirname = species[len('SPECIES_'):].lower()
+        dirname = base_name(species)
+        if not (repo / 'graphics/pokemon' / dirname).is_dir():
+            #  Fatal, not skipped. Writing to a directory that does not exist
+            #  CREATES it, beside the real one, and the asset then ships
+            #  detached from its species with the sprite silently centred.
+            raise SystemExit(f'{n}: graphics/pokemon/{dirname} does not exist')
         if not gp.exists():
             print(f'{n:12s} {side:5s} MISSING {gp}')
+            skipped.append((n, side, f'no gif at {gp}'))
             continue
         info, err = emit_species(repo, gp, n, dirname, back, args.min_hold)
+        #  A sequence too long for the u8 fields is not a reason to drop a
+        #  species - it means the rip is finer than the runtime can address,
+        #  and holding each step longer merges steps until it fits. Masquerain's
+        #  back is what this is for: 256 steps, one over the limit, and dropping
+        #  it would have cost the whole animation to save one step.
+        hold = args.min_hold
+        while err and err.startswith(U8_OVERFLOW) and hold < MAX_MIN_HOLD:
+            hold += 1
+            info, err = emit_species(repo, gp, n, dirname, back, hold)
         if err:
             print(f'{n:12s} {side:5s} SKIPPED: {err}')
+            skipped.append((n, side, err))
             continue
         info['species'], info['id'] = species, ids[species]
         built.append(info)
         total_holds = sum(h for _f, h in info['steps'])
         fps = 60.0 * len(info['steps']) / total_holds if total_holds else 0
         note = f'  resampled, {info["dropped"]} frames dropped' if info['dropped'] else ''
+        if hold != args.min_hold:
+            note += f'  min-hold raised to {hold} to fit the u8 sequence'
         print(f'{n:12s} {side:5s} {info["w"]}x{info["h"]}  {info["frames"]:3d} frames  '
               f'{len(info["steps"]):3d} steps  {fps:4.1f} fps{note}')
+
+    #  A roster is emitted a hundred species at a time and the per-species
+    #  lines scroll past, so a skip has to be restated at the end or it is
+    #  simply not seen. This is how Masquerain's back went missing from a
+    #  135 species batch without anyone noticing until the counts were compared.
+    if skipped:
+        print(f'\n{len(skipped)} of {len(jobs)} assets were NOT emitted:')
+        for n, side, why in skipped:
+            print(f'  {n:12s} {side:5s} {why}')
 
     if built:
         p = write_header(repo, built, ids)

@@ -84,13 +84,21 @@ DOUBLE_BATTLE_TEST("BW anim: Tate and Liza animate two sprites at once")
 // A species with no entry has to keep its stock sprite rather than fall into
 // the animated path with a NULL anim - that is what lets the roster land a few
 // species at a time instead of as one commit.
+//
+// THIS SPECIES HAS TO BE RE-POINTED EACH TIME THE ROSTER GROWS. It was
+// Wobbuffet until gen 2 was emitted, at which point the ASSUME below started
+// failing - correctly, and loudly, which is the whole reason it is an ASSUME
+// and not an assertion inside the body. Note that an ASSUMPTION_FAIL SKIPS the
+// test rather than failing the run, so leaving it pointed at an animated
+// species quietly costs the coverage. Patrat is gen 5, which is the last
+// generation this build enables and so the last one the roster can reach.
 SINGLE_BATTLE_TEST("BW anim: a species with no entry is left alone")
 {
     GIVEN {
-        ASSUME(GetBwAnim(SPECIES_WOBBUFFET, FALSE) == NULL);
-        ASSUME(GetBwAnim(SPECIES_WOBBUFFET, TRUE) == NULL);
-        PLAYER(SPECIES_WOBBUFFET);
-        OPPONENT(SPECIES_WOBBUFFET);
+        ASSUME(GetBwAnim(SPECIES_PATRAT, FALSE) == NULL);
+        ASSUME(GetBwAnim(SPECIES_PATRAT, TRUE) == NULL);
+        PLAYER(SPECIES_PATRAT);
+        OPPONENT(SPECIES_PATRAT);
     } WHEN {
         TURN { }
     }
