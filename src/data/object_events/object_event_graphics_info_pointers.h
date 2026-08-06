@@ -108,6 +108,9 @@ extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RivalMayAcr
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RivalMaySurfing;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RivalMayFieldMove;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Cameraman;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueDiverM;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueDiverF;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueDiverJuan;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_BrendanUnderwater;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_MayUnderwater;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_MovingBox;
@@ -513,6 +516,9 @@ const struct ObjectEventGraphicsInfo *const gObjectEventGraphicsInfoPointers[NUM
     [OBJ_EVENT_GFX_RIVAL_MAY_SURFING] =        &gObjectEventGraphicsInfo_RivalMaySurfing,
     [OBJ_EVENT_GFX_RIVAL_MAY_FIELD_MOVE] =     &gObjectEventGraphicsInfo_RivalMayFieldMove,
     [OBJ_EVENT_GFX_CAMERAMAN] =                &gObjectEventGraphicsInfo_Cameraman,
+    [OBJ_EVENT_GFX_ROGUE_DIVER_M] = &gObjectEventGraphicsInfo_RogueDiverM,
+    [OBJ_EVENT_GFX_ROGUE_DIVER_F] = &gObjectEventGraphicsInfo_RogueDiverF,
+    [OBJ_EVENT_GFX_ROGUE_DIVER_JUAN] = &gObjectEventGraphicsInfo_RogueDiverJuan,
     [OBJ_EVENT_GFX_BRENDAN_UNDERWATER] =       &gObjectEventGraphicsInfo_BrendanUnderwater,
     [OBJ_EVENT_GFX_MAY_UNDERWATER] =           &gObjectEventGraphicsInfo_MayUnderwater,
     [OBJ_EVENT_GFX_MOVING_BOX] =               &gObjectEventGraphicsInfo_MovingBox,

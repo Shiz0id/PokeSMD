@@ -870,7 +870,22 @@
 //       More space can be made by shifting flags around in constants/flags.h or changing how trainer flags are handled
 //       MAX_TRAINERS_COUNT can be increased but will take up additional saveblock space
 
-#define TRAINERS_COUNT_EMERALD     856
+// The seafloor dungeon's own opponents, so a diver's battle pic matches the
+// diver standing on the floor. See sUnderwaterTrainers in src/rogue_dungeon.c.
+//
+// These take seven of the eight ids left after TRAINER_ROGUE_RIVAL, leaving
+// ONE. That is the ceiling on per-theme trainer tables: thirteen more themes
+// cannot have their own trainers without raising MAX_TRAINERS_COUNT_EMERALD,
+// which costs saveblock space because every trainer id owns a defeat flag.
+#define TRAINER_ROGUE_DIVER_1               856
+#define TRAINER_ROGUE_DIVER_2               857
+#define TRAINER_ROGUE_DIVER_3               858
+#define TRAINER_ROGUE_DIVER_4               859
+#define TRAINER_ROGUE_DIVER_5               860
+#define TRAINER_ROGUE_DIVER_6               861
+#define TRAINER_ROGUE_DIVER_7               862
+
+#define TRAINERS_COUNT_EMERALD     863
 #define MAX_TRAINERS_COUNT_EMERALD 864
 
 #if IS_FRLG

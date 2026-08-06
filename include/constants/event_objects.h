@@ -413,6 +413,9 @@ enum
     OBJ_EVENT_GFX_PUSHABLE_BOULDER_FRLG,
     OBJ_EVENT_GFX_CUTTABLE_TREE_FRLG,
     OBJ_EVENT_GFX_BREAKABLE_ROCK_FRLG,
+    OBJ_EVENT_GFX_ROGUE_DIVER_M,
+    OBJ_EVENT_GFX_ROGUE_DIVER_F,
+    OBJ_EVENT_GFX_ROGUE_DIVER_JUAN,
     NUM_OBJ_EVENT_GFX,
 };
 
@@ -605,6 +608,13 @@ enum
 #define OBJ_EVENT_PAL_TAG_BALL_STRANGE            0x116A
 #endif //OW_FOLLOWERS_POKEBALLS
 // Used as a placeholder follower graphic
+// Divers for the seafloor dungeon. Their palettes are shared: the male and
+// female appear on the same floors so they take one tag between them, while
+// Juan gets his own - PrepareFloor returns before PlaceTrainers on a boss
+// floor, so he is never on screen beside them.
+#define OBJ_EVENT_PAL_TAG_ROGUE_DIVER             0x116B
+#define OBJ_EVENT_PAL_TAG_ROGUE_DIVER_JUAN        0x116C
+
 #define OBJ_EVENT_PAL_TAG_SUBSTITUTE              0x7611
 #define OBJ_EVENT_PAL_TAG_LIGHT                   0x8001
 #define OBJ_EVENT_PAL_TAG_LIGHT_2                 0x8002

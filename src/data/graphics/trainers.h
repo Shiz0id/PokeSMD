@@ -25,6 +25,12 @@ const u16 gTrainerPalette_Collector[] = INCGFX_U16("graphics/trainers/front_pics
 const u32 gTrainerFrontPic_AquaGruntF[] = INCGFX_U32("graphics/trainers/front_pics/aqua_grunt_f.png", ".4bpp.smol");
 const u16 gTrainerPalette_AquaGruntF[] = INCGFX_U16("graphics/trainers/front_pics/aqua_grunt_f.png", ".gbapal");
 
+// Scuba divers by Mega Recurso (ORAS-style trainer sheet); original ORAS art
+// ripped by kylepixl. Not our work - see tools/rogue/import_diver_trainers.py.
+const u32 gTrainerFrontPic_RogueDiverM[] = INCGFX_U32("graphics/trainers/front_pics/rogue_diver_m.png", ".4bpp.smol");
+const u16 gTrainerPalette_RogueDiverM[] = INCGFX_U16("graphics/trainers/front_pics/rogue_diver_m.png", ".gbapal");
+const u32 gTrainerFrontPic_RogueDiverF[] = INCGFX_U32("graphics/trainers/front_pics/rogue_diver_f.png", ".4bpp.smol");
+const u16 gTrainerPalette_RogueDiverF[] = INCGFX_U16("graphics/trainers/front_pics/rogue_diver_f.png", ".gbapal");
 const u32 gTrainerFrontPic_SwimmerM[] = INCGFX_U32("graphics/trainers/front_pics/swimmer_m.png", ".4bpp.smol");
 const u16 gTrainerPalette_SwimmerM[] = INCGFX_U16("graphics/trainers/front_pics/swimmer_m.png", ".gbapal");
 
@@ -669,6 +675,14 @@ const struct TrainerPicInfo gTrainerPicInfo[TRAINER_PIC_COUNT] =
     [TRAINER_PIC_SWIMMER_M] =
     {
         .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_SwimmerM, gTrainerPalette_SwimmerM),
+    },
+    [TRAINER_PIC_ROGUE_DIVER_M] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_RogueDiverM, gTrainerPalette_RogueDiverM),
+    },
+    [TRAINER_PIC_ROGUE_DIVER_F] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_RogueDiverF, gTrainerPalette_RogueDiverF),
     },
     [TRAINER_PIC_MAGMA_GRUNT_M] =
     {

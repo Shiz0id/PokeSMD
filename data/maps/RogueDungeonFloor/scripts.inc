@@ -126,8 +126,17 @@ RogueDungeonFloor_EventScript_BossAce::
 RogueDungeonFloor_EventScript_BossAceDone::
 	return
 
-@ Say so rather than saying nothing. There is still no swap UI, so a full party
-@ loses the ace - but the player should at least learn what they walked past.
+@ A full party losing the ace is deliberate, and there must NOT be a swap prompt
+@ here. The rest stop's archivist gives the run real box access before every
+@ dungeon - IsDungeonEndFloor above routes there, and the Elite Four are dungeons
+@ too - so descending a slot light is a wager the player places at the
+@ way-station and pays for across the whole dungeon. Offering the swap here moves
+@ the choice to a point where the dungeon is already survived and there is no
+@ cost left to weigh, which makes the ace automatic and the wager a formality.
+@
+@ Naming the ace is what makes it a wager rather than a loss: STR_VAR_1 is
+@ already buffered by RogueDungeon_PrepareBossAceOffer, so the player learns
+@ exactly which Pokemon they walked past and can price the next one.
 RogueDungeonFloor_EventScript_BossAceNoRoom::
 	msgbox RogueDungeonFloor_Text_AceNoRoom, MSGBOX_DEFAULT
 	return

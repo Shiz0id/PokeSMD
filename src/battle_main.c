@@ -310,6 +310,9 @@ const struct TrainerClass gTrainerClasses[TRAINER_CLASS_COUNT] =
     [TRAINER_CLASS_BIRD_KEEPER] = { _("BIRD KEEPER"), 8 },
     [TRAINER_CLASS_COLLECTOR] = { _("COLLECTOR"), 15, BALL_PREMIER },
     [TRAINER_CLASS_SWIMMER_M] = { _("SWIMMER♂"), 2, BALL_DIVE },
+    // Dive Balls, inherited from the swimmer, because that is what the
+    // class would carry and the seafloor is where it is caught.
+    [TRAINER_CLASS_ROGUE_DIVER] = { _("DIVER"), 4, BALL_DIVE },
     [TRAINER_CLASS_TEAM_MAGMA] = { _("TEAM MAGMA") },
     [TRAINER_CLASS_EXPERT] = { _("EXPERT"), 10 },
     [TRAINER_CLASS_AQUA_ADMIN] = { _("AQUA ADMIN"), 10 },

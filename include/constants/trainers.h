@@ -177,6 +177,11 @@ enum __attribute__((packed)) TrainerPicID
     TRAINER_PIC_CRUSH_GIRL_FRLG,
     TRAINER_PIC_POKEMON_BREEDER_FRLG,
     TRAINER_PIC_PAINTER_FRLG,
+    // Scuba divers for the seafloor dungeon. Appended rather than inserted:
+    // trainerPic is stored per trainer, so shifting any existing id would
+    // silently repaint hundreds of stock trainers.
+    TRAINER_PIC_ROGUE_DIVER_M,
+    TRAINER_PIC_ROGUE_DIVER_F,
     TRAINER_PIC_COUNT,
 };
 
@@ -521,6 +526,8 @@ enum TrainerClassID
     TRAINER_CLASS_RUIN_MANIAC_FRLG,
     TRAINER_CLASS_LADY_FRLG,
     TRAINER_CLASS_PAINTER_FRLG,
+    // Appended, never inserted: trainerClass is stored per trainer.
+    TRAINER_CLASS_ROGUE_DIVER,
 
     TRAINER_CLASS_COUNT,
 };

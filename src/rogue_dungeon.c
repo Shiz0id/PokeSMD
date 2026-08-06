@@ -42,7 +42,8 @@ extern const u8 RogueDungeonFloor_EventScript_BossDone[];
 extern const u8 RogueDungeonFloor_Text_TrainerIntro[];
 extern const u8 RogueDungeonFloor_Text_TrainerDefeat[];
 
-static u16 PickTrainerForLevel(u8 target);
+static u16 PickTrainerForLevel(u8 target, const struct RogueDungeonTheme *theme,
+                               u16 *gfxOut);
 
 // How long each dungeon is. The Elite Four's five are half length, which is what
 // makes them come every five floors with no mini boss between - see the run
@@ -424,6 +425,29 @@ static const struct RogueDecor sJungleDecor[] =
 // long water stretch. It also foreshadows Juan for free: Luvdisc, Whiscash and
 // Crawdaunt are his, and Milotic closes the list because Sootopolis is where
 // the stock game puts it.
+// The seafloor's own opponents, so the figure on the floor and the pic in the
+// battle are the same person. Sorted by level like the stock table, because the
+// picker widens a window around the floor's target and expects that order.
+//
+// Levels 40-46 straddle the dungeon on purpose: Underwater is floors 71-80,
+// whose FloorTargetLevel runs 41-45, and the first window is +/-3. Reaching past
+// both ends is what stops the deepest floors falling through to a wider window.
+//
+// Species were read out of src/data/pokemon/species_info rather than recalled,
+// and that check earned its place: DRAGALGE is Poison/DRAGON - Skrelp loses the
+// Water type when it evolves, exactly the Seadra/Kingdra trap - so it is not
+// here. SPECIES_BASCULIN does not exist under that name either.
+static const struct RogueThemeTrainer sUnderwaterTrainers[] =
+{
+    { TRAINER_ROGUE_DIVER_1, OBJ_EVENT_GFX_ROGUE_DIVER_M, 40 },
+    { TRAINER_ROGUE_DIVER_2, OBJ_EVENT_GFX_ROGUE_DIVER_F, 41 },
+    { TRAINER_ROGUE_DIVER_3, OBJ_EVENT_GFX_ROGUE_DIVER_M, 42 },
+    { TRAINER_ROGUE_DIVER_4, OBJ_EVENT_GFX_ROGUE_DIVER_F, 43 },
+    { TRAINER_ROGUE_DIVER_5, OBJ_EVENT_GFX_ROGUE_DIVER_M, 44 },
+    { TRAINER_ROGUE_DIVER_6, OBJ_EVENT_GFX_ROGUE_DIVER_F, 45 },
+    { TRAINER_ROGUE_DIVER_7, OBJ_EVENT_GFX_ROGUE_DIVER_M, 46 },
+};
+
 static const u16 sUnderwaterSpecies[] =
 {
     SPECIES_CHINCHOU,  SPECIES_CLAMPERL, SPECIES_CORPHISH, SPECIES_BARBOACH,
@@ -1208,13 +1232,14 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .patches = sUnderwaterPatch,
         .patchCount = ARRAY_COUNT(sUnderwaterPatch),
 
-        // Swimmers stand in until divers exist. They are wrong - a swimmer is
-        // drawn treading the surface in swimwear, and this is the seafloor -
-        // but the only diving sprites in the game are the player's own
-        // BRENDAN_UNDERWATER / MAY_UNDERWATER, and dressing every trainer as
-        // the player is worse.
-        .trainerGfx = OBJ_EVENT_GFX_SWIMMER_M,
-        .trainerGfxAlt = OBJ_EVENT_GFX_SWIMMER_F,
+        // The seafloor brings its own trainers, so both halves of a diver
+        // agree: the entry names the overworld sprite AND the trainer whose
+        // battle pic will follow it. trainerGfx below is the fallback for a
+        // floor that somehow places a trainer without going through the table.
+        .trainers = sUnderwaterTrainers,
+        .trainerCount = ARRAY_COUNT(sUnderwaterTrainers),
+        .trainerGfx = OBJ_EVENT_GFX_ROGUE_DIVER_M,
+        .trainerGfxAlt = OBJ_EVENT_GFX_ROGUE_DIVER_F,
 
         // No platform, unlike the ocean: the seafloor is ordinary walkable
         // ground, so Juan stands on it the way every land boss does.
@@ -3118,8 +3143,16 @@ void RogueDungeon_OnBossDefeated(void)
 // form a contiguous run. Widens the window until something matches rather than
 // failing - the low end of the table is thin, as the stock game has few
 // trainers below level 10.
-static u16 PickTrainerForLevel(u8 target)
+
+// Returns the trainer, and writes its overworld sprite through gfxOut when the
+// theme brought its own. gfxOut is left alone for the stock table, whose
+// entries have no sprite and leave the caller alternating theme->trainerGfx.
+static u16 PickTrainerForLevel(u8 target, const struct RogueDungeonTheme *theme,
+                               u16 *gfxOut)
 {
+    const struct RogueThemeTrainer *themed = theme ? theme->trainers : NULL;
+    u32 count = themed ? theme->trainerCount
+                       : ARRAY_COUNT(sRogueDungeonTrainers);
     u32 i, first = 0, last = 0;
     u32 window;
 
@@ -3127,9 +3160,10 @@ static u16 PickTrainerForLevel(u8 target)
     {
         bool8 found = FALSE;
 
-        for (i = 0; i < ARRAY_COUNT(sRogueDungeonTrainers); i++)
+        for (i = 0; i < count; i++)
         {
-            u32 level = sRogueDungeonTrainers[i].avgLevel;
+            u32 level = themed ? themed[i].avgLevel
+                               : sRogueDungeonTrainers[i].avgLevel;
 
             if (level + window >= target && level <= target + window)
             {
@@ -3143,9 +3177,23 @@ static u16 PickTrainerForLevel(u8 target)
         }
 
         if (found)
-            return sRogueDungeonTrainers[first + (DungeonRandom() % (last - first + 1))].trainerId;
+        {
+            u32 pick = first + (DungeonRandom() % (last - first + 1));
+
+            if (themed)
+            {
+                *gfxOut = themed[pick].gfxId;
+                return themed[pick].trainerId;
+            }
+            return sRogueDungeonTrainers[pick].trainerId;
+        }
     }
 
+    if (themed)
+    {
+        *gfxOut = themed[0].gfxId;
+        return themed[0].trainerId;
+    }
     return sRogueDungeonTrainers[0].trainerId;
 }
 
@@ -3647,7 +3695,7 @@ static void PlaceTrainers(u16 floor)
     const struct RogueDungeonTheme *theme = ThemeForFloor(floor);
     u32 target = FloorTargetLevel(floor);
     u32 count = 1 + floor / DUNGEON_TRAINER_FLOORS_PER_EXTRA;
-    u16 trainerId, gfx;
+    u16 trainerId, gfx, themedGfx;
     u32 j;
     u32 i;
 
@@ -3673,7 +3721,11 @@ static void PlaceTrainers(u16 floor)
         // Distinct ids only. The defeat flag is derived from the trainer id, so
         // two slots sharing one would both be marked beaten by a single fight,
         // leaving a trainer standing that refuses to battle.
-        trainerId = PickTrainerForLevel(target);
+        // Themed is left at 0 and only written when the theme brought its own
+        // trainers, so the alternation below stays the behaviour for every
+        // theme that did not.
+        themedGfx = 0;
+        trainerId = PickTrainerForLevel(target, theme, &themedGfx);
 
         for (j = 0; j < sTrainerCount; j++)
         {
@@ -3685,9 +3737,13 @@ static void PlaceTrainers(u16 floor)
 
         sTrainerIds[sTrainerCount] = trainerId;
 
-        // Alternate the two so a floor is not populated by one repeated figure.
-        gfx = (sTrainerCount & 1) && theme->trainerGfxAlt ? theme->trainerGfxAlt
-                                                          : theme->trainerGfx;
+        // A themed trainer names its own sprite, because parity and level are
+        // picked independently and a diver drawn female must not open the
+        // battle as a man. Otherwise alternate the theme's two, so a floor is
+        // not populated by one repeated figure.
+        gfx = themedGfx ? themedGfx
+            : ((sTrainerCount & 1) && theme->trainerGfxAlt ? theme->trainerGfxAlt
+                                                           : theme->trainerGfx);
         sTrainerGfx[sTrainerCount] = gfx ? gfx : OBJ_EVENT_GFX_HIKER;
         sTrainerCount++;
     }

@@ -25,6 +25,46 @@ static const struct SpriteFrameImage sPicTable_BrendanSurfing[] = {
     overworld_frame(gObjectEventPic_BrendanSurfing, 4, 4, 5),
 };
 
+// Frames 0,1,2 are south, north and west; the walk slots repeat them,
+// exactly as sPicTable_BrendanUnderwater does.
+static const struct SpriteFrameImage sPicTable_RogueDiverM[] = {
+    overworld_frame(gObjectEventPic_RogueDiverM, 4, 4, 0),
+    overworld_frame(gObjectEventPic_RogueDiverM, 4, 4, 1),
+    overworld_frame(gObjectEventPic_RogueDiverM, 4, 4, 2),
+    overworld_frame(gObjectEventPic_RogueDiverM, 4, 4, 0),
+    overworld_frame(gObjectEventPic_RogueDiverM, 4, 4, 0),
+    overworld_frame(gObjectEventPic_RogueDiverM, 4, 4, 1),
+    overworld_frame(gObjectEventPic_RogueDiverM, 4, 4, 1),
+    overworld_frame(gObjectEventPic_RogueDiverM, 4, 4, 2),
+    overworld_frame(gObjectEventPic_RogueDiverM, 4, 4, 2),
+};
+// Frames 0,1,2 are south, north and west; the walk slots repeat them,
+// exactly as sPicTable_BrendanUnderwater does.
+static const struct SpriteFrameImage sPicTable_RogueDiverF[] = {
+    overworld_frame(gObjectEventPic_RogueDiverF, 4, 4, 0),
+    overworld_frame(gObjectEventPic_RogueDiverF, 4, 4, 1),
+    overworld_frame(gObjectEventPic_RogueDiverF, 4, 4, 2),
+    overworld_frame(gObjectEventPic_RogueDiverF, 4, 4, 0),
+    overworld_frame(gObjectEventPic_RogueDiverF, 4, 4, 0),
+    overworld_frame(gObjectEventPic_RogueDiverF, 4, 4, 1),
+    overworld_frame(gObjectEventPic_RogueDiverF, 4, 4, 1),
+    overworld_frame(gObjectEventPic_RogueDiverF, 4, 4, 2),
+    overworld_frame(gObjectEventPic_RogueDiverF, 4, 4, 2),
+};
+// Frames 0,1,2 are south, north and west; the walk slots repeat them,
+// exactly as sPicTable_BrendanUnderwater does.
+static const struct SpriteFrameImage sPicTable_RogueDiverJuan[] = {
+    overworld_frame(gObjectEventPic_RogueDiverJuan, 4, 4, 0),
+    overworld_frame(gObjectEventPic_RogueDiverJuan, 4, 4, 1),
+    overworld_frame(gObjectEventPic_RogueDiverJuan, 4, 4, 2),
+    overworld_frame(gObjectEventPic_RogueDiverJuan, 4, 4, 0),
+    overworld_frame(gObjectEventPic_RogueDiverJuan, 4, 4, 0),
+    overworld_frame(gObjectEventPic_RogueDiverJuan, 4, 4, 1),
+    overworld_frame(gObjectEventPic_RogueDiverJuan, 4, 4, 1),
+    overworld_frame(gObjectEventPic_RogueDiverJuan, 4, 4, 2),
+    overworld_frame(gObjectEventPic_RogueDiverJuan, 4, 4, 2),
+};
+
 static const struct SpriteFrameImage sPicTable_BrendanUnderwater[] = {
     overworld_frame(gObjectEventPic_BrendanUnderwater, 4, 4, 0),
     overworld_frame(gObjectEventPic_BrendanUnderwater, 4, 4, 1),

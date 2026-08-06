@@ -1080,6 +1080,16 @@ struct RogueSkirt
     u16 east;
 };
 
+// One opponent a theme supplies itself. avgLevel is matched against the
+// floor's target the same way the stock table is; gfxId is the overworld sprite
+// to stand it up as, so the figure on the floor and the pic in the battle agree.
+struct RogueThemeTrainer
+{
+    u16 trainerId;
+    u16 gfxId;
+    u8 avgLevel;
+};
+
 struct RogueDungeonTheme
 {
     u16 layoutId;
@@ -1180,6 +1190,23 @@ struct RogueDungeonTheme
     // either leaves the default. Bosses and mini bosses carry their own sprites
     // and ignore this.
     u16 trainerGfx, trainerGfxAlt;
+
+    // A theme may bring its OWN trainers instead of drawing from the 709 stock
+    // ones in sRogueDungeonTrainers. Null means the stock table, which is what
+    // every theme but the seafloor still does.
+    //
+    // This exists because the two halves of a trainer come from different
+    // places. The OVERWORLD sprite is theme->trainerGfx above; the BATTLE pic
+    // rides on the trainer id and so came from whatever stock trainer matched
+    // the floor's level. The player therefore walked up to a diver and fought a
+    // Bug Catcher. A theme table fixes that by owning both.
+    //
+    // Each entry carries its own gfxId rather than letting the caller alternate
+    // trainerGfx/trainerGfxAlt by index parity, because parity and level are
+    // chosen independently - so a diver drawn female in the overworld could
+    // open a battle as a man. An entry that names both cannot disagree.
+    const struct RogueThemeTrainer *trainers;
+    u16 trainerCount;
 
     // Stand the arena's trainer on a solid block of its own. Set for themes
     // whose floor is not something a person can stand on - the ocean would
