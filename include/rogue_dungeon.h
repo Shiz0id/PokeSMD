@@ -1222,6 +1222,27 @@ struct RogueDungeonTheme
     const u16 *species;
     u8 speciesCount;
 
+    // How many of the pool are live at once, and therefore also where the tier
+    // ramp STARTS - the two are the same number and have to be, or index 0 is
+    // unreachable on the very first floor. From that pair the pool size follows:
+    //
+    //     reachable pool = encounterWindow + dungeonLength - 1
+    //
+    // so a ten floor dungeon with a window of 12 supports 21 species, and a
+    // five floor one with a window of 8 supports 12.
+    //
+    // PER THEME because the types are not equally deep. Gen 1-4 holds exactly
+    // seven Dragons once the legendaries, the 600 BST pseudos and the
+    // pre-evolutions are out, so Drake's window is 7 - and no single global
+    // number can be right for both him and a cave. Zero means
+    // DUNGEON_ENCOUNTER_WINDOW.
+    //
+    // Raising it past the branch's slot count only works where the table is
+    // re-dealt per roll; see sWildTheme in rogue_dungeon.c. Land is dealt once
+    // and has twelve slots, so twelve is its ceiling. Water re-deals, so its
+    // only ceiling is its own pool.
+    u8 encounterWindow;
+
     // Which of the engine's encounter tables this theme's floors feed, matching
     // the metatile behaviour of whatever surface it actually paints encounters
     // on. WILD_AREA_LAND is 0 and is right for eleven of the thirteen themes,
@@ -1349,12 +1370,20 @@ struct RogueFloorMapOverride
 // only grows. A prefix keeps the weakest species in play forever, which is why
 // Zubat was everywhere; with a window they retire as stronger ones unlock.
 //
-// THE RAMP IS PER DUNGEON, so these are floors WITHIN a dungeon - see
-// BuildWildEncounterTable. A ten floor dungeon therefore runs tiers 7..16 and a
-// five floor one 7..11, which is what makes a sixteen entry pool fully
-// reachable in the first and an eleven entry pool in the second. Lengthen a
-// pool past that and the tail is dead; check_species_pools.py fails on it.
-#define DUNGEON_ENCOUNTER_STARTING_TIER 7
+// THE RAMP IS PER DUNGEON, so these are floors WITHIN a dungeon, and it STARTS
+// AT THE WINDOW - see BuildWildEncounterTable and theme->encounterWindow. Those
+// two together fix the pool size a theme can support:
+//
+//     reachable pool = window + dungeonLength - 1
+//
+// so the default window of 8 supports 17 species over ten floors and 12 over
+// five, and a theme that sets its own window moves both ends together. Lengthen
+// a pool past that and the tail is dead; shorten it below the window and the
+// floor repeats species across its slots. check_species_pools.py fails on both.
+//
+// There is no separate starting tier any more. It was 6, then 7, and it was
+// always really the window: any other value either buries the bottom of the
+// pool on the first floor or leaves the window unfilled.
 #define DUNGEON_ENCOUNTER_TIER_FLOORS   1
 #define DUNGEON_ENCOUNTER_WINDOW        8
 

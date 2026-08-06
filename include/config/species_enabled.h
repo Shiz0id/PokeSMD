@@ -10,7 +10,7 @@
 #define P_GEN_2_POKEMON                  TRUE // Generation 2 Pokémon (GSC)
 #define P_GEN_3_POKEMON                  TRUE // Generation 3 Pokémon (RSE, FRLG)
 #define P_GEN_4_POKEMON                  TRUE // Generation 4 Pokémon (DPPt, HGSS)
-#define P_GEN_5_POKEMON                  TRUE // Generation 5 Pokémon (BW, B2W2)
+#define P_GEN_5_POKEMON                  FALSE // Generation 5 Pokémon (BW, B2W2)
 #define P_GEN_6_POKEMON                  FALSE // Generation 6 Pokémon (XY, ORAS)
 #define P_GEN_7_POKEMON                  FALSE // Generation 7 Pokémon (SM, USUM, LGPE)
 #define P_GEN_8_POKEMON                  FALSE // Generation 8 Pokémon (SwSh, BDSP, LA)
@@ -304,9 +304,9 @@
 #define P_FAMILY_ARCEUS                  P_GEN_4_POKEMON
 
 #define P_FAMILY_VICTINI                 P_GEN_5_POKEMON
-#define P_FAMILY_SNIVY                   P_GEN_5_POKEMON
-#define P_FAMILY_TEPIG                   P_GEN_5_POKEMON
-#define P_FAMILY_OSHAWOTT                P_GEN_5_POKEMON
+#define P_FAMILY_SNIVY                   TRUE
+#define P_FAMILY_TEPIG                   TRUE
+#define P_FAMILY_OSHAWOTT                TRUE
 #define P_FAMILY_PATRAT                  P_GEN_5_POKEMON
 #define P_FAMILY_LILLIPUP                P_GEN_5_POKEMON
 #define P_FAMILY_PURRLOIN                P_GEN_5_POKEMON

@@ -510,10 +510,9 @@ static const u16 sSidneySpecies[] =
 // Ghost floor is for.
 static const u16 sPhoebeSpecies[] =
 {
-    SPECIES_SHEDINJA, SPECIES_MISDREAVUS, SPECIES_SABLEYE,
-    SPECIES_HAUNTER, SPECIES_DRIFBLIM, SPECIES_BANETTE,
-    SPECIES_MISMAGIUS, SPECIES_DUSCLOPS, SPECIES_CHANDELURE,
-    SPECIES_GENGAR, SPECIES_DUSKNOIR,
+    SPECIES_SHEDINJA, SPECIES_MISDREAVUS, SPECIES_SABLEYE, SPECIES_HAUNTER,
+    SPECIES_DRIFBLIM, SPECIES_BANETTE, SPECIES_MISMAGIUS, SPECIES_SPIRITOMB,
+    SPECIES_DUSCLOPS, SPECIES_GENGAR, SPECIES_DUSKNOIR,
 };
 
 // Glacia, Ice. Sealeo, Glalie and Walrein are her own three. This is the pool
@@ -523,8 +522,8 @@ static const u16 sPhoebeSpecies[] =
 static const u16 sGlaciaSpecies[] =
 {
     SPECIES_SEALEO, SPECIES_DEWGONG, SPECIES_JYNX, SPECIES_PILOSWINE,
-    SPECIES_GLALIE, SPECIES_CLOYSTER, SPECIES_FROSLASS, SPECIES_BEARTIC,
-    SPECIES_ABOMASNOW, SPECIES_WALREIN, SPECIES_LAPRAS,
+    SPECIES_GLALIE, SPECIES_CLOYSTER, SPECIES_FROSLASS, SPECIES_ABOMASNOW,
+    SPECIES_WALREIN, SPECIES_MAMOSWINE, SPECIES_LAPRAS,
 };
 
 // Drake, Dragon. This was the thinnest pool in the run at six, and that was the
@@ -538,8 +537,7 @@ static const u16 sGlaciaSpecies[] =
 static const u16 sDrakeSpecies[] =
 {
     SPECIES_VIBRAVA, SPECIES_DRAGONAIR, SPECIES_GABITE, SPECIES_SHELGON,
-    SPECIES_ALTARIA, SPECIES_DRUDDIGON, SPECIES_FRAXURE, SPECIES_FLYGON,
-    SPECIES_KINGDRA, SPECIES_ZWEILOUS, SPECIES_HAXORUS,
+    SPECIES_ALTARIA, SPECIES_FLYGON, SPECIES_KINGDRA,
 };
 
 // Seaweed, laid in blobs the way vanilla lays it. Every slot is the same id
@@ -592,10 +590,9 @@ static const struct RoguePatchLayer sUnderwaterPatch[] =
 // what fills the sixth slot.
 static const u16 sEverGrandeSpecies[] =
 {
-    SPECIES_SUNFLORA, SPECIES_BELLOSSOM, SPECIES_CHERRIM,
-    SPECIES_JUMPLUFF, SPECIES_VILEPLUME, SPECIES_WHIMSICOTT,
-    SPECIES_VICTREEBEL, SPECIES_VENOMOTH, SPECIES_LILLIGANT,
-    SPECIES_TANGROWTH, SPECIES_ROSERADE,
+    SPECIES_SUNFLORA, SPECIES_BELLOSSOM, SPECIES_CHERRIM, SPECIES_JUMPLUFF,
+    SPECIES_VILEPLUME, SPECIES_VICTREEBEL, SPECIES_VENOMOTH,
+    SPECIES_CRADILY, SPECIES_TANGROWTH, SPECIES_EXEGGUTOR, SPECIES_ROSERADE,
 };
 
 // Steven, Steel, and the deepest floors in the run. EIGHT, like the Elite Four
@@ -618,8 +615,7 @@ static const u16 sStevenSpecies[] =
 {
     SPECIES_MAGNETON, SPECIES_LAIRON, SPECIES_METANG, SPECIES_FORRETRESS,
     SPECIES_PROBOPASS, SPECIES_BRONZONG, SPECIES_SKARMORY,
-    SPECIES_KLINKLANG, SPECIES_ESCAVALIER, SPECIES_FERROTHORN,
-    SPECIES_EXCADRILL, SPECIES_STEELIX, SPECIES_SCIZOR, SPECIES_MAGNEZONE,
+    SPECIES_BASTIODON, SPECIES_STEELIX, SPECIES_SCIZOR, SPECIES_MAGNEZONE,
     SPECIES_AGGRON, SPECIES_LUCARIO,
 };
 
@@ -1495,6 +1491,12 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         },
         .species = sDrakeSpecies,
         .speciesCount = ARRAY_COUNT(sDrakeSpecies),
+        // SEVEN, and it is the only theme that needs its own. Gen 1-4 holds
+        // exactly seven Dragons once the legendaries, the 600 BST pseudos and
+        // the pre-evolutions are out, so this is the whole type rather than a
+        // choice. The default of 8 would leave the window permanently one short
+        // and the floor repeating a species across its twelve slots.
+        .encounterWindow = ARRAY_COUNT(sDrakeSpecies),
     },
     // Ever Grande, Wallace's, and the first theme whose ENCOUNTER SURFACE is
     // something other than grass, cave floor or water.
@@ -2341,8 +2343,13 @@ static void BuildWildEncounterTable(u16 floor)
     //
     // Difficulty does not come from here. FloorTargetLevel is still absolute, so
     // a deep dungeon still sends high-level Pokemon; this decides only WHICH.
-    u32 tiers = DUNGEON_ENCOUNTER_STARTING_TIER
-              + DungeonFloorWithin(floor) / DUNGEON_ENCOUNTER_TIER_FLOORS;
+    // The ramp STARTS at the window, which is what makes index 0 reachable on a
+    // dungeon's first floor: bottom is tiers - window, and on floor 0 those are
+    // equal. Any other starting tier either buries the bottom of the pool or
+    // leaves the window unfilled.
+    u32 window = (theme->encounterWindow != 0)
+               ? theme->encounterWindow : DUNGEON_ENCOUNTER_WINDOW;
+    u32 tiers = window + DungeonFloorWithin(floor) / DUNGEON_ENCOUNTER_TIER_FLOORS;
     u32 bottom, width, rotation;
     u8 level;
 
@@ -2352,13 +2359,6 @@ static void BuildWildEncounterTable(u16 floor)
     u32 slots = (theme->wildArea == WILD_AREA_WATER)
               ? NUM_WATER_MONS_ENCOUNTER_SLOTS
               : NUM_LAND_MONS_ENCOUNTER_SLOTS;
-
-    // The window is NO LONGER capped to the slot count. It used to be, because
-    // eight species across five slots leaves three unrollable on a floor whose
-    // table is dealt once - present in the ladder, absent from the game. The
-    // water branch now re-deals per roll, so every species in the window is
-    // reachable on the floor regardless of how few slots exist at any instant.
-    u32 window = DUNGEON_ENCOUNTER_WINDOW;
 
     // Clamp before narrowing to u8, or a deep enough floor wraps.
     if (scaled > MAX_LEVEL - DUNGEON_ENCOUNTER_LEVEL_SPREAD)

@@ -3,15 +3,19 @@ Every species in a theme's pool has to be reachable, and every pool has to be
 long enough to fill its window.
 
 WHY THIS EXISTS. A theme's pool is not read as a whole. BuildWildEncounterTable
-takes a sliding window of at most DUNGEON_ENCOUNTER_WINDOW entries ending at
+takes a sliding window ending at
 
-    tiers = STARTING_TIER + floorWithinDungeon / TIER_FLOORS
+    tiers = theme->encounterWindow + floorWithinDungeon / TIER_FLOORS
 
-clamped to the pool length, and deals `slots` entries round-robin out of it. So
-a pool longer than the deepest tier its dungeon reaches has a TAIL NOTHING CAN
-ROLL, and a pool shorter than the window repeats species across the floor's
-slots. Neither fails to build, neither crashes, and neither is visible without
-counting - the floor just quietly offers less than it looks like it should.
+clamped to the pool length, and deals `slots` entries round-robin out of it. The
+ramp starts AT the window, so the two together fix what a pool may be:
+
+    reachable pool = window + dungeonLength - 1
+
+A pool longer than that has a TAIL NOTHING CAN ROLL; one shorter than the window
+repeats species across the floor's slots. Neither fails to build, neither
+crashes, and neither is visible without counting - the floor just quietly offers
+less than it looks like it should.
 
 This is the check for a bug that had already happened: when the ramp keyed off
 the ABSOLUTE floor rather than the floor within the dungeon, 63 curated species
@@ -43,7 +47,6 @@ def parse(repo):
     hdr = (repo / 'include/rogue_dungeon.h').read_text(encoding='utf-8', errors='replace')
 
     cfg = dict(
-        start=const(hdr, 'DUNGEON_ENCOUNTER_STARTING_TIER'),
         step=const(hdr, 'DUNGEON_ENCOUNTER_TIER_FLOORS'),
         window=const(hdr, 'DUNGEON_ENCOUNTER_WINDOW'),
         long=const(hdr, 'DUNGEON_LONG_FLOORS'),
@@ -72,7 +75,19 @@ def parse(repo):
         if not pool:
             raise SystemExit(f's{name}Species not found')
         species = re.findall(r'SPECIES_(\w+)', pool.group(1))
-        themes.append(dict(name=name, water=water, species=species))
+
+        #  The window is per theme, and it doubles as the tier the ramp starts
+        #  at - see theme->encounterWindow. Zero, or absent, means the default.
+        w = re.search(r'\.encounterWindow\s*=\s*([A-Za-z0-9_()]+)', block)
+        if not w:
+            window = cfg['window']
+        elif w.group(1).startswith('ARRAY_COUNT'):
+            #  ARRAY_COUNT(sXSpecies) - the window is the whole pool.
+            window = len(species)
+        else:
+            window = int(w.group(1)) or cfg['window']
+
+        themes.append(dict(name=name, water=water, species=species, window=window))
     return cfg, themes
 
 
@@ -95,10 +110,12 @@ def main():
         slots = WATER_SLOTS if t['water'] else LAND_SLOTS
         have = len(t['species'])
 
+        window = t['window']
         reachable, widths = set(), set()
         for f in range(length):
-            tiers = min(cfg['start'] + f // cfg['step'], have)
-            bottom = max(0, tiers - cfg['window'])
+            #  The ramp starts AT the window; there is no separate start tier.
+            tiers = min(window + f // cfg['step'], have)
+            bottom = max(0, tiers - window)
             width = tiers - bottom
             widths.add(width)
             reachable |= set(range(bottom, bottom + width))
@@ -111,11 +128,11 @@ def main():
         if dead:
             fails.append(f'{t["name"]}: {len(dead)} unreachable species '
                          f'(pool is {have}, deepest tier reaches '
-                         f'{min(cfg["start"] + (length - 1) // cfg["step"], have)}) '
+                         f'{min(window + (length - 1) // cfg["step"], have)}) '
                          f'-> {", ".join(s.title() for s in dead)}')
-        if max(widths) < cfg['window']:
+        if max(widths) < window:
             fails.append(f'{t["name"]}: pool of {have} cannot fill the window of '
-                         f'{cfg["window"]} - a floor offers only {max(widths)} '
+                         f'{window} - a floor offers only {max(widths)} '
                          f'species across {slots} slots, so it repeats')
         if dupes:
             fails.append(f'{t["name"]}: duplicate species in one pool -> '
@@ -124,7 +141,7 @@ def main():
         if args.verbose:
             print(f'{i:>2} {t["name"]:14s} {"water" if t["water"] else "land ":5s} '
                   f'{length:>2}fl  pool {have:>2}  reachable {len(reachable):>2}  '
-                  f'{min(widths)}-{max(widths)} per floor of {cfg["window"]}')
+                  f'{min(widths)}-{max(widths)} per floor of {window}')
 
     if fails:
         print(f'FAIL: {len(fails)} problem(s)')
@@ -133,7 +150,7 @@ def main():
         return 1
 
     print(f'OK: {len(themes)} themes, every species reachable, '
-          f'every pool fills the window of {cfg["window"]}')
+          f'every pool fills its own window')
     return 0
 
 
