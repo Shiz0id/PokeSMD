@@ -18,18 +18,19 @@
 // sorts by the NUMERIC species id read out of the species enum. Sorting by
 // name looks equivalent and is not - it puts CLAYDOL before GEODUDE while
 // their ids run the other way, and this search would then silently miss them.
-const struct BwAnim *GetBwAnim(u16 species)
+const struct BwAnim *GetBwAnim(u16 species, bool32 isBack)
 {
+    const struct BwAnim *table = isBack ? sBwAnimsBack : sBwAnims;
     u32 lo = 0;
-    u32 hi = ARRAY_COUNT(sBwAnims);
+    u32 hi = isBack ? ARRAY_COUNT(sBwAnimsBack) : ARRAY_COUNT(sBwAnims);
 
     while (lo < hi)
     {
         u32 mid = (lo + hi) / 2;
-        u16 got = sBwAnims[mid].species;
+        u16 got = table[mid].species;
 
         if (got == species)
-            return &sBwAnims[mid];
+            return &table[mid];
         if (got < species)
             lo = mid + 1;
         else
@@ -47,10 +48,12 @@ const struct BwAnim *GetBwAnim(u16 species)
 // cost only a copy - which is why average CPU is lower than decoding one frame
 // at a time would be, not higher.
 //
-// OPPONENTS ONLY. The gif set is 1,253 front sprites with no backs, and the
-// player's own Pokemon show their back sprite in battle. So at most two of
-// these run at once even in a double battle, and Tate & Liza are the real worst
-// case rather than a four-way one.
+// EITHER SIDE, but usually only the opponent. The 1,253 gif set is front
+// sprites with no backs, so a species animates in the player's own slot only if
+// a back sprite was sourced separately for it. Where both exist, a double
+// battle can have FOUR sprites animating - which the one-decode-per-video-frame
+// rule below is what makes affordable, since it caps the cost at one decode
+// however many battlers want one.
 
 // EWRAM_DATA, not a plain static: plain statics land in IWRAM, which is the one
 // with no headroom - see limits-and-ram.md.
@@ -132,16 +135,21 @@ void RogueBwAnim_OnLoadSprite(u32 battler, u16 species)
 
     ClearBwState(battler);
 
-    // The player's side shows back sprites, which these assets do not contain.
-    if (IsOnPlayerSide(battler))
-        return;
-
-    anim = GetBwAnim(species);
+    // Which side the battler is on decides which table to read, because it
+    // decides which sprite the engine will draw. A species with a front entry
+    // and no back animates as an opponent and stays static in the player's own
+    // slot, which is the usual case.
+    anim = GetBwAnim(species, IsOnPlayerSide(battler));
     if (anim == NULL)
         return;
 
+    // AllocUnchecked, NOT Alloc. Alloc calls fatalf when the heap cannot
+    // satisfy it and never returns NULL, so a NULL check after it is dead code
+    // and a tight battle is a crash rather than a degraded one. This is the
+    // allocation most likely to fail: it is the largest thing a battle asks for
+    // after the 16 KB sprite buffer, and a double battle can want four.
     if (sBwChunkBuf[battler] == NULL)
-        sBwChunkBuf[battler] = Alloc(GetSmolChunkSize(anim->frames));
+        sBwChunkBuf[battler] = AllocUnchecked(GetSmolChunkSize(anim->frames));
 
     // Out of heap is not worth a crash. Leaving the buffer NULL means the mon
     // keeps the stock two-frame sprite the caller has already loaded, which is

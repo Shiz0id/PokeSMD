@@ -8,23 +8,25 @@ and appends to a generated header:
   include/constants/rogue_bw_anim.h     frame count, size, and the playback
                                         sequence as (frame, hold) pairs
 
-WHY THE FRAMES ARE ONE SHEET rather than one file each. Stacking them in a
-single blob is what lets the compressor exploit redundancy BETWEEN frames, and
-that is most of the win: Treecko's 26 frames compress to 14% of raw where a
-lone frame manages ~28%. Measured across 22 species the mean is 4,062 B for a
-whole species - so Gen 1-5 is 2.4 MB, not the 11 MB a per-frame projection
-predicted.
+WHY THE FRAMES ARE ONE SHEET rather than one file each. Frames of a species are
+highly redundant, and a sheet is what lets the compressor exploit that. It is
+compressed as a mode 7 frame CONTAINER, so the redundancy is captured within
+each small group of frames while any one group stays independently decodable -
+a flat blob compresses better still but has to be decoded whole, which for a
+29 frame sprite is 59 KB to reach 2 KB of it.
 
 HOLD IS IN VIDEO FRAMES, not milliseconds. BW timings are 70-600 ms against a
 16.74 ms video frame; converting here means the engine never divides at
 runtime. A hold is clamped to at least 1 so a frame cannot be skipped entirely.
 
-FRAME COUNT IS CAPPED. compresSmol segfaults on very large sheets - Beedrill at
-177 frames and Celebi at 129 both crashed it. Over the cap the sequence is
-truncated at a loop boundary rather than the whole species being dropped.
+PLAYBACK IS FLOORED AT --min-hold VIDEO FRAMES. Rips vary: the BW set runs
+7.7-10 fps, but a smooth rip can be 20 ms flat, which is 50 fps and rounds down
+to a hold of 1. That is both faster than the gif asks for and the most
+expensive thing the runtime can play. See DEFAULT_MIN_HOLD.
 
 Run:  python emit_bw_anim.py --gifs D:/PokemonTest/gifs --species geodude,nosepass
       python emit_bw_anim.py --gifs ... --preset test
+      python emit_bw_anim.py --gifs ... --back mewtwo=path/to/mewtwo_b.gif
 Needs Pillow. Run `make` afterwards - gbagfx and compresSmol run from the build.
 """
 import argparse
@@ -37,9 +39,31 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import downscale_bw as D
 
 VIDEO_FRAME_MS = 1000.0 / 59.7275
-MAX_FRAMES = 96          # under the size that crashes compresSmol
+# Was 96, because compresSmol segfaulted on very large sheets - Beedrill at 177
+# frames and Celebi at 129 both crashed it. A frame container removes that
+# limit rather than working around it: the compressor never sees the whole
+# sheet any more, only one chunk of four frames at a time, so the size that
+# crashed it cannot arise. 255 is now the real ceiling, and it comes from
+# frameCount and seqLength being u8 in the C table.
+MAX_FRAMES = 255
 MON_PIC_WIDTH = 64       # must match include/constants/pokemon.h
 MON_PIC_HEIGHT = 64
+
+# The floor on how long one step may hold, in VIDEO FRAMES - the same unit the
+# runtime counts in, which is the point.
+#
+# A hold of 1 is the pathological case and the only one worth merging. It means
+# a frame change every video frame, which is 60 fps: faster than the gif itself
+# asks for, since anything under 25 ms rounds down to a single 16.74 ms frame,
+# and the most expensive thing the runtime can be asked to play, since it forces
+# a chunk decode every framesPerChunk frames.
+#
+# Expressing this as a frames-per-second cap looked equivalent and was not. A
+# 30 fps cap is a 33.3 ms floor, which caught Geodude's 30 ms steps - and those
+# already round to a hold of 2 and were never a problem. Measured across the
+# eleven emitted gifs, a floor of 2 holds touches Celebi alone and leaves every
+# other sprite byte-identical.
+DEFAULT_MIN_HOLD = 2
 
 # The species this is being proved on. Roxanne is floor 10 and reachable in
 # minutes; Tate and Liza are the double battle, which is the worst case the
@@ -84,8 +108,95 @@ def species_ids(repo):
     return out
 
 
-def stock_bbox(repo, stem):
-    """Bounding box of the shipped 64x64 front sprite's first frame.
+def stem_to_species(ids):
+    """gif directory name -> SPECIES_ constant.
+
+    The gif set names a directory by stripping every underscore out of the
+    species name: SPECIES_NIDORAN_F is "nidoranf" and SPECIES_MR_MIME is
+    "mrmime". So the mapping cannot be recovered by rule from the stem - the
+    underscore is simply gone - and has to be built by walking the enum
+    forwards. Deriving it the other way, as 'SPECIES_' + stem.upper(), yields
+    SPECIES_NIDORANF, which is in no enum and used to abort the whole run.
+    """
+    out = {}
+    for species in ids:
+        stem = species[len('SPECIES_'):].lower().replace('_', '')
+        # First one wins, matching the enum order, so a later alias cannot
+        # steal a base species' directory.
+        out.setdefault(stem, species)
+    return out
+
+
+def resample(seq, durs, min_hold):
+    """Merge runs of steps that would hold for fewer than min_hold video frames.
+
+    Preserves total duration.
+
+    WHY THIS IS NOT DEDUP, which already ran. Dedup shrinks the frame POOL by
+    removing duplicate images; it cannot touch the SEQUENCE, because a sequence
+    revisiting an earlier pose is the normal shape of an animation. Playback
+    rate comes from the gif's own per-frame durations and survives dedup
+    untouched.
+
+    Rips vary wildly. The BW set runs 7.7-10 fps - Claydol at 120-130 ms,
+    Mewtwo at 100 - but a smooth rip can be 20 ms flat, which is 50 fps, and the
+    GBA cannot hold a frame for less than one video frame at 16.74 ms. So the
+    fastest sources both play FASTER than intended and cost the most decodes: a
+    frame change every video frame is a chunk decode every framesPerChunk.
+
+    Merging rather than resampling onto a fixed grid is deliberate. A long
+    deliberate pause - Claydol has a 470 ms one - already exceeds the threshold
+    and is emitted untouched, so a gif that is mostly slow keeps its timing
+    exactly. Only runs of too-short steps collapse.
+
+    The test is applied to the ROUNDED hold, not to the raw milliseconds,
+    because the rounded hold is what the runtime will actually count.
+    """
+    out_seq, out_durs = [], []
+    acc = 0.0
+    pick, pick_dur = None, -1.0
+
+    for s, d in zip(seq, durs):
+        # Within a merged window the longest-held pose is the one that showed,
+        # so it is the one worth keeping.
+        if d > pick_dur:
+            pick, pick_dur = s, d
+        acc += d
+        if max(1, round(acc / VIDEO_FRAME_MS)) >= min_hold:
+            out_seq.append(pick)
+            out_durs.append(acc)
+            acc, pick, pick_dur = 0.0, None, -1.0
+
+    # Whatever is left over is folded into the last step rather than emitted as
+    # a short one, so the loop keeps its total length.
+    if acc > 0:
+        if out_durs:
+            out_durs[-1] += acc
+        else:
+            out_seq.append(pick if pick is not None else seq[-1])
+            out_durs.append(acc)
+
+    return out_seq, out_durs
+
+
+def prune_frames(frames, seq):
+    """Drop frames the sequence no longer names, and renumber what is left.
+
+    Resampling is what makes this necessary and is also what pays for it: the
+    frames dropped from the sequence are still in the pool, still compressed
+    into the container and still costing ROM, until they are pruned.
+    """
+    used = sorted(set(seq))
+    remap = {old: new for new, old in enumerate(used)}
+    return [frames[i] for i in used], [remap[s] for s in seq]
+
+
+def stock_bbox(repo, stem, back=False):
+    """Bounding box of the shipped 64x64 sprite's first frame.
+
+    anim_front.png is 64x128 - two frames stacked - so only the top 64 rows are
+    read. back.png is a single 64x64 frame and is read whole; taking the top
+    half of it would clip the sprite and pull the alignment upward.
 
     Read as INDEXED with palette entry 0 as the transparent one, which is the
     GBA's rule. Converting to RGBA and taking the alpha channel looks equivalent
@@ -93,7 +204,7 @@ def stock_bbox(repo, stem):
     opaque and the box is the whole 64x64 - which silently centres every sprite
     and is only visible as a mon standing slightly wrong in game.
     """
-    p = repo / 'graphics/pokemon' / stem / 'anim_front.png'
+    p = repo / 'graphics/pokemon' / stem / ('back.png' if back else 'anim_front.png')
     if not p.exists():
         return None
     im = Image.open(p)
@@ -109,7 +220,7 @@ def stock_bbox(repo, stem):
     return None if x1 <= x0 else (x0, y0, x1, y1)
 
 
-def stock_placement(repo, stem, w, h):
+def stock_placement(repo, stem, w, h, back=False):
     """Where in the 64x64 box to put a w x h frame.
 
     Matched to the sprite the game already draws, on CENTRE X and BOTTOM Y.
@@ -118,7 +229,7 @@ def stock_placement(repo, stem, w, h):
     centring vertically would sink or float it relative to the static sprite it
     replaces, and the swap happens in front of the player at switch-in.
     """
-    box = stock_bbox(repo, stem)
+    box = stock_bbox(repo, stem, back)
     if box is None:
         # Nothing to match: centre horizontally, stand on the bottom.
         return (MON_PIC_WIDTH - w) // 2, MON_PIC_HEIGHT - h
@@ -129,13 +240,28 @@ def stock_placement(repo, stem, w, h):
             max(0, min(MON_PIC_HEIGHT - h, oy)))
 
 
-def emit_species(repo, gif_path, stem):
+def emit_species(repo, gif_path, stem, dirname, back=False, min_hold=DEFAULT_MIN_HOLD):
+    """stem is the GIF directory, dirname the REPO one, and they differ.
+
+    The gif set strips underscores - "mrmime", "nidoranf" - while the repo
+    keeps them: graphics/pokemon/mr_mime, nidoran_f, nidoran_m. Writing to the
+    gif's spelling creates a directory beside the real one, which is wrong
+    twice: the asset does not sit with the species it belongs to, and
+    stock_bbox finds no anim_front.png there, so alignment silently falls back
+    to centring instead of matching the sprite the game already draws.
+    """
     built = D.build_species(str(gif_path))
     if not built:
         return None, 'no frames'
     frames, seq, durs, cols = built
     if len(cols) > 15:
         return None, f'{len(cols)} colours (4bpp allows 15)'
+
+    before = len(frames)
+    if min_hold > 1:
+        seq, durs = resample(seq, durs, min_hold)
+        frames, seq = prune_frames(frames, seq)
+    dropped = before - len(frames)
 
     # Truncate at a whole number of frames if the sheet would be too big.
     if len(frames) > MAX_FRAMES:
@@ -154,7 +280,7 @@ def emit_species(repo, gif_path, stem):
     # sprite. It is also what makes frameSize the same 2048 for every species,
     # which is what lets one chunk buffer size serve all of them.
     tw, th = MON_PIC_WIDTH, MON_PIC_HEIGHT
-    ox, oy = stock_placement(repo, stem, w, h)
+    ox, oy = stock_placement(repo, dirname, w, h, back)
 
     sheet = Image.new('RGBA', (tw, th * len(frames)), (0, 0, 0, 0))
     for i, f in enumerate(frames):
@@ -180,9 +306,10 @@ def emit_species(repo, gif_path, stem):
         flat.extend(c)
     idx.putpalette(flat)
 
-    outdir = repo / 'graphics/pokemon' / stem
+    outdir = repo / 'graphics/pokemon' / dirname
     outdir.mkdir(parents=True, exist_ok=True)
-    idx.save(outdir / 'bw_anim.png')
+    asset = 'bw_anim_back.png' if back else 'bw_anim.png'
+    idx.save(outdir / asset)
 
     steps = []
     for i, s in enumerate(seq):
@@ -192,8 +319,17 @@ def emit_species(repo, gif_path, stem):
         else:
             steps.append([s, min(255, hold)])
 
-    return dict(stem=stem, sym=c_name(stem), w=tw, h=th, species=stem.upper(),
-                frames=len(frames), steps=steps), None
+    # seqLength and frameCount are u8 in the C table, so a sequence longer than
+    # 255 steps would wrap and play a fragment of itself forever.
+    if len(steps) > 255 or len(frames) > 255:
+        return None, f'{len(frames)} frames / {len(steps)} steps exceeds the u8 table fields'
+
+    # Back symbols carry a suffix: a species may have both, and without it the
+    # two would declare the same gBwAnimGfx_<Name> twice.
+    return dict(stem=stem, dir=dirname,
+                sym=c_name(dirname) + ('Back' if back else ''),
+                w=tw, h=th, dropped=dropped,
+                frames=len(frames), steps=steps, back=back, asset=asset), None
 
 
 def write_header(repo, built, ids):
@@ -203,11 +339,6 @@ def write_header(repo, built, ids):
     linearly, but this is meant to reach several hundred and a linear scan per
     battler per frame is exactly the kind of cost that hides until it matters.
     """
-    for b in built:
-        key = 'SPECIES_' + b['stem'].upper()
-        if key not in ids:
-            raise SystemExit(f'{key} is not in the species enum')
-        b['id'] = ids[key]
     built = sorted(built, key=lambda b: b['id'])
     L = [
         '#ifndef GUARD_DATA_ROGUE_BW_ANIM_H',
@@ -233,9 +364,9 @@ def write_header(repo, built, ids):
     ]
     for b in built:
         L.append(f'const u32 gBwAnimGfx_{b["sym"]}[] = INCGFX_U32('
-                 f'"graphics/pokemon/{b["stem"]}/bw_anim.png", ".4bpp.fsmol");')
+                 f'"graphics/pokemon/{b["dir"]}/{b["asset"]}", ".4bpp.fsmol");')
         L.append(f'const u16 gBwAnimPal_{b["sym"]}[] = INCGFX_U16('
-                 f'"graphics/pokemon/{b["stem"]}/bw_anim.png", ".gbapal");')
+                 f'"graphics/pokemon/{b["dir"]}/{b["asset"]}", ".gbapal");')
     L.append('')
     for b in built:
         L.append(f'static const struct BwAnimStep sBwSeq_{b["sym"]}[] =')
@@ -245,23 +376,32 @@ def write_header(repo, built, ids):
         L.append('};')
         L.append('')
 
-    L.append('// Sorted by species id - GetBwAnim bisects this.')
-    L.append('static const struct BwAnim sBwAnims[] =')
-    L.append('{')
-    for b in built:
-        L.append(f'    {{')
-        L.append(f'        .species = SPECIES_{b["stem"].upper()},'
-                 f'   // {b["id"]}')
-        L.append(f'        .frames = gBwAnimGfx_{b["sym"]},')
-        L.append(f'        .palette = gBwAnimPal_{b["sym"]},')
-        L.append(f'        .seq = sBwSeq_{b["sym"]},')
-        L.append(f'        .frameCount = {b["frames"]},')
-        L.append(f'        .seqLength = {len(b["steps"])},')
-        L.append(f'        .width = {b["w"]},')
-        L.append(f'        .height = {b["h"]},')
-        L.append(f'    }},')
-    L.append('};')
-    L.append('')
+    # Front and back are SEPARATE tables, each sorted by species id, rather than
+    # one table with a flag. A species can have both, and a single table sorted
+    # by species would then hold duplicate keys, which is exactly what a binary
+    # search cannot resolve.
+    for back, name, label in ((False, 'sBwAnims', 'Front'), (True, 'sBwAnimsBack', 'Back')):
+        rows = [b for b in built if b['back'] == back]
+        L.append(f'// {label} sprites, sorted by species id - GetBwAnim bisects this.')
+        L.append(f'static const struct BwAnim {name}[] =')
+        L.append('{')
+        for b in rows:
+            L.append(f'    {{')
+            L.append(f'        .species = {b["species"]},   // {b["id"]}')
+            L.append(f'        .frames = gBwAnimGfx_{b["sym"]},')
+            L.append(f'        .palette = gBwAnimPal_{b["sym"]},')
+            L.append(f'        .seq = sBwSeq_{b["sym"]},')
+            L.append(f'        .frameCount = {b["frames"]},')
+            L.append(f'        .seqLength = {len(b["steps"])},')
+            L.append(f'        .width = {b["w"]},')
+            L.append(f'        .height = {b["h"]},')
+            L.append(f'    }},')
+        if not rows:
+            # An empty array is not valid C, and ARRAY_COUNT of it would be
+            # meaningless anyway.
+            L.append('    { .species = SPECIES_NONE },')
+        L.append('};')
+        L.append('')
     L.append('#endif // GUARD_DATA_ROGUE_BW_ANIM_H')
 
     p = repo / 'src/data/rogue_bw_anim.h'
@@ -295,8 +435,8 @@ def write_rules(repo, built, chunk):
         '# chunk does have to be decoded, and the scratch buffer with it.',
         '',
     ]
-    for b in sorted(built, key=lambda b: b['stem']):
-        asset = f'$(ASSETS_DIR_NAME)/graphics/pokemon/{b["stem"]}/bw_anim.png.4bpp'
+    for b in sorted(built, key=lambda b: (b['dir'], b['back'])):
+        asset = f'$(ASSETS_DIR_NAME)/graphics/pokemon/{b["dir"]}/{b["asset"]}.4bpp'
         L.append(f'{asset}.fsmol: {asset}')
         L.append(f'\t$(SMOL) -fw $< $@ {b["w"] * b["h"] // 2} {chunk}')
         L.append('')
@@ -312,44 +452,92 @@ def main():
     ap.add_argument('--repo', default=str(Path(__file__).resolve().parents[2]))
     ap.add_argument('--species')
     ap.add_argument('--preset')
-    #  4 is where the measured curve stops paying: it fits Gen 1-5 in ROM at
-    #  5.12 MB against ~6.9 MB free, and holds one decode inside half a video
-    #  frame. 8 saves another 0.7 MB but spends 80% of a frame in one go.
-    ap.add_argument('--chunk', type=int, default=4)
+    #  2, because four animating battlers need four chunk buffers and 4 x 8 KB
+    #  does not fit the heap - see the container section of
+    #  roguelike-architecture.md. This knob is set by RAM, not by ROM.
+    ap.add_argument('--chunk', type=int, default=2)
+    #  Back sprites are named individually rather than found in --gifs, because
+    #  the 1,253 gif set is front sprites only - one per species, no backs. Any
+    #  back animation therefore comes from somewhere else and has no naming
+    #  convention to rely on.  --back mewtwo=path/to/mewtwo_b.gif
+    ap.add_argument('--back', action='append', default=[],
+                    metavar='SPECIES=PATH',
+                    help='a back-sprite gif for one species, repeatable')
+    ap.add_argument('--min-hold', type=int, default=DEFAULT_MIN_HOLD,
+                    help='floor on video frames per step; 1 keeps gif timing')
+    ap.add_argument('--backs', metavar='DIR',
+                    help='directory of back-sprite gifs, used for every species '
+                         'named by --species or --preset that has one')
     args = ap.parse_args()
 
     repo = Path(args.repo)
     gifs = Path(args.gifs)
 
+    ids = species_ids(repo)
     names = []
-    if args.preset:
+    if args.preset == 'gen1':
+        # Taken from the enum rather than written out, so it cannot drift and
+        # so the awkward names come out right without being special-cased.
+        names = [s[len('SPECIES_'):].lower().replace('_', '')
+                 for s, i in sorted(ids.items(), key=lambda t: t[1])
+                 if 1 <= i <= 151]
+    elif args.preset:
         names = PRESETS[args.preset]
     if args.species:
         names += [s.strip() for s in args.species.split(',') if s.strip()]
-    if not names:
-        raise SystemExit('give --species or --preset')
 
+    jobs = [(n, gifs / n / f'{n}.gif', False) for n in names]
+
+    if args.backs:
+        # The back set nests one level deeper than the front one. Both layouts
+        # are accepted rather than assumed, since a rip can arrive either way.
+        root = Path(args.backs)
+        for n in names:
+            for cand in (root / n / n / f'{n}.gif', root / n / f'{n}.gif'):
+                if cand.exists():
+                    jobs.append((n, cand, True))
+                    break
+    for spec in args.back:
+        if '=' not in spec:
+            raise SystemExit(f'--back wants SPECIES=PATH, got {spec}')
+        n, path = spec.split('=', 1)
+        jobs.append((n.strip(), Path(path.strip()), True))
+
+    if not jobs:
+        raise SystemExit('give --species, --preset or --back')
+
+    byStem = stem_to_species(ids)
     built = []
-    for n in names:
-        gp = gifs / n / f'{n}.gif'
+    for n, gp, back in jobs:
+        side = 'back' if back else 'front'
+        species = byStem.get(n)
+        if species is None:
+            # Skipped rather than fatal: at 151 species one unrecognised
+            # directory should not throw away the other 300 containers.
+            print(f'{n:12s} {side:5s} SKIPPED: no species matches that directory')
+            continue
+        dirname = species[len('SPECIES_'):].lower()
         if not gp.exists():
-            print(f'{n:12s} MISSING {gp}')
+            print(f'{n:12s} {side:5s} MISSING {gp}')
             continue
-        info, err = emit_species(repo, gp, n)
+        info, err = emit_species(repo, gp, n, dirname, back, args.min_hold)
         if err:
-            print(f'{n:12s} SKIPPED: {err}')
+            print(f'{n:12s} {side:5s} SKIPPED: {err}')
             continue
+        info['species'], info['id'] = species, ids[species]
         built.append(info)
         total_holds = sum(h for _f, h in info['steps'])
-        print(f'{n:12s} {info["w"]}x{info["h"]}  {info["frames"]:3d} frames  '
-              f'{len(info["steps"]):3d} steps  loop {total_holds} video frames')
+        fps = 60.0 * len(info['steps']) / total_holds if total_holds else 0
+        note = f'  resampled, {info["dropped"]} frames dropped' if info['dropped'] else ''
+        print(f'{n:12s} {side:5s} {info["w"]}x{info["h"]}  {info["frames"]:3d} frames  '
+              f'{len(info["steps"]):3d} steps  {fps:4.1f} fps{note}')
 
     if built:
-        p = write_header(repo, built, species_ids(repo))
+        p = write_header(repo, built, ids)
         print(f'\nwrote {p}')
         r = write_rules(repo, built, args.chunk)
         print(f'wrote {r}')
-        print(f'wrote {len(built)} x graphics/pokemon/<name>/bw_anim.png')
+        print(f'wrote {len(built)} assets under graphics/pokemon/')
 
 
 if __name__ == '__main__':

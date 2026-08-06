@@ -18,7 +18,7 @@ TEST("BW anim: every emitted species resolves and agrees with its container")
 
     for (u32 i = 0; i < ARRAY_COUNT(species); i++)
     {
-        const struct BwAnim *anim = GetBwAnim(species[i]);
+        const struct BwAnim *anim = GetBwAnim(species[i], FALSE);
 
         EXPECT(anim != NULL);
         if (anim == NULL)
@@ -87,10 +87,70 @@ DOUBLE_BATTLE_TEST("BW anim: Tate and Liza animate two sprites at once")
 SINGLE_BATTLE_TEST("BW anim: a species with no entry is left alone")
 {
     GIVEN {
-        ASSUME(GetBwAnim(SPECIES_WOBBUFFET) == NULL);
+        ASSUME(GetBwAnim(SPECIES_WOBBUFFET, FALSE) == NULL);
+        ASSUME(GetBwAnim(SPECIES_WOBBUFFET, TRUE) == NULL);
         PLAYER(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_WOBBUFFET);
     } WHEN {
+        TURN { }
+    }
+}
+
+// Back sprites, which are the exception: the gif set has none, so these are
+// sourced one at a time. Mewtwo and Celebi are the test pair.
+TEST("BW anim: back sprites resolve on the back table only")
+{
+    static const u16 species[] = { SPECIES_MEWTWO, SPECIES_CELEBI };
+
+    for (u32 i = 0; i < ARRAY_COUNT(species); i++)
+    {
+        const struct BwAnim *back = GetBwAnim(species[i], TRUE);
+
+        EXPECT(back != NULL);
+        if (back == NULL)
+            continue;
+
+        EXPECT_EQ(back->species, species[i]);
+        EXPECT_EQ(GetSmolFrameSize(back->frames), MON_PIC_SIZE);
+        EXPECT_EQ(GetSmolFrameCount(back->frames), back->frameCount);
+
+        // The two tables must not be aliased. This used to assert the front
+        // lookup returned NULL, which held only while Mewtwo and Celebi were
+        // the only species with backs and no fronts - a roster change made it
+        // false without anything being wrong. What actually matters is that a
+        // side gets ITS OWN entry, so compare them instead.
+        const struct BwAnim *front = GetBwAnim(species[i], FALSE);
+        if (front != NULL)
+        {
+            EXPECT(front != back);
+            EXPECT(front->frames != back->frames);
+            EXPECT_EQ(front->species, back->species);
+        }
+
+        for (u32 s = 0; s < back->seqLength; s++)
+        {
+            EXPECT(back->seq[s].frame < back->frameCount);
+            EXPECT(back->seq[s].hold >= 1);
+        }
+    }
+}
+
+// The true worst case, and one the front-only design said could not happen:
+// four sprites animating at once. Mewtwo and Celebi on the player side against
+// two of Tate & Liza's four, every one of them decoding out of its own 8 KB
+// chunk buffer. What keeps this affordable is that the tick decodes at most one
+// chunk per video frame however many battlers want one.
+DOUBLE_BATTLE_TEST("BW anim: four sprites animate at once")
+{
+    GIVEN {
+        PLAYER(SPECIES_MEWTWO);
+        PLAYER(SPECIES_CELEBI);
+        OPPONENT(SPECIES_CLAYDOL);
+        OPPONENT(SPECIES_XATU);
+        OPPONENT(SPECIES_LUNATONE);
+        OPPONENT(SPECIES_SOLROCK);
+    } WHEN {
+        TURN { }
         TURN { }
     }
 }

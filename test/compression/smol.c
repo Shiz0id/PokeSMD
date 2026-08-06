@@ -6409,19 +6409,37 @@ TEST("Compression test: frame container header")
 {
     static const u32 compFile[] = INCGFX_U32("graphics/pokemon/claydol/bw_anim.png", ".4bpp.fsmol");
 
+    u32 frameSize, perChunk;
+
     EXPECT_EQ(IsSmolFrameContainer(compFile), TRUE);
     EXPECT_EQ(GetSmolFrameCount(compFile), 29);
     EXPECT_EQ(GetSmolFrameSize(compFile), 64 * 64 / 2);
-    EXPECT_EQ(GetSmolChunkSize(compFile), 4 * 64 * 64 / 2);
     //  The whole stack, which no single call produces - see DecompressSmolChunk.
     EXPECT_EQ(GetDecompressedDataSize(compFile), 29 * 64 * 64 / 2);
 
-    //  Frame 6 is the third frame of chunk 1; frame 28 is the only frame of the
-    //  short final chunk.
-    EXPECT_EQ(GetSmolFrameChunk(compFile, 6), 1);
-    EXPECT_EQ(GetSmolFrameOffsetInChunk(compFile, 6), 2 * 64 * 64 / 2);
-    EXPECT_EQ(GetSmolFrameChunk(compFile, 28), 7);
-    EXPECT_EQ(GetSmolFrameOffsetInChunk(compFile, 28), 0);
+    //  Chunk size is a TUNING KNOB - it trades ROM against the size of the
+    //  smallest decodable unit, and it moved from 4 to 2 when four animating
+    //  battlers turned out not to fit in the heap at 8 KB each. So the frames
+    //  per chunk are read back rather than written down, and what is asserted
+    //  is the arithmetic that indexes them, which must hold at any setting.
+    frameSize = GetSmolFrameSize(compFile);
+    perChunk = GetSmolChunkSize(compFile) / frameSize;
+    EXPECT(perChunk >= 1);
+    EXPECT_EQ(GetSmolChunkSize(compFile), perChunk * frameSize);
+
+    for (u32 frame = 0; frame < GetSmolFrameCount(compFile); frame++)
+    {
+        EXPECT_EQ(GetSmolFrameChunk(compFile, frame), frame / perChunk);
+        EXPECT_EQ(GetSmolFrameOffsetInChunk(compFile, frame),
+                  (frame % perChunk) * frameSize);
+        //  A frame never sits past the end of the buffer it is decoded into.
+        EXPECT(GetSmolFrameOffsetInChunk(compFile, frame) + frameSize
+               <= GetSmolChunkSize(compFile));
+    }
+
+    //  29 frames is deliberately not a multiple of any chunk size worth using,
+    //  so the last chunk is always short - which is the case that breaks.
+    EXPECT(29 % perChunk != 0);
 }
 
 TEST("Compression test: frame container sequential")

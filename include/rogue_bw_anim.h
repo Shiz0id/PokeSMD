@@ -34,8 +34,14 @@ struct BwAnim
     u8 width, height;               // pixels, always whole tiles
 };
 
-// NULL when the species has no animation - callers fall back to the stock pic.
-const struct BwAnim *GetBwAnim(u16 species);
+// NULL when the species has no animation for that side - callers fall back to
+// the stock pic. Front and back are separate tables rather than one table with
+// a flag, because a species may have both and a single species-sorted table
+// would then hold duplicate keys, which is what a binary search cannot resolve.
+//
+// Most species have a front and no back: the 1,253 gif set this is built from
+// is front sprites only. Backs come from elsewhere, one at a time.
+const struct BwAnim *GetBwAnim(u16 species, bool32 isBack);
 
 // Bytes one decoded frame occupies. Always MON_PIC_SIZE - every battle sprite
 // is 64x64 and the frames are padded to it - but derived rather than assumed so
