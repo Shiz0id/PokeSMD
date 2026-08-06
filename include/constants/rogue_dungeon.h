@@ -14,7 +14,7 @@
 
 // Replaces the Birch intro with name entry alone and starts the player in the
 // dungeon instead of the moving truck. Set to FALSE to get vanilla back.
-#define ROGUE_SLIM_NEW_GAME TRUE
+#define ROGUE_SLIM_NEW_GAME FALSE
 
 // Kept permanently set. An object event whose flagId is set is not spawned, so
 // this hides the placeholder slots map.json has to declare but a given floor

@@ -9326,6 +9326,7 @@
     },
     {
       "id": "LAYOUT_ROGUE_DUNGEON_FLOOR",
+      "layout_version": "emerald",
       "name": "RogueDungeonFloor_Layout",
       "width": 48,
       "height": 48,
@@ -9336,6 +9337,7 @@
     },
     {
       "id": "LAYOUT_ROGUE_DUNGEON_WOODS",
+      "layout_version": "emerald",
       "name": "RogueDungeonWoods_Layout",
       "width": 48,
       "height": 48,
@@ -9346,6 +9348,7 @@
     },
     {
       "id": "LAYOUT_ROGUE_DUNGEON_NEWMAUVILLE",
+      "layout_version": "emerald",
       "name": "RogueDungeonNewMauville_Layout",
       "width": 48,
       "height": 48,
@@ -9356,6 +9359,7 @@
     },
     {
       "id": "LAYOUT_ROGUE_DUNGEON_FIERYPATH",
+      "layout_version": "emerald",
       "name": "RogueDungeonFieryPath_Layout",
       "width": 48,
       "height": 48,
@@ -9366,6 +9370,7 @@
     },
     {
       "id": "LAYOUT_ROGUE_DUNGEON_MIRAGETOWER",
+      "layout_version": "emerald",
       "name": "RogueDungeonMirageTower_Layout",
       "width": 48,
       "height": 48,
@@ -9376,6 +9381,7 @@
     },
     {
       "id": "LAYOUT_ROGUE_DUNGEON_JUNGLE",
+      "layout_version": "emerald",
       "name": "RogueDungeonJungle_Layout",
       "width": 48,
       "height": 48,
@@ -9386,6 +9392,7 @@
     },
     {
       "id": "LAYOUT_ROGUE_DUNGEON_OCEAN",
+      "layout_version": "emerald",
       "name": "RogueDungeonOcean_Layout",
       "width": 48,
       "height": 48,
@@ -9396,6 +9403,7 @@
     },
     {
       "id": "LAYOUT_ROGUE_DUNGEON_UNDERWATER",
+      "layout_version": "emerald",
       "name": "RogueDungeonUnderwaterTiles_Layout",
       "width": 48,
       "height": 48,
@@ -9406,6 +9414,7 @@
     },
     {
       "id": "LAYOUT_ROGUE_DUNGEON_VRSIDNEY",
+      "layout_version": "emerald",
       "name": "RogueDungeonVRSidney_Layout",
       "width": 48,
       "height": 48,
@@ -9416,6 +9425,7 @@
     },
     {
       "id": "LAYOUT_ROGUE_DUNGEON_VRPHOEBE",
+      "layout_version": "emerald",
       "name": "RogueDungeonVRPhoebe_Layout",
       "width": 48,
       "height": 48,
@@ -9426,6 +9436,7 @@
     },
     {
       "id": "LAYOUT_ROGUE_DUNGEON_VRGLACIA",
+      "layout_version": "emerald",
       "name": "RogueDungeonVRGlacia_Layout",
       "width": 48,
       "height": 48,
@@ -9436,6 +9447,7 @@
     },
     {
       "id": "LAYOUT_ROGUE_DUNGEON_VRDRAKE",
+      "layout_version": "emerald",
       "name": "RogueDungeonVRDrake_Layout",
       "width": 48,
       "height": 48,
@@ -9446,6 +9458,7 @@
     },
     {
       "id": "LAYOUT_ROGUE_DUNGEON_EVERGRANDE",
+      "layout_version": "emerald",
       "name": "RogueDungeonEverGrande_Layout",
       "width": 48,
       "height": 48,
@@ -9456,6 +9469,7 @@
     },
     {
       "id": "LAYOUT_ROGUE_DUNGEON_LAPIS",
+      "layout_version": "emerald",
       "name": "RogueDungeonLapis_Layout",
       "width": 48,
       "height": 48,
@@ -9466,6 +9480,7 @@
     },
     {
       "id": "LAYOUT_ROGUE_DUNGEON_MURKYCAVE",
+      "layout_version": "emerald",
       "name": "RogueDungeonMurkyCave_Layout",
       "width": 48,
       "height": 48,
@@ -9476,6 +9491,7 @@
     },
     {
       "id": "LAYOUT_ROGUE_REST_STOP",
+      "layout_version": "emerald",
       "name": "RogueRestStop_Layout",
       "width": 17,
       "height": 13,
@@ -9486,6 +9502,7 @@
     },
     {
       "id": "LAYOUT_ROGUE_REST_STOP_GAMES",
+      "layout_version": "emerald",
       "name": "RogueRestStopGames_Layout",
       "width": 16,
       "height": 11,
