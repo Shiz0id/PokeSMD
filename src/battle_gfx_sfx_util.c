@@ -11,6 +11,7 @@
 #include "malloc.h"
 #include "graphics.h"
 #include "random.h"
+#include "rogue_bw_anim.h"
 #include "util.h"
 #include "pokemon.h"
 #include "constants/moves.h"
@@ -659,6 +660,13 @@ void BattleLoadMonSpriteGfx(struct Pokemon *mon, enum BattlerId battler)
 
     LoadPalette(paletteData, paletteOffset, PLTT_SIZE_4BPP);
     LoadPalette(paletteData, BG_PLTT_ID(8) + BG_PLTT_ID(battler), PLTT_SIZE_4BPP);
+
+    // Takes over the pic and the palette when this species is animated, and
+    // clears any previous animation when it is not. Deliberately here rather
+    // than at the end of the function: it replaces the palette just loaded, and
+    // the tints below - transform, dynamax, tera - must still apply on top of
+    // whichever palette won.
+    RogueBwAnim_OnLoadSprite(battler, species);
 
     // transform's pink color
     if (gBattleMons[battler].volatiles.transformed)
@@ -1425,6 +1433,11 @@ void AllocateMonSpritesGfx(void)
 
 void FreeMonSpritesGfx(void)
 {
+    // Before the NULL check, not after: the chunk buffers are allocated
+    // separately from gMonSpritesGfxPtr and would otherwise leak a battle at a
+    // time on any path that reaches here with it already cleared.
+    RogueBwAnim_Free();
+
     if (gMonSpritesGfxPtr == NULL)
         return;
 

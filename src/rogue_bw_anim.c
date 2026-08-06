@@ -1,5 +1,11 @@
 #include "global.h"
 #include "rogue_bw_anim.h"
+#include "battle.h"
+#include "decompress.h"
+#include "malloc.h"
+#include "palette.h"
+#include "pokemon.h"
+#include "sprite.h"
 #include "constants/species.h"
 
 #include "data/rogue_bw_anim.h"
@@ -31,4 +37,212 @@ const struct BwAnim *GetBwAnim(u16 species)
     }
 
     return NULL;
+}
+
+// ---------------------------------------------------------------------------
+// The battle runtime.
+//
+// Frames live compressed in ROM and are decoded a CHUNK at a time into a buffer
+// held per battler. A chunk is four frames, so three frame changes out of four
+// cost only a copy - which is why average CPU is lower than decoding one frame
+// at a time would be, not higher.
+//
+// OPPONENTS ONLY. The gif set is 1,253 front sprites with no backs, and the
+// player's own Pokemon show their back sprite in battle. So at most two of
+// these run at once even in a double battle, and Tate & Liza are the real worst
+// case rather than a four-way one.
+
+// EWRAM_DATA, not a plain static: plain statics land in IWRAM, which is the one
+// with no headroom - see limits-and-ram.md.
+static EWRAM_DATA u8 *sBwChunkBuf[MAX_BATTLERS_COUNT] = {NULL};
+static EWRAM_DATA const struct BwAnim *sBwAnim[MAX_BATTLERS_COUNT] = {NULL};
+
+#define BW_NO_CHUNK 0xFF
+
+static void ClearBwState(u32 battler)
+{
+    struct BattleSpriteInfo *info = &gBattleSpritesDataPtr->battlerData[battler];
+
+    sBwAnim[battler] = NULL;
+    info->bwStep = 0;
+    info->bwHold = 0;
+    info->bwChunk = BW_NO_CHUNK;
+}
+
+// Is gBattlerSpriteIds[battler] really this battler's mon sprite, showing this
+// species?
+//
+// IT IS OFTEN NOT, and assuming otherwise corrupts whatever sprite it does name.
+// Two ways it lies. The trainer slide code assigns
+// gBattlerSpriteIds[battler] = gBattleStruct->trainerSlideSpriteIds[battler],
+// so the id can be a TRAINER's - that is how a Geodude frame ended up drawn
+// over Roxanne. And at the moment the pic is loaded the mon sprite does not
+// exist yet: BtlController_HandleDrawTrainerPic calls BattleLoadMonSpriteGfx
+// and only then CreateSprite, so the id still holds whatever was there before,
+// and writing 2 KB to its tiles is what put a band of garbage through the
+// player's healthbox.
+//
+// The engine stamps data[0] and data[2] on a battler's mon sprite the moment it
+// creates one, so checking both is the discriminator, and it costs two loads.
+static bool32 IsBattlerMonSprite(u32 battler, u16 species)
+{
+    u32 spriteId = gBattlerSpriteIds[battler];
+
+    if (spriteId == SPRITE_NONE || spriteId >= MAX_SPRITES)
+        return FALSE;
+
+    return gSprites[spriteId].data[0] == (s16)battler
+        && gSprites[spriteId].data[2] == (s16)species;
+}
+
+// Put a frame where the engine will draw it.
+//
+// It goes into BOTH resident slots, and that is not redundancy. A species'
+// frontAnimFrames cycles image frames 0 and 1 - ANIMCMD_FRAME(0,30),
+// ANIMCMD_FRAME(1,30) - and every one of those issues its own VRAM copy out of
+// whichever slot it names. Writing only the slot we request would leave the
+// other holding a stale frame for the anim system to draw the moment a mon
+// plays its two-frame animation. Filling both means it does not matter which
+// one wins, and it costs two 2 KB copies against a 48,000 cycle decode.
+//
+// The VRAM copy is skipped unless the sprite is verified. Filling the buffer is
+// always safe and is all that is needed at load time anyway - the sprite is
+// created immediately afterwards and reads it.
+static void PublishBwFrame(u32 battler, u16 species, const u8 *frame, u32 size)
+{
+    enum BattlerPosition position = GetBattlerPosition(battler);
+    u8 *dest = gMonSpritesGfxPtr->spritesGfx[position];
+
+    if (dest == NULL)
+        return;
+
+    CpuFastCopy(frame, dest, size);
+    CpuFastCopy(frame, dest + MON_PIC_SIZE, size);
+
+    if (IsBattlerMonSprite(battler, species))
+        RequestSpriteFrameImageCopy(0, gSprites[gBattlerSpriteIds[battler]].oam.tileNum,
+                                    gMonSpritesGfxPtr->frameImages[position]);
+}
+
+void RogueBwAnim_OnLoadSprite(u32 battler, u16 species)
+{
+    const struct BwAnim *anim;
+    struct BattleSpriteInfo *info;
+    u32 chunk, frame;
+
+    ClearBwState(battler);
+
+    // The player's side shows back sprites, which these assets do not contain.
+    if (IsOnPlayerSide(battler))
+        return;
+
+    anim = GetBwAnim(species);
+    if (anim == NULL)
+        return;
+
+    if (sBwChunkBuf[battler] == NULL)
+        sBwChunkBuf[battler] = Alloc(GetSmolChunkSize(anim->frames));
+
+    // Out of heap is not worth a crash. Leaving the buffer NULL means the mon
+    // keeps the stock two-frame sprite the caller has already loaded, which is
+    // exactly the fallback a species with no entry gets.
+    if (sBwChunkBuf[battler] == NULL)
+        return;
+
+    sBwAnim[battler] = anim;
+    info = &gBattleSpritesDataPtr->battlerData[battler];
+    info->bwStep = 0;
+    info->bwHold = anim->seq[0].hold - 1;
+
+    frame = anim->seq[0].frame;
+    chunk = GetSmolFrameChunk(anim->frames, frame);
+    DecompressSmolChunk(anim->frames, sBwChunkBuf[battler], chunk);
+    info->bwChunk = chunk;
+
+    PublishBwFrame(battler, anim->species,
+                   sBwChunkBuf[battler] + GetSmolFrameOffsetInChunk(anim->frames, frame),
+                   GetSmolFrameSize(anim->frames));
+
+    // The gif carries its own 15 colours, which are not the ones the shipped
+    // sprite uses - so the palette has to be taken over along with the pixels
+    // or the mon arrives in the right shape and the wrong colours. This
+    // overwrites the LoadPalette the caller just did.
+    LoadPalette(anim->palette, OBJ_PLTT_ID(battler), PLTT_SIZE_4BPP);
+    LoadPalette(anim->palette, BG_PLTT_ID(8) + BG_PLTT_ID(battler), PLTT_SIZE_4BPP);
+}
+
+static void TickBattler(u32 battler, bool32 *decodedThisFrame)
+{
+    const struct BwAnim *anim = sBwAnim[battler];
+    struct BattleSpriteInfo *info = &gBattleSpritesDataPtr->battlerData[battler];
+    u32 spriteId = gBattlerSpriteIds[battler];
+    u32 nextStep, frame, chunk;
+
+    if (anim == NULL || sBwChunkBuf[battler] == NULL)
+        return;
+    if (info->invisible || info->behindSubstitute)
+        return;
+    if (spriteId == SPRITE_NONE || spriteId >= MAX_SPRITES || gSprites[spriteId].invisible)
+        return;
+
+    if (info->bwHold > 0)
+    {
+        info->bwHold--;
+        return;
+    }
+
+    nextStep = info->bwStep + 1;
+    if (nextStep >= anim->seqLength)
+        nextStep = 0;
+
+    frame = anim->seq[nextStep].frame;
+    chunk = GetSmolFrameChunk(anim->frames, frame);
+
+    if (chunk != info->bwChunk)
+    {
+        // At most one chunk decode per video frame. A decode is ~48% of a frame
+        // and the budget only has room for one on top of a battle's own 8%, so
+        // in a double battle the second battler waits. bwHold stays 0, so this
+        // retries next frame rather than skipping the step - and a one frame
+        // delay is invisible against holds that run 4 to 8 frames.
+        if (*decodedThisFrame)
+            return;
+
+        DecompressSmolChunk(anim->frames, sBwChunkBuf[battler], chunk);
+        info->bwChunk = chunk;
+        *decodedThisFrame = TRUE;
+    }
+
+    info->bwStep = nextStep;
+    info->bwHold = anim->seq[nextStep].hold - 1;
+    PublishBwFrame(battler, anim->species,
+                   sBwChunkBuf[battler] + GetSmolFrameOffsetInChunk(anim->frames, frame),
+                   GetSmolFrameSize(anim->frames));
+}
+
+void RogueBwAnim_Tick(void)
+{
+    bool32 decodedThisFrame = FALSE;
+
+    // Runs from BattleMainCB2, which is the steady state callback - setup goes
+    // through CB2_InitBattleInternal, where these pointers are not valid yet.
+    if (gBattleSpritesDataPtr == NULL || gBattleSpritesDataPtr->battlerData == NULL
+     || gMonSpritesGfxPtr == NULL)
+        return;
+
+    for (u32 battler = 0; battler < gBattlersCount; battler++)
+        TickBattler(battler, &decodedThisFrame);
+}
+
+void RogueBwAnim_Free(void)
+{
+    for (u32 battler = 0; battler < MAX_BATTLERS_COUNT; battler++)
+    {
+        if (sBwChunkBuf[battler] != NULL)
+        {
+            Free(sBwChunkBuf[battler]);
+            sBwChunkBuf[battler] = NULL;
+        }
+        sBwAnim[battler] = NULL;
+    }
 }

@@ -862,6 +862,13 @@ struct BattleSpriteInfo
     u16 flag_x8:1; // 0x8
     u16 hpNumbersNoBars:1; // 0x10
     enum Species transformSpecies;
+    // BW animated sprites. Here rather than in a table of their own because
+    // this struct is already per battler and is already reset on both
+    // switch-in and transform, which are exactly the two moments an animation
+    // has to restart.
+    u8 bwStep;      // index into the species' playback sequence
+    u8 bwHold;      // video frames left before the next step
+    u8 bwChunk;     // frame chunk currently in the buffer, 0xFF for none
 };
 
 struct BattleAnimationInfo

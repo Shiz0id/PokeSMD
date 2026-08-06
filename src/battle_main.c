@@ -47,6 +47,7 @@
 #include "random.h"
 #include "recorded_battle.h"
 #include "roamer.h"
+#include "rogue_bw_anim.h"
 #include "safari_zone.h"
 #include "scanline_effect.h"
 #include "script.h"
@@ -1750,6 +1751,9 @@ static void CB2_HandleStartMultiBattle(void)
 
 void BattleMainCB2(void)
 {
+    // Before AnimateSprites, so a frame queued this tick joins the same VBlank
+    // copy batch as everything else the sprite system asks for this frame.
+    RogueBwAnim_Tick();
     AnimateSprites();
     BuildOamBuffer();
     RunTextPrinters();

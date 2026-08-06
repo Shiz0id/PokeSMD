@@ -37,7 +37,22 @@ struct BwAnim
 // NULL when the species has no animation - callers fall back to the stock pic.
 const struct BwAnim *GetBwAnim(u16 species);
 
-// Bytes one decoded frame occupies, for sizing the ring buffer.
+// Bytes one decoded frame occupies. Always MON_PIC_SIZE - every battle sprite
+// is 64x64 and the frames are padded to it - but derived rather than assumed so
+// a species emitted at the wrong size fails visibly instead of tiling askew.
 #define BW_FRAME_SIZE(anim) ((anim)->width * (anim)->height / 2)
+
+// Called from BattleLoadMonSpriteGfx, after it has loaded the stock pic and
+// palette. Takes over both when the species has an animation, and clears any
+// previous one when it does not - which is what makes it correct on switch-in
+// AND on transform, since that function is the hook for both.
+void RogueBwAnim_OnLoadSprite(u32 battler, u16 species);
+
+// Called from BattleMainCB2. Advances every animating battler by one video
+// frame. Safe to call when nothing is animating, and before sprites exist.
+void RogueBwAnim_Tick(void);
+
+// Called from FreeMonSpritesGfx. Releases the chunk buffers.
+void RogueBwAnim_Free(void);
 
 #endif // GUARD_ROGUE_BW_ANIM_H
