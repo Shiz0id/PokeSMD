@@ -16,6 +16,23 @@
 #define DISABLED_ON_RELEASE TRUE
 #endif
 
+// MUST be defined before the config includes below. One of them reaches
+// constants/flags.h, whose #if IS_FRLG picks the Emerald or FRLG flag set
+// and then sets its include guard - so if IS_FRLG is not defined yet, a
+// firered build silently gets Emerald flag values everywhere.
+#ifdef FIRERED
+    #define GAME_VERSION (VERSION_FIRE_RED)
+    #define IS_FRLG 1
+#else
+    #ifdef LEAFGREEN
+    #define GAME_VERSION (VERSION_LEAF_GREEN)
+    #define IS_FRLG 1
+    #else
+    #define GAME_VERSION (VERSION_EMERALD)
+    #define IS_FRLG 0
+    #endif
+#endif
+
 #include "config/ai.h"
 #include "config/battle.h"
 #include "config/caps.h"
@@ -64,18 +81,6 @@ enum Language
     NUM_LANGUAGES = LANGUAGE_SPANISH,
 };
 
-#ifdef FIRERED
-    #define GAME_VERSION (VERSION_FIRE_RED)
-    #define IS_FRLG 1
-#else
-    #ifdef LEAFGREEN
-    #define GAME_VERSION (VERSION_LEAF_GREEN)
-    #define IS_FRLG 1
-    #else
-    #define GAME_VERSION (VERSION_EMERALD)
-    #define IS_FRLG 0
-    #endif
-#endif
 #define GAME_LANGUAGE (LANGUAGE_ENGLISH)
 
 // party sizes

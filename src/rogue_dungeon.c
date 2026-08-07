@@ -1749,8 +1749,21 @@ EWRAM_DATA static u8 sHiddenCount = 0;
 // A wrong id here would clear or read a VANILLA hidden item's flag. Checked at
 // compile time because the two constants live in different headers and the
 // relationship between them is arithmetic nobody would re-derive by eye.
+//
+// EMERALD ONLY, and deliberately not papered over. The check is arithmetic in
+// EMERALD's flag space: FLAG_HIDDEN_ITEMS_START is 0x1F4 there and 1000 under
+// FRLG, and FLAG_UNUSED_0x264 does not exist in the FRLG set at all. The house
+// rule for a flag the other version lacks is to define it as 0, but that is for
+// flags shared code merely NAMES - doing it here would make the assert compare
+// 1000 + 0x70 against 0 and fail, which is the assert working correctly.
+//
+// The dungeon's hidden item flag range has not been rebased for FRLG, so it
+// would overlap real FRLG hidden items. That does not bite while the roguelike
+// maps are excluded from a firered build, and has to be solved before it is not.
+#if !IS_FRLG
 STATIC_ASSERT(FLAG_HIDDEN_ITEMS_START + DUNGEON_HIDDEN_FIRST_ID == FLAG_UNUSED_0x264,
               RogueHiddenItemIdsMustStartAtTheFirstFreeFlag);
+#endif
 
 // A bg event stores its item in an ELEVEN BIT field, so an item id past 2047
 // would be silently truncated into a different item rather than failing. There
