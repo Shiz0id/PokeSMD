@@ -32,6 +32,7 @@
 #include "constants/event_object_movement.h"
 #include "constants/rogue_dungeon_trainers.h"
 #include "constants/rogue_dungeon_starters.h"
+#include "constants/rogue_safari_pool.h"
 #include "rogue_dungeon.h"
 
 extern const u8 RogueDungeonFloor_EventScript_Stairs[];
@@ -1723,9 +1724,17 @@ EWRAM_DATA static struct WildPokemon sDungeonWildMons[NUM_LAND_MONS_ENCOUNTER_SL
 // whose table never changes; rotating gives every species in the window its turn
 // in the common slots.
 //
-// Land is left alone deliberately: twelve slots already exceed the window, so
-// every species is reachable on every roll and re-dealing would buy nothing.
-EWRAM_DATA static const struct RogueDungeonTheme *sWildTheme = NULL;
+// WHETHER IT RE-DEALS IS DERIVED, NOT KEYED ON THE AREA: it re-deals exactly
+// when `width > slots`, which is the condition under which re-dealing buys
+// anything at all. That is behaviour-identical to the old `area == WATER` test
+// for every dungeon theme - the ocean and the seafloor run a window of 12 into
+// 5 water slots and still re-deal; the six land gyms run 12 into 12 and still
+// do not; Drake's 7 and the Elite Four's 8 are narrower than 12 and still do
+// not - and it turns the Safari Zone on by itself, because its land window is
+// 47 against the same 12 slots.
+//
+// So "land is left alone" was never about land. It was about 12 == 12.
+EWRAM_DATA static const u16 *sWildSpecies = NULL;
 EWRAM_DATA static u8 sWildBottom = 0;
 EWRAM_DATA static u8 sWildWidth = 0;
 EWRAM_DATA static u8 sWildRotation = 0;
@@ -1736,6 +1745,37 @@ EWRAM_DATA static struct WildPokemonInfo sDungeonWildInfo = {0};
 // Which branch the table above was built for. Recorded rather than re-derived
 // in the hook, so the answer cannot disagree with the table actually in RAM.
 EWRAM_DATA static u8 sDungeonWildArea = WILD_AREA_LAND;
+
+// The Safari Zone's table shares every sWild* variable above. It needs no
+// "whose table is this" flag of its own: sWildSpecies already names the ladder
+// in RAM, so comparing against the ladder the Safari WANTS is self-
+// invalidating - a dungeon floor rebuilding puts a theme's pool there, which
+// matches neither Safari ladder, and the Safari rebuilds on its next roll.
+// Only the floor has to be remembered.
+EWRAM_DATA static u16 sSafariBuiltFloor = 0;
+
+// sWildBottom and sWildWidth are u8, and the deepest floor indexes
+// sSafariLandSpecies at bottom + width - 1. A ladder past 255 would wrap them
+// silently and deal species from the wrong end of the pool.
+STATIC_ASSERT(ARRAY_COUNT(sSafariLandSpecies) <= 255, SafariLandLadderFitsU8);
+STATIC_ASSERT(ARRAY_COUNT(sSafariWaterSpecies) <= 255, SafariWaterLadderFitsU8);
+
+// A window WIDER than its slot count is what makes the re-deal in
+// RogueDungeon_GetWildMonInfo do anything, and it is the whole design of this
+// area: 47 live species dealt twelve at a time, re-dealt every roll. Narrow
+// either of these to its slot count and the Safari quietly becomes twelve
+// species a visit.
+STATIC_ASSERT(DUNGEON_SAFARI_LAND_WINDOW > NUM_LAND_MONS_ENCOUNTER_SLOTS,
+              SafariLandWindowWiderThanSlots);
+STATIC_ASSERT(DUNGEON_SAFARI_WATER_WINDOW > NUM_WATER_MONS_ENCOUNTER_SLOTS,
+              SafariWaterWindowWiderThanSlots);
+
+// A pool must reach its own end: bottom tops out at count - window, so a window
+// wider than the ladder leaves the deepest floors reading a truncated window.
+STATIC_ASSERT(ARRAY_COUNT(sSafariLandSpecies) >= DUNGEON_SAFARI_LAND_WINDOW,
+              SafariLandLadderFillsItsWindow);
+STATIC_ASSERT(ARRAY_COUNT(sSafariWaterSpecies) >= DUNGEON_SAFARI_WATER_WINDOW,
+              SafariWaterLadderFillsItsWindow);
 
 // Runtime dungeon floor generator.
 //
@@ -2328,10 +2368,13 @@ bool8 RogueDungeon_TryHandleWhiteOut(void)
     return TRUE;
 }
 
-// Deals `slots` entries from the theme's pool, starting the round robin at
-// `rotation`. Split out of BuildWildEncounterTable because the water branch
-// re-deals per roll - see RogueDungeon_GetWildMonInfo.
-static void DealWildSlots(const struct RogueDungeonTheme *theme, u32 slots,
+// Deals `slots` entries from a species ladder, starting the round robin at
+// `rotation`. Split out of BuildWildEncounterTable because a table whose window
+// is wider than its slots re-deals per roll - see RogueDungeon_GetWildMonInfo.
+//
+// Takes the LADDER rather than the theme, because the Safari Zone has pools and
+// no theme. Nothing here ever wanted anything else off the theme.
+static void DealWildSlots(const u16 *species, u32 slots,
                           u32 bottom, u32 width, u32 rotation, u8 level)
 {
     u32 i;
@@ -2342,7 +2385,7 @@ static void DealWildSlots(const struct RogueDungeonTheme *theme, u32 slots,
     // which species lands in the common slots.
     for (i = 0; i < slots; i++)
     {
-        sDungeonWildMons[i].species = theme->species[bottom + (i + rotation) % width];
+        sDungeonWildMons[i].species = species[bottom + (i + rotation) % width];
         sDungeonWildMons[i].minLevel = level;
         sDungeonWildMons[i].maxLevel = level + DUNGEON_ENCOUNTER_LEVEL_SPREAD;
     }
@@ -2409,15 +2452,98 @@ static void BuildWildEncounterTable(u16 floor)
     sWildRotation = rotation;
     sWildLevel = level;
     sWildSlots = slots;
-    sWildTheme = theme;
+    sWildSpecies = theme->species;
 
-    DealWildSlots(theme, slots, bottom, width, rotation, level);
+    DealWildSlots(theme->species, slots, bottom, width, rotation, level);
 
     // encounterRate is read straight off the static table, not from here, so
     // this value is only a sane fallback.
     sDungeonWildInfo.encounterRate = 10;
     sDungeonWildInfo.wildPokemon = sDungeonWildMons;
     sDungeonWildArea = theme->wildArea;
+}
+
+// Which ladder the Safari's given surface reads. Also the cache key - see
+// sSafariBuiltFloor.
+static const u16 *SafariLadder(enum WildPokemonArea area)
+{
+    return (area == WILD_AREA_WATER) ? sSafariWaterSpecies : sSafariLandSpecies;
+}
+
+// Is the player in the run's Safari Zone?
+//
+// Group AND section, because neither alone is enough: the Rogue map group also
+// holds the dungeon floors and the way-station, and MAPSEC_SAFARI_ZONE is
+// vanilla's own, shared with the six Hoenn maps these were copied from. The
+// pair is exact and costs one comparison more than a six-way map id list would,
+// while not needing to name a single map - so a seventh zone needs no edit
+// here.
+static bool8 IsSafariMap(void)
+{
+    return gSaveBlock1Ptr->location.mapGroup == MAP_GROUP(MAP_ROGUE_SAFARI_SOUTH)
+        && gMapHeader.regionMapSectionId == MAPSEC_SAFARI_ZONE;
+}
+
+// The Safari Zone's table.
+//
+// Depth decides WHICH species, exactly as it does on a dungeon floor, and the
+// level follows FloorTargetLevel so a Safari catch arrives at parity with the
+// curve rather than as a free gift or a fossil.
+//
+// THE TIER COUNTS FROM THE ABSOLUTE RUN FLOOR, which is the opposite of what
+// BuildWildEncounterTable does and right for the opposite reason. A theme pool
+// is written for one dungeon's depth, so keying it on the absolute floor made
+// every theme read its pool from wherever its dungeon happened to sit. This
+// pool spans the whole run and has no dungeon to be relative to. Do not
+// "correct" this to DungeonFloorWithin.
+static void BuildSafariEncounterTable(u16 floor, enum WildPokemonArea area)
+{
+    const u16 *ladder;
+    u32 count, window, slots, tiers, bottom, width;
+    u32 scaled = FloorTargetLevel(floor);
+    u8 level;
+
+    ladder = SafariLadder(area);
+    if (area == WILD_AREA_WATER)
+    {
+        count = ARRAY_COUNT(sSafariWaterSpecies);
+        window = DUNGEON_SAFARI_WATER_WINDOW;
+        slots = NUM_WATER_MONS_ENCOUNTER_SLOTS;
+    }
+    else
+    {
+        count = ARRAY_COUNT(sSafariLandSpecies);
+        window = DUNGEON_SAFARI_LAND_WINDOW;
+        slots = NUM_LAND_MONS_ENCOUNTER_SLOTS;
+    }
+
+    // Clamp before narrowing to u8, or a deep enough floor wraps.
+    if (scaled > MAX_LEVEL - DUNGEON_ENCOUNTER_LEVEL_SPREAD)
+        scaled = MAX_LEVEL - DUNGEON_ENCOUNTER_LEVEL_SPREAD;
+    level = scaled;
+
+    tiers = window + floor / DUNGEON_ENCOUNTER_TIER_FLOORS;
+    if (tiers > count)
+        tiers = count;
+    bottom = (tiers > window) ? tiers - window : 0;
+    width = tiers - bottom;
+
+    sWildBottom = bottom;
+    sWildWidth = width;
+    // NOT DungeonRandom(). That stream belongs to floor generation and is not
+    // live here - the Safari is entered from the way-station, outside any
+    // floor's generation - so the opening rotation comes off the floor number
+    // and the per-roll advance does the rest.
+    sWildRotation = width ? floor % width : 0;
+    sWildLevel = level;
+    sWildSlots = slots;
+    sWildSpecies = ladder;
+
+    DealWildSlots(ladder, slots, bottom, width, sWildRotation, level);
+
+    sDungeonWildInfo.encounterRate = 10;
+    sDungeonWildInfo.wildPokemon = sDungeonWildMons;
+    sDungeonWildArea = area;
 }
 
 // Hooked into TryGenerateWildMon. Returning NULL leaves the caller on the
@@ -2434,22 +2560,53 @@ static void BuildWildEncounterTable(u16 floor)
 // water branch, and before this they fell through to the static placeholder.
 const struct WildPokemonInfo *RogueDungeon_GetWildMonInfo(enum WildPokemonArea area)
 {
-    if (gMapHeader.mapLayoutId != LAYOUT_ROGUE_DUNGEON_FLOOR)
-        return NULL;
-    if (area != sDungeonWildArea)
-        return NULL;
+    if (IsSafariMap())
+    {
+        u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
 
-    // Water re-deals per roll; see sWildTheme for why, and why land does not.
+        // Built LAZILY rather than from a map script, so no entry path can miss
+        // it: there is no ON_TRANSITION on a load-from-save, and the Safari has
+        // six maps the player walks between by CONNECTION rather than by warp,
+        // which runs no map script at all.
+        //
+        // The cache exists so the rotation below can advance. Rebuilding every
+        // roll would reset it and undo the whole point.
+        if (sSafariBuiltFloor != floor || sWildSpecies != SafariLadder(area))
+        {
+            BuildSafariEncounterTable(floor, area);
+            sSafariBuiltFloor = floor;
+        }
+    }
+    else
+    {
+        if (gMapHeader.mapLayoutId != LAYOUT_ROGUE_DUNGEON_FLOOR)
+            return NULL;
+        if (area != sDungeonWildArea)
+            return NULL;
+    }
+
+    // RE-DEAL WHEN THE WINDOW IS WIDER THAN THE SLOTS, which is exactly when
+    // re-dealing buys anything: the window then means "how many species can
+    // appear here at all" instead of "how many are present at once". This used
+    // to test `area == WILD_AREA_WATER`, which was the same set of tables by
+    // coincidence - water's 12-wide window over 5 slots. Land was never the
+    // exception; 12 == 12 was.
     //
     // Advanced by ONE so the rotation walks the window rather than jumping
     // around it - over consecutive rolls every species passes through the
     // common slots exactly once per lap. Deliberately NOT DungeonRandom():
     // that stream belongs to floor generation and is not live at roll time, and
     // drawing from it here would make encounters depend on generation order.
-    if (sDungeonWildArea == WILD_AREA_WATER && sWildTheme != NULL && sWildWidth != 0)
+    //
+    // Land runs six ability-influenced scans over the table where water runs
+    // fewer, so on land an ability's pull now samples a freshly dealt twelve
+    // each roll. That is still atomic - TryGenerateWildMon takes this pointer
+    // once and uses it for the whole call - but it is a real change in what
+    // Magnet Pull and friends are choosing from, not an oversight.
+    if (sWildWidth > sWildSlots && sWildSpecies != NULL)
     {
         sWildRotation = (sWildRotation + 1) % sWildWidth;
-        DealWildSlots(sWildTheme, sWildSlots, sWildBottom, sWildWidth,
+        DealWildSlots(sWildSpecies, sWildSlots, sWildBottom, sWildWidth,
                       sWildRotation, sWildLevel);
     }
 

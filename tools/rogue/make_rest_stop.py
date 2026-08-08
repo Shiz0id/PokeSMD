@@ -114,6 +114,11 @@ assert dict(warp_tiles.DOORS)['REST_STOP_ALCOVE'] == FLOOR
 #
 #   #  wall        .  floor       X  the descent out
 #   G  the alcove cut west into the rock, through to the game room
+#   S  the alcove cut east into the rock, through to the Safari Zone
+#
+# G and S are the same art and the same door metatile - a one-tile notch in the
+# wall, mirrored. They are told apart by which warp_event sits on them, not by
+# anything in the layout.
 PLAN = (
     '#################',
     '#################',
@@ -121,7 +126,7 @@ PLAN = (
     '###...........###',
     '##.............##',
     '##.............##',
-    '#G.............##',
+    '#G.............S#',
     '##.............##',
     '###...........###',
     '####....X....####',
@@ -134,7 +139,7 @@ PLAN = (
 # floor - there is no door art in a tileset made of cut rock, and a one-tile
 # notch in a wall reads as a way through on its own - but it and the descent are
 # the DOOR clones, so the engine will fire their warps.
-OPEN = {'.': FLOOR, 'X': DESCENT, 'G': ALCOVE}
+OPEN = {'.': FLOOR, 'X': DESCENT, 'G': ALCOVE, 'S': ALCOVE}
 
 
 def is_wall(plan, x, y):
@@ -310,6 +315,8 @@ def main(argv):
                 print(f'  descent   at ({x},{y})  -> warp_event goes here')
             elif c == 'G':
                 print(f'  games door at ({x},{y})  -> warp_event goes here')
+            elif c == 'S':
+                print(f'  safari door at ({x},{y}) -> warp_event goes here')
 
     used = sorted({b & 0x3FF for b in blocks})
     print(f'  {len(used)} distinct metatiles: '

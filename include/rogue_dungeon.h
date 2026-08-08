@@ -1387,6 +1387,23 @@ struct RogueFloorMapOverride
 #define DUNGEON_ENCOUNTER_TIER_FLOORS   1
 #define DUNGEON_ENCOUNTER_WINDOW        8
 
+// The Safari Zone's windows, which are deliberately WIDER than the engine's
+// slot counts (12 land, 5 water). That is legal - and is the point - because
+// the table re-deals on every roll, so the window is how many species can turn
+// up at all rather than how many stand there at once. It is the same mechanism
+// the ocean uses to get more than five species out of five water slots.
+//
+// 47 is not a taste number: the ladder advances one tier per floor from the
+// ABSOLUTE run floor, so a window of W reaches W + DUNGEON_TOTAL_FLOORS - 1
+// species over a run. At 47 that is 161, which is exactly the length of
+// sSafariLandSpecies - every species the run cannot otherwise obtain is
+// reachable and none had to be cut. Narrow it and the tail of the ladder
+// becomes unreachable; widen it and the bottom stays live too long.
+// tools/rogue/gen_safari_pool.py owns both ends of that arithmetic, and
+// tools/rogue/check_safari_pool.py fails if they stop agreeing.
+#define DUNGEON_SAFARI_LAND_WINDOW     47
+#define DUNGEON_SAFARI_WATER_WINDOW    12
+
 void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition);
 bool8 RogueDungeon_TryStartStairsScript(struct MapPosition *position);
 // Which FLDEFFOBJ_ the long-grass effect should wear here. The effect id stays

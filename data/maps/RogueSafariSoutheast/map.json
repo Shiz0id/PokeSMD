@@ -1,0 +1,32 @@
+{
+  "id": "MAP_ROGUE_SAFARI_SOUTHEAST",
+  "name": "RogueSafariSoutheast",
+  "layout": "LAYOUT_SAFARI_ZONE_SOUTHEAST",
+  "music": "MUS_SAFARI_ZONE",
+  "region": "REGION_HOENN",
+  "region_map_section": "MAPSEC_SAFARI_ZONE",
+  "requires_flash": false,
+  "weather": "WEATHER_NONE",
+  "map_type": "MAP_TYPE_UNDERGROUND",
+  "allow_cycling": false,
+  "allow_escaping": false,
+  "allow_running": true,
+  "show_map_name": true,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "connections": [
+    {
+      "map": "MAP_ROGUE_SAFARI_SOUTH",
+      "offset": 0,
+      "direction": "left"
+    },
+    {
+      "map": "MAP_ROGUE_SAFARI_NORTHEAST",
+      "offset": 0,
+      "direction": "up"
+    }
+  ],
+  "object_events": [],
+  "warp_events": [],
+  "coord_events": [],
+  "bg_events": []
+}

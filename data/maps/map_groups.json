@@ -1170,6 +1170,12 @@
     "RogueDungeonPetals",
     "RogueRestStop",
     "RogueRestStopGames",
+    "RogueSafariSouth",
+    "RogueSafariSouthwest",
+    "RogueSafariSoutheast",
+    "RogueSafariNorth",
+    "RogueSafariNorthwest",
+    "RogueSafariNortheast",
     "RogueDungeonRain",
     "RogueDungeonBlizzard"
   ]

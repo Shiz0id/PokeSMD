@@ -613,6 +613,12 @@ gStdScripts_End::
 	.include "data/maps/RogueDungeonBlizzard/scripts.inc"
 	.include "data/maps/RogueRestStop/scripts.inc"
 	.include "data/maps/RogueRestStopGames/scripts.inc"
+	.include "data/maps/RogueSafariSouth/scripts.inc"
+	.include "data/maps/RogueSafariSouthwest/scripts.inc"
+	.include "data/maps/RogueSafariSoutheast/scripts.inc"
+	.include "data/maps/RogueSafariNorth/scripts.inc"
+	.include "data/maps/RogueSafariNorthwest/scripts.inc"
+	.include "data/maps/RogueSafariNortheast/scripts.inc"
 
 .if IS_FRLG
 
