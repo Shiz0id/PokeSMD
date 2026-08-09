@@ -946,10 +946,17 @@ static void HandleInput(void)
 	}
 }
 
-static void ExitSnake(void)
+static void ExitSnake(u8 taskId)
 {
     if (!gPaletteFade.active)
     {
+        // The main loop is a task, and the overworld runs tasks too -- so
+        // leaving it alive does not stop it, it hands it to the field with
+        // sSnake NULL. It then reads its state byte off address 0 and acts on
+        // whatever comes back, every frame. Voltorb Flip is the only one of
+        // the nine upstream destroys its main task in, and the only one
+        // anyone had played.
+        DestroyTask(taskId);
         SetMainCallback2(CB2_ReturnToFieldContinueScriptPlayMapMusic);
         GameCorner_FreeBgTilemapBuffers();
         FREE_AND_SET_NULL(sSnake);
@@ -2108,7 +2115,7 @@ static void SnakeMain(u8 taskId)
 			}
 			break;
 		case SNAKE_EXIT:
-			ExitSnake();
+			ExitSnake(taskId);
 			break;
 	}
 }
