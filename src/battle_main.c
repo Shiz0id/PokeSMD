@@ -1751,14 +1751,74 @@ static void CB2_HandleStartMultiBattle(void)
 
 void BattleMainCB2(void)
 {
-    // Before AnimateSprites, so a frame queued this tick joins the same VBlank
-    // copy batch as everything else the sprite system asks for this frame.
+    u32 speedScale = GetBattleSpeedScale(FALSE);
+
+    // ONCE per video frame, deliberately outside the speed loop below, and
+    // before AnimateSprites so a frame queued this tick joins the same VBlank
+    // copy batch as everything else the sprite system asks for.
+    //
+    // Inside the loop it would run up to four times a frame, and a tick can
+    // trigger a chunk decode: one decode is ~31% of a video frame at k=2, and
+    // the pathological four-battler double already measures 764 permille. Four
+    // of those in one frame is several times over budget. The BW containers are
+    // idle loops playing at a real 7.7-10 fps rather than battle events, so
+    // holding them at real time while the battle runs fast is also the right
+    // look.
     RogueBwAnim_Tick();
-    AnimateSprites();
-    BuildOamBuffer();
-    RunTextPrinters();
-    UpdatePaletteFade();
-    RunTasks();
+
+    if (gBattleResults.caughtMonSpecies)
+        speedScale = 1;
+
+    if (speedScale <= 1)
+    {
+        // Maintain OG order for compat
+        AnimateSprites();
+        BuildOamBuffer();
+        RunTextPrinters();
+        UpdatePaletteFade();
+        RunTasks();
+    }
+    else
+    {
+        u32 s;
+        u32 fadeResult;
+
+        // Update select entries at higher speed
+        // disable speed up during palette fades otherwise we run into issues with blending
+        for (s = 1; s < speedScale; ++s)
+        {
+            AnimateSprites();
+            RunTextPrinters();
+            fadeResult = UpdatePaletteFade();
+
+            if (fadeResult == PALETTE_FADE_STATUS_LOADING)
+            {
+                // minimal final update as we've just started a fade
+                BuildOamBuffer();
+                RunTasks();
+                break;
+            }
+            else
+            {
+                RunTasks();
+                VBlankCB_Battle();
+
+                // Call it again to make sure everything is behaving as it should
+                if (gMain.callback1)
+                    gMain.callback1();
+            }
+        }
+
+        if (fadeResult != PALETTE_FADE_STATUS_LOADING)
+        {
+            // final update
+            AnimateSprites();
+            BuildOamBuffer();
+            RunTextPrinters();
+            UpdatePaletteFade();
+            RunTasks();
+        }
+    }
 
     if (JOY_HELD(B_BUTTON) && gBattleTypeFlags & BATTLE_TYPE_RECORDED && RecordedBattle_CanStopPlayback())
     {
@@ -2975,6 +3035,16 @@ void BeginBattleIntro(void)
     gBattleCommunication[1] = 0;
     gBattleStruct->eventState.battleIntro = 0;
     gBattleMainFunc = DoBattleIntro;
+}
+
+bool32 InBattleChoosingMoves(void)
+{
+    return gBattleMainFunc == HandleTurnActionSelectionState;
+}
+
+bool32 InBattleRunningActions(void)
+{
+    return gBattleMainFunc == RunTurnActionsFunctions;
 }
 
 static void BattleMainCB1(void)

@@ -56,6 +56,8 @@
 #include "constants/trainers.h"
 #include "constants/trainer_hill.h"
 #include "constants/weather.h"
+#include "wild_encounter.h"
+#include "constants/battle_mode.h"
 #include "fishing.h"
 
 enum TransitionType
@@ -1124,9 +1126,65 @@ void SetMapVarsToTrainerB(void)
     }
 }
 
+// Helper function to convert double battles to single if conditions aren't met
+static void ConvertDoubleToSingleIfNeeded(void)
+{
+    // Force single battle if trainer only has 1 pokemon OR player doesn't have 2 usable mons
+    if (GetTrainerPartySizeFromId(TRAINER_BATTLE_PARAM.opponentA) == 1
+        || GetMonsStateToDoubles_2() != PLAYER_HAS_TWO_USABLE_MONS)
+    {
+        if (TRAINER_BATTLE_PARAM.mode == TRAINER_BATTLE_DOUBLE)
+            TRAINER_BATTLE_PARAM.mode = TRAINER_BATTLE_SINGLE;
+        if (TRAINER_BATTLE_PARAM.mode == TRAINER_BATTLE_CONTINUE_SCRIPT_DOUBLE)
+            TRAINER_BATTLE_PARAM.mode = TRAINER_BATTLE_CONTINUE_SCRIPT;
+        if (TRAINER_BATTLE_PARAM.mode == TRAINER_BATTLE_REMATCH_DOUBLE)
+            TRAINER_BATTLE_PARAM.mode = TRAINER_BATTLE_REMATCH;
+    }
+}
+
+// Rewrites TRAINER_BATTLE_PARAM.mode to match the player's battle mode option.
+//
+// Split out of BattleSetup_ConfigureTrainerBattle and exported, because the
+// roguelike's generated dungeon trainers never reach that function: their
+// scripts carry no inline trainerbattle data, so ConfigureTrainerBattle and
+// ConfigureTwoTrainersBattle branch around it and fill TRAINER_BATTLE_PARAM
+// from RogueDungeon_SetUpTrainerBattle instead. Left where upstream had it,
+// the setting would have applied to bosses and script trainers while the
+// generated trainers -- most of the battles in a run -- silently ignored it.
+void ApplyBattleModePreference(void)
+{
+    if (gSaveBlock2Ptr->battleMode == BATTLE_MODE_SINGLES)
+    {
+        // Force all battles to be singles
+        if (TRAINER_BATTLE_PARAM.mode == TRAINER_BATTLE_DOUBLE)
+            TRAINER_BATTLE_PARAM.mode = TRAINER_BATTLE_SINGLE;
+        if (TRAINER_BATTLE_PARAM.mode == TRAINER_BATTLE_CONTINUE_SCRIPT_DOUBLE)
+            TRAINER_BATTLE_PARAM.mode = TRAINER_BATTLE_CONTINUE_SCRIPT;
+        if (TRAINER_BATTLE_PARAM.mode == TRAINER_BATTLE_REMATCH_DOUBLE)
+            TRAINER_BATTLE_PARAM.mode = TRAINER_BATTLE_REMATCH;
+    }
+    else if (gSaveBlock2Ptr->battleMode == BATTLE_MODE_DOUBLES)
+    {
+        // Force all battles to be doubles
+        if (TRAINER_BATTLE_PARAM.mode == TRAINER_BATTLE_SINGLE)
+            TRAINER_BATTLE_PARAM.mode = TRAINER_BATTLE_DOUBLE;
+        if (TRAINER_BATTLE_PARAM.mode == TRAINER_BATTLE_CONTINUE_SCRIPT)
+            TRAINER_BATTLE_PARAM.mode = TRAINER_BATTLE_CONTINUE_SCRIPT_DOUBLE;
+        if (TRAINER_BATTLE_PARAM.mode == TRAINER_BATTLE_REMATCH)
+            TRAINER_BATTLE_PARAM.mode = TRAINER_BATTLE_REMATCH_DOUBLE;
+
+        ConvertDoubleToSingleIfNeeded();
+    }
+
+    // BATTLE_MODE_MIXED: Keep original battle type (no conversion)
+    ConvertDoubleToSingleIfNeeded();
+}
+
 // expects parameters have been loaded correctly with TrainerBattleLoadArgs
 const u8 *BattleSetup_ConfigureTrainerBattle(const u8 *data)
 {
+    ApplyBattleModePreference();
+
     switch (TRAINER_BATTLE_PARAM.mode)
     {
     case TRAINER_BATTLE_SINGLE_NO_INTRO_TEXT:
@@ -1354,7 +1412,9 @@ void BattleSetup_StartTrainerBattle(void)
         }
         else
         {
-            gBattleTypeFlags = (BATTLE_TYPE_TRAINER);
+            gBattleTypeFlags = BATTLE_TYPE_TRAINER;
+            if (gSaveBlock2Ptr->battleMode == BATTLE_MODE_DOUBLES)
+                gBattleTypeFlags |= BATTLE_TYPE_DOUBLE;
         }
     }
 
@@ -1515,7 +1575,7 @@ static void CB2_EndTrainerBattle(void)
     }
     else if (IsPlayerDefeated(gBattleOutcome) == TRUE)
     {
-        if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE || InTrainerHillChallenge() || (!NoAliveMonsForPlayer()) || FlagGet(B_FLAG_NO_WHITEOUT))
+    if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE || InTrainerHillChallenge() || (!NoAliveMonsForPlayer()) || FlagGet(B_FLAG_NO_WHITEOUT))
             SetMainCallback2(CB2_ReturnToFieldContinueScriptPlayMapMusic);
         else
             SetMainCallback2(CB2_WhiteOut);

@@ -4759,6 +4759,18 @@ void RogueDungeon_SetUpTrainerBattle(void)
 
     SetMapVarsToTrainerA();
 
+    // A generated trainer never reaches BattleSetup_ConfigureTrainerBattle --
+    // ConfigureTrainerBattle and ConfigureTwoTrainersBattle branch around it
+    // because these scripts carry no inline trainerbattle data -- so the
+    // player's battle mode option has to be applied here or the majority of the
+    // battles in a run would quietly ignore it.
+    //
+    // Safe in the two-trainer case as well. This runs on the slot A call, which
+    // happens first either way; forcing singles leaves the mode at the
+    // TRAINER_BATTLE_SINGLE set just above, and forcing doubles matches what a
+    // two-opponent battle already is.
+    ApplyBattleModePreference();
+
     // The other exit: talking to an already-beaten trainer skips the battle and
     // leaves via gotopostbattlescript, which reads this one instead.
     SetTrainerBattleEndScript(endScript);
