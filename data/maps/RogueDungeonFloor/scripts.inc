@@ -50,6 +50,43 @@ RogueDungeonFloor_EventScript_ChooseStarters::
 	@ player who cannot craft cannot discover that materials are worth
 	@ digging for -- and the materials are buried from floor 1.
 	additem ITEM_CRAFT_BUNDLE, 1
+	@ Both bikes. Vanilla gives one or the other and treats the choice as
+	@ progression; a run has no Cycling Road to earn either on, so both are
+	@ granted and the choice is which one suits the floor -- Mach for crossing
+	@ a big open room, Acro for nothing in particular yet.
+	@
+	@ THESE DO NOTHING WITHOUT THE MAP FLAG. Overworld_IsBikingAllowed reads
+	@ gMapHeader.allowCycling and every map in a run shipped with it false, so
+	@ granting the bikes alone would have put two key items in the bag that
+	@ refuse to deploy everywhere the player can stand. The run's maps set it
+	@ true now. It is NOT the same gate as Fly and Teleport, which key on map
+	@ type -- so the Safari copies stay MAP_TYPE_UNDERGROUND and stay unflyable.
+	additem ITEM_MACH_BIKE, 1
+	additem ITEM_ACRO_BIKE, 1
+	@ THE FOUR BATTLE GIMMICKS, and these are the ones that were being
+	@ overlooked. Every one of them is compiled into this build --
+	@ P_MEGA_EVOLUTIONS, P_ULTRA_BURST_FORMS, P_GIGANTAMAX_FORMS and
+	@ P_TERA_FORMS are all TRUE -- and every one is gated on the player HOLDING
+	@ its key item, in four separate places:
+	@
+	@   battle_util.c     CheckBagHasItem(ITEM_MEGA_RING)     -> Mega Evolution
+	@   battle_util.c     CheckBagHasItem(ITEM_Z_POWER_RING)  -> Z-moves, Ultra Burst
+	@   battle_dynamax.c  CheckBagHasItem(ITEM_DYNAMAX_BAND)  -> Dynamax
+	@   battle_terastal.c CheckBagHasItem(ITEM_TERA_ORB)      -> Terastallization
+	@
+	@ So without these the mechanics are in the ROM, cost their ROM, and can
+	@ never be used by the player. Trainers are NOT gated the same way -- the
+	@ check is on player positions only -- so a boss could already Mega Evolve
+	@ against a player who structurally could not answer.
+	@
+	@ Each of these four is a real balance decision and each is one line: delete
+	@ the ones this run should not have. Tera in particular changes every matchup
+	@ in the game, and B_FLAG_TERA_ORB_CHARGED is 0, so the orb never needs
+	@ recharging and it is available in every battle of all 115 floors.
+	additem ITEM_MEGA_RING, 1
+	additem ITEM_Z_POWER_RING, 1
+	additem ITEM_DYNAMAX_BAND, 1
+	additem ITEM_TERA_ORB, 1
 	setvar VAR_ROGUE_RUN_STATE, ROGUE_RUN_ACTIVE
 	releaseall
 	end
