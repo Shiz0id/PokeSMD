@@ -3317,6 +3317,21 @@ bool8 RogueDungeon_IsBossFloor(u16 floor)
     return IsMiniBossFloor(floor) || IsDungeonBossFloor(floor);
 }
 
+// The Wave Charm. A run grants no field moves at all, so the Safari Zone's
+// water surface used to be reachable only on a Mudkip run - Mudkip learns Surf
+// at 30 and Swampert has it at 1, and no other starter pick learns it by level.
+// Sixteen generated, check-guarded species sat behind one of thirty picks.
+//
+// This does not make anything else surfable. The ocean theme already crosses
+// water because its floor metatile is water and the player arrives on a surf
+// blob; the seafloor is a property of the MAP, not a move; and the jungle's
+// water is MB_PUDDLE precisely so it is not a second encounter surface. So the
+// only thing this opens is the Safari's water, which is the point.
+bool32 RogueDungeon_HasSurfTool(void)
+{
+    return CheckBagHasItem(ITEM_ROGUE_SURF_TOOL, 1);
+}
+
 // Boss floors skip rooms and corridors entirely: a single centred arena, the
 // boss standing in the open, and no exit at all until it is beaten.
 static void PrepareArenaFloor(u16 floor)

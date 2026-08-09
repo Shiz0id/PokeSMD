@@ -1433,6 +1433,12 @@ bool8 RogueDungeon_IsGeneratedTrainer(void);
 bool8 RogueDungeon_HasTrainerBeenBeaten(u8 objectEventId);
 bool8 RogueDungeon_IsBossFloor(u16 floor);
 
+// TRUE while the player carries the Wave Charm. Hooked into PartyHasMonWithSurf
+// and ScrCmd_checkfieldmove so the lead Pokemon can carry the player over water
+// without anyone in the party knowing Surf. See the ITEM_ROGUE_SURF_TOOL entry
+// in src/data/items.h for why that is worth doing.
+bool32 RogueDungeon_HasSurfTool(void);
+
 void RogueDungeon_ResetRun(void);
 
 // These pick the destination MAP from the floor's theme, which is what keeps an

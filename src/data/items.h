@@ -13932,6 +13932,29 @@ const struct ItemInfo gItemsInfo[] =
         .iconPalette = gItemIconPalette_DowsingMachine,
     },
 
+    // A run never grants Surf, so before this the Safari Zone's water surface
+    // was reachable only on a Mudkip run -- Mudkip learns Surf at 30 and
+    // Swampert knows it at 1, and no other starter pick learns it by level.
+    // That stranded sSafariWaterSpecies, a generated and check-guarded ladder
+    // of sixteen species, behind one of thirty starters.
+    //
+    // Held rather than used: there is no fieldUseFunc, because the prompt comes
+    // from walking into water like any other surf. The icon is the HM disc in
+    // water colours, which is what this replaces and costs no new art.
+    [ITEM_ROGUE_SURF_TOOL] =
+    {
+        .name = ITEM_NAME("Wave Charm"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "Lets the first\n"
+            "POKéMON in the party\n"
+            "carry you over water."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+        .iconPic = gItemIcon_HM,
+        .iconPalette = gItemIconPalette_WaterTMHM,
+    },
+
     [ITEM_TOWN_MAP] =
     {
         .name = ITEM_NAME("Town Map"),

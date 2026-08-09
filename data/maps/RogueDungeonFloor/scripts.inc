@@ -26,6 +26,12 @@ RogueDungeonFloor_EventScript_ChooseStarters::
 	@ balls, so without this the whole hidden half of the floor is unreachable
 	@ and the player has no way to know it is there.
 	additem ITEM_DOWSING_MACHINE, 1
+	@ Also a tool rather than a prize, and for the same reason. A run grants no
+	@ field moves, so the Safari Zone's water surface -- sixteen generated,
+	@ check-guarded species -- was reachable only on a Mudkip run. Nothing else
+	@ in a run responds to it: the ocean floor is already water, the seafloor is
+	@ a property of the map, and the jungle's water is MB_PUDDLE on purpose.
+	additem ITEM_ROGUE_SURF_TOOL, 1
 	setvar VAR_ROGUE_RUN_STATE, ROGUE_RUN_ACTIVE
 	releaseall
 	end

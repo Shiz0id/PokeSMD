@@ -17,6 +17,7 @@
 #include "overworld.h"
 #include "party_menu.h"
 #include "random.h"
+#include "rogue_dungeon.h"
 #include "rotating_gate.h"
 #include "rtc.h"
 #include "script.h"
@@ -1625,6 +1626,14 @@ bool8 PartyHasMonWithSurf(void)
 
     if (!TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_SURFING))
     {
+        // The Wave Charm lets the lead Pokemon carry the player instead. Still
+        // requires a party: the surf field effect animates a mon out of a slot,
+        // which is also why ScrCmd_checkfieldmove answers with slot 0 rather
+        // than PARTY_SIZE. See RogueDungeon_HasSurfTool.
+        if (RogueDungeon_HasSurfTool()
+         && GetMonData(&gParties[B_TRAINER_PLAYER][0], MON_DATA_SPECIES) != SPECIES_NONE)
+            return TRUE;
+
         for (i = 0; i < PARTY_SIZE; i++)
         {
             if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) == SPECIES_NONE)
