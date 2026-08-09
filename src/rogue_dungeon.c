@@ -39,6 +39,7 @@ extern const u8 RogueDungeonFloor_EventScript_Stairs[];
 extern const u8 RogueDungeonFloor_EventScript_Trainer[];
 extern const u8 RogueDungeonFloor_EventScript_TrainerDone[];
 extern const u8 RogueDungeonFloor_EventScript_ItemBall[];
+extern const u8 RogueDungeonFloor_EventScript_MiningRock[];
 extern const u8 RogueDungeonFloor_EventScript_BossDone[];
 extern const u8 RogueDungeonFloor_Text_TrainerIntro[];
 extern const u8 RogueDungeonFloor_Text_TrainerDefeat[];
@@ -1896,6 +1897,9 @@ EWRAM_DATA static u8 sItemCount = 0;
 // every load - see PlantFloorBerryTrees.
 EWRAM_DATA static u16 sBerryItems[DUNGEON_MAX_BERRIES] = {0};
 EWRAM_DATA static u8 sBerryX[DUNGEON_MAX_BERRIES] = {0};
+EWRAM_DATA static u8 sRockX[DUNGEON_MAX_ROCKS] = {0};
+EWRAM_DATA static u8 sRockY[DUNGEON_MAX_ROCKS] = {0};
+EWRAM_DATA static u8 sRockCount = 0;
 EWRAM_DATA static u8 sBerryY[DUNGEON_MAX_BERRIES] = {0};
 EWRAM_DATA static u8 sBerryCount = 0;
 
@@ -3765,13 +3769,11 @@ STATIC_ASSERT(ITEM_DAWN_STONE    == ITEM_FIRE_STONE + 9, RogueStoneOrderDawn);
 // sBuriedStones only half closes by burying two of the ten.
 static const struct RogueLootEntry sLootMaterials[] =
 {
-    // Shards: four colours, flat weights, live for the whole run. A stone
-    // costs four of one colour, so an even spread is what makes the choice
-    // "which stone am I saving for" rather than "which did the floor give".
-    { ITEM_RED_SHARD,      16,   0, 255, 1 },
-    { ITEM_BLUE_SHARD,     16,   0, 255, 1 },
-    { ITEM_YELLOW_SHARD,   16,   0, 255, 1 },
-    { ITEM_GREEN_SHARD,    16,   0, 255, 1 },
+    // NO SHARDS, NO HEART SCALE, NO STAR PIECE. Those are the mining
+    // minigame's, and the first draft of this table buried them as well --
+    // two sources for one thing, and the worse of the two, since a dowsing
+    // hit is a press of A and mining is a decision with a stress meter
+    // running. What is left here is the half mining does NOT give.
 
     // Water is the base of every healing recipe and has to be findable from
     // floor 1, in twos, or the berry half of the tree cannot start.
@@ -3783,13 +3785,10 @@ static const struct RogueLootEntry sLootMaterials[] =
     { ITEM_PEARL,          12,   0,  60, 1 },
     { ITEM_STARDUST,       12,   0,  70, 1 },
 
-    // The mid and late materials, and the reason the top of the recipe tree
-    // is unreachable early. Heart Scale is the scarcest by design -- it is
-    // the revive line, and revives are what a run dies without.
+    // The mid and late materials, and the reason the top of the recipe tree is
+    // unreachable early.
     { ITEM_BIG_MUSHROOM,   10,  35, 255, 1 },
     { ITEM_BIG_PEARL,      10,  45, 255, 1 },
-    { ITEM_STAR_PIECE,      8,  55, 255, 1 },
-    { ITEM_HEART_SCALE,     6,  30, 255, 1 },
 };
 
 static const struct RogueLootEntry sLootBerries[] =
@@ -4043,6 +4042,62 @@ static void PlaceBerryTrees(u16 floor)
         RollFromTable(sLootBerries, ARRAY_COUNT(sLootBerries), floor,
                       &sBerryItems[sBerryCount], &quantity);
         sBerryCount++;
+    }
+}
+
+// Mining rocks. Solid objects like berry trees, so the same placement rules:
+// never on the stairs, never on top of anything already placed.
+//
+// Every theme gets them, unlike berries. A rock is rubble rather than soil,
+// so there is no theme this reads wrong on -- and the ocean and the seafloor
+// are exactly the two themes that bury NOTHING, because dowsing cannot be
+// started while surfing or diving. Without rocks those two would have no
+// material source at all.
+static void PlaceRocks(u16 floor)
+{
+    u32 i, j;
+
+    sRockCount = 0;
+
+    if (sRoomCount == 0)
+        return;
+
+    for (i = 0; i < DUNGEON_MAX_ROCKS; i++)
+    {
+        u32 room = DungeonRandom() % sRoomCount;
+        u8 x = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
+        u8 y = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
+
+        if (x == sStairsX && y == sStairsY)
+            continue;
+
+        for (j = 0; j < sItemCount; j++)
+            if (sItemX[j] == x && sItemY[j] == y)
+                break;
+        if (j != sItemCount)
+            continue;
+
+        for (j = 0; j < sTrainerCount; j++)
+            if (sTrainerX[j] == x && sTrainerY[j] == y)
+                break;
+        if (j != sTrainerCount)
+            continue;
+
+        for (j = 0; j < sBerryCount; j++)
+            if (sBerryX[j] == x && sBerryY[j] == y)
+                break;
+        if (j != sBerryCount)
+            continue;
+
+        for (j = 0; j < sRockCount; j++)
+            if (sRockX[j] == x && sRockY[j] == y)
+                break;
+        if (j != sRockCount)
+            continue;
+
+        sRockX[sRockCount] = x;
+        sRockY[sRockCount] = y;
+        sRockCount++;
     }
 }
 
@@ -4352,6 +4407,7 @@ static void PrepareFloor(u16 seed)
     // After the trainers, because it refuses to stack a ball on one of them.
     PlaceItems(floor);
     PlaceBerryTrees(floor);
+    PlaceRocks(floor);
     // Last, so it can avoid every solid thing already placed - a hidden item
     // under a ball or a tree is one the player can never be told about.
     PlaceHiddenItems(floor);
@@ -4753,6 +4809,53 @@ void RogueDungeon_LoadObjectEventTemplates(void)
             templates[slot].flagId = FLAG_ROGUE_OBJECT_UNUSED;
         }
     }
+
+    for (i = 0; i < DUNGEON_MAX_ROCKS; i++)
+    {
+        u32 slot = DUNGEON_MAX_TRAINERS + DUNGEON_MAX_ITEMS
+                 + DUNGEON_MAX_BERRIES + i;
+
+        templates[slot].localId = slot + 1;
+        templates[slot].kind = OBJ_KIND_NORMAL;
+        templates[slot].elevation = elevation;
+
+        if (i < sRockCount)
+        {
+            templates[slot].graphicsId = OBJ_EVENT_GFX_BREAKABLE_ROCK;
+            templates[slot].x = sRockX[i];
+            templates[slot].y = sRockY[i];
+            templates[slot].movementType = MOVEMENT_TYPE_NONE;
+            templates[slot].trainerRange_berryTreeId = 0;
+            templates[slot].script = RogueDungeonFloor_EventScript_MiningRock;
+            templates[slot].flagId = 0;
+        }
+        else
+        {
+            templates[slot].flagId = FLAG_ROGUE_OBJECT_UNUSED;
+        }
+    }
+}
+
+// A rock is spent once it has been mined. Same shape as
+// RogueDungeon_HideTakenFloorItem and for the same reason: the template is
+// what a reload rebuilds from, so moving it off the map is what makes the
+// rock stay gone until the next floor.
+void RogueDungeon_HideMinedRock(void)
+{
+    struct ObjectEventTemplate *templates = gSaveBlock1Ptr->objectEventTemplates;
+    u32 first = DUNGEON_ROCK_FIRST_LOCAL_ID;
+    u32 slot;
+
+    if (gSpecialVar_LastTalked < first
+     || gSpecialVar_LastTalked >= first + DUNGEON_MAX_ROCKS)
+        return;
+
+    slot = gSpecialVar_LastTalked - 1;
+    templates[slot].x = INT16_MAX;
+    templates[slot].y = INT16_MAX;
+    RemoveObjectEventByLocalIdAndMap(gSpecialVar_LastTalked,
+                                     gSaveBlock1Ptr->location.mapNum,
+                                     gSaveBlock1Ptr->location.mapGroup);
 }
 
 // Maps a talked-to object event back to its item ball slot, the same way

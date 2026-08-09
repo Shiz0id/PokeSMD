@@ -11,7 +11,14 @@ rather than restating them. Checks:
 
   1. every item named in a recipe or in sLootMaterials exists in items.h
   2. every ingredient is obtainable somewhere -- a loot table, a berry table,
-     the materials table, the run's granted items, or another recipe's output
+     the materials table, THE MINING MINIGAME'S OWN REWARD TABLE, the run's
+     granted items, or another recipe's output.
+
+     Mining is read out of src/mining_minigame.c rather than restated, because
+     it is the source for the whole mineral half of the tree -- every shard,
+     Heart Scale, Star Piece -- and nothing else drops any of those. If the
+     rocks are ever unwired from the floor generator, every stone recipe goes
+     with them and this check is what should say so.
   3. every recipe has an EARLIEST FLOOR: the first floor on which all of its
      ingredients are simultaneously in band. A recipe with no such floor is
      dead, and one whose ingredients only overlap for a few floors is fragile.
@@ -44,6 +51,7 @@ REPO = Path(sys.argv[1])
 RUN_FLOORS = 115
 
 dungeon = (REPO / "src/rogue_dungeon.c").read_text(encoding="utf-8")
+mining = (REPO / "src/mining_minigame.c").read_text(encoding="utf-8")
 recipes_src = (REPO / "src/data/crafting_recipes.h").read_text(encoding="utf-8")
 items_h = (REPO / "include/constants/items.h").read_text(encoding="utf-8")
 constants = (REPO / "include/constants/rogue_dungeon.h").read_text(encoding="utf-8")
@@ -84,6 +92,17 @@ stone_first = int(re.search(r"#define DUNGEON_STONE_FIRST_FLOOR\s+(\d+)", consta
 
 granted = set(re.findall(r"additem\s+(ITEM_[A-Z0-9_]+)", grant))
 
+# The mining minigame's payout. Available from the floor the rocks are placed
+# on, which is every floor -- rocks are the one material source that is not
+# theme-gated, deliberately, because the ocean and the seafloor bury nothing.
+mined = set(re.findall(r"\.bagItemId\s*=\s*(ITEM_[A-Z0-9_]+)", mining))
+rocks_per_floor = int(re.search(r"#define DUNGEON_MAX_ROCKS\s+(\d+)",
+                                constants).group(1))
+if rocks_per_floor < 1:
+    failures.append("DUNGEON_MAX_ROCKS is %d, so nothing can be mined and the "
+                    "whole mineral half of the recipe tree is unreachable"
+                    % rocks_per_floor)
+
 # floors on which an item can be picked up
 avail = {}
 for name, rows in tables.items():
@@ -95,6 +114,9 @@ for item in stone_items:
     avail.setdefault(item, set()).update(range(stone_first, RUN_FLOORS + 1))
 for item in granted:
     avail.setdefault(item, set()).update(range(0, RUN_FLOORS + 1))
+if rocks_per_floor > 0:
+    for item in mined:
+        avail.setdefault(item, set()).update(range(0, RUN_FLOORS + 1))
 
 # ---- parse the recipes -----------------------------------------------------
 body = strip_comments(recipes_src)
@@ -173,7 +195,8 @@ for result, qty, ingredients in recipes:
     drop = loot_first.get(result)
     if drop is None or drop < DEEP_FLOOR:
         continue
-    scarce = [i for i in ingredients if material_first.get(i, -1) >= SCARCE_FLOOR]
+    scarce = [i for i in ingredients
+              if material_first.get(i, -1) >= SCARCE_FLOOR or i in mined]
     if not scarce:
         failures.append("%s is not dropped until floor %d but its recipe wants no "
                         "material scarcer than floor %d -- it is a deep item at a "
@@ -196,8 +219,9 @@ if worst > cap:
                     % (RUN_FLOORS, worst, cap))
 
 # ---- report ----------------------------------------------------------------
-print("%d recipes, %d materials, %d buried at the deepest floor (cap %d)"
-      % (len(recipes), len(tables["sLootMaterials"]), worst, cap))
+print("%d recipes, %d buried materials, %d mined items, %d rocks a floor"
+      % (len(recipes), len(tables["sLootMaterials"]), len(mined), rocks_per_floor))
+print("%d buried at the deepest floor (cap %d)" % (worst, cap))
 print()
 print("%-22s %-14s %s" % ("recipe", "first floor", "floors available"))
 for result, first, span in sorted(notes, key=lambda r: (r[1], r[0])):

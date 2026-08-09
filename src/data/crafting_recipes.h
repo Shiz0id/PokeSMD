@@ -154,9 +154,14 @@ static const struct CraftRecipeList gCraftRecipes[ITEMS_COUNT] =
         { ITEM_HEART_SCALE, ITEM_SITRUS_BERRY },
         { ITEM_FRESH_WATER },
     }),
+    // The Big Pearl is a DEPTH GATE, not a cost, and it is here because moving
+    // materials to mining took the depth out of the mineral half: rocks are on
+    // every floor from the first, so Heart Scale and Star Piece have no band and
+    // this was craftable on floor 1 against a drop floor of 80. The pearl is the
+    // only buried thing in the recipe and it puts it at 45.
     CRAFT_ONE(ITEM_MAX_REVIVE, 1, {
         { ITEM_HEART_SCALE, ITEM_HEART_SCALE },
-        { ITEM_STAR_PIECE },
+        { ITEM_STAR_PIECE,  ITEM_BIG_PEARL },
     }),
 
     // ------------------------------------------------------- evolution stones

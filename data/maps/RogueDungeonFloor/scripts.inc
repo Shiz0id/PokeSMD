@@ -275,3 +275,18 @@ RogueDungeonFloor_Text_AceNoRoom:
 
 RogueDungeonFloor_Text_GotTM:
 	.string "You received {STR_VAR_1}!$"
+
+@ A mining rock. The minigame is a special, so this is a lock, a call and a
+@ cleanup -- StartMining sets its own callback and returns to the field itself,
+@ which is why nothing here waits on it.
+@
+@ The rock is removed BEFORE the minigame rather than after: StartMining leaves
+@ through CB2_ReturnToField, so script execution does not resume on the far side
+@ and anything written after the special would never run.
+RogueDungeonFloor_EventScript_MiningRock::
+	lock
+	faceplayer
+	special RogueDungeon_HideMinedRock
+	special StartMining
+	releaseall
+	end

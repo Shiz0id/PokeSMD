@@ -99,7 +99,8 @@
 // case is floor 115: 2 + 115/16 = 9 held, plus 3, which is 12 against
 // DUNGEON_MAX_HIDDEN 16. That headroom is not spare change -- a hidden
 // item's id IS its flag, so the cap is a flag range, not an array bound.
-#define DUNGEON_MATERIALS_PER_FLOOR  3
+// Two rather than three, now that the rocks carry the mineral half.
+#define DUNGEON_MATERIALS_PER_FLOOR  2
 
 // The engine derives a hidden item's flag as
 // hiddenItemId + FLAG_HIDDEN_ITEMS_START, so the ids we choose ARE flags and
@@ -129,6 +130,30 @@
 // Object event local ids again: trainers, then item balls, then these.
 #define DUNGEON_BERRY_FIRST_LOCAL_ID \
     (DUNGEON_MAX_TRAINERS + DUNGEON_MAX_ITEMS + 1)
+
+// Mining rocks: the source of crafting materials, and the reason
+// sLootMaterials no longer buries a shard.
+//
+// The mining minigame was vendored and wired to nothing -- reachable only
+// from the debug menu -- and its own reward table is already exactly the
+// crafting tree's mineral half: all four shards, Heart Scale, Star Piece,
+// and six evolution stones outright. Burying those as well would have been
+// two sources for one thing, and the worse of the two: a dowsing hit is a
+// press of A, and the minigame is a decision about where to dig with a
+// stress meter running.
+//
+// THREE, AND THE NUMBER IS A TEMPLATE BUDGET RATHER THAN A TASTE. map.json
+// declares one object event per possible placement and the engine takes the
+// COUNT from ROM, so every rock is a slot whether or not a floor uses it.
+// The floor already declares 16 against an OBJECT_EVENTS_COUNT of 16 that
+// includes the player and now a follower, so these three take it to 19 and
+// spawning degrades the way the game corner's 28 do: proximity decides, and
+// something furthest away silently does not appear. The per-map ceiling is
+// 64, so this is legal; it is the live sprite limit that is tight.
+#define DUNGEON_MAX_ROCKS 3
+
+#define DUNGEON_ROCK_FIRST_LOCAL_ID \
+    (DUNGEON_MAX_TRAINERS + DUNGEON_MAX_ITEMS + DUNGEON_MAX_BERRIES + 1)
 
 // Runs finished, and whether any ever has. The counter is what the run-complete
 // message reads back; the flag is the door for post-first-run content, which is

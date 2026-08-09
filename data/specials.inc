@@ -663,3 +663,4 @@ gSpecials::
 	def_special StartBlackJack
 	def_special StartGacha
 	def_special StartDerby
+	def_special RogueDungeon_HideMinedRock
