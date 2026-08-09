@@ -63,30 +63,36 @@ RogueDungeonFloor_EventScript_ChooseStarters::
 	@ type -- so the Safari copies stay MAP_TYPE_UNDERGROUND and stay unflyable.
 	additem ITEM_MACH_BIKE, 1
 	additem ITEM_ACRO_BIKE, 1
-	@ THE FOUR BATTLE GIMMICKS, and these are the ones that were being
-	@ overlooked. Every one of them is compiled into this build --
-	@ P_MEGA_EVOLUTIONS, P_ULTRA_BURST_FORMS, P_GIGANTAMAX_FORMS and
-	@ P_TERA_FORMS are all TRUE -- and every one is gated on the player HOLDING
-	@ its key item, in four separate places:
+	@ TWO BATTLE GIMMICKS OF THE FOUR THIS BUILD COMPILES. Each is gated on the
+	@ player HOLDING its key item, and the four gates live in three files:
 	@
 	@   battle_util.c     CheckBagHasItem(ITEM_MEGA_RING)     -> Mega Evolution
 	@   battle_util.c     CheckBagHasItem(ITEM_Z_POWER_RING)  -> Z-moves, Ultra Burst
 	@   battle_dynamax.c  CheckBagHasItem(ITEM_DYNAMAX_BAND)  -> Dynamax
 	@   battle_terastal.c CheckBagHasItem(ITEM_TERA_ORB)      -> Terastallization
 	@
-	@ So without these the mechanics are in the ROM, cost their ROM, and can
-	@ never be used by the player. Trainers are NOT gated the same way -- the
-	@ check is on player positions only -- so a boss could already Mega Evolve
-	@ against a player who structurally could not answer.
+	@ Mega and Z are granted. THE CHECK IS ON PLAYER POSITIONS ONLY -- a trainer
+	@ is not gated on anything in the player's bag -- so a boss could already
+	@ Mega Evolve against a player who structurally could not answer. Those two
+	@ are parity rather than a buff.
 	@
-	@ Each of these four is a real balance decision and each is one line: delete
-	@ the ones this run should not have. Tera in particular changes every matchup
-	@ in the game, and B_FLAG_TERA_ORB_CHARGED is 0, so the orb never needs
-	@ recharging and it is available in every battle of all 115 floors.
+	@ DYNAMAX AND TERASTALLIZATION ARE DELIBERATELY WITHHELD, and the two are
+	@ withheld for different reasons worth keeping apart.
+	@
+	@ Tera is the bigger of the two: it rewrites a Pokemon's typing on demand,
+	@ so it changes every matchup in the game rather than adding a phase to
+	@ some of them. B_FLAG_TERA_ORB_CHARGED is 0, so the orb would never need
+	@ recharging and would be live in every battle of all 115 floors -- a run
+	@ built on type answers to fourteen themed pools does not survive that being
+	@ free. Dynamax is a two-turn power spike whose whole design assumes a raid
+	@ or a gym, neither of which a floor is.
+	@
+	@ Both are one line to restore. P_GIGANTAMAX_FORMS and P_TERA_FORMS stay
+	@ TRUE, so the forms and their data are still compiled -- what is withheld
+	@ is the player's access, not the mechanic. Trainers are unaffected by this
+	@ either way, since they were never gated on the bag.
 	additem ITEM_MEGA_RING, 1
 	additem ITEM_Z_POWER_RING, 1
-	additem ITEM_DYNAMAX_BAND, 1
-	additem ITEM_TERA_ORB, 1
 	setvar VAR_ROGUE_RUN_STATE, ROGUE_RUN_ACTIVE
 	releaseall
 	end
