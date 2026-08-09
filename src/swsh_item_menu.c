@@ -1,5 +1,6 @@
 #include "global.h"
 #include "item_menu.h"
+#include "tx_registered_items_menu.h"
 #include "battle.h"
 #include "battle_controllers.h"
 #include "battle_message.h"
@@ -2675,8 +2676,9 @@ static void BagMenu_ItemPrintCallback(u8 windowId, u32 itemIndex, u8 y)
         }
         else
         {
-            // Print registered icon
-            if (gSaveBlock1Ptr->registeredItem != ITEM_NONE && gSaveBlock1Ptr->registeredItem == itemSlot.itemId)
+            // Print registered icon. Any of the REGISTERED_ITEMS_MAX slots now,
+            // not the single registeredItem the field used to be.
+            if (TxRegItemsMenu_CheckRegisteredHasItem(itemSlot.itemId))
                 BlitBitmapToWindow(windowId, sRegisteredSelect_Gfx, 102, y + 4, 16, 16);
         }
 
@@ -3615,7 +3617,7 @@ static void OpenContextMenu(u8 taskId)
                 gBagMenu->contextMenuItemsPtr = gBagMenu->contextMenuItemsBuffer;
                 gBagMenu->contextMenuNumItems = ARRAY_COUNT(sContextMenuItems_KeyItemsPocket);
                 memcpy(&gBagMenu->contextMenuItemsBuffer, &sContextMenuItems_KeyItemsPocket, sizeof(sContextMenuItems_KeyItemsPocket));
-                if (gSaveBlock1Ptr->registeredItem == gSpecialVar_ItemId)
+                if (TxRegItemsMenu_CheckRegisteredHasItem(gSpecialVar_ItemId))
                     gBagMenu->contextMenuItemsBuffer[1] = ACTION_DESELECT;
                 if (gSpecialVar_ItemId == ITEM_MACH_BIKE || gSpecialVar_ItemId == ITEM_ACRO_BIKE || gSpecialVar_ItemId == ITEM_BICYCLE)
                 {
@@ -3920,10 +3922,15 @@ static void ItemMenu_Register(u8 taskId)
     u16 *scrollPos = &gBagPosition.scrollPosition[gBagPosition.pocket];
     u16 *cursorPos = &gBagPosition.cursorPosition[gBagPosition.pocket];
 
-    if (gSaveBlock1Ptr->registeredItem == gSpecialVar_ItemId)
-        gSaveBlock1Ptr->registeredItem = ITEM_NONE;
+    // Toggle membership of the register LIST rather than swapping a single
+    // slot. AddRegisteredItem returns FALSE when all REGISTERED_ITEMS_MAX slots
+    // are taken; upstream's item_menu.c version puts up a "too many registered"
+    // message there, which is worth adding here if the list ever fills up in
+    // practice. A run realistically registers one or two things.
+    if (TxRegItemsMenu_CheckRegisteredHasItem(gSpecialVar_ItemId))
+        TxRegItemsMenu_RemoveRegisteredItem(gSpecialVar_ItemId);
     else
-        gSaveBlock1Ptr->registeredItem = gSpecialVar_ItemId;
+        TxRegItemsMenu_AddRegisteredItem(gSpecialVar_ItemId);
     DestroyListMenuTask(tListTaskId, scrollPos, cursorPos);
     LoadBagItemListBuffers(gBagPosition.pocket);
     tListTaskId = ListMenuInit(&gMultiuseListMenuTemplate, *scrollPos, *cursorPos);
@@ -4068,36 +4075,47 @@ static void Task_ItemContext_GiveToPC(u8 taskId)
 
 #define tUsingRegisteredKeyItem data[3] // See usage in item_use.c
 
-bool8 UseRegisteredKeyItemOnField(void)
+// `button` selects which register slot to fire. 1 means "the only one", which
+// is how field_control_avatar.c calls it when registeredItemListCount == 1;
+// 2..REGISTERED_ITEMS_MAX+1 come from the picker, offset so that 0 can stay a
+// sentinel. Signature and slot scheme are upstream's, from the copy that landed
+// in the now-dead item_menu.c.
+bool8 UseRegisteredKeyItemOnField(u8 button)
 {
     u8 taskId;
+    u16 registeredItem;
 
     if (InUnionRoom() == TRUE || CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE || InBattlePike() || InMultiPartnerRoom() == TRUE)
         return FALSE;
     HideMapNamePopUpWindow();
     ChangeBgY_ScreenOff(0, 0, BG_COORD_SET);
-    if (gSaveBlock1Ptr->registeredItem != ITEM_NONE)
+    if (button >= 1 && button <= REGISTERED_ITEMS_MAX + 1)
+        registeredItem = gSaveBlock1Ptr->registeredItems[button == 1 ? 0 : button - 2].itemId;
+    else
+        return FALSE;
+
+    if (registeredItem != ITEM_NONE)
     {
-        // Same NULL guard as src/item_menu.c. This file is a fork of that one
-        // taken before the fix, so it arrived carrying the bug again: a key item
-        // with no fieldUseFunc, registered to SELECT, builds a task whose
-        // callback is address 0. Any fix to one of these has to be made in both
-        // until the old bag menu is deleted.
-        if (CheckBagHasItem(gSaveBlock1Ptr->registeredItem, 1) == TRUE
-         && GetItemFieldFunc(gSaveBlock1Ptr->registeredItem) != NULL)
+        // The NULL guard, carried across from src/item_menu.c. A key item with
+        // no fieldUseFunc, registered to SELECT, would otherwise build a task
+        // whose callback is address 0. Multi-register makes this MORE reachable,
+        // not less: the picker will happily list several such items.
+        if (CheckBagHasItem(registeredItem, 1) == TRUE
+         && GetItemFieldFunc(registeredItem) != NULL)
         {
             LockPlayerFieldControls();
             FreezeObjectEvents();
             PlayerFreeze();
             StopPlayerAvatar();
-            gSpecialVar_ItemId = gSaveBlock1Ptr->registeredItem;
-            taskId = CreateTask(GetItemFieldFunc(gSaveBlock1Ptr->registeredItem), 8);
+            gSpecialVar_ItemId = registeredItem;
+            taskId = CreateTask(GetItemFieldFunc(registeredItem), 8);
             gTasks[taskId].tUsingRegisteredKeyItem = TRUE;
             return TRUE;
         }
         else
         {
-            gSaveBlock1Ptr->registeredItem = ITEM_NONE;
+            // Drop it out of the list rather than nulling a single field.
+            TxRegItemsMenu_RemoveRegisteredItem(registeredItem);
         }
     }
     ScriptContext_SetupScript(EventScript_SelectWithoutRegisteredItem);

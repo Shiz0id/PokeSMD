@@ -1752,6 +1752,10 @@ const u16 gBattlePyramidBagInterface_Pal[] = INCGFX_U16("graphics/bag/menu_pyram
 
 const u32 gSwapLineGfx[] = INCGFX_U32("graphics/interface/swap_line.png", ".4bpp.smol");
 const u16 gSwapLinePal[] = INCGFX_U16("graphics/interface/swap_line.png", ".gbapal");
+// tx_registered_items_menu. Declared through INCGFX/.smol like everything else
+// here rather than upstream's INCBIN/.lz -- their base predates the modern
+// graphics pipeline, and mixing the two would mean the asset is never built.
+const u32 gSwapLineGfx_RegisteredItemsMenu[] = INCGFX_U32("graphics/interface/swap_line_tx.png", ".4bpp.smol");
 
 const u32 gShopMenu_Gfx[] = INCGFX_U32("graphics/shop/menu.png", ".4bpp.smol");
 const u16 gShopMenu_Pal[] = INCGFX_U16("graphics/shop/menu.png", ".gbapal");
