@@ -13,6 +13,7 @@
 #include "battle_scripts.h"
 #include "window.h"
 #include "constants/battle_string_ids.h"
+#include "rogue_bw_anim.h"
 
 void AllocateBattleGfxResources(void)
 {
@@ -28,6 +29,22 @@ static void FreeBattleGfxResources(void)
 
 void CloseMainBattleScreen(void)
 {
+    // The BW frame containers hold a decode buffer per battler -- 4 KB
+    // each, 16 KB with four out in a double. Nothing freed them while the
+    // player was in the bag or the party menu, so the SwSh bag opened on a
+    // heap still carrying all of it, and AllocateBattleGfxResources then
+    // failed on the way back: its 0x2000 request succeeded and its 0x1000
+    // one did not, which is a heap with no 4 KB block left rather than a
+    // leak. Reported from play as
+    // "src/battle_util2.c:20: out of memory trying to allocate 4096 bytes".
+    //
+    // Safe to drop here because the round trip rebuilds them: reshow runs
+    // LoadBattlerSpriteGfx for all four battlers (cases 7-10), which reaches
+    // BattleLoadMonSpriteGfx, which is the hook RogueBwAnim_OnLoadSprite
+    // hangs off -- and that allocates lazily when the buffer is NULL.
+    // RogueBwAnim_Free also clears sBwAnim, so the tick is a no-op for a
+    // battler until its sprite is reloaded rather than decoding into NULL.
+    RogueBwAnim_Free();
     FreeBattleGfxResources();
     FreeAllWindowBuffers();
 }
