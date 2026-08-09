@@ -127,7 +127,17 @@ struct BagMenu
     u8 pocketScrollArrowsTask;
     u8 pocketSwitchArrowsTask;
     const u8 *contextMenuItemsPtr;
-    u8 contextMenuItemsBuffer[4];
+    // SIX, not four. Every vanilla context menu is a 2x2 grid and fits in four,
+    // but the variable rod's Super technique menu is a 2x3 and needs six -- and
+    // memcpying six into a four-byte buffer overruns straight into
+    // contextMenuNumItems below and the first byte of numItemStacks, which is
+    // what the upstream branch this came from does. gBagMenu is heap-allocated,
+    // so the two bytes cost no EWRAM at all.
+    //
+    // STATIC_ASSERTed against the widest menu in swsh_item_menu.c rather than
+    // trusted, because overrunning it corrupts the count that decides how the
+    // menu is drawn -- the symptom is a wrong-shaped menu, not a crash.
+    u8 contextMenuItemsBuffer[6];
     u8 contextMenuNumItems;
     u8 numItemStacks[BAG_POCKET_IDS_COUNT];
     u8 numShownItems[BAG_POCKET_IDS_COUNT];

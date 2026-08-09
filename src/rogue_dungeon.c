@@ -2222,6 +2222,19 @@ void RogueDungeon_ResetRun(void)
     // bankrolled by every previous run. The Coin Case is an item and goes with
     // the bag; the clerk hands out another one.
     SetCoins(0);
+
+    // Same reasoning as the bag, and a flag needs saying out loud because
+    // resetting the floor counter does not touch one: ApplyRunConfig sets these
+    // by depth, so leaving them set hands the next run a Super technique on
+    // floor 1. The rod itself goes with ClearBag and is granted again at the
+    // starter pick.
+    FlagClear(FLAG_ROGUE_ROD_GOOD_TECHNIQUE);
+    FlagClear(FLAG_ROGUE_ROD_SUPER_TECHNIQUE);
+
+    // And the remembered technique, which is not a flag and would otherwise
+    // leave a fresh Old-Rod-only run fishing at whatever it last chose. OLD_ROD
+    // is 0, so this is also the value a save that never opened the menu holds.
+    VarSet(VAR_ROGUE_ROD_TECHNIQUE, OLD_ROD);
 }
 
 // Maps that replace a theme's own for the last few floors of its dungeon. See
@@ -4848,8 +4861,29 @@ void RogueDungeon_SetUpTrainerBattle(void)
 // gained the line - and because there is no cost to setting a set flag.
 static void ApplyRunConfig(void)
 {
+    u32 dungeon = DungeonIndexOf(VarGet(VAR_ROGUE_DUNGEON_FLOOR));
+
     // Party-wide Exp Share, permanently on. See FLAG_ROGUE_EXP_SHARE.
     FlagSet(FLAG_ROGUE_EXP_SHARE);
+
+    // The variable rod's two techniques, which is the whole progression the rod
+    // has. Set here rather than from a script for the reason above: this runs on
+    // every floor load, so a run already past the threshold when this shipped
+    // still gets them, and there is no entry path that can miss one.
+    //
+    // KEYED ON THE DUNGEON, not the floor. Dungeons are not the same length -
+    // ten floors for a gym, five for an Elite Four member - so a raw floor
+    // number means a different place in the run the moment anything is
+    // restructured, and nothing would report it.
+    //
+    // Cleared by RogueDungeon_ResetRun, not here. Putting the floor counter
+    // back to 0 does NOT narrow the menu again by itself - a flag survives it -
+    // so without that a whiteout would leave the next run holding the Super
+    // technique on floor 1.
+    if (dungeon >= DUNGEON_ROD_GOOD_DUNGEON)
+        FlagSet(FLAG_ROGUE_ROD_GOOD_TECHNIQUE);
+    if (dungeon >= DUNGEON_ROD_SUPER_DUNGEON)
+        FlagSet(FLAG_ROGUE_ROD_SUPER_TECHNIQUE);
 }
 
 void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)

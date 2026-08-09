@@ -63,6 +63,7 @@ static void Task_OpenRegisteredPokeblockCase(u8);
 static void Task_AccessPokemonBoxLink(u8);
 static void ItemUseOnFieldCB_Bike(u8);
 static void ItemUseOnFieldCB_Rod(u8);
+static void ItemUseOnFieldCB_VariableRod(u8);
 static void ItemUseOnFieldCB_Itemfinder(u8);
 static void ItemUseOnFieldCB_Berry(u8);
 static void ItemUseOnFieldCB_WailmerPailBerry(u8);
@@ -368,6 +369,44 @@ void ItemUseOutOfBattle_Rod(u8 taskId)
 static void ItemUseOnFieldCB_Rod(u8 taskId)
 {
     StartFishing(GetItemSecondaryId(gSpecialVar_ItemId));
+    DestroyTask(taskId);
+}
+
+// One rod, three techniques. Where ItemUseOnFieldCB_Rod above reads the tier
+// off the ITEM, this reads it off a var the bag's context menu writes, so the
+// same item fishes at whatever technique the player last picked -- including
+// through SELECT, which never opens the bag at all.
+void ItemUseOutOfBattle_VariableRod(u8 taskId)
+{
+    if (CanFish() == TRUE && OW_VAR_VARIABLE_ROD_USE_TECHNIQUE != 0)
+    {
+        sItemUseOnFieldCB = ItemUseOnFieldCB_VariableRod;
+        SetUpItemUseOnFieldCallback(taskId);
+    }
+    else
+    {
+        DisplayDadsAdviceCannotUseItemMessage(taskId, gTasks[taskId].tUsingRegisteredKeyItem);
+    }
+}
+
+static void ItemUseOnFieldCB_VariableRod(u8 taskId)
+{
+    switch (VarGet(OW_VAR_VARIABLE_ROD_USE_TECHNIQUE))
+    {
+    case SUPER_ROD:
+    case GOOD_ROD:
+        StartFishing(VarGet(OW_VAR_VARIABLE_ROD_USE_TECHNIQUE));
+        break;
+
+    // OLD_ROD is 0, so this is also the never-been-set case and needs no
+    // initialisation anywhere. A var holding anything else - a stale value from
+    // a save made before this existed - lands here too rather than indexing the
+    // encounter table with it.
+    case OLD_ROD:
+    default:
+        StartFishing(OLD_ROD);
+        break;
+    }
     DestroyTask(taskId);
 }
 

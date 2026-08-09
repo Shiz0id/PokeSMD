@@ -1057,6 +1057,7 @@ enum __attribute__((packed)) Item
     // stones stay contiguous, so shifting an existing id fails the build --
     // which is what that assert is for.
     ITEM_ROGUE_SURF_TOOL = 874,
+    ITEM_ROGUE_VARIABLE_ROD = 875,
 
     ITEMS_COUNT,
     ITEM_FIELD_ARROW = ITEMS_COUNT,

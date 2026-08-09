@@ -37,11 +37,12 @@ RogueDungeonFloor_EventScript_ChooseStarters::
 	@ dead code. It works on the two water themes and on the Safari's ponds --
 	@ see RogueDungeon_GetWildMonInfo, which folds fishing into the water branch.
 	@
-	@ DELIBERATELY THE OLD ROD AND DELIBERATELY UNCONDITIONAL. The upgradeable
-	@ rod is the next piece of work and will want to own how a rod is obtained
-	@ and how it improves; this is one line for it to replace rather than a
-	@ progression to unpick.
-	additem ITEM_OLD_ROD, 1
+	@ ONE ROD FOR THE WHOLE RUN. It starts on the Old technique and gains the
+	@ Good and Super ones by depth -- see ApplyRunConfig, which sets the two
+	@ flags, and DUNGEON_ROD_GOOD_DUNGEON for where. So this stays a single
+	@ unconditional grant even though the rod is a progression: what improves is
+	@ the technique, not the item.
+	additem ITEM_ROGUE_VARIABLE_ROD, 1
 	setvar VAR_ROGUE_RUN_STATE, ROGUE_RUN_ACTIVE
 	releaseall
 	end

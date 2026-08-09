@@ -162,6 +162,35 @@
 // underwater - so it is unavailable on the ocean and seafloor themes.
 #define FLAG_ROGUE_DOWSING_ACTIVE FLAG_UNUSED_0x91B
 
+// The variable rod's two technique unlocks, and the var remembering which
+// technique was last chosen. Read by the bag's context menu and by
+// ItemUseOnFieldCB_VariableRod through the OW_* config macros in
+// include/config/overworld.h, which is where upstream's implementation expects
+// to find them.
+//
+// The var needs no initialisation and deliberately has none: OLD_ROD is 0, so a
+// save that has never opened the menu already reads as the Old Rod technique.
+//
+// CHECKED AGAINST THE ROGUELIKE'S OWN CLAIMS FIRST, which is not the same as
+// checking vars.h - every id this project takes is an ALIAS of a VAR_UNUSED_/
+// FLAG_UNUSED_ name, so the pool still calls them unused. 0x40F9 and
+// 0x91D-0x91E are genuinely free; vars_frlg.h names 0x40F9 as VAR_0x40F9 but
+// nothing in the tree references it.
+#define VAR_ROGUE_ROD_TECHNIQUE        VAR_UNUSED_0x40F9
+#define FLAG_ROGUE_ROD_GOOD_TECHNIQUE  FLAG_UNUSED_0x91D
+#define FLAG_ROGUE_ROD_SUPER_TECHNIQUE FLAG_UNUSED_0x91E
+
+// Which dungeon each technique arrives in, as a DUNGEON INDEX rather than a
+// floor number. Floors per dungeon are not uniform - the Elite Four run five
+// where the gyms run ten - so a raw floor threshold silently moves relative to
+// the run's shape the moment anything is restructured. See DungeonIndexOf.
+//
+// Good at dungeon 3 puts it a little before halfway through the gyms; Super at
+// dungeon 8 is the first Elite Four dungeon, so the Super technique and the
+// gauntlet arrive together.
+#define DUNGEON_ROD_GOOD_DUNGEON  3
+#define DUNGEON_ROD_SUPER_DUNGEON 8
+
 // Wild encounter experience, as a percentage. Trainers are deliberately NOT
 // boosted: the level curve is fitted to the stock bosses' unscaled parties, and
 // the trainers on a floor are scaled to the curve, so multiplying those would

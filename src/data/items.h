@@ -13964,6 +13964,33 @@ const struct ItemInfo gItemsInfo[] =
         .iconPalette = gItemIconPalette_WaterTMHM,
     },
 
+    [ITEM_ROGUE_VARIABLE_ROD] =
+    {
+        .name = ITEM_NAME("Anglers Rod"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "One rod, many\n"
+            "techniques. Better\n"
+            "ones come with depth."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+
+        // Deliberately NOT ItemUseOutOfBattle_Rod, and deliberately no
+        // .secondaryId. The three vanilla rods each bake their tier into that
+        // field; this one reads the technique out of VAR_ROGUE_ROD_TECHNIQUE at
+        // use time, which is what lets one item cover all three and what makes
+        // registering it to SELECT meaningful -- it fishes the way it last did.
+        .type = ITEM_USE_FIELD,
+        .fieldUseFunc = ItemUseOutOfBattle_VariableRod,
+
+        // The Super Rod's art, and nothing new drawn. This REPLACES all three
+        // rods rather than joining them, so the best of the three is the honest
+        // picture and there is no vanilla rod obtainable in a run to confuse it
+        // with.
+        .iconPic = gItemIcon_SuperRod,
+        .iconPalette = gItemIconPalette_SuperRod,
+    },
+
     [ITEM_TOWN_MAP] =
     {
         .name = ITEM_NAME("Town Map"),

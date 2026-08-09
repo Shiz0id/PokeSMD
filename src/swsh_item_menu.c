@@ -129,6 +129,9 @@ enum {
     ACTION_BY_TYPE,
     ACTION_BY_AMOUNT,
     ACTION_BY_INDEX,
+    ACTION_OLD_TECHNIQUE,
+    ACTION_GOOD_TECHNIQUE,
+    ACTION_SUPER_TECHNIQUE,
     ACTION_DUMMY,
 };
 
@@ -315,6 +318,9 @@ static u8 CreateBagInputHandlerTask(u8);
 static void BagMenu_MoveCursorCallback(s32, bool8, struct ListMenu *);
 static void BagMenu_ItemPrintCallback(u8, u32, u8);
 static void ItemMenu_UseOutOfBattle(u8);
+static void ItemMenu_UseOutOfBattle_VariableOldRod(u8);
+static void ItemMenu_UseOutOfBattle_VariableGoodRod(u8);
+static void ItemMenu_UseOutOfBattle_VariableSuperRod(u8);
 static void ItemMenu_Toss(u8);
 static void ItemMenu_Register(u8);
 static void ItemMenu_Give(u8);
@@ -616,6 +622,13 @@ static const struct MenuAction sItemMenuActions[] = {
     [ACTION_BY_TYPE]           = {COMPOUND_STRING("Type"),      {ItemMenu_SortByType}},
     [ACTION_BY_AMOUNT]         = {COMPOUND_STRING("Amount"),    {ItemMenu_SortByAmount}},
     [ACTION_BY_INDEX]          = {COMPOUND_STRING("Index"),     {ItemMenu_SortByIndex}},
+
+    // FONT_NARROWER on the second word, as upstream wrote it. "Super Tech." is
+    // wider than any label this grid was laid out for, and the grid does not
+    // measure - it would simply draw over the next column.
+    [ACTION_OLD_TECHNIQUE]     = {COMPOUND_STRING("Old {FONT_NARROWER}Tech."),   {ItemMenu_UseOutOfBattle_VariableOldRod}},
+    [ACTION_GOOD_TECHNIQUE]    = {COMPOUND_STRING("Good {FONT_NARROWER}Tech."),  {ItemMenu_UseOutOfBattle_VariableGoodRod}},
+    [ACTION_SUPER_TECHNIQUE]   = {COMPOUND_STRING("Super {FONT_NARROWER}Tech."), {ItemMenu_UseOutOfBattle_VariableSuperRod}},
     [ACTION_DUMMY]             = {gText_EmptyString2,           {NULL}}
 };
 
@@ -630,6 +643,38 @@ static const u8 sContextMenuItems_KeyItemsPocket[] = {
     ACTION_USE,         ACTION_REGISTER,
     ACTION_DUMMY,       ACTION_CANCEL
 };
+
+// The variable rod replaces USE with a technique picker, one row per unlocked
+// technique. There is deliberately no plain USE: choosing a technique IS using
+// it, and offering both would leave "Use" meaning "whatever I picked last",
+// which is only discoverable by trying it.
+//
+// REGISTER stays in the top-right of all three so its position never moves as
+// techniques unlock, and so the rod keeps working through SELECT - that path
+// never opens the bag, and fishes with whatever technique was chosen last.
+static const u8 sContextMenuItems_OldVariableRod[] = {
+    ACTION_OLD_TECHNIQUE,   ACTION_REGISTER,
+    ACTION_DUMMY,           ACTION_CANCEL
+};
+
+static const u8 sContextMenuItems_GoodVariableRod[] = {
+    ACTION_OLD_TECHNIQUE,   ACTION_REGISTER,
+    ACTION_GOOD_TECHNIQUE,  ACTION_CANCEL
+};
+
+static const u8 sContextMenuItems_SuperVariableRod[] = {
+    ACTION_OLD_TECHNIQUE,   ACTION_REGISTER,
+    ACTION_GOOD_TECHNIQUE,  ACTION_DUMMY,
+    ACTION_SUPER_TECHNIQUE, ACTION_CANCEL
+};
+
+// The reason contextMenuItemsBuffer is six bytes rather than four. Overrunning
+// it writes into contextMenuNumItems, which decides whether the menu is drawn
+// as a 2x2 or a 2x3 -- so the failure is a mis-shaped menu rather than a crash,
+// and would not be visible until the Super technique unlocks deep in a run.
+STATIC_ASSERT(sizeof(sContextMenuItems_SuperVariableRod)
+              <= sizeof(((struct BagMenu *)0)->contextMenuItemsBuffer),
+              SuperRodMenuFitsContextBuffer);
 
 static const u8 sContextMenuItems_BallsPocket[] = {
     ACTION_GIVE,        ACTION_DUMMY,
@@ -3624,6 +3669,35 @@ static void OpenContextMenu(u8 taskId)
                     if (TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE))
                         gBagMenu->contextMenuItemsBuffer[0] = ACTION_WALK;
                 }
+
+                // Checked deepest-unlock-first, so each technique's menu is a
+                // superset of the one below it. Both flags being 0 disables the
+                // feature and leaves the Old menu, which is also what a run
+                // before DUNGEON_ROD_GOOD_DUNGEON sees.
+                if (gSpecialVar_ItemId == ITEM_ROGUE_VARIABLE_ROD)
+                {
+                    if (OW_FLAG_VARIABLE_ROD_SUPER_TECHNIQUE != 0 && FlagGet(OW_FLAG_VARIABLE_ROD_SUPER_TECHNIQUE))
+                    {
+                        gBagMenu->contextMenuNumItems = ARRAY_COUNT(sContextMenuItems_SuperVariableRod);
+                        memcpy(gBagMenu->contextMenuItemsBuffer, sContextMenuItems_SuperVariableRod, sizeof(sContextMenuItems_SuperVariableRod));
+                    }
+                    else if (OW_FLAG_VARIABLE_ROD_GOOD_TECHNIQUE != 0 && FlagGet(OW_FLAG_VARIABLE_ROD_GOOD_TECHNIQUE))
+                    {
+                        gBagMenu->contextMenuNumItems = ARRAY_COUNT(sContextMenuItems_GoodVariableRod);
+                        memcpy(gBagMenu->contextMenuItemsBuffer, sContextMenuItems_GoodVariableRod, sizeof(sContextMenuItems_GoodVariableRod));
+                    }
+                    else
+                    {
+                        gBagMenu->contextMenuNumItems = ARRAY_COUNT(sContextMenuItems_OldVariableRod);
+                        memcpy(gBagMenu->contextMenuItemsBuffer, sContextMenuItems_OldVariableRod, sizeof(sContextMenuItems_OldVariableRod));
+                    }
+
+                    // Kept after the memcpy, not before it: this branch runs
+                    // inside the key-items case, which has already registered
+                    // the buffer, and the DESELECT swap above applies here too.
+                    if (TxRegItemsMenu_CheckRegisteredHasItem(gSpecialVar_ItemId))
+                        gBagMenu->contextMenuItemsBuffer[1] = ACTION_DESELECT;
+                }
                 break;
             case POCKET_POKE_BALLS:
                 gBagMenu->contextMenuItemsPtr = sContextMenuItems_BallsPocket;
@@ -3802,6 +3876,31 @@ static void ItemMenu_UseOutOfBattle(u8 taskId)
                 ItemUseOutOfBattle_Berry(taskId);
         }
     }
+}
+
+// Record the technique, then use the rod through the ordinary path -- which
+// reaches ItemUseOutOfBattle_VariableRod, which reads the var straight back.
+// The round trip is the point: SELECT never comes through here, so the var is
+// the only place the choice can persist.
+static void ItemMenu_UseOutOfBattle_VariableOldRod(u8 taskId)
+{
+    if (OW_VAR_VARIABLE_ROD_USE_TECHNIQUE != 0)
+        VarSet(OW_VAR_VARIABLE_ROD_USE_TECHNIQUE, OLD_ROD);
+    ItemMenu_UseOutOfBattle(taskId);
+}
+
+static void ItemMenu_UseOutOfBattle_VariableGoodRod(u8 taskId)
+{
+    if (OW_VAR_VARIABLE_ROD_USE_TECHNIQUE != 0)
+        VarSet(OW_VAR_VARIABLE_ROD_USE_TECHNIQUE, GOOD_ROD);
+    ItemMenu_UseOutOfBattle(taskId);
+}
+
+static void ItemMenu_UseOutOfBattle_VariableSuperRod(u8 taskId)
+{
+    if (OW_VAR_VARIABLE_ROD_USE_TECHNIQUE != 0)
+        VarSet(OW_VAR_VARIABLE_ROD_USE_TECHNIQUE, SUPER_ROD);
+    ItemMenu_UseOutOfBattle(taskId);
 }
 
 static void ItemMenu_Toss(u8 taskId)

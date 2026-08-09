@@ -52,7 +52,7 @@
 #else
 
 // Game Corner blackjack. Keeps upstream's numbering, unlike its vars: the
-// roguelike's flags are all at 0x918-0x91C, so these three do not collide.
+// roguelike's flags are all at 0x918-0x91E, so these three do not collide.
 #define FLAG_GC_INSURANCE    0x20
 #define FLAG_GC_RESET_BJ     0x21
 #define FLAG_GC_BLACKJACK    0x22
@@ -60,7 +60,7 @@
 // THIRD project to raid this same tail, after the game corner's vars. Merged as
 // they had it, a hand of blackjack and the follower toggle would have shared one
 // bit. 0x23 is genuinely free: the roguelike's own flags alias
-// FLAG_UNUSED_0x918-0x91C, not anything down here.
+// FLAG_UNUSED_0x918-0x91E, not anything down here.
 #define FLAG_POKEMON_FOLLOWERS    0x23
 #define FLAG_UNUSED_0x024    0x24 // Unused Flag
 #define FLAG_UNUSED_0x025    0x25 // Unused Flag

@@ -158,4 +158,19 @@
 // Configuration
 #define OW_AMBIENT_CRIES                OW_AMBIENT_CRIES_VANILLA // Selects how ambient cries are played, if at all. As in vanilla, no matter what is chosen, cries will not play if the player is not on a map with Land or Water encounter tables.
 
+// Variable Rod. One rod item that fishes with a chosen technique instead of
+// three separate rods; the technique is picked from the item's context menu in
+// the bag and the last choice is remembered here, so a rod registered to SELECT
+// keeps fishing the way it last did.
+//
+// These are the upstream names and upstream reads them directly. They resolve
+// to this project's own ids rather than to raw numbers so that there is exactly
+// one place claiming them - see constants/rogue_dungeon.h, which also explains
+// why "unused" in vars.h is not evidence that an id is free. Set any of the
+// three back to 0 to disable that much of the feature; 0 on the var disables
+// the rod entirely and it answers "can't use that".
+#define OW_VAR_VARIABLE_ROD_USE_TECHNIQUE       VAR_ROGUE_ROD_TECHNIQUE
+#define OW_FLAG_VARIABLE_ROD_GOOD_TECHNIQUE     FLAG_ROGUE_ROD_GOOD_TECHNIQUE
+#define OW_FLAG_VARIABLE_ROD_SUPER_TECHNIQUE    FLAG_ROGUE_ROD_SUPER_TECHNIQUE
+
 #endif // GUARD_CONFIG_OVERWORLD_H
