@@ -13951,6 +13951,15 @@ const struct ItemInfo gItemsInfo[] =
             "carry you over water."),
         .importance = 1,
         .pocket = POCKET_KEY_ITEMS,
+        // The charm works by being carried, so there is nothing to "use" -- but
+        // it still needs a fieldUseFunc, and leaving it NULL was a crash rather
+        // than a no-op. Every key item gets ACTION_REGISTER unconditionally
+        // (sContextMenuItems_KeyItemsPocket), and the SELECT path does
+        // CreateTask(GetItemFieldFunc(registeredItem), 8) with no NULL check --
+        // so registering this and pressing SELECT made a task whose callback is
+        // address 0.
+        .type = ITEM_USE_FIELD,
+        .fieldUseFunc = ItemUseOutOfBattle_CannotUse,
         .iconPic = gItemIcon_HM,
         .iconPalette = gItemIconPalette_WaterTMHM,
     },
