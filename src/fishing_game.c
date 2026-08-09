@@ -813,9 +813,6 @@ void CB2_InitFishingMinigame(void)
 
 void Task_InitOWFishingMinigame(u8 taskId)
 {
-    void *tilemapBuffer;
-    u32 tilesSize;
-
     LoadSpritePalettes(sSpritePalettes_FishingGame);
 
     // If the sprite palettes couldn't be loaded, do the minigame on a separate screen.
@@ -827,17 +824,26 @@ void Task_InitOWFishingMinigame(u8 taskId)
         return;
     }
 
-    // Scratch only: LoadBgTiles copies it into VRAM and nothing keeps the
-    // pointer, so it must be freed here. Upstream never frees it, which leaks
-    // the whole buffer on every cast in overworld mode.
-    tilesSize = GetDecompressedDataSize(gFishingGameOWBG_Gfx);
-    tilemapBuffer = AllocZeroed(tilesSize);
-    DecompressDataWithHeaderWram(gFishingGameOWBG_Gfx, tilemapBuffer);
     CopyToBgTilemapBuffer(0, gFishingGameOWBG_Tilemap, 0, 0);
     CopyBgTilemapBufferToVram(0);
     LoadPalette(gFishingGameOWBG_Pal, BG_PLTT_ID(13), PLTT_SIZE_4BPP);
-    LoadBgTiles(0, tilemapBuffer, tilesSize, 0);
-    Free(tilemapBuffer);
+
+    // LoadBgTiles does NOT copy -- it calls RequestDma3Copy, which parks the
+    // SOURCE POINTER in sDma3Requests and returns, and the copy is performed
+    // later by ProcessDma3Requests in VBlank, in chunks across several frames.
+    // So upstream's buffer really did have to outlive this function, and the
+    // Free() added here on the way in (to close what looked like a per-cast
+    // leak) handed the block back while DMA3 still held a pointer into it.
+    // Whether that corrupted anything depended on whether something else
+    // reallocated the block before the queue drained -- which is exactly the
+    // "works fine at first, then corrupted some of the time" that was reported.
+    //
+    // DecompressAndCopyTileDataToVram is the engine's own answer to this: it
+    // parks the pointer in sTempTileDataBuffer, and FreeTempTileDataBuffersIfPossible
+    // frees it only once IsDma3ManagerBusyWithBgCopy goes false. So the buffer
+    // is still freed -- the leak stays closed -- but at a point where the DMA
+    // has provably finished reading it.
+    DecompressAndCopyTileDataToVram(0, gFishingGameOWBG_Gfx, 0, 0, 0);
     LoadMessageBoxAndFrameGfx(0, TRUE);
     LoadFishingSpritesheets();
 
@@ -1235,6 +1241,13 @@ static void Task_FishingGame(u8 taskId)
 
 static void Task_FishingPauseUntilFadeIn(u8 taskId)
 {
+    // Drains the buffer DecompressAndCopyTileDataToVram parked, as soon as the
+    // DMA it was queued for has finished. Runs every frame until the fade-in
+    // completes, and both entry paths -- straight in, and via the tutorial --
+    // pass through here, so one call site covers both. A no-op once there is
+    // nothing outstanding.
+    FreeTempTileDataBuffersIfPossible();
+
     RunTextPrinters();
 
     if (!gPaletteFade.active && taskData.tGameStateBits & FG_SEPARATE_SCREEN) // Keep the game paused until the screen has fully faded in.
