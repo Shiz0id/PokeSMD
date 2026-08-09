@@ -777,10 +777,17 @@ static void FlappyBirdMainCallback(void)
     UpdatePaletteFade();
 }
 
-static void ExitFlappyBird(void)
+static void ExitFlappyBird(u8 taskId)
 {
     if (!gPaletteFade.active)
     {
+        // The main loop is a task, and the overworld runs tasks too -- so
+        // leaving it alive does not stop it, it hands it to the field with
+        // sFlappy NULL. It then reads its state byte off address 0 and acts on
+        // whatever comes back, every frame. Voltorb Flip is the only one of
+        // the nine upstream destroys its main task in, and the only one
+        // anyone had played.
+        DestroyTask(taskId);
         SetMainCallback2(CB2_ReturnToFieldContinueScriptPlayMapMusic);
         // InitFlappyBirdScreen allocates three of these and keeps no pointer to
         // any of them. See src/game_corner.c for why that matters.
@@ -1751,7 +1758,7 @@ static void FlappyBirdMain(u8 taskId)
 			}
 			break;
 		case FLAPPY_EXIT:
-			ExitFlappyBird();
+			ExitFlappyBird(taskId);
 			break;	
 	}
 }
