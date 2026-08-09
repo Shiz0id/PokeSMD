@@ -448,10 +448,34 @@ static const struct RogueDecor sJungleDecor[] =
 // whose FloorTargetLevel runs 41-45, and the first window is +/-3. Reaching past
 // both ends is what stops the deepest floors falling through to a wider window.
 //
-// Species were read out of src/data/pokemon/species_info rather than recalled,
-// and that check earned its place: DRAGALGE is Poison/DRAGON - Skrelp loses the
-// Water type when it evolves, exactly the Seadra/Kingdra trap - so it is not
-// here. SPECIES_BASCULIN does not exist under that name either.
+// Their parties are in src/data/trainers.party. They were rewritten once
+// already, and the reason is worth keeping: the first set was chosen while Gen
+// 5 and 6 were compiled in, and cutting those generations left ELEVEN of the
+// fourteen slots naming species that are not in the ROM - Frillish, Clauncher,
+// Tirtouga, Skrelp, Binacle, Alomomola, Jellicent x2, Carracosta, Clawitzer,
+// Barbaracle. Only Lanturn, Mantine and Relicanth survived.
+//
+// Nothing said so. A disabled family still compiles to a zeroed species_info
+// row, so the build was clean and the divers just led with blanks. The rule
+// this earns: a species named anywhere - a pool, a party, a gift - has to be
+// checked against pokeemerald.map, not against species_info, because
+// species_info still has the row.
+//
+// The replacements are Gen 1-4 and graded to the old power ramp (per-diver
+// party BST 315, 350, 408, 475, 490, 490, 505 against the old 332, 337, 383,
+// 475, 490, 492, 490). The shape is deliberate and matches what was there: the
+// shallow divers carry juveniles and the deep ones carry the evolutions -
+// Shellder to Cloyster, Omanyte to Omastar, Kabuto to Kabutops, Shellos to
+// Gastrodon, Clamperl to Gorebyss.
+//
+// Typing was read out of src/data/pokemon/species_info rather than recalled,
+// and that check earned its place on the first pass: DRAGALGE is Poison/DRAGON
+// - Skrelp loses the Water type when it evolves, exactly the Seadra/Kingdra
+// trap. SPECIES_BASCULIN does not exist under that name either.
+//
+// SHELLOS and GASTRODON are form species: the bare name is an enum entry equal
+// to the WEST form, not a valueless alias, so trainers.party may name them
+// plainly. Castform already ships that way and is the precedent.
 static const struct RogueThemeTrainer sUnderwaterTrainers[] =
 {
     { TRAINER_ROGUE_DIVER_1, OBJ_EVENT_GFX_ROGUE_DIVER_M, 40 },
