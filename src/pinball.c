@@ -427,7 +427,7 @@ static void UpdateTimer(void);
 static void HandleTimeRanOut(void);
 static void DisableFlippers(void);
 static void StartExitPinballGame(void);
-static void ExitPinballGame(void);
+static void ExitPinballGame(u8 taskId);
 static void UpdateBallSprite(struct Sprite *sprite);
 static void UpdateFlipperSprite(struct Sprite *sprite);
 static void UpdateTimerDigitSprite(struct Sprite *sprite);
@@ -2628,7 +2628,7 @@ static void PinballMain(u8 taskId)
         StartExitPinballGame();
         break;
     case PINBALL_STATE_EXIT:
-        ExitPinballGame();
+        ExitPinballGame(taskId);
         break;
     }
 }
@@ -3647,10 +3647,17 @@ static void StartExitPinballGame(void)
 	//SetWeather(WEATHER_NONE);
 }
 
-static void ExitPinballGame(void)
+static void ExitPinballGame(u8 taskId)
 {
     if (!gPaletteFade.active)
     {
+        // The main loop is a task, and the overworld runs tasks too -- so
+        // leaving it alive does not stop it, it hands it to the field with
+        // sPinballGame NULL. It then reads its state byte off address 0 and acts on
+        // whatever comes back, every frame. Voltorb Flip is the only one of
+        // the nine upstream destroys its main task in, and the only one
+        // anyone had played.
+        DestroyTask(taskId);
         if (sPinballGame->gameType == GAME_TYPE_DIGLETT)
             FREE_AND_SET_NULL(sPinballGame->diglett.collisionMap);
 
