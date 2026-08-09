@@ -350,6 +350,12 @@ Debug_Follower_NPC_Event_Script::
 Debug_Follower_NPC_Test_Message:
 	.string "This is a Follower NPC test.$"
 
+Debug_EventScript_Mining_Minigame::
+	fadescreen FADE_TO_BLACK
+	special StartMining
+	release
+	end
+
 Debug_EventScript_Steven_Multi::
 	call MossdeepCity_SpaceCenter_2F_EventScript_ChoosePartyForMultiBattle
 	release
@@ -665,6 +671,16 @@ Debug_EventScript_EWRAMCounters::
 Debug_EventScript_EWRAMCounters_Text::
 	.string "Follower Steps: {STR_VAR_1}.\n"
 	.string "Fishing Chain: {STR_VAR_2}.$"
+
+Debug_EventScript_HeapUsage::
+	callnative CheckHeapUsage
+	msgbox Debug_EventScript_HeapUsage_Text, MSGBOX_DEFAULT
+	release
+	end
+
+Debug_EventScript_HeapUsage_Text::
+	.string "Heap free: {STR_VAR_1}\n"
+	.string "Used: {STR_VAR_2}  Max blk: {STR_VAR_3}$"
 
 Debug_EventScript_FontTest_Text_1::
 	.string "{FONT_SMALL_NARROWER}"                 @ Edit this to test your font
