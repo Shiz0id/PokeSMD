@@ -5,6 +5,7 @@
 #include "event_data.h"
 #include "field_weather.h"   // IsWeatherSnowy, for Snow Cloak
 #include "fieldmap.h"
+#include "fishing_game.h"
 #include "fishing.h"
 #include "follower_npc.h"
 #include "item.h"
@@ -25,6 +26,7 @@
 #include "battle_debug.h"
 #include "battle_pike.h"
 #include "battle_pyramid.h"
+#include "config/fishing_game.h"
 #include "constants/abilities.h"
 #include "constants/game_stat.h"
 #include "constants/item.h"
@@ -597,9 +599,21 @@ bool8 TryGenerateWildMon(const struct WildPokemonInfo *wildMonInfo, enum WildPok
 
 static u16 GenerateFishingWildMon(const struct WildPokemonInfo *wildMonInfo, u8 rod)
 {
-    u8 wildMonIndex = ChooseWildMonIndex_Fishing(rod);
-    enum Species wildMonSpecies = wildMonInfo->wildPokemon[wildMonIndex].species;
-    u8 level = ChooseWildMonLevel(wildMonInfo->wildPokemon, wildMonIndex, WILD_AREA_FISHING);
+    // Same hook as TryGenerateWildMon, repeated here because the rod is the one
+    // encounter surface that does NOT funnel through that function -
+    // FishingWildEncounter reaches this directly. Without it a cast reads the
+    // static placeholder while every other surface on the floor reads RAM.
+    const struct WildPokemonInfo *dungeonInfo = RogueDungeon_GetWildMonInfo(WILD_AREA_FISHING);
+    u8 wildMonIndex;
+    enum Species wildMonSpecies;
+    u8 level;
+
+    if (dungeonInfo != NULL)
+        wildMonInfo = dungeonInfo;
+
+    wildMonIndex = ChooseWildMonIndex_Fishing(rod);
+    wildMonSpecies = wildMonInfo->wildPokemon[wildMonIndex].species;
+    level = ChooseWildMonLevel(wildMonInfo->wildPokemon, wildMonIndex, WILD_AREA_FISHING);
 
     UpdateChainFishingStreak();
     CreateWildMon(wildMonSpecies, level);
@@ -1004,10 +1018,13 @@ void FishingWildEncounter(u8 rod)
         timeOfDay = GetTimeOfDayForEncounters(headerId, WILD_AREA_FISHING);
         species = GenerateFishingWildMon(gWildMonHeaders[headerId].encounterTypes[timeOfDay].fishingMonsInfo, rod);
     }
-
-    IncrementGameStat(GAME_STAT_FISHING_ENCOUNTERS);
+    
     SetPokemonAnglerSpecies(species);
-    BattleSetup_StartWildBattle();
+    if (!FG_FISH_MINIGAME_ENABLED)
+    {
+        IncrementGameStat(GAME_STAT_FISHING_ENCOUNTERS);
+        BattleSetup_StartWildBattle();
+    }
 }
 
 u16 GetLocalWildMon(bool8 *isWaterMon)

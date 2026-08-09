@@ -4002,8 +4002,12 @@ static void Cmd_getexp(void)
             {
                 gBattleScripting.getexpState = 5;
                 gBattleStruct->battlerExpReward = 0;
-                if (B_MAX_LEVEL_EV_GAINS >= GEN_5)
-                    MonGainEVs(&gParties[B_TRAINER_PLAYER][*expMonId], faintedSpecies);
+                // EVs are no longer earned from battle; they are allocated by
+                // hand in the stat editor. Kept as OUR 1.16.4 call rather than
+                // upstream's 1.16.1 one, so restoring it is uncommenting rather
+                // than re-deriving the identifiers.
+                //if (B_MAX_LEVEL_EV_GAINS >= GEN_5)
+                //    MonGainEVs(&gParties[B_TRAINER_PLAYER][*expMonId], faintedSpecies);
             }
             else
             {
@@ -4071,7 +4075,8 @@ static void Cmd_getexp(void)
                         gBattleStruct->teamGotExpMsgPrinted = TRUE;
                     }
 
-                    MonGainEVs(&gParties[B_TRAINER_PLAYER][*expMonId], faintedSpecies);
+                    // The main EV award. Off for the same reason as above.
+                    //MonGainEVs(&gParties[B_TRAINER_PLAYER][*expMonId], faintedSpecies);
                 }
                 gBattleScripting.getexpState++;
             }
@@ -11218,6 +11223,15 @@ void ApplyExperienceMultipliers(s32 *expAmount, u8 expGetterMonId, u8 faintedBat
     }
 }
 
+#if SWSH_ITEM_MENU_IN_BATTLE_USE
+static bool32 ItemUseTargetsPartnerParty(enum BattlerId battler)
+{
+    return (gBattleTypeFlags & BATTLE_TYPE_MULTI)
+        && IsOnPlayerSide(battler)
+        && gBattleStruct->itemTargetPartner[battler];
+}
+#endif
+
 void BS_ItemRestoreHP(void)
 {
     NATIVE_ARGS(const u8 *alreadyMaxHpInstr, const u8 *restoreBattlerInstr);
@@ -11225,6 +11239,10 @@ void BS_ItemRestoreHP(void)
     enum BattlerId battler = MAX_BATTLERS_COUNT;
     u32 healParam = GetItemEffect(gLastUsedItem)[6];
     struct Pokemon *party = GetBattlerParty(gBattlerAttacker);
+#if SWSH_ITEM_MENU_IN_BATTLE_USE
+    if (ItemUseTargetsPartnerParty(gBattlerAttacker))
+        party = gParties[B_TRAINER_PARTNER];
+#endif
     u16 hp = GetMonData(&party[gBattleStruct->itemPartyIndex[gBattlerAttacker]], MON_DATA_HP);
     u16 maxHP = GetMonData(&party[gBattleStruct->itemPartyIndex[gBattlerAttacker]], MON_DATA_MAX_HP);
     gBattleCommunication[MULTIUSE_STATE] = 0;
@@ -11240,10 +11258,20 @@ void BS_ItemRestoreHP(void)
             gBattleResults.numRevivesUsed++;
 
         // Check if the recipient is an active battler.
-        if (gBattleStruct->itemPartyIndex[gBattlerAttacker] == gBattlerPartyIndexes[gBattlerAttacker])
-            battler = gBattlerAttacker;
-        else if (IsDoubleBattle() && gBattleStruct->itemPartyIndex[gBattlerAttacker] == gBattlerPartyIndexes[BATTLE_PARTNER(gBattlerAttacker)])
-            battler = BATTLE_PARTNER(gBattlerAttacker);
+#if SWSH_ITEM_MENU_IN_BATTLE_USE
+        if (ItemUseTargetsPartnerParty(gBattlerAttacker))
+        {
+            if (gBattleStruct->itemPartyIndex[gBattlerAttacker] == gBattlerPartyIndexes[BATTLE_PARTNER(gBattlerAttacker)])
+                battler = BATTLE_PARTNER(gBattlerAttacker);
+        }
+        else
+#endif
+        {
+            if (gBattleStruct->itemPartyIndex[gBattlerAttacker] == gBattlerPartyIndexes[gBattlerAttacker])
+                battler = gBattlerAttacker;
+            else if (IsDoubleBattle() && gBattleStruct->itemPartyIndex[gBattlerAttacker] == gBattlerPartyIndexes[BATTLE_PARTNER(gBattlerAttacker)])
+                battler = BATTLE_PARTNER(gBattlerAttacker);
+        }
 
         // Get amount to heal.
         switch (healParam)
@@ -11298,8 +11326,23 @@ void BS_ItemCureStatus(void)
     u32 targetBattler = MAX_BATTLERS_COUNT;
     bool32 statusChanged = FALSE;
     struct Pokemon *party = GetBattlerParty(gBattlerAttacker);
+#if SWSH_ITEM_MENU_IN_BATTLE_USE
+    if (ItemUseTargetsPartnerParty(gBattlerAttacker))
+        party = gParties[B_TRAINER_PARTNER];
+#endif
 
     // Heal volatile conditions if battler is active.
+#if SWSH_ITEM_MENU_IN_BATTLE_USE
+    if (ItemUseTargetsPartnerParty(gBattlerAttacker))
+    {
+        if (gBattleStruct->itemPartyIndex[gBattlerAttacker] == gBattlerPartyIndexes[BATTLE_PARTNER(gBattlerAttacker)])
+        {
+            statusChanged = ItemHealMonVolatile(BATTLE_PARTNER(gBattlerAttacker), gLastUsedItem);
+            targetBattler = BATTLE_PARTNER(gBattlerAttacker);
+        }
+    }
+    else
+#endif
     if (gBattleStruct->itemPartyIndex[gBattlerAttacker] == gBattlerPartyIndexes[gBattlerAttacker])
     {
         statusChanged = ItemHealMonVolatile(gBattlerAttacker, gLastUsedItem);
@@ -11342,6 +11385,11 @@ void BS_ItemIncreaseStat(void)
 {
     NATIVE_ARGS();
 
+#if SWSH_ITEM_MENU_IN_BATTLE_USE
+    if (ItemUseTargetsPartnerParty(gBattlerAttacker))
+        gBattlerAttacker = BATTLE_PARTNER(gBattlerAttacker);
+    else
+#endif
     if (gBattlerPartyIndexes[gBattlerAttacker] != gBattleStruct->itemPartyIndex[gBattlerAttacker])
         gBattlerAttacker = BATTLE_PARTNER(gBattlerAttacker);
 
@@ -11370,6 +11418,10 @@ void BS_ItemRestorePP(void)
     enum BattlerId battler = MAX_BATTLERS_COUNT;
     struct Pokemon *mon = &gParties[GetBattlerTrainer(gBattlerAttacker)][gBattleStruct->itemPartyIndex[gBattlerAttacker]];
     enum Move moveId = MOVE_NONE;
+#if SWSH_ITEM_MENU_IN_BATTLE_USE
+    if (ItemUseTargetsPartnerParty(gBattlerAttacker))
+        mon = &gParties[B_TRAINER_PARTNER][gBattleStruct->itemPartyIndex[gBattlerAttacker]];
+#endif
 
     // Check whether to apply to all moves.
     if (effect[4] & ITEM4_HEAL_PP_ONE)
@@ -11384,6 +11436,14 @@ void BS_ItemRestorePP(void)
     }
 
     // Check if the recipient is an active battler.
+#if SWSH_ITEM_MENU_IN_BATTLE_USE
+    if (ItemUseTargetsPartnerParty(gBattlerAttacker))
+    {
+        if (gBattleStruct->itemPartyIndex[gBattlerAttacker] == gBattlerPartyIndexes[BATTLE_PARTNER(gBattlerAttacker)])
+            battler = BATTLE_PARTNER(gBattlerAttacker);
+    }
+    else
+#endif
     if (gBattleStruct->itemPartyIndex[gBattlerAttacker] == gBattlerPartyIndexes[gBattlerAttacker])
         battler = gBattlerAttacker;
     else if (IsDoubleBattle()

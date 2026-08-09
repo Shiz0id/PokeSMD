@@ -1052,6 +1052,13 @@ enum __attribute__((packed)) Item
     ITEM_TATSUGIRINITE = 872,
     ITEM_GLIMMORANITE = 873,
 
+    // Appended, never inserted. rogue_dungeon.c derives the Game Corner's stone
+    // counter from ITEM_FIRE_STONE + index behind a STATIC_ASSERT that the ten
+    // stones stay contiguous, so shifting an existing id fails the build --
+    // which is what that assert is for.
+    ITEM_ROGUE_SURF_TOOL = 874,
+    ITEM_ROGUE_VARIABLE_ROD = 875,
+
     ITEMS_COUNT,
     ITEM_FIELD_ARROW = ITEMS_COUNT,
 };

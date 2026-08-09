@@ -281,6 +281,27 @@ void LoadMonIconPalettePersonality(enum Species species, u32 personality)
         LoadSpritePalette(&gMonIconPaletteTable[palIndex]);
 }
 
+// As LoadMonIconPalettePersonality, but returns the slot the palette landed in.
+u8 LoadMonIconPaletteGetIndex(enum Species species, u32 personality)
+{
+    u8 palIndex;
+    u8 palSlot;
+
+    species = SanitizeSpeciesId(species);
+#if P_GENDER_DIFFERENCES
+    if (gSpeciesInfo[species].iconSpriteFemale != NULL && IsPersonalityFemale(species, personality))
+        palIndex = gSpeciesInfo[species].iconPalIndexFemale;
+    else
+#endif
+        palIndex = gSpeciesInfo[species].iconPalIndex;
+
+    palSlot = IndexOfSpritePaletteTag(gMonIconPaletteTable[palIndex].tag);
+    if (palSlot == 0xFF)
+        palSlot = LoadSpritePalette(&gMonIconPaletteTable[palIndex]);
+
+    return palSlot;
+}
+
 void FreeMonIconPalettes(void)
 {
     u8 i;

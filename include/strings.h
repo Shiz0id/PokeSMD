@@ -187,12 +187,65 @@ extern const u8 gText_SaveError[];
 extern const u8 gText_SavingDontTurnOffPower[];
 extern const u8 gText_SavingPlayer[];
 extern const u8 gText_SavingRuns[];
+
+// Game corner prize counters
+extern const u8 gText_RareCandy[];
+extern const u8 gText_WStone[];
+extern const u8 gText_FStone[];
+extern const u8 gText_LStone[];
+extern const u8 gText_TStone[];
+extern const u8 gText_MStone[];
+extern const u8 gText_SStone[];
+extern const u8 gText_ChoiceB[];
+extern const u8 gText_BrightP[];
+
 extern const u8 gText_SavingPokedex[];
 extern const u8 gText_SavingTime[];
 
 // Battle pyramid menu texts
 extern const u8 gText_BattlePyramidConfirmRest[];
 extern const u8 gText_BattlePyramidConfirmRetire[];
+
+// option menu texts
+extern const u8 gText_TextSpeedSlow[];
+extern const u8 gText_TextSpeedMid[];
+extern const u8 gText_TextSpeedFast[];
+extern const u8 gText_BattleSceneOn[];
+extern const u8 gText_BattleSceneOff[];
+extern const u8 gText_BattleStyleShift[];
+extern const u8 gText_BattleStyleSet[];
+extern const u8 gText_SoundMono[];
+extern const u8 gText_SoundStereo[];
+extern const u8 gText_FrameTypeNumber[];
+extern const u8 gText_FrameType[];
+extern const u8 gText_ButtonTypeNormal[];
+extern const u8 gText_ButtonTypeLR[];
+extern const u8 gText_ButtonTypeLEqualsA[];
+extern const u8 gText_BattleModeSingles[];
+extern const u8 gText_BattleModeDoubles[];
+extern const u8 gText_BattleModeMixed[];
+extern const u8 gText_FollowerShow[];
+extern const u8 gText_FollowerHide[];
+extern const u8 gText_Option[];
+extern const u8 gText_OptionMenu[];
+extern const u8 gText_SmallDot[];
+extern const u8 gText_LargeDot[];
+extern const u8 gText_PageNav[];
+extern const u8 gText_TextSpeed[];
+extern const u8 gText_BattleScene[];
+extern const u8 gText_BattleStyle[];
+extern const u8 gText_Sound[];
+extern const u8 gText_Frame[];
+extern const u8 gText_OptionMenuCancel[];
+extern const u8 gText_ButtonMode[];
+extern const u8 gText_BattleMode[];
+extern const u8 gText_Follower[];
+extern const u8 gText_BattleSpeed[];
+extern const u8 gText_BattleSpeed1x[];
+extern const u8 gText_BattleSpeed2x[];
+extern const u8 gText_BattleSpeed3x[];
+extern const u8 gText_BattleSpeed4x[];
+extern const u8 gText_Autorun[];
 
 extern const u8 gText_MaleSymbol[];
 extern const u8 gText_FemaleSymbol[];
@@ -324,6 +377,7 @@ extern const u8 gText_SpDef[];
 extern const u8 gText_Speed[];
 extern const u8 gText_Dash[];
 extern const u8 gText_Plus[];
+extern const u8 gText_StatEditor[];
 
 //Pokédex text
 extern const u8 gText_CryOf[];

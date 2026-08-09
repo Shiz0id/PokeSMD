@@ -51,6 +51,8 @@
 #include "constants/rgb.h"
 #include "constants/songs.h"
 
+#if !SWSH_ITEM_MENU
+
 #define TAG_POCKET_SCROLL_ARROW 110
 #define TAG_BAG_SCROLL_ARROW    111
 
@@ -2154,7 +2156,14 @@ bool8 UseRegisteredKeyItemOnField(void)
     ChangeBgY_ScreenOff(0, 0, BG_COORD_SET);
     if (gSaveBlock1Ptr->registeredItem != ITEM_NONE)
     {
-        if (CheckBagHasItem(gSaveBlock1Ptr->registeredItem, 1) == TRUE)
+        // GetItemFieldFunc can return NULL, and CreateTask does not check: a key
+        // item with no fieldUseFunc registered to SELECT produced a task whose
+        // callback is address 0, which crashes on the next RunTasks. Every key
+        // item is registerable -- sContextMenuItems_KeyItemsPocket offers
+        // ACTION_REGISTER unconditionally -- so this is reachable for any item
+        // that omits the field, not just the one that found it.
+        if (CheckBagHasItem(gSaveBlock1Ptr->registeredItem, 1) == TRUE
+         && GetItemFieldFunc(gSaveBlock1Ptr->registeredItem) != NULL)
         {
             LockPlayerFieldControls();
             FreezeObjectEvents();
@@ -3028,3 +3037,5 @@ static s32 CompareItemsByIndex(enum Pocket pocketId, struct ItemSlot item1, stru
 
     return 0; // Cannot have multiple stacks of indexed items
 }
+
+#endif // !SWSH_ITEM_MENU

@@ -464,6 +464,12 @@ $(C_BUILDDIR)/data.o: CFLAGS += -fno-show-column -fno-diagnostics-show-caret
 # Needed for parity with pret
 $(C_BUILDDIR)/graphics.o: override CFLAGS += -Wno-missing-braces
 
+# Same reason as graphics.o: the pinball flipper collision masks are
+# `const u8 x[][0x80] = INCBIN_U8(...)`, and INCBIN emits one flat brace list.
+# pachinko.c is a copy of pinball.c and carries the same two tables.
+$(C_BUILDDIR)/pinball.o: override CFLAGS += -Wno-missing-braces
+$(C_BUILDDIR)/pachinko.o: override CFLAGS += -Wno-missing-braces
+
 # Dependency rules (for the *.c & *.s sources to .o files)
 # Have to be explicit or else missing files won't be reported.
 $(C_BUILDDIR)/move_relearner.o: $(C_SUBDIR)/move_relearner.c $(DATA_SRC_SUBDIR)/tutor_moves.h

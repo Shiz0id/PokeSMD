@@ -169,6 +169,11 @@ enum
     MULTI_HOF_VICTORIES_QUIT,
     MULTI_EGGS_VICTORIES_QUIT,
     MULTI_HOF_EGGS_VICTORIES_QUIT,
+    // Game corner prize counters. Appended, rather than taking upstream's
+    // MULTI_UNUSED_21/22: this list is an enum here, not a run of #defines
+    // with spare slots to repurpose.
+    MULTI_GAMECORNER_NEW,
+    MULTI_GAMECORNER_NEW2,
 };
 
 #define MULTI_NONE 255

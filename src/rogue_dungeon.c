@@ -1732,6 +1732,22 @@ static const struct RogueDungeonTheme *ThemeForFloor(u16 floor)
 // floor fills only the first NUM_WATER_MONS_ENCOUNTER_SLOTS of it.
 EWRAM_DATA static struct WildPokemon sDungeonWildMons[NUM_LAND_MONS_ENCOUNTER_SLOTS] = {0};
 
+// The rod gets a table of its own rather than sharing the one above, for two
+// reasons that both end in silence rather than a crash.
+//
+// TEN SLOTS AGAINST WATER'S FIVE, and the rod reads them in bands - Old Rod
+// draws slots 0-1, Good Rod 2-4, Super Rod 5-9. Sharing the buffer would hand a
+// Super Rod slots 5-9 of whatever the last surf roll happened to leave there,
+// which on a fresh floor is zeroes: species 0, level 0.
+//
+// AND THE ROTATION STRIDE IS THE SLOT COUNT. Making the shared stride 10 to
+// match would put gcd(10, 12) = 2 between stride and window, and the rotation
+// would then reach only half its ladder - the exact failure check_safari_pool.py
+// exists to catch. Its own rotation keeps the two independent.
+EWRAM_DATA static struct WildPokemon sDungeonFishingMons[NUM_FISHING_MONS_ENCOUNTER_SLOTS] = {0};
+EWRAM_DATA static struct WildPokemonInfo sDungeonFishingInfo = {0};
+EWRAM_DATA static u8 sFishingRotation = 0;
+
 // What the floor's deal was made from, kept so the water branch can re-deal it.
 //
 // WHY WATER RE-DEALS AND LAND DOES NOT. The engine gives water five encounter
@@ -2206,6 +2222,19 @@ void RogueDungeon_ResetRun(void)
     // bankrolled by every previous run. The Coin Case is an item and goes with
     // the bag; the clerk hands out another one.
     SetCoins(0);
+
+    // Same reasoning as the bag, and a flag needs saying out loud because
+    // resetting the floor counter does not touch one: ApplyRunConfig sets these
+    // by depth, so leaving them set hands the next run a Super technique on
+    // floor 1. The rod itself goes with ClearBag and is granted again at the
+    // starter pick.
+    FlagClear(FLAG_ROGUE_ROD_GOOD_TECHNIQUE);
+    FlagClear(FLAG_ROGUE_ROD_SUPER_TECHNIQUE);
+
+    // And the remembered technique, which is not a flag and would otherwise
+    // leave a fresh Old-Rod-only run fishing at whatever it last chose. OLD_ROD
+    // is 0, so this is also the value a save that never opened the menu holds.
+    VarSet(VAR_ROGUE_ROD_TECHNIQUE, OLD_ROD);
 }
 
 // Maps that replace a theme's own for the last few floors of its dungeon. See
@@ -2398,7 +2427,10 @@ bool8 RogueDungeon_TryHandleWhiteOut(void)
 //
 // Takes the LADDER rather than the theme, because the Safari Zone has pools and
 // no theme. Nothing here ever wanted anything else off the theme.
-static void DealWildSlots(const u16 *species, u32 slots,
+//
+// Takes the DESTINATION too, because fishing keeps a table of its own - see
+// sDungeonFishingMons.
+static void DealWildSlots(struct WildPokemon *dst, const u16 *species, u32 slots,
                           u32 bottom, u32 width, u32 rotation, u8 level)
 {
     u32 i;
@@ -2409,9 +2441,9 @@ static void DealWildSlots(const u16 *species, u32 slots,
     // which species lands in the common slots.
     for (i = 0; i < slots; i++)
     {
-        sDungeonWildMons[i].species = species[bottom + (i + rotation) % width];
-        sDungeonWildMons[i].minLevel = level;
-        sDungeonWildMons[i].maxLevel = level + DUNGEON_ENCOUNTER_LEVEL_SPREAD;
+        dst[i].species = species[bottom + (i + rotation) % width];
+        dst[i].minLevel = level;
+        dst[i].maxLevel = level + DUNGEON_ENCOUNTER_LEVEL_SPREAD;
     }
 }
 
@@ -2478,7 +2510,7 @@ static void BuildWildEncounterTable(u16 floor)
     sWildSlots = slots;
     sWildSpecies = theme->species;
 
-    DealWildSlots(theme->species, slots, bottom, width, rotation, level);
+    DealWildSlots(sDungeonWildMons, theme->species, slots, bottom, width, rotation, level);
 
     // encounterRate is read straight off the static table, not from here, so
     // this value is only a sane fallback.
@@ -2563,11 +2595,37 @@ static void BuildSafariEncounterTable(u16 floor, enum WildPokemonArea area)
     sWildSlots = slots;
     sWildSpecies = ladder;
 
-    DealWildSlots(ladder, slots, bottom, width, sWildRotation, level);
+    DealWildSlots(sDungeonWildMons, ladder, slots, bottom, width, sWildRotation, level);
 
     sDungeonWildInfo.encounterRate = 10;
     sDungeonWildInfo.wildPokemon = sDungeonWildMons;
     sDungeonWildArea = area;
+}
+
+// Deals the rod's ten slots from whatever window the water branch has already
+// worked out for this floor. Called only after that window is current.
+//
+// STRIDE 1, and that does not contradict the stride-`slots` finding at
+// sWildRotation. That one was about a table as wide as its window, where
+// advancing by one leaves eleven of twelve species in place and consecutive
+// tables read as identical. Ten slots into a twelve-wide window share eight
+// species at ANY stride, so the thing left worth getting right is which rung
+// lands in the Old Rod's two slots - and 1 is the only stride coprime with
+// every width, so every rung reaches them equally often.
+static const struct WildPokemonInfo *FishingInfoForCurrentWindow(void)
+{
+    // No window means no floor has been built for this surface yet, which is
+    // the one case where the static placeholder is the better answer.
+    if (sWildSpecies == NULL || sWildWidth == 0)
+        return NULL;
+
+    sFishingRotation = (sFishingRotation + 1) % sWildWidth;
+    DealWildSlots(sDungeonFishingMons, sWildSpecies, NUM_FISHING_MONS_ENCOUNTER_SLOTS,
+                  sWildBottom, sWildWidth, sFishingRotation, sWildLevel);
+
+    sDungeonFishingInfo.encounterRate = 10;
+    sDungeonFishingInfo.wildPokemon = sDungeonFishingMons;
+    return &sDungeonFishingInfo;
 }
 
 // Hooked into TryGenerateWildMon. Returning NULL leaves the caller on the
@@ -2584,6 +2642,21 @@ static void BuildSafariEncounterTable(u16 floor, enum WildPokemonArea area)
 // water branch, and before this they fell through to the static placeholder.
 const struct WildPokemonInfo *RogueDungeon_GetWildMonInfo(enum WildPokemonArea area)
 {
+    // FROM HERE DOWN, FISHING IS THE WATER BRANCH. The rod fishes the water the
+    // player would otherwise surf, so it wants the same ladder, the same window
+    // and the same levels; folding it in here rather than adding a third case
+    // means the Safari cache key, the theme's wildArea test and the level curve
+    // all keep working untouched. Only the final deal differs, and that has a
+    // table of its own.
+    //
+    // Which also settles where the rod works: on a floor this passes only when
+    // the theme's own wildArea is WATER, so the ocean and the seafloor - the two
+    // themes that have any water at all - and nowhere else.
+    bool8 fishing = (area == WILD_AREA_FISHING);
+
+    if (fishing)
+        area = WILD_AREA_WATER;
+
     if (IsSafariMap())
     {
         u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
@@ -2608,6 +2681,12 @@ const struct WildPokemonInfo *RogueDungeon_GetWildMonInfo(enum WildPokemonArea a
         if (area != sDungeonWildArea)
             return NULL;
     }
+
+    // The rod leaves here, ABOVE the re-deal below, so that a cast never
+    // advances the surf rotation. The two surfaces share a window, not a
+    // sequence.
+    if (fishing)
+        return FishingInfoForCurrentWindow();
 
     // RE-DEAL WHEN THE WINDOW IS WIDER THAN THE SLOTS, which is exactly when
     // re-dealing buys anything: the window then means "how many species can
@@ -2644,8 +2723,8 @@ const struct WildPokemonInfo *RogueDungeon_GetWildMonInfo(enum WildPokemonArea a
     if (sWildWidth > sWildSlots && sWildSpecies != NULL)
     {
         sWildRotation = (sWildRotation + sWildSlots) % sWildWidth;
-        DealWildSlots(sWildSpecies, sWildSlots, sWildBottom, sWildWidth,
-                      sWildRotation, sWildLevel);
+        DealWildSlots(sDungeonWildMons, sWildSpecies, sWildSlots, sWildBottom,
+                      sWildWidth, sWildRotation, sWildLevel);
     }
 
     return &sDungeonWildInfo;
@@ -3315,6 +3394,21 @@ static u16 PickMiniBossForLevel(u8 target, u16 *gfxId)
 bool8 RogueDungeon_IsBossFloor(u16 floor)
 {
     return IsMiniBossFloor(floor) || IsDungeonBossFloor(floor);
+}
+
+// The Wave Charm. A run grants no field moves at all, so the Safari Zone's
+// water surface used to be reachable only on a Mudkip run - Mudkip learns Surf
+// at 30 and Swampert has it at 1, and no other starter pick learns it by level.
+// Sixteen generated, check-guarded species sat behind one of thirty picks.
+//
+// This does not make anything else surfable. The ocean theme already crosses
+// water because its floor metatile is water and the player arrives on a surf
+// blob; the seafloor is a property of the MAP, not a move; and the jungle's
+// water is MB_PUDDLE precisely so it is not a second encounter surface. So the
+// only thing this opens is the Safari's water, which is the point.
+bool32 RogueDungeon_HasSurfTool(void)
+{
+    return CheckBagHasItem(ITEM_ROGUE_SURF_TOOL, 1);
 }
 
 // Boss floors skip rooms and corridors entirely: a single centred arena, the
@@ -4744,6 +4838,18 @@ void RogueDungeon_SetUpTrainerBattle(void)
 
     SetMapVarsToTrainerA();
 
+    // A generated trainer never reaches BattleSetup_ConfigureTrainerBattle --
+    // ConfigureTrainerBattle and ConfigureTwoTrainersBattle branch around it
+    // because these scripts carry no inline trainerbattle data -- so the
+    // player's battle mode option has to be applied here or the majority of the
+    // battles in a run would quietly ignore it.
+    //
+    // Safe in the two-trainer case as well. This runs on the slot A call, which
+    // happens first either way; forcing singles leaves the mode at the
+    // TRAINER_BATTLE_SINGLE set just above, and forcing doubles matches what a
+    // two-opponent battle already is.
+    ApplyBattleModePreference();
+
     // The other exit: talking to an already-beaten trainer skips the battle and
     // leaves via gotopostbattlescript, which reads this one instead.
     SetTrainerBattleEndScript(endScript);
@@ -4755,8 +4861,29 @@ void RogueDungeon_SetUpTrainerBattle(void)
 // gained the line - and because there is no cost to setting a set flag.
 static void ApplyRunConfig(void)
 {
+    u32 dungeon = DungeonIndexOf(VarGet(VAR_ROGUE_DUNGEON_FLOOR));
+
     // Party-wide Exp Share, permanently on. See FLAG_ROGUE_EXP_SHARE.
     FlagSet(FLAG_ROGUE_EXP_SHARE);
+
+    // The variable rod's two techniques, which is the whole progression the rod
+    // has. Set here rather than from a script for the reason above: this runs on
+    // every floor load, so a run already past the threshold when this shipped
+    // still gets them, and there is no entry path that can miss one.
+    //
+    // KEYED ON THE DUNGEON, not the floor. Dungeons are not the same length -
+    // ten floors for a gym, five for an Elite Four member - so a raw floor
+    // number means a different place in the run the moment anything is
+    // restructured, and nothing would report it.
+    //
+    // Cleared by RogueDungeon_ResetRun, not here. Putting the floor counter
+    // back to 0 does NOT narrow the menu again by itself - a flag survives it -
+    // so without that a whiteout would leave the next run holding the Super
+    // technique on floor 1.
+    if (dungeon >= DUNGEON_ROD_GOOD_DUNGEON)
+        FlagSet(FLAG_ROGUE_ROD_GOOD_TECHNIQUE);
+    if (dungeon >= DUNGEON_ROD_SUPER_DUNGEON)
+        FlagSet(FLAG_ROGUE_ROD_SUPER_TECHNIQUE);
 }
 
 void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)

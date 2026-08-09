@@ -116,6 +116,9 @@ enum Language
 #define BAG_TMHM_COUNT 64
 #define BAG_BERRIES_COUNT 46
 
+//tx_registered_items_menu
+#define REGISTERED_ITEMS_MAX 10
+
 // Number of facilities for Ranking Hall.
 // 7 facilities for single mode + tower double mode + tower multi mode.
 // Excludes link modes. See RANKING_HALL_* in include/constants/battle_frontier.h
@@ -200,6 +203,11 @@ enum Gender
 
 #define OPTIONS_BATTLE_STYLE_SHIFT 0
 #define OPTIONS_BATTLE_STYLE_SET 1
+
+#define OPTIONS_BATTLE_SPEED_1X  0
+#define OPTIONS_BATTLE_SPEED_2X  1
+#define OPTIONS_BATTLE_SPEED_3X  2
+#define OPTIONS_BATTLE_SPEED_4X  3
 
 enum __attribute__((packed)) Direction
 {

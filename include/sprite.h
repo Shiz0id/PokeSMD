@@ -154,8 +154,8 @@ enum
 
 struct Subsprite
 {
-    s8 x; // was u16 in R/S
-    s8 y; // was u16 in R/S
+    s16 x; // was u16 in R/S, widened past 127 for the BW battle UI cursor
+    s16 y; // was u16 in R/S, widened past 127 for the BW battle UI cursor
     u16 shape:2;
     u16 size:2;
     u16 tileOffset:10;
@@ -215,7 +215,7 @@ struct Sprite
     /*0x3E*/ u16 inUse:1;                   //1
              u16 coordOffsetEnabled:1;      //2
              u16 invisible:1;               //4
-             u16 flags_3:1;                 //8
+             u16 objWinMask:1;                 //8
              // if nonzero, tile offset for usingSheet sprites
              // is (offset + 1) << sheetSpan;
              // (This allows using frame-based anim tables for sheet sprites)

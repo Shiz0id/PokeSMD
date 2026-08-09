@@ -473,12 +473,32 @@ int ExtractData(const std::unique_ptr<unsigned char[]>& buffer, int offset, int 
 
 void CFile::TryConvertIncbin()
 {
-    std::string idents[4] = { "INCBIN_U8", "INCBIN_U16", "INCBIN_U32", "INCBIN_COMP"};
+    // The signed forms exist for the game corner's pinball tables, whose angle
+    // and delta data is signed 16-bit. Adding only the INCBIN_S16 macro in
+    // global.h is NOT enough and fails silently: preproc would not recognise
+    // the identifier, the macro would expand to its {0} fallback, and the table
+    // would compile to a single zero.
+    static const struct
+    {
+        const char *ident;
+        int size;
+        bool isSigned;
+        bool isCompressed;
+    } kinds[] = {
+        { "INCBIN_U8",   1, false, false },
+        { "INCBIN_U16",  2, false, false },
+        { "INCBIN_U32",  4, false, false },
+        { "INCBIN_COMP", 4, false, true  },
+        { "INCBIN_S8",   1, true,  false },
+        { "INCBIN_S16",  2, true,  false },
+        { "INCBIN_S32",  4, true,  false },
+    };
+    const int kindCount = sizeof(kinds) / sizeof(kinds[0]);
     int incbinType = -1;
 
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < kindCount; i++)
     {
-        if (CheckIdentifier(idents[i]))
+        if (CheckIdentifier(kinds[i].ident))
         {
             incbinType = i;
             break;
@@ -488,12 +508,13 @@ void CFile::TryConvertIncbin()
     if (incbinType == -1)
         return;
 
-    int size = incbinType < 3 ? 1 << incbinType : 4;
+    int size = kinds[incbinType].size;
+    bool isSigned = kinds[incbinType].isSigned;
 
     long oldPos = m_pos;
     auto oldLocation = m_location;
 
-    m_pos += idents[incbinType].length();
+    m_pos += std::string(kinds[incbinType].ident).length();
 
     SkipWhitespace();
 
@@ -515,7 +536,7 @@ void CFile::TryConvertIncbin()
         auto path = ReadString();
 
         // INCBIN_COMP; include *compressed* version of file
-        if (incbinType == 3)
+        if (kinds[incbinType].isCompressed)
             path = path.append(".smol");
 
         int fileSize;
@@ -531,7 +552,26 @@ void CFile::TryConvertIncbin()
         {
             int data = ExtractData(buffer, offset, size);
             offset += size;
-            printf("%uu,", data);
+
+            if (isSigned)
+            {
+                // ExtractData assembles bytes little-endian without sign
+                // extending, so a 16-bit -1 arrives here as 65535. Upstream
+                // only swapped the printf specifier, which emits "65535" into
+                // an s16 initialiser and leans on the implicit conversion --
+                // right answer, but a -Woverflow warning per element. Extend it
+                // here so the generated source says what the data means.
+                if (size == 1)
+                    data = (int)(signed char)data;
+                else if (size == 2)
+                    data = (int)(short)data;
+
+                printf("%d,", data);
+            }
+            else
+            {
+                printf("%uu,", data);
+            }
         }
 
         SkipWhitespace();

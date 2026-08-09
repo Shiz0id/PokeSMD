@@ -26,6 +26,8 @@
 #include "trainer_tower.h"
 #include "window.h"
 #include "line_break.h"
+#include "bw_battle_ui.h"
+#include "config/bw_battle_ui.h"
 #include "constants/abilities.h"
 #include "constants/battle_dome.h"
 #include "constants/battle_string_ids.h"
@@ -192,7 +194,7 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
 {
     [STRINGID_TRAINER1LOSETEXT]                     = COMPOUND_STRING("{B_TRAINER1_LOSE_TEXT}"),
     [STRINGID_PKMNGAINEDEXP]                        = COMPOUND_STRING("{B_BUFF1} gained{B_BUFF2} {B_BUFF3} Exp. Points!\p"),
-    [STRINGID_PKMNGREWTOLV]                         = COMPOUND_STRING("{B_BUFF1} grew to Lv. {B_BUFF2}!{WAIT_SE}\p"),
+    [STRINGID_PKMNGREWTOLV]                         = COMPOUND_STRING("{B_BUFF1} grew to Lv. {B_BUFF2}!\nIt also gained some EVs!{WAIT_SE}\p"),
     [STRINGID_PKMNLEARNEDMOVE]                      = COMPOUND_STRING("{B_BUFF1} learned {B_BUFF2}!{WAIT_SE}\p"),
     [STRINGID_TRYTOLEARNMOVE1]                      = COMPOUND_STRING("{B_BUFF1} wants to learn the move {B_BUFF2}.\p"),
     [STRINGID_TRYTOLEARNMOVE2]                      = COMPOUND_STRING("However, {B_BUFF1} already knows four moves.\p"),
@@ -1270,7 +1272,17 @@ const u16 gBallEscapeStringIds[] =
 };
 
 // Overworld weathers that don't have an associated battle weather default to "It is raining."
-const u16 gWeatherStartsStringIds[] =
+// SIZED TO WEATHER_COUNT ON PURPOSE. BattleScript_OverworldWeatherStarts does
+// `printfromtable gWeatherStartsStringIds`, and the index is
+// gBattleCommunication[MULTISTRING_CHOOSER], which DoFieldEndTurnEffects sets to
+// GetCurrentWeather() -- the raw overworld weather id. Vanilla's highest entry
+// is WEATHER_ABNORMAL (15), so the table was 16 entries wide while this project
+// added weathers at 16, 17 and 18; a blizzard read two entries past the end and
+// printed whatever rodata followed ("Aargh! Almost had it!"). Letting the array
+// size itself off its own initialisers is what made that silent, so it does not
+// any more: an id with no entry here now reads a defined 0 rather than the next
+// table along, and a new weather that reaches battle needs a line below.
+const u16 gWeatherStartsStringIds[WEATHER_COUNT] =
 {
     [WEATHER_NONE]               = STRINGID_ITISRAINING,
     [WEATHER_SUNNY_CLOUDS]       = STRINGID_ITISRAINING,
@@ -1287,7 +1299,16 @@ const u16 gWeatherStartsStringIds[] =
     [WEATHER_DROUGHT]            = STRINGID_SUNLIGHTISHARSH,
     [WEATHER_DOWNPOUR]           = STRINGID_ITISRAINING,
     [WEATHER_UNDERWATER_BUBBLES] = STRINGID_ITISRAINING,
-    [WEATHER_ABNORMAL]           = STRINGID_ITISRAINING
+    [WEATHER_ABNORMAL]           = STRINGID_ITISRAINING,
+    // This project's three. Blizzard mirrors snow and monsoon mirrors rain,
+    // because that is exactly what each converts to in the switch that leads
+    // here. Petals never reach this table -- they are deliberately absent from
+    // that switch and so never set effect -- but the entry is here anyway, so
+    // that making them mechanical later is a one-line change rather than a
+    // silent wrong string.
+    [WEATHER_PETALS]             = STRINGID_ITISRAINING,
+    [WEATHER_MONSOON]            = STRINGID_ITISRAINING,
+    [WEATHER_BLIZZARD]           = (B_OVERWORLD_SNOW >= GEN_9 ? STRINGID_ITISSNOWING : STRINGID_ITISHAILING),
 };
 
 const u16 gTerrainStartsStringIds[] =
@@ -3819,6 +3840,27 @@ void BattlePutTextOnWindow(const u8 *text, u8 windowId)
     bool32 copyToVram;
     struct TextPrinterTemplate printerTemplate;
     u8 speed;
+
+    // The BW action box is a blitted bitmap rather than printed text, and the
+    // move box draws its own PP/type/prompt, so those windows are handled here.
+    // The Kanto tutorial and Battle Arena keep their own window sets, which are
+    // too small for the BW artwork, so they stay on the gen3 menu.
+    if (BattleUI_UsesInputBox())
+    {
+        switch (windowId)
+        {
+        case B_WIN_ACTION_MENU:
+            BattleUI_PopulateActionBox();
+            // fallthrough
+        case B_WIN_PP:
+        case B_WIN_PP_REMAINING:
+        case B_WIN_SWITCH_PROMPT:
+        case B_WIN_MOVE_TYPE:
+            return;
+        default:
+            break;
+        }
+    }
 
     if (windowId & B_WIN_COPYTOVRAM)
     {

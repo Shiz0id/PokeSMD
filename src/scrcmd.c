@@ -46,6 +46,7 @@
 #include "random.h"
 #include "overworld.h"
 #include "rotating_tile_puzzle.h"
+#include "rogue_dungeon.h"
 #include "rtc.h"
 #include "script.h"
 #include "script_menu.h"
@@ -2327,6 +2328,24 @@ bool8 ScrCmd_checkfieldmove(struct ScriptContext *ctx)
             gSpecialVar_Result = i;
             gSpecialVar_0x8004 = species;
             break;
+        }
+    }
+
+    // The Wave Charm: nobody has to know Surf, the lead Pokemon carries you.
+    // Answering with slot 0 rather than PARTY_SIZE is what lets data/scripts/
+    // surf.inc work unchanged -- it buffers that slot's nickname and hands the
+    // slot to FLDEFF_USE_SURF, and both need a real mon. A mon that actually
+    // knows Surf still wins the loop above, so it stays the one shown.
+    if (fieldMove == FIELD_MOVE_SURF
+     && gSpecialVar_Result == PARTY_SIZE
+     && RogueDungeon_HasSurfTool())
+    {
+        enum Species species = GetMonData(&gParties[B_TRAINER_PLAYER][0], MON_DATA_SPECIES);
+
+        if (species != SPECIES_NONE && !GetMonData(&gParties[B_TRAINER_PLAYER][0], MON_DATA_IS_EGG))
+        {
+            gSpecialVar_Result = 0;
+            gSpecialVar_0x8004 = species;
         }
     }
 

@@ -199,14 +199,49 @@ void PrintHeap(void)
     while (block != head);
 }
 
+// An out-of-memory report that says only how much was wanted cannot tell
+// exhaustion from fragmentation, and the two want opposite fixes: a bigger
+// heap helps the first and does nothing at all for the second. If TOTAL is
+// comfortably above the request and LARGEST is below it, the heap is
+// fragmented and HEAP_SIZE is not the lever.
+static void HeapFreeStats(u32 *totalFree, u32 *largestFree)
+{
+    const struct MemBlock *head = HeapHead();
+    const struct MemBlock *pos = head;
+    u32 total = 0, largest = 0;
+
+    *totalFree = 0;
+    *largestFree = 0;
+
+    if (head == NULL)
+        return;
+
+    do {
+        if (!pos->allocated)
+        {
+            total += pos->size;
+            if (pos->size > largest)
+                largest = pos->size;
+        }
+        pos = pos->next;
+    } while (pos != head);
+
+    *totalFree = total;
+    *largestFree = largest;
+}
+
 void *Alloc_(u32 size, const char *location)
 {
     void *p = AllocInternal(sHeapStart, size, location);
     if (!p)
     {
+        u32 totalFree, largestFree;
+
+        HeapFreeStats(&totalFree, &largestFree);
         if (TESTING)
             PrintHeap();
-        fatalf("%s: out of memory trying to allocate %d bytes", location, size);
+        fatalf("%s: out of memory trying to allocate %d bytes. free %d largest %d",
+               location, size, totalFree, largestFree);
     }
     return p;
 }
@@ -221,9 +256,13 @@ void *AllocZeroed_(u32 size, const char *location)
     void *p = AllocZeroedInternal(sHeapStart, size, location);
     if (!p)
     {
+        u32 totalFree, largestFree;
+
+        HeapFreeStats(&totalFree, &largestFree);
         if (TESTING)
             PrintHeap();
-        fatalf("%s: out of memory trying to allocate %d bytes", location, size);
+        fatalf("%s: out of memory trying to allocate %d bytes. free %d largest %d",
+               location, size, totalFree, largestFree);
     }
     return p;
 }

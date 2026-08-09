@@ -711,6 +711,14 @@ const u16 gBattleInterface_BallStatusBarPal[] = INCGFX_U16("graphics/battle_inte
 
 const u16 gBattleInterface_BallDisplayPal[] = INCGFX_U16("graphics/battle_interface/ball_display.png", ".gbapal");
 
+const u16 gBattleInterface_BwHealthboxPal[] = INCGFX_U16("graphics/battle_interface/bw_healthbox.pal", ".gbapal");
+const u16 gBattleInterface_BwHealthbarPal[] = INCGFX_U16("graphics/battle_interface/bw_healthbar.pal", ".gbapal");
+const u32 gBattleInterface_BwStatusSingleGfx[] = INCGFX_U32("graphics/battle_interface/bw_status_single.png", ".4bpp");
+const u32 gBattleInterface_BwStatusDoubleGfx[] = INCGFX_U32("graphics/battle_interface/bw_status_double.png", ".4bpp");
+const u32 gBattleInterface_BwNameFontGfx[] = INCGFX_U32("graphics/battle_interface/bw_name_font.png", ".4bpp");
+const u32 gBattleInterface_BwHpNumbersFontGfx[] = INCGFX_U32("graphics/battle_interface/bw_hp_numbers_font.png", ".4bpp");
+const u32 gBattleInterface_BwLevelLabelGfx[] = INCGFX_U32("graphics/battle_interface/bw_level_label.png", ".4bpp");
+
 const u8 gHealthboxElementsGfxTable[][32] = INCBIN_U8("graphics/battle_interface/hpbar.4bpp",
                                                   "graphics/battle_interface/expbar.4bpp",
                                                   "graphics/battle_interface/status.4bpp",
@@ -1744,6 +1752,10 @@ const u16 gBattlePyramidBagInterface_Pal[] = INCGFX_U16("graphics/bag/menu_pyram
 
 const u32 gSwapLineGfx[] = INCGFX_U32("graphics/interface/swap_line.png", ".4bpp.smol");
 const u16 gSwapLinePal[] = INCGFX_U16("graphics/interface/swap_line.png", ".gbapal");
+// tx_registered_items_menu. Declared through INCGFX/.smol like everything else
+// here rather than upstream's INCBIN/.lz -- their base predates the modern
+// graphics pipeline, and mixing the two would mean the asset is never built.
+const u32 gSwapLineGfx_RegisteredItemsMenu[] = INCGFX_U32("graphics/interface/swap_line_tx.png", ".4bpp.smol");
 
 const u32 gShopMenu_Gfx[] = INCGFX_U32("graphics/shop/menu.png", ".4bpp.smol");
 const u16 gShopMenu_Pal[] = INCGFX_U16("graphics/shop/menu.png", ".gbapal");

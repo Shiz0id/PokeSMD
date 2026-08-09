@@ -13932,6 +13932,65 @@ const struct ItemInfo gItemsInfo[] =
         .iconPalette = gItemIconPalette_DowsingMachine,
     },
 
+    // A run never grants Surf, so before this the Safari Zone's water surface
+    // was reachable only on a Mudkip run -- Mudkip learns Surf at 30 and
+    // Swampert knows it at 1, and no other starter pick learns it by level.
+    // That stranded sSafariWaterSpecies, a generated and check-guarded ladder
+    // of sixteen species, behind one of thirty starters.
+    //
+    // Held rather than used: there is no fieldUseFunc, because the prompt comes
+    // from walking into water like any other surf. The icon is the HM disc in
+    // water colours, which is what this replaces and costs no new art.
+    [ITEM_ROGUE_SURF_TOOL] =
+    {
+        .name = ITEM_NAME("Wave Charm"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "Lets the first\n"
+            "POKéMON in the party\n"
+            "carry you over water."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+        // The charm works by being carried, so there is nothing to "use" -- but
+        // it still needs a fieldUseFunc, and leaving it NULL was a crash rather
+        // than a no-op. Every key item gets ACTION_REGISTER unconditionally
+        // (sContextMenuItems_KeyItemsPocket), and the SELECT path does
+        // CreateTask(GetItemFieldFunc(registeredItem), 8) with no NULL check --
+        // so registering this and pressing SELECT made a task whose callback is
+        // address 0.
+        .type = ITEM_USE_FIELD,
+        .fieldUseFunc = ItemUseOutOfBattle_CannotUse,
+        .iconPic = gItemIcon_HM,
+        .iconPalette = gItemIconPalette_WaterTMHM,
+    },
+
+    [ITEM_ROGUE_VARIABLE_ROD] =
+    {
+        .name = ITEM_NAME("Anglers Rod"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "One rod, many\n"
+            "techniques. Better\n"
+            "ones come with depth."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+
+        // Deliberately NOT ItemUseOutOfBattle_Rod, and deliberately no
+        // .secondaryId. The three vanilla rods each bake their tier into that
+        // field; this one reads the technique out of VAR_ROGUE_ROD_TECHNIQUE at
+        // use time, which is what lets one item cover all three and what makes
+        // registering it to SELECT meaningful -- it fishes the way it last did.
+        .type = ITEM_USE_FIELD,
+        .fieldUseFunc = ItemUseOutOfBattle_VariableRod,
+
+        // The Super Rod's art, and nothing new drawn. This REPLACES all three
+        // rods rather than joining them, so the best of the three is the honest
+        // picture and there is no vanilla rod obtainable in a run to confuse it
+        // with.
+        .iconPic = gItemIcon_SuperRod,
+        .iconPalette = gItemIconPalette_SuperRod,
+    },
+
     [ITEM_TOWN_MAP] =
     {
         .name = ITEM_NAME("Town Map"),

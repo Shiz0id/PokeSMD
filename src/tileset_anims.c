@@ -34,6 +34,7 @@ static void TilesetAnim_EverGrande(u16);
 static void TilesetAnim_Mossdeep(u16);
 static void TilesetAnim_Pacifidlog(u16);
 static void TilesetAnim_Sootopolis(u16);
+static void TilesetAnim_MauvilleGameCorner(u16);
 static void TilesetAnim_BattleFrontierOutsideWest(u16);
 static void TilesetAnim_BattleFrontierOutsideEast(u16);
 static void TilesetAnim_Underwater(u16);
@@ -76,6 +77,25 @@ static void QueueAnimTiles_MauvilleGym_ElectricGates(u16);
 static void QueueAnimTiles_SootopolisGym_Waterfalls(u16);
 static void QueueAnimTiles_EliteFour_GroundLights(u16);
 static void QueueAnimTiles_EliteFour_WallLights(u16);
+static void QueueAnimTiles_MauvilleGameCorner_Lights(u16);
+
+// INCGFX_U16 rather than upstream's INCBIN_U16: this repo builds the .4bpp from
+// the .png through the graphics rules, so the source name is the PNG.
+const u16 gTilesetAnims_MauvilleGameCorner_Lights_Frame0[] = INCGFX_U16("data/tilesets/secondary/mauville_game_corner/anim/lights/light_anim_0.png", ".4bpp");
+const u16 gTilesetAnims_MauvilleGameCorner_Lights_Frame1[] = INCGFX_U16("data/tilesets/secondary/mauville_game_corner/anim/lights/light_anim_1.png", ".4bpp");
+const u16 gTilesetAnims_MauvilleGameCorner_Lights_Frame2[] = INCGFX_U16("data/tilesets/secondary/mauville_game_corner/anim/lights/light_anim_2.png", ".4bpp");
+const u16 gTilesetAnims_MauvilleGameCorner_Lights_Frame3[] = INCGFX_U16("data/tilesets/secondary/mauville_game_corner/anim/lights/light_anim_3.png", ".4bpp");
+const u16 gTilesetAnims_MauvilleGameCorner_Lights_Frame4[] = INCGFX_U16("data/tilesets/secondary/mauville_game_corner/anim/lights/light_anim_4.png", ".4bpp");
+const u16 gTilesetAnims_MauvilleGameCorner_Lights_Frame5[] = INCGFX_U16("data/tilesets/secondary/mauville_game_corner/anim/lights/light_anim_5.png", ".4bpp");
+
+const u16 *const gTilesetAnims_MauvilleGameCorner_Lights[] = {
+    gTilesetAnims_MauvilleGameCorner_Lights_Frame0,
+    gTilesetAnims_MauvilleGameCorner_Lights_Frame1,
+    gTilesetAnims_MauvilleGameCorner_Lights_Frame2,
+    gTilesetAnims_MauvilleGameCorner_Lights_Frame3,
+    gTilesetAnims_MauvilleGameCorner_Lights_Frame4,
+    gTilesetAnims_MauvilleGameCorner_Lights_Frame5,
+};
 
 const u16 gTilesetAnims_General_Flower_Frame1[] = INCGFX_U16("data/tilesets/primary/general/anim/flower/1.png", ".4bpp");
 const u16 gTilesetAnims_General_Flower_Frame0[] = INCGFX_U16("data/tilesets/primary/general/anim/flower/0.png", ".4bpp");
@@ -708,6 +728,15 @@ static void QueueAnimTiles_General_Waterfall(u16 timer)
     AppendTilesetAnimToBuffer(gTilesetAnims_General_Waterfall[i], (u16 *)(BG_VRAM + TILE_OFFSET_4BPP(496)), 6 * TILE_SIZE_4BPP);
 }
 
+// The game corner's chase lights. Tile 521 and 0x40 bytes - two tiles - are
+// upstream's numbers, and they are only correct because this tileset's tiles
+// came across wholesale rather than being appended to ours.
+static void QueueAnimTiles_MauvilleGameCorner_Lights(u16 timer)
+{
+    u16 i = timer % ARRAY_COUNT(gTilesetAnims_MauvilleGameCorner_Lights);
+    AppendTilesetAnimToBuffer(gTilesetAnims_MauvilleGameCorner_Lights[i], (u16 *)(BG_VRAM + TILE_OFFSET_4BPP(521)), 0x40);
+}
+
 void InitTilesetAnim_Petalburg(void)
 {
     sSecondaryTilesetAnimCounter = 0;
@@ -825,6 +854,13 @@ void InitTilesetAnim_SootopolisGym(void)
     sSecondaryTilesetAnimCounter = 0;
     sSecondaryTilesetAnimCounterMax = 240;
     sSecondaryTilesetAnimCallback = TilesetAnim_SootopolisGym;
+}
+
+void InitTilesetAnim_MauvilleGameCorner(void)
+{
+    sSecondaryTilesetAnimCounter = 0;
+    sSecondaryTilesetAnimCounterMax = 128;
+    sSecondaryTilesetAnimCallback = TilesetAnim_MauvilleGameCorner;
 }
 
 void InitTilesetAnim_Cave(void)
@@ -960,6 +996,12 @@ static void TilesetAnim_Mossdeep(u16 timer)
     // the loop does not stutter when it wraps.
     if (timer % 8 == 0)
         QueueAnimTiles_Mossdeep_Whirlpool(timer / 8);
+}
+
+static void TilesetAnim_MauvilleGameCorner(u16 timer)
+{
+    if (timer % 16 == 0)
+        QueueAnimTiles_MauvilleGameCorner_Lights(timer / 16);
 }
 
 static void TilesetAnim_Pacifidlog(u16 timer)

@@ -41,7 +41,18 @@ struct MemBlock
     u8 data[0];
 };
 
-#define HEAP_SIZE 0x1C500
+// 0x1C500 + 0x2000. The BW animated sprites reserve 4 KB per animating
+// battler and a double battle has four, so 16 KB of what used to be
+// headroom is spoken for before anything else asks. That budget was
+// measured once, when the frame containers landed, and then the BW battle
+// UI, the SwSh bag, the USM start menu, the EV allocator, the registered
+// items menu and the fishing minigame all arrived on the same heap -- none
+// of which the linker can see, because the heap is one fixed array.
+//
+// Two 4096-byte requests were failing in doubles: the move box's tilemap
+// on the FIGHT button (src/menu.c:1592) and gBattleAnimBgTilemapBuffer on
+// the way back from the bag (src/battle_util2.c:20).
+#define HEAP_SIZE 0x1E500
 extern u8 gHeap[HEAP_SIZE];
 
 #if TESTING || !defined(NDEBUG)

@@ -71,6 +71,10 @@ void SetMapVarsToTrainerA(void);
 void SetTrainerBattleEndScript(const u8 *script);
 void SetMapVarsToTrainerB(void);
 const u8 *BattleSetup_ConfigureTrainerBattle(const u8 *data);
+// Applies the player's battle mode option to TRAINER_BATTLE_PARAM.mode.
+// ConfigureTrainerBattle calls it -- and so must RogueDungeon_SetUpTrainerBattle,
+// because the generated dungeon trainers bypass that function entirely.
+void ApplyBattleModePreference(void);
 const u8* BattleSetup_ConfigureFacilityTrainerBattle(u8 facility, const u8* scriptEndPtr);
 void ConfigureAndSetUpOneTrainerBattle(u8 trainerObjEventId, const u8 *trainerScript);
 void ConfigureTwoTrainersBattle(u8 trainerObjEventId, const u8 *trainerScript);

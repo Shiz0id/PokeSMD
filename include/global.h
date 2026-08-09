@@ -10,6 +10,7 @@
 #include "siirtc.h"
 #include "fpmath.h"
 #include "metaprogram.h"
+#include "constants/unbound_start_menu.h"
 #include "constants/global.h"
 #include "constants/flags.h"
 #include "constants/vars.h"
@@ -48,6 +49,12 @@
 #define INCBIN_U16  INCBIN
 #define INCBIN_U32  INCBIN
 #define INCBIN_COMP INCBIN
+// Signed forms, for the game corner's pinball angle and delta tables. These
+// names must also be known to tools/preproc/c_file.cpp -- the macro alone
+// expands to the {0} fallback above and the table silently becomes one zero.
+#define INCBIN_S8   INCBIN
+#define INCBIN_S16  INCBIN
+#define INCBIN_S32  INCBIN
 #define INCGFX(...) {0}
 #define INCGFX_U8   INCGFX
 #define INCGFX_U16  INCGFX
@@ -253,6 +260,11 @@ struct NPCFollower
 #include "constants/items.h"
 #define ITEM_FLAGS_COUNT ((ITEMS_COUNT / 8) + ((ITEMS_COUNT % 8) ? 1 : 0))
 
+struct PACKED Usm_SavedItems {
+    u8 items[USM_ICO_COUNT];
+    u8 count;
+};
+
 struct SaveBlock3
 {
 #if OW_USE_FAKE_RTC
@@ -271,6 +283,7 @@ struct SaveBlock3
 #if APRICORN_TREE_COUNT > 0
     u8 apricornTrees[NUM_APRICORN_TREE_BYTES];
 #endif
+    struct Usm_SavedItems usmSaved;
 }; /* max size 1624 bytes */
 
 extern struct SaveBlock3 *gSaveBlock3Ptr;
@@ -601,8 +614,10 @@ struct SaveBlock2
              u16 optionsBattleStyle:1; // OPTIONS_BATTLE_STYLE_[SHIFT/SET]
              u16 optionsBattleSceneOff:1; // whether battle animations are disabled
              u16 regionMapZoom:1; // whether the map is zoomed in
-             //u16 padding1:4;
-             //u16 padding2;
+             u16 battleMode:2;
+             u16 optionsBattleSpeed:2;       // Battle speed setting (0-3 for 1x/2x/3x/4x)
+             u16 optionsAutoRun:1;           // Autorun setting (TRUE = automatically run)
+             //u16 padding1:1;
     /*0x18*/ struct Pokedex pokedex;
     /*0x90*/ u8 filler_90[0x8];
     /*0x98*/ struct Time localTimeOffset;
@@ -676,6 +691,11 @@ struct ItemSlot
 {
     enum Item itemId;
     u16 quantity;
+};
+
+struct RegisteredItemSlot
+{
+    u16 itemId;
 };
 
 struct Pokeblock
@@ -1111,7 +1131,7 @@ struct SaveBlock1
     /*0x238*/ struct Pokemon playerParty[PARTY_SIZE];
     /*0x490*/ u32 money;
     /*0x494*/ u16 coins;
-    /*0x496*/ u16 registeredItem; // registered for use with SELECT button
+    /*0x496*/ u16 registeredItemSelect; // registered for use with SELECT button
     /*0x498*/ struct ItemSlot pcItems[PC_ITEMS_COUNT];
     /*0x560 -> 0x848 is bag storage*/
     /*0x560*/ struct Bag bag;
@@ -1209,6 +1229,12 @@ struct SaveBlock1
     u8 rivalName[PLAYER_NAME_LENGTH + 1];
     struct DaycareMon route5DayCareMon;
 #endif
+    // Not a conflict in substance: both sides appended to the end of
+    // SaveBlock1. The FRLG fields arrived with 1.16.4, which their base
+    // predates.
+    u8 registeredItemLastSelected:4; //max 16 items
+    u8 registeredItemListCount:4;
+    struct RegisteredItemSlot registeredItems[REGISTERED_ITEMS_MAX];
     // sizeof: 0x3???
 };
 

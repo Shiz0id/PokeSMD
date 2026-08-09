@@ -872,6 +872,12 @@ u8 GetTrainerEncounterMusicId(u16 trainerOpponentId);
 u16 ModifyStatByNature(u8 nature, u16 stat, enum Stat statIndex);
 void AdjustFriendship(struct Pokemon *mon, u8 event);
 s32 CalculateFriendshipBonuses(struct Pokemon *mon, s32 modifier, enum HoldEffect itemHoldEffect);
+// Kept declared and compiled, unlike upstream, which comments out both the
+// prototype and the whole definition. The EV allocator's design point is that
+// EVs are not earned from battle, and commenting out the two CALL SITES gets
+// that -- see battle_script_commands.c. Leaving the function intact keeps a
+// prototype that matches our 1.16.4 signature (enum Species, not u16) and makes
+// it one line to put back behind a config constant.
 void MonGainEVs(struct Pokemon *mon, enum Species defeatedSpecies);
 u16 GetMonEVCount(struct Pokemon *mon);
 bool8 TryIncrementMonLevel(struct Pokemon *mon);

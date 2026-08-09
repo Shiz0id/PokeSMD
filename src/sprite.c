@@ -89,6 +89,7 @@ static void ApplyAffineAnimFrame(u8 matrixNum, struct AffineAnimFrameCmd *frameC
 static void AllocSpriteTileRange(u16 tag, u16 start, u16 count);
 static void DoLoadSpritePalette(const u16 *src, u16 paletteOffset);
 static void UpdateSpriteMatrixAnchorPos(struct Sprite *, s32, s32);
+static bool8 AddObjWinMaskToOamBuffer(struct Sprite *sprite, u8 *oamIndex);
 
 typedef void (*AnimFunc)(struct Sprite *);
 typedef void (*AnimCmdFunc)(struct Sprite *);
@@ -1749,11 +1750,32 @@ bool8 AddSpriteToOamBuffer(struct Sprite *sprite, u8 *oamIndex)
     {
         gMain.oamBuffer[*oamIndex] = sprite->oam;
         (*oamIndex)++;
+        // Strict superset of the previous `return FALSE`: objWinMask is zero on
+        // every sprite that does not opt in, so this is unchanged for all of
+        // them. The USM start menu uses it to punch an OBJ-window mask.
+        if (sprite->objWinMask)
+            return AddObjWinMaskToOamBuffer(sprite, oamIndex);
         return FALSE;
     }
     else
     {
         return AddSubspritesToOamBuffer(sprite, &gMain.oamBuffer[*oamIndex], oamIndex);
+    }
+}
+
+static bool8 AddObjWinMaskToOamBuffer(struct Sprite *sprite, u8 *oamIndex)
+{
+    if (*oamIndex >= gOamLimit)
+    {
+        return 1;
+    }
+
+    else
+    {
+        struct OamData oam = sprite->oam;
+        oam.objMode = ST_OAM_OBJ_WINDOW;
+        gMain.oamBuffer[(*oamIndex)++] = oam;
+        return 0;
     }
 }
 

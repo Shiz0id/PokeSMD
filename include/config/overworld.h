@@ -64,7 +64,7 @@
 #define OW_FOLLOWERS_WEATHER_FORMS     FALSE      // If TRUE, Castform and Cherrim gain FORM_CHANGE_OVERWORLD_WEATHER, which will make them transform in the overworld based on the weather.
 #define OW_FOLLOWERS_COPY_WILD_PKMN    FALSE      // If TRUE, follower Pokémon that know Transform or have Illusion/Imposter will copy wild Pokémon at random.
 #define OW_BATTLE_ONLY_FORMS           TRUE       // If TRUE, loads overworld sprites for battle-only forms like Mega Evos. Requires OW_POKEMON_OBJECT_EVENTS.
-#define B_FLAG_FOLLOWERS_DISABLED      0          // Enables / Disables followers by using a flag. Helpful to disable followers for a period of time.
+#define B_FLAG_FOLLOWERS_DISABLED      FLAG_POKEMON_FOLLOWERS          // Enables / Disables followers by using a flag. Helpful to disable followers for a period of time.
 #define OW_FOLLOWERS_SCRIPT_MOVEMENT   TRUE       // If TRUE, follower Pokémon only go back to their Poké Ball if a non-player collides with them by setting the FLAG_SAFE_FOLLOWER_MOVEMENT flag by default.
 // Follower Pokémon Restrictions
 // If set, the only Pokémon allowed to follow you will be those matching species, met location, and/or met level; These accept vars, too: VAR_TEMP_1, etc
@@ -157,5 +157,20 @@
 
 // Configuration
 #define OW_AMBIENT_CRIES                OW_AMBIENT_CRIES_VANILLA // Selects how ambient cries are played, if at all. As in vanilla, no matter what is chosen, cries will not play if the player is not on a map with Land or Water encounter tables.
+
+// Variable Rod. One rod item that fishes with a chosen technique instead of
+// three separate rods; the technique is picked from the item's context menu in
+// the bag and the last choice is remembered here, so a rod registered to SELECT
+// keeps fishing the way it last did.
+//
+// These are the upstream names and upstream reads them directly. They resolve
+// to this project's own ids rather than to raw numbers so that there is exactly
+// one place claiming them - see constants/rogue_dungeon.h, which also explains
+// why "unused" in vars.h is not evidence that an id is free. Set any of the
+// three back to 0 to disable that much of the feature; 0 on the var disables
+// the rod entirely and it answers "can't use that".
+#define OW_VAR_VARIABLE_ROD_USE_TECHNIQUE       VAR_ROGUE_ROD_TECHNIQUE
+#define OW_FLAG_VARIABLE_ROD_GOOD_TECHNIQUE     FLAG_ROGUE_ROD_GOOD_TECHNIQUE
+#define OW_FLAG_VARIABLE_ROD_SUPER_TECHNIQUE    FLAG_ROGUE_ROD_SUPER_TECHNIQUE
 
 #endif // GUARD_CONFIG_OVERWORLD_H

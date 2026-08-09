@@ -26,6 +26,23 @@ RogueDungeonFloor_EventScript_ChooseStarters::
 	@ balls, so without this the whole hidden half of the floor is unreachable
 	@ and the player has no way to know it is there.
 	additem ITEM_DOWSING_MACHINE, 1
+	@ Also a tool rather than a prize, and for the same reason. A run grants no
+	@ field moves, so the Safari Zone's water surface -- sixteen generated,
+	@ check-guarded species -- was reachable only on a Mudkip run. Nothing else
+	@ in a run responds to it: the ocean floor is already water, the seafloor is
+	@ a property of the map, and the jungle's water is MB_PUDDLE on purpose.
+	additem ITEM_ROGUE_SURF_TOOL, 1
+	@ The third tool, and the one that makes the fishing minigame reachable at
+	@ all: no map in a run grants a rod, so without this the whole feature is
+	@ dead code. It works on the two water themes and on the Safari's ponds --
+	@ see RogueDungeon_GetWildMonInfo, which folds fishing into the water branch.
+	@
+	@ ONE ROD FOR THE WHOLE RUN. It starts on the Old technique and gains the
+	@ Good and Super ones by depth -- see ApplyRunConfig, which sets the two
+	@ flags, and DUNGEON_ROD_GOOD_DUNGEON for where. So this stays a single
+	@ unconditional grant even though the rod is a progression: what improves is
+	@ the technique, not the item.
+	additem ITEM_ROGUE_VARIABLE_ROD, 1
 	setvar VAR_ROGUE_RUN_STATE, ROGUE_RUN_ACTIVE
 	releaseall
 	end
