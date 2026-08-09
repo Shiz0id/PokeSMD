@@ -187,6 +187,18 @@ extern const u8 gText_SaveError[];
 extern const u8 gText_SavingDontTurnOffPower[];
 extern const u8 gText_SavingPlayer[];
 extern const u8 gText_SavingRuns[];
+
+// Game corner prize counters
+extern const u8 gText_RareCandy[];
+extern const u8 gText_WStone[];
+extern const u8 gText_FStone[];
+extern const u8 gText_LStone[];
+extern const u8 gText_TStone[];
+extern const u8 gText_MStone[];
+extern const u8 gText_SStone[];
+extern const u8 gText_ChoiceB[];
+extern const u8 gText_BrightP[];
+
 extern const u8 gText_SavingPokedex[];
 extern const u8 gText_SavingTime[];
 

@@ -1017,6 +1017,18 @@ const u8 gText_SamePkmnInPartyAlready[] = _("Same {PKMN} in party already.");
 const u8 gText_DecimalPoint[] = _(".");
 const u8 gText_SavingPlayer[] = _("PLAYER");
 const u8 gText_SavingRuns[] = _("CLEARED");
+
+// Game corner prize counters. CLEAR_TO 0x48 lines the price column up.
+const u8 gText_RareCandy[] = _("RARE CANDY{CLEAR_TO 0x48}4,000 COINS");
+const u8 gText_WStone[] = _("WATER STONE{CLEAR_TO 0x48}2,000 COINS");
+const u8 gText_FStone[] = _("FIRE STONE{CLEAR_TO 0x48}2,000 COINS");
+const u8 gText_LStone[] = _("LEAF STONE{CLEAR_TO 0x48}2,000 COINS");
+const u8 gText_TStone[] = _("THUNDERSTONE{CLEAR_TO 0x48}2,000 COINS");
+const u8 gText_MStone[] = _("MOON STONE{CLEAR_TO 0x48}2,000 COINS");
+const u8 gText_SStone[] = _("SUN STONE{CLEAR_TO 0x48}2,000 COINS");
+const u8 gText_ChoiceB[] = _("CHOICE BAND{CLEAR_TO 0x48}4,500 COINS");
+const u8 gText_BrightP[] = _("BRIGHTPOWDER{CLEAR_TO 0x48}4,500 COINS");
+
 const u8 gText_SavingPokedex[] = _("POKéDEX");
 const u8 gText_SavingTime[] = _("TIME");
 const u8 gText_WirelessCommStatus[] = _("Wireless Communication Status");

@@ -1122,6 +1122,27 @@ static const struct MenuAction sMultichoiceList_HOF_Eggs_Victories_Quit[] = {
     {gText_ShopQuit}
 };
 
+// The game corner's two extra prize counters. Our own prize clerk sells the ten
+// evolution stones and sits on the third counter; these are upstream's.
+static const struct MenuAction sMultichoiceList_GameCornerNew[] =
+{
+    {gText_RareCandy},
+    {gText_SStone},
+    {gText_MStone},
+    {gText_ChoiceB},
+    {gText_BrightP},
+    {gText_Exit},
+};
+
+static const struct MenuAction sMultichoiceList_GameCornerNew2[] =
+{
+    {gText_FStone},
+    {gText_TStone},
+    {gText_WStone},
+    {gText_LStone},
+    {gText_Exit},
+};
+
 static const struct MenuAction MultichoiceList_Exit[] =
 {
     {gText_Exit},
@@ -1294,6 +1315,8 @@ static const struct MultichoiceListStruct sMultichoiceLists[] =
     [MULTI_HOF_VICTORIES_QUIT]                         = MULTICHOICE(sMultichoiceList_HOF_Victories_Quit),
     [MULTI_EGGS_VICTORIES_QUIT]                        = MULTICHOICE(sMultichoiceList_Eggs_Victories_Quit),
     [MULTI_HOF_EGGS_VICTORIES_QUIT]                    = MULTICHOICE(sMultichoiceList_HOF_Eggs_Victories_Quit),
+    [MULTI_GAMECORNER_NEW]                             = MULTICHOICE(sMultichoiceList_GameCornerNew),
+    [MULTI_GAMECORNER_NEW2]                            = MULTICHOICE(sMultichoiceList_GameCornerNew2),
 };
 
 const u8 *const gStdStrings[] =
