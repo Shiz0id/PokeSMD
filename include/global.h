@@ -10,6 +10,7 @@
 #include "siirtc.h"
 #include "fpmath.h"
 #include "metaprogram.h"
+#include "constants/unbound_start_menu.h"
 #include "constants/global.h"
 #include "constants/flags.h"
 #include "constants/vars.h"
@@ -259,6 +260,11 @@ struct NPCFollower
 #include "constants/items.h"
 #define ITEM_FLAGS_COUNT ((ITEMS_COUNT / 8) + ((ITEMS_COUNT % 8) ? 1 : 0))
 
+struct PACKED Usm_SavedItems {
+    u8 items[USM_ICO_COUNT];
+    u8 count;
+};
+
 struct SaveBlock3
 {
 #if OW_USE_FAKE_RTC
@@ -277,6 +283,7 @@ struct SaveBlock3
 #if APRICORN_TREE_COUNT > 0
     u8 apricornTrees[NUM_APRICORN_TREE_BYTES];
 #endif
+    struct Usm_SavedItems usmSaved;
 }; /* max size 1624 bytes */
 
 extern struct SaveBlock3 *gSaveBlock3Ptr;

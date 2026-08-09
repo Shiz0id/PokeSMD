@@ -43,6 +43,7 @@
 #include "trainer_hill.h"
 #include "fldeff.h"
 #include "battle.h"
+#include "unbound_start_menu.h"
 
 static void Task_ExitNonAnimDoor(u8);
 static void Task_ExitNonDoor(u8);
