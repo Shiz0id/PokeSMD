@@ -659,3 +659,4 @@ gSpecials::
 	def_special StartFlappyBird
 	def_special StartSnake
 	def_special StartBlockStacker
+	def_special StartBlackJack

@@ -373,7 +373,16 @@ Movement_Bouncer_Leave:
 
 RogueRestStopGames_EventScript_Blackjack::
 	lockall
-	msgbox RogueRestStopGames_Text_CabinetOffline, MSGBOX_DEFAULT
+	checkitem ITEM_COIN_CASE
+	goto_if_eq VAR_RESULT, FALSE, RogueRestStopGames_EventScript_NoCoinCase
+	msgbox RogueRestStopGames_Text_BlackJack, MSGBOX_YESNO
+	closemessage
+	goto_if_eq VAR_RESULT, NO, RogueRestStopGames_CancelBJ
+	playbgm MUS_GAME_CORNER, FALSE
+	special StartBlackJack
+	waitstate
+	savebgm MUS_DUMMY
+	fadedefaultbgm
 	releaseall
 	end
 

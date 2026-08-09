@@ -235,6 +235,53 @@ individually, and most of them will be nothing.** Three of the first four games
 had a real defect; this one did not, and the way to tell them apart was to look
 at each one rather than to trust or dismiss the category.
 
+### Blackjack — DONE, and it broke the pattern in four ways
+
+The first game that was not just the recipe. Everything new here is likely to
+recur in gacha, derby, pinball and pachinko, so it is all worth knowing up
+front.
+
+**1. It needs strings, and upstream puts them in `src/strings.c`.** Eight of
+them. They are now `static const u8 sText_*` inside `game_corner_blackjack.c`,
+because nothing outside the game reads them and `strings.c` is an engine file
+this port otherwise never touches. Do the same for any game that follows.
+
+**Their two bet lines read `"¥{STR_VAR_1}"` and the unit is wrong.** The glyph
+is in our charmap at `B7` so it would have built — but the game is
+`GetCoins`/`AddCoins`/`RemoveCoins`/`SetCoins` throughout and never touches
+money, so it is betting Game Corner coins with a money symbol in front of them.
+Changed to `"{STR_VAR_1} coins"`.
+
+**2. `EWRAM_DATA` cannot carry a non-zero initialiser.** It is
+`section(".sbss")`, so upstream's `static EWRAM_DATA u8 sTextWindowId = 1;` is a
+hard error here — *only zero initializers are allowed*. Set it in
+`InitBJScreen` instead, which is better than the initialiser was: a load-time
+value only held until the first `ShowMessage` overwrote it, so a second session
+inherited the previous one's window id.
+
+**3. `port_sprite_sheets.py` does not catch every site.** Blackjack selects one
+of 52 card sheets through a `const struct CompressedSpriteSheet *` and then
+writes `sheet->data`, where the script's pattern expects `name.data`. It
+rewrote 10 of 11 and the eleventh was left for the build to catch — which it
+did, loudly. **That is the right failure mode**, but do check the compiler
+output rather than the script's count.
+
+**4. It leaks window buffers as well as a BG tilemap.** `InitBJScreen` calls
+`InitWindows(sBJWinTemplates)` — two templates at 30x2 and 14x4 tiles, ~3.7 KB —
+and nothing ever frees them, plus whatever `ShowMessage`'s `AddWindow` left
+outstanding. `FreeAllWindowBuffers()` in `ExitBJ` fixes it.
+
+Checked across all five ported games: **Voltorb Flip is balanced**
+(`InitWindows` + `FreeAllWindowBuffers`), blackjack was not, and Flappy Bird,
+Snake and Block Stacker use no windows at all. Grep each remaining game for
+`InitWindows` and pair it.
+
+Its header was also carrying six declarations the game does not use, three of
+them `static`, and one — `void ResetAllPicSprites(void)` — contradicting the
+real `bool16 ResetAllPicSprites(void)` in `trainer_pokemon_sprites.h`. It only
+escaped being a conflicting declaration because nothing included both. Trimmed
+to `StartBlackJack`.
+
 ---
 
 ## Order of work, and the number to watch
@@ -247,7 +294,7 @@ Games are ported ascending by size so the cheap ones prove the pattern first:
 | `flappybird.c` | 1,914 | **ported, not yet played** |
 | `snake.c` | 2,386 | **ported, not yet played** |
 | `block_stacker.c` | 2,507 | **ported, not yet played** |
-| `game_corner_blackjack.c` | 3,403 | |
+| `game_corner_blackjack.c` | 3,403 | **ported, not yet played** |
 | `game_corner_gacha.c` | 4,418 | |
 | `pinball.c` | 5,179 | |
 | `derby.c` | 5,714 | |
@@ -257,10 +304,10 @@ Games are ported ascending by size so the cheap ones prove the pattern first:
 port, and after each game:
 
 ```
-                 start   + VFlip   + Flappy   + Snake   + Stacker
-EWRAM / 262,144  227,688  227,700   227,704   227,708    227,712  (+4 B)
-IWRAM /  32,768   28,392   28,392    28,392    28,392     28,392  (+0)
-ROM               84.59%   84.69%    84.74%    84.78%     84.84%  (+~22 KB)
+                 start   + VFlip   + Flappy   + Snake   + Stacker   + BJack
+EWRAM / 262,144  227,688  227,700   227,704   227,708    227,712    227,720  (+8 B)
+IWRAM /  32,768   28,392   28,392    28,392    28,392     28,392     28,392  (+0)
+ROM               84.59%   84.69%    84.74%    84.78%     84.84%     85.00%  (+~52 KB)
 ```
 
 **Four games in, IWRAM has not moved once**, and EWRAM has cost 24 bytes in
