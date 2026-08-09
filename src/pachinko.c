@@ -5340,6 +5340,10 @@ static void ExitPinballGame(u8 taskId)
 
         SetMainCallback2(sPinballGame->returnMainCallback);
         GameCorner_FreeBgTilemapBuffers();
+        // Pairs with the InitWindows in the setup path. Pinball, blackjack,
+        // derby and gacha all had this and pachinko did not, so it leaked its
+        // window buffers every session.
+        FreeAllWindowBuffers();
         FREE_AND_SET_NULL(sPinballGame);
 		FREE_AND_SET_NULL(sScore);
     }
