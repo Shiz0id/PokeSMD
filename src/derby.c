@@ -3798,10 +3798,17 @@ static void StartExitDerby(void)
     sDerby->state = DERBY_STATE_EXIT;
 }
 
-static void ExitDerby(void)
+static void ExitDerby(u8 taskId)
 {
     if (!gPaletteFade.active)
     {
+        // The main loop is a task, and the overworld runs tasks too -- so
+        // leaving it alive does not stop it, it hands it to the field with
+        // sDerby NULL. It then reads its state byte off address 0 and acts on
+        // whatever comes back, every frame. Voltorb Flip is the only one of
+        // the nine upstream destroys its main task in, and the only one
+        // anyone had played.
+        DestroyTask(taskId);
         SetMainCallback2(CB2_ReturnToFieldContinueScriptPlayMapMusic);
         GameCorner_FreeBgTilemapBuffers();
         // InitWindows(sDerbyWinTemplates) with nothing freeing it, as in
@@ -5185,7 +5192,7 @@ static void DerbyMain(u8 taskId)
         StartExitDerby();
         break;
     case DERBY_STATE_EXIT:
-        ExitDerby();
+        ExitDerby(taskId);
         break;
     }
 }
