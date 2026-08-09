@@ -26,6 +26,7 @@ tools/rogue/gen_safari_pool.py --write.
 """
 import re
 import sys
+from math import gcd
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -143,7 +144,27 @@ def main(argv):
             print(f'  sorted weakest to strongest, BST '
                   f'{bst[0]}-{bst[-1]}')
 
-        # 4. duplicates
+        # 4. the rotation stride reaches every rung
+        #
+        # RogueDungeon_GetWildMonInfo advances the rotation by `slots` so
+        # consecutive tables share nothing. That only walks the whole window if
+        # the stride is coprime with the width - otherwise the rotation cycles
+        # through width/gcd values and the rest of the ladder is dealt to
+        # NOBODY, forever, with no symptom but a samey area. 47 happens to be
+        # prime, which makes land safe by luck rather than by design, so this
+        # is checked rather than assumed.
+        g = gcd(slots, widths[0])
+        if g != 1:
+            failures.append(
+                f'{label}: stride {slots} and width {widths[0]} share a factor '
+                f'of {g}, so the rotation only ever takes '
+                f'{widths[0] // g} of {widths[0]} values and '
+                f'{widths[0] - widths[0] // g} rung(s) never reach a slot')
+        else:
+            print(f'  stride {slots} coprime with width {widths[0]}, so the '
+                  f'rotation visits all {widths[0]} values')
+
+        # 5. duplicates
         dupes = {s for s in ladder if ladder.count(s) > 1}
         if dupes:
             failures.append(f'{label}: duplicate rung(s) {sorted(dupes)}')
