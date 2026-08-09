@@ -88,32 +88,87 @@ pachinko is clearly a copy of pinball: every shared name (`PlayPinballGame`,
 `InitMeowth`, `InitDiglett`, `InitSeel`, …) is `static`. Only the five entry
 points above are external, and they are distinct.
 
+### Voltorb Flip — DONE, and the API drift was tiny
+
+The whole port compiled after **three** substitutions. That is the useful
+finding: a game is 1,300 lines of self-contained task code that touches the
+engine in very few places, so the hand-port is much cheaper than the 497-file
+diff suggests.
+
+| upstream | here | why |
+|---|---|---|
+| `gDecompressionBuffer` | `LoadCompressedSpriteSheet(&sheet)` | The expansion **deleted** that 16 KB global scratch buffer; `item_menu_icons.h` records the removal. Both call sites were the decompress-into-scratch-then-`LoadSpriteSheet` idiom on a `struct CompressedSpriteSheet`, which is exactly what `LoadCompressedSpriteSheet` does — so this is shorter than what it replaced, not a workaround. |
+| `LZDecompressWram` | `DecompressDataWithHeaderWram` | Renamed. It dispatches on the mode nibble, so it still reads the LZ77 `.lz` that `gbagfx` produces. |
+| `VAR_FLIP_LEVEL`, `VAR_FLIP_WINNINGS` | `VAR_GC_FLIP_LEVEL` (`0x4091`), `VAR_GC_FLIP_WINNINGS` (`0x409B`) | The rehousing above. These are the two that sat on `VAR_ROGUE_DUNGEON_SEED` and `VAR_ROGUE_DUNGEON_FLOOR`. |
+
+**`Special_ViewVoltorbFlip` lives in `src/rogue_voltorbflip.c`, not
+`src/field_specials.c` where upstream puts it.** It is four lines and it is the
+only thing the game exports besides `CB2_ShowVoltorbFlip`, so keeping it beside
+the game holds the engine-side diff to a single appended line in
+`data/specials.inc`. Do the same for the other eight.
+
+#### An upstream bug that the rename exposed
+
+```c
+VarSet(VAR_FLIP_LEVEL, VAR_FLIP_LEVEL + 1);   // upstream
+```
+
+That writes the **var id plus one** — the constant `0x4092` — not the level plus
+one. `ResetVoltorbFlipCards` takes a `u8`, so 16530 truncates to 146, and
+`min(146, MAX_VOLTORB_FLIP_LEVEL) - 1` pins it at row 7, the hardest board.
+
+So upstream's difficulty ladder does not exist: **win the first round and every
+round afterwards is level 8.** It builds, it runs, and it reads in play as "this
+game is brutal" rather than as a defect. Fixed to `VarGet(VAR_GC_FLIP_LEVEL) + 1`.
+
+**This exact pattern does not recur** — `VarSet(VAR_x, VAR_y…)` was grepped
+across all eight remaining games and comes back clean, so no one needs to look
+for it again.
+
+The general lesson does carry, though: this is code that was never finished
+against a working build, because the author was fighting the RAM and audio
+layout machinery described above. *The parts that compile have not necessarily
+run.* Read what each game does with its vars, and play it.
+
 ---
 
 ## Order of work, and the number to watch
 
 Games are ported ascending by size so the cheap ones prove the pattern first:
 
-| | lines |
-|---|---|
-| `rogue_voltorbflip.c` | 1,371 |
-| `flappybird.c` | 1,914 |
-| `snake.c` | 2,386 |
-| `block_stacker.c` | 2,507 |
-| `game_corner_blackjack.c` | 3,403 |
-| `game_corner_gacha.c` | 4,418 |
-| `pinball.c` | 5,179 |
-| `derby.c` | 5,714 |
-| `pachinko.c` | 6,868 |
+| | lines | state |
+|---|---|---|
+| `rogue_voltorbflip.c` | 1,371 | **ported, and confirmed in play** |
+| `flappybird.c` | 1,914 | |
+| `snake.c` | 2,386 | |
+| `block_stacker.c` | 2,507 | |
+| `game_corner_blackjack.c` | 3,403 | |
+| `game_corner_gacha.c` | 4,418 | |
+| `pinball.c` | 5,179 | |
+| `derby.c` | 5,714 | |
+| `pachinko.c` | 6,868 | |
 
 **Read the linker line after every single one.** Budget at the start of the
-port:
+port, and after each game:
 
 ```
-EWRAM  227,688 / 262,144   (~34 KB free)
-IWRAM   28,392 /  32,768   (~4.3 KB free)   <- expected to bind first
-ROM      84.59%            (~4.9 MB free)
+                    at start      + Voltorb Flip
+EWRAM  / 262,144     227,688         227,700   (+12 B)
+IWRAM  /  32,768      28,392          28,392   (+0)
+ROM                   84.59%          84.69%   (+~33 KB)
 ```
+
+**Voltorb Flip cost 12 bytes of EWRAM and nothing at all in IWRAM**, which is
+the number that mattered — same shape as the mining minigame, and for the same
+reason. The twelve bytes are three `EWRAM_DATA` *pointers*; the board state, the
+tilemap and the winnings struct are all `Alloc`ed on the heap and all three are
+released and NULLed in `Task_VoltorbFlipFadeOut`. So the per-game cost to watch
+is heap occupancy at runtime, not the linker line — and `Utilities → Heap usage`
+already reports that.
+
+If the remaining eight land at this scale, the whole port is affordable. Do not
+assume they will: this is the smallest of the nine, and pinball and pachinko
+carry physics state.
 
 IWRAM is the constraint, as it is for everything in this build. **Mark every
 new static `EWRAM_DATA`** — a plain static lands in IWRAM, which is where the

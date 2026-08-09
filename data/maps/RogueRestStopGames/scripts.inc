@@ -463,7 +463,25 @@ RogueRestStopGames_EventScript_PinballGengar::
 
 RogueRestStopGames_EventScript_VoltorbFlip::
 	lockall
-	msgbox RogueRestStopGames_Text_CabinetOffline, MSGBOX_DEFAULT
+	checkitem ITEM_COIN_CASE
+	goto_if_eq VAR_RESULT, FALSE, RogueRestStopGames_EventScript_NoCoinCase
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, 50, VF_Not_Enough
+	showcoinsbox 1, 1
+	msgbox RogueRestStopGames_Text_VF, MSGBOX_YESNO
+	closemessage
+	goto_if_eq VAR_RESULT, NO, RogueRestStopGames_CancelVF
+	removecoins 50
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	delay 40
+	hidecoinsbox 0, 5
+	playbgm MUS_RG_OAK, FALSE
+	setvar VAR_GC_FLIP_WINNINGS, 0
+	special Special_ViewVoltorbFlip
+	waitstate
+	goto_if_eq VAR_RESULT, 0, VF_Come_Again
+	goto_if_eq VAR_RESULT, 1, VF_Go_On
 	releaseall
 	end
 
@@ -484,8 +502,11 @@ VF_Go_On::
 	goto VF_Loop
 	
 VF_Loop::
-	lockall
-	msgbox RogueRestStopGames_Text_CabinetOffline, MSGBOX_DEFAULT
+	hidecoinsbox 0, 5
+	special Special_ViewVoltorbFlip
+	waitstate
+	goto_if_eq VAR_RESULT, 0, VF_Come_Again
+	goto_if_eq VAR_RESULT, 1, VF_Go_On
 	releaseall
 	end
 
