@@ -658,3 +658,4 @@ gSpecials::
 	def_special Special_ViewVoltorbFlip
 	def_special StartFlappyBird
 	def_special StartSnake
+	def_special StartBlockStacker

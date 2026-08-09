@@ -217,6 +217,24 @@ Left alone deliberately: `snake.c` declares a `static DerbyVBlankCallback` it
 never defines, and carries an unused `CreateBody` and `HandleInput`. Copy-paste
 leftovers from `derby.c`, harmless, and not worth widening the diff over.
 
+### Block Stacker — DONE, and the first one with nothing wrong in it
+
+Entirely mechanical: 26 sprite sheet sites, one BG tilemap buffer, the two var
+renames, the header's `static` forward declaration dropped. No defect found.
+
+One thing was worth *checking* rather than assuming. The compiler reports a
+`Lives` local set and never read in four `CheckLevel_N` functions, which in a
+game with a lives counter looks exactly like a broken lives system. It is not:
+the live state is `sBlockStacker->BlocksLeft` and `->LastLives`, and both are
+maintained. `Lives` is dead scratch, alongside the `curX2`/`curX3`/`preX2`/
+`preX3` that each `CheckLevel_N` declares because they were copied from the one
+row that needed three. Harmless, and left alone.
+
+Record that as the shape of the remaining work: **the warnings are worth reading
+individually, and most of them will be nothing.** Three of the first four games
+had a real defect; this one did not, and the way to tell them apart was to look
+at each one rather than to trust or dismiss the category.
+
 ---
 
 ## Order of work, and the number to watch
@@ -228,7 +246,7 @@ Games are ported ascending by size so the cheap ones prove the pattern first:
 | `rogue_voltorbflip.c` | 1,371 | **ported, and confirmed in play** |
 | `flappybird.c` | 1,914 | **ported, not yet played** |
 | `snake.c` | 2,386 | **ported, not yet played** |
-| `block_stacker.c` | 2,507 | |
+| `block_stacker.c` | 2,507 | **ported, not yet played** |
 | `game_corner_blackjack.c` | 3,403 | |
 | `game_corner_gacha.c` | 4,418 | |
 | `pinball.c` | 5,179 | |
@@ -239,11 +257,21 @@ Games are ported ascending by size so the cheap ones prove the pattern first:
 port, and after each game:
 
 ```
-                  at start   + Voltorb Flip   + Flappy Bird   + Snake
-EWRAM / 262,144    227,688       227,700         227,704      227,708  (+4 B)
-IWRAM /  32,768     28,392        28,392          28,392       28,392  (+0)
-ROM                 84.59%        84.69%          84.74%       84.78%  (+~13 KB)
+                 start   + VFlip   + Flappy   + Snake   + Stacker
+EWRAM / 262,144  227,688  227,700   227,704   227,708    227,712  (+4 B)
+IWRAM /  32,768   28,392   28,392    28,392    28,392     28,392  (+0)
+ROM               84.59%   84.69%    84.74%    84.78%     84.84%  (+~22 KB)
 ```
+
+**Four games in, IWRAM has not moved once**, and EWRAM has cost 24 bytes in
+total — six per game, which is the state pointer and a stray unused
+`sTextWindowId` each carries. The doc's original expectation that IWRAM would
+bind first has not survived contact: every game puts its state on the heap. ROM
+is the only figure actually moving, at 13–33 KB a game, and there are ~4.8 MB
+of it free.
+
+**So watch the heap, not the linker.** `Utilities → Heap usage` is the
+instrument; the linker line will keep saying nothing is happening.
 
 **Voltorb Flip cost 12 bytes of EWRAM and nothing at all in IWRAM**, which is
 the number that mattered — same shape as the mining minigame, and for the same
