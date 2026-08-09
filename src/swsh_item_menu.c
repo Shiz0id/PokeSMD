@@ -45,6 +45,8 @@
 #include "sprite.h"
 #include "strings.h"
 #include "string_util.h"
+#include "craft_menu.h"
+#include "craft_logic.h"
 #include "task.h"
 #include "text_window.h"
 #include "menu_helpers.h"
@@ -283,6 +285,9 @@ static void BagMenu_RemoveWindow(u8);
 static void PrintThereIsNoPokemon(u8);
 static void InitTossHowManyInput(u8);
 static void Task_ChooseHowManyToToss(u8);
+static void Task_ItemContext_Craft(u8);
+static void Task_ChooseHowManyToCraft(u8);
+static void FinishCraftSelection(u8);
 static void AskTossItems(u8);
 static void AskTossItemsYesNo(u8);
 static void TossItem(u8);
@@ -754,6 +759,7 @@ static const TaskFunc sContextMenuFuncs[] = {
     [ITEMMENULOCATION_WALLY] =                  NULL,
     [ITEMMENULOCATION_PCBOX] =                  Task_ItemContext_GiveToPC,
     [ITEMMENULOCATION_BERRY_TREE_MULCH] =       Task_FadeAndCloseBagMenuIfMulch,
+    [ITEMMENULOCATION_CRAFTING] =               Task_ItemContext_Craft,
 };
 
 static const struct YesNoFuncTable sYesNoTossFunctions = {ConfirmToss, CancelToss};
@@ -1585,6 +1591,32 @@ void CB2_BagMenuFromStartMenu(void)
     GoToBagMenu(ITEMMENULOCATION_FIELD, POCKETS_COUNT, CB2_ReturnToFieldWithOpenMenu);
 }
 
+// The crafting branch puts these three in item_menu.c, which is
+// #if !SWSH_ITEM_MENU and therefore does not compile. Ported here instead;
+// the copy over there is left at their version so flipping SWSH_ITEM_MENU
+// off gives a working crafting bag rather than a broken one.
+static void (*sBagPreOpenCallback)(void) = NULL;
+
+void SetBagPreOpenCallback(void (*callback)(void))
+{
+    sBagPreOpenCallback = callback;
+}
+
+void BagPreOpen_SetCursorItem(void)
+{
+    u16 listPos = GetItemListPosition(gBagPosition.pocket);
+
+    if (listPos >= gBagPockets[gBagPosition.pocket].capacity)
+        gSpecialVar_ItemId = ITEM_NONE;
+    else
+        gSpecialVar_ItemId = GetBagItemId(gBagPosition.pocket, listPos);
+}
+
+void CB2_BagMenuFromCraftMenu(void)
+{
+    GoToBagMenu(ITEMMENULOCATION_CRAFTING, POCKETS_COUNT, CB2_ReturnToCraftMenu);
+}
+
 void CB2_BagMenuFromBattle(void)
 {
     if (CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE)
@@ -1693,6 +1725,11 @@ void GoToBagMenu(u8 location, u8 pocket, MainCallback exitCallback)
         gBagMenu->hpBarWindowMapped = FALSE;
         gBagMenu->multiFullPage = 0;
 #endif
+        if (sBagPreOpenCallback != NULL)
+        {
+            sBagPreOpenCallback();
+            sBagPreOpenCallback = NULL;
+        }
         SetMainCallback2(CB2_Bag);
     }
 }
@@ -3633,6 +3670,7 @@ static void OpenContextMenu(u8 taskId)
     case ITEMMENULOCATION_BERRY_TREE:
     case ITEMMENULOCATION_ITEMPC:
     case ITEMMENULOCATION_BERRY_TREE_MULCH:
+    case ITEMMENULOCATION_CRAFTING:
     default:
         if (MenuHelpers_IsLinkActive() == TRUE || InUnionRoom() == TRUE)
         {
@@ -3973,6 +4011,71 @@ static void Task_ChooseHowManyToToss(u8 taskId)
         BagMenu_RemoveWindow(ITEMWIN_QUANTITY);
         CancelToss(taskId);
     }
+}
+
+static void Task_ItemContext_Craft(u8 taskId)
+{
+    s16 *data = gTasks[taskId].data;
+
+    if (gBagPosition.pocket == POCKET_KEY_ITEMS || gBagPosition.pocket == POCKET_TM_HM)
+    {
+        DisplayItemMessage(taskId, FONT_NORMAL, gText_CantCraftWithItem, HandleErrorMessage);
+        return;
+    }
+
+    tItemCount = 1;
+    if (tQuantity == 1)
+    {
+        FinishCraftSelection(taskId);
+    }
+    else
+    {
+        AddItemQuantityWindow();
+        gTasks[taskId].func = Task_ChooseHowManyToCraft;
+    }
+}
+
+static void Task_ChooseHowManyToCraft(u8 taskId)
+{
+    s16 *data = gTasks[taskId].data;
+
+    if (AdjustQuantityAccordingToDPadInput(&tItemCount, tQuantity) == TRUE)
+    {
+        PrintQuantity(gBagMenu->windowIds[ITEMWIN_QUANTITY], tItemCount);
+    }
+    else if (JOY_NEW(A_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        DestroyQuantityFrameSprites();
+        BagMenu_RemoveWindow(ITEMWIN_QUANTITY);
+        FinishCraftSelection(taskId);
+    }
+    else if (JOY_NEW(B_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        DestroyQuantityFrameSprites();
+        BagMenu_RemoveWindow(ITEMWIN_QUANTITY);
+        PrintItemDescription(tListPosition);
+        BagMenu_PrintCursor(tListTaskId, COLORID_NORMAL);
+        ReturnToItemList(taskId);
+    }
+}
+
+static void FinishCraftSelection(u8 taskId)
+{
+    s16 *data = gTasks[taskId].data;
+    u32 row = CRAFT_SLOT_ROW(gCraftActiveSlot);
+    u32 col = CRAFT_SLOT_COL(gCraftActiveSlot);
+
+    // Whatever was in the slot goes back to the bag before the new item
+    // takes it, or swapping a slot destroys the item that was there.
+    if (gCraftSlots[row][col].itemId != ITEM_NONE)
+        AddBagItem(gCraftSlots[row][col].itemId, gCraftSlots[row][col].quantity);
+
+    CraftLogic_SetSlot(gCraftActiveSlot, gSpecialVar_ItemId, tItemCount);
+    RemoveBagItem(gSpecialVar_ItemId, tItemCount);
+    gBagMenu->newScreenCallback = CB2_ReturnToCraftMenu;
+    Task_FadeAndCloseBagMenu(taskId);
 }
 
 static void ConfirmToss(u8 taskId)

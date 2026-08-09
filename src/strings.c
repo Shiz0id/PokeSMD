@@ -173,6 +173,7 @@ const u8 gText_TheBattle[] = _("the battle");
 const u8 gText_ThePokemonList[] = _("the POKéMON LIST");
 const u8 gText_TheShop[] = _("the shop");
 const u8 gText_ThePC[] = _("the PC");
+const u8 gText_TheCraftingTable[] = _("the crafting table");
 
 const u8 *const gBagMenu_ReturnToStrings[] =
 {
@@ -189,6 +190,7 @@ const u8 *const gBagMenu_ReturnToStrings[] =
     [ITEMMENULOCATION_WALLY]               = gText_TheBattle,
     [ITEMMENULOCATION_PCBOX]               = gText_ThePC,
     [ITEMMENULOCATION_BERRY_TREE_MULCH]    = gText_TheField,
+    [ITEMMENULOCATION_CRAFTING]            = gText_TheCraftingTable,
 };
 
 const u8 *const gPyramidBagMenu_ReturnToStrings[] =
@@ -311,6 +313,7 @@ const u8 gText_NothingToCut[] = _("There's nothing to CUT.");
 const u8 gText_CantSurfHere[] = _("You can't SURF here.");
 const u8 gText_AlreadySurfing[] = _("You're already SURFING.");
 const u8 gText_CantUseHere[] = _("Can't use that here.");
+const u8 gText_CantCraftWithItem[] = _("You can't craft with this item.");
 const u8 gText_RestoreWhichMove[] = _("Restore which move?");
 const u8 gText_BoostPP[] = _("Boost PP of which move?");
 const u8 gText_DoWhatWithItem[] = _("Do what with an item?");
@@ -1229,3 +1232,5 @@ const u8 gText_Volcanobadge[] = _("VOLCANOBADGE");
 const u8 gText_Earthbadge[] = _("EARTHBADGE");
 const u8 gText_OakImportantToGetToKnowPokemonThroughly[] = _("OAK: It's important to get to know\nyour POKéMON thoroughly.\p");
 const u8 gText_OakThisIsListOfPokemon[] = _("This is a list of your POKéMON,\n{PLAYER}.\pOpen this to check the skills\nand moves of your POKéMON.\pYou also choose POKéMON here if\nyou want to use an item on one.{PAUSE_UNTIL_PRESS}");
+
+const u8 gText_CraftingMode[] = _("CRAFTING");

@@ -1058,6 +1058,11 @@ enum __attribute__((packed)) Item
     // which is what that assert is for.
     ITEM_ROGUE_SURF_TOOL = 874,
     ITEM_ROGUE_VARIABLE_ROD = 875,
+    // Appended at 876, not taken at 855 as upstream has it. Their base is
+    // 1.14.2, where 855 was the end of the list; here it is a real item, and
+    // inserting would shift every id above it -- including the ten evolution
+    // stones the STATIC_ASSERTs in rogue_dungeon.c pin.
+    ITEM_CRAFT_BUNDLE = 876,
 
     ITEMS_COUNT,
     ITEM_FIELD_ARROW = ITEMS_COUNT,

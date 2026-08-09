@@ -1,4 +1,5 @@
 Route102_MapScripts::
+	map_script MAP_SCRIPT_ON_TRANSITION, Route102_OnTransition
 	.byte 0
 
 Route102_EventScript_LittleBoy::
@@ -12,6 +13,14 @@ Route102_EventScript_RouteSignOldale::
 Route102_EventScript_RouteSignPetalburg::
 	msgbox Route102_Text_RouteSignPetalburg, MSGBOX_SIGN
 	end
+
+Route102_OnTransition::
+	end
+
+Route102_EventScript_Boy_CraftingTutorialPos::
+	setobjectxyperm 5, 37, 4
+	setobjectmovementtype 5, MOVEMENT_TYPE_LOOK_AROUND
+	return
 
 Route102_EventScript_Boy::
 	msgbox Route102_Text_CatchWholeBunchOfPokemon, MSGBOX_NPC

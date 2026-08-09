@@ -1786,6 +1786,10 @@ extern const u32 gBagScreen_Gfx[];
 extern const u32 gBagScreen_GfxTileMap[];
 extern const u16 gBagScreenFemale_Pal[];
 extern const u16 gBagScreenMale_Pal[];
+extern const u32 gRecipeBookMenu_Gfx[];
+extern const u32 gRecipeBookMenu_Tilemap[];
+extern const u32 gRecipeBookMenuExtended_Tilemap[];
+extern const u16 gRecipeBookMenu_Pal[];
 extern const u8 gBagMenuHMIcon_Gfx[];
 
 // item menu icons graphics
@@ -2027,6 +2031,17 @@ extern const u32 gShopMenu_Gfx[];
 extern const u32 gShopMenu_Tilemap[];
 extern const u16 gShopMenu_Pal[];
 extern const u32 gShopMenuMoney_Gfx[];
+
+extern const u32 gCraftWorkbench_TopLeft_Gfx[];
+extern const u32 gCraftWorkbench_TopMid_Gfx[];
+extern const u32 gCraftWorkbench_TopRight_Gfx[];
+extern const u32 gCraftWorkbench_MidLeft_Gfx[];
+extern const u32 gCraftWorkbench_MidMid_Gfx[];
+extern const u32 gCraftWorkbench_MidRight_Gfx[];
+extern const u32 gCraftWorkbench_BotLeft_Gfx[];
+extern const u32 gCraftWorkbench_BotMid_Gfx[];
+extern const u32 gCraftWorkbench_BotRight_Gfx[];
+extern const u16 gCraftWorkbench_Pal[];
 
 extern const u32 gBattleInterface_BallStatusBarGfx[];
 extern const u8 gBattleInterface_BallDisplayGfx[];

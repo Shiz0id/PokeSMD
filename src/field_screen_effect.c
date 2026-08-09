@@ -43,6 +43,7 @@
 #include "constants/rgb.h"
 #include "trainer_hill.h"
 #include "fldeff.h"
+#include "craft_menu.h"
 #include "battle.h"
 #include "unbound_start_menu.h"
 
@@ -1748,4 +1749,9 @@ bool32 IsDirectionalStairWarpMetatileBehavior(u16 metatileBehavior, enum Directi
             return TRUE;
     }
     return FALSE;
+}
+
+void ReturnToField_OpenCraftMenu(void)
+{
+    SetMainCallback2(CB2_ReturnToField_OpenCraftMenu);
 }

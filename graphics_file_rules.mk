@@ -315,3 +315,6 @@ $(PKNAVOPTIONSGFXDIR)/options.4bpp: $(PKNAVOPTIONSGFXDIR)/hoenn_map.4bpp \
                                     $(PKNAVOPTIONSGFXDIR)/tough.4bpp \
                                     $(PKNAVOPTIONSGFXDIR)/cancel.4bpp
 	@cat $^ >$@
+
+graphics/crafting/recipe_book_menu.4bpp: %.4bpp: %.png
+	$(GFX) $< $@ -num_tiles 32 -Wnum_tiles

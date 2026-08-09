@@ -41,6 +41,8 @@
 #include "sprite.h"
 #include "strings.h"
 #include "string_util.h"
+#include "craft_menu.h"
+#include "craft_logic.h"
 #include "task.h"
 #include "text_window.h"
 #include "menu_helpers.h"
@@ -212,6 +214,9 @@ static void Task_ItemContext_GiveToParty(u8);
 static void Task_ItemContext_Sell(u8);
 static void Task_ItemContext_Deposit(u8);
 static void Task_ItemContext_GiveToPC(u8);
+static void Task_ItemContext_Craft(u8);
+static void Task_ChooseHowManyToCraft(u8);
+static void FinishCraftSelection(u8);
 static void ConfirmToss(u8);
 static void CancelToss(u8);
 static void ConfirmSell(u8);
@@ -223,6 +228,7 @@ static const u8 sText_DepositHowManyVar1[] = _("Deposit how many\n{STR_VAR_1}?")
 static const u8 sText_DepositedVar2Var1s[] = _("Deposited {STR_VAR_2}\n{STR_VAR_1}.");
 static const u8 sText_NoRoomForItems[] = _("There's no room to\nstore items.");
 static const u8 sText_CantStoreImportantItems[] = _("Important items\ncan't be stored in\nthe PC!");
+static const u8 sText_PlaceHowManyVar1[] = _("Place how many\n{STR_VAR_1}?");
 
 static void Task_LoadBagSortOptions(u8 taskId);
 static void ItemMenu_SortByName(u8 taskId);
@@ -384,6 +390,7 @@ static const TaskFunc sContextMenuFuncs[] = {
     [ITEMMENULOCATION_WALLY] =                  NULL,
     [ITEMMENULOCATION_PCBOX] =                  Task_ItemContext_GiveToPC,
     [ITEMMENULOCATION_BERRY_TREE_MULCH] =       Task_FadeAndCloseBagMenuIfMulch,
+    [ITEMMENULOCATION_CRAFTING] =               Task_ItemContext_Craft,
 };
 
 static const struct YesNoFuncTable sYesNoTossFunctions = {ConfirmToss, CancelToss};
@@ -582,6 +589,7 @@ static EWRAM_DATA struct ListBuffer1 *sListBuffer1 = 0;
 static EWRAM_DATA struct ListBuffer2 *sListBuffer2 = 0;
 EWRAM_DATA u16 gSpecialVar_ItemId = 0;
 static EWRAM_DATA struct TempWallyBag *sTempWallyBag = 0;
+static void (*sBagPreOpenCallback)(void) = NULL;
 
 void ResetBagScrollPositions(void)
 {
@@ -590,9 +598,29 @@ void ResetBagScrollPositions(void)
     memset(gBagPosition.scrollPosition, 0, sizeof(gBagPosition.scrollPosition));
 }
 
+void SetBagPreOpenCallback(void (*callback)(void))
+{
+    sBagPreOpenCallback = callback;
+}
+
+void BagPreOpen_SetCursorItem(void)
+{
+    u16 listPos = GetItemListPosition(gBagPosition.pocket);
+
+    if (listPos >= gBagPockets[gBagPosition.pocket].capacity)
+        gSpecialVar_ItemId = ITEM_NONE;
+    else
+        gSpecialVar_ItemId = GetBagItemId(gBagPosition.pocket, listPos);
+}
+
 void CB2_BagMenuFromStartMenu(void)
 {
     GoToBagMenu(ITEMMENULOCATION_FIELD, POCKETS_COUNT, CB2_ReturnToFieldWithOpenMenu);
+}
+
+void CB2_BagMenuFromCraftMenu(void)
+{
+    GoToBagMenu(ITEMMENULOCATION_CRAFTING, POCKETS_COUNT, CB2_ReturnToCraftMenu);
 }
 
 void CB2_BagMenuFromBattle(void)
@@ -676,6 +704,11 @@ void GoToBagMenu(u8 location, u8 pocket, MainCallback exitCallback)
         gBagMenu->pocketSwitchArrowsTask = TASK_NONE;
         memset(gBagMenu->spriteIds, SPRITE_NONE, sizeof(gBagMenu->spriteIds));
         memset(gBagMenu->windowIds, WINDOW_NONE, sizeof(gBagMenu->windowIds));
+        if (sBagPreOpenCallback != NULL)
+        {
+            sBagPreOpenCallback();
+            sBagPreOpenCallback = NULL;
+        }
         SetMainCallback2(CB2_Bag);
     }
 }
@@ -777,7 +810,10 @@ static bool8 SetupBagMenu(void)
         gMain.state++;
         break;
     case 13:
-        PrintPocketNames(gPocketNamesStringsTable[gBagPosition.pocket], 0);
+        if (gBagPosition.location == ITEMMENULOCATION_CRAFTING)
+            PrintPocketNames(gPocketNamesStringsTable[gBagPosition.pocket], gText_CraftingMode);
+        else
+            PrintPocketNames(gPocketNamesStringsTable[gBagPosition.pocket], 0);
         CopyPocketNameToWindow(0);
         DrawPocketIndicatorSquare(gBagPosition.pocket, TRUE);
         gMain.state++;
@@ -1668,6 +1704,7 @@ static void OpenContextMenu(u8 taskId)
     case ITEMMENULOCATION_BERRY_TREE:
     case ITEMMENULOCATION_ITEMPC:
     case ITEMMENULOCATION_BERRY_TREE_MULCH:
+    case ITEMMENULOCATION_CRAFTING:
     default:
         if (MenuHelpers_IsLinkActive() == TRUE || InUnionRoom() == TRUE)
         {
@@ -2400,6 +2437,71 @@ static void WaitDepositErrorMessage(u8 taskId)
         BagMenu_PrintCursor(tListTaskId, COLORID_NORMAL);
         ReturnToItemList(taskId);
     }
+}
+
+static void Task_ItemContext_Craft(u8 taskId)
+{
+    s16 *data = gTasks[taskId].data;
+
+    if (gBagPosition.pocket == POCKET_KEY_ITEMS || gBagPosition.pocket == POCKET_TM_HM)
+    {
+        DisplayItemMessage(taskId, FONT_NORMAL, gText_CantCraftWithItem, HandleErrorMessage);
+        return;
+    }
+
+    tItemCount = 1;
+    if (tQuantity == 1)
+    {
+        FinishCraftSelection(taskId);
+    }
+    else
+    {
+        u8 *end = CopyItemNameHandlePlural(gSpecialVar_ItemId, gStringVar1, 2);
+        WrapFontIdToFit(gStringVar1, end, FONT_NORMAL, WindowWidthPx(WIN_DESCRIPTION) - 10 - 6);
+        StringExpandPlaceholders(gStringVar4, sText_PlaceHowManyVar1);
+        FillWindowPixelBuffer(WIN_DESCRIPTION, PIXEL_FILL(0));
+        BagMenu_Print(WIN_DESCRIPTION, FONT_NORMAL, gStringVar4, 3, 1, 0, 0, 0, COLORID_NORMAL);
+        AddItemQuantityWindow(ITEMWIN_QUANTITY);
+        gTasks[taskId].func = Task_ChooseHowManyToCraft;
+    }
+}
+
+static void Task_ChooseHowManyToCraft(u8 taskId)
+{
+    s16 *data = gTasks[taskId].data;
+
+    if (AdjustQuantityAccordingToDPadInput(&tItemCount, tQuantity) == TRUE)
+    {
+        PrintItemQuantity(gBagMenu->windowIds[ITEMWIN_QUANTITY], tItemCount);
+    }
+    else if (JOY_NEW(A_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        BagMenu_RemoveWindow(ITEMWIN_QUANTITY);
+        FinishCraftSelection(taskId);
+    }
+    else if (JOY_NEW(B_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        PrintItemDescription(tListPosition);
+        BagMenu_PrintCursor(tListTaskId, COLORID_NORMAL);
+        BagMenu_RemoveWindow(ITEMWIN_QUANTITY);
+        ReturnToItemList(taskId);
+    }
+}
+
+static void FinishCraftSelection(u8 taskId)
+{
+    s16 *data = gTasks[taskId].data;
+
+    if (gCraftSlots[CRAFT_SLOT_ROW(gCraftActiveSlot)][CRAFT_SLOT_COL(gCraftActiveSlot)].itemId != ITEM_NONE)
+        AddBagItem(gCraftSlots[CRAFT_SLOT_ROW(gCraftActiveSlot)][CRAFT_SLOT_COL(gCraftActiveSlot)].itemId,
+                   gCraftSlots[CRAFT_SLOT_ROW(gCraftActiveSlot)][CRAFT_SLOT_COL(gCraftActiveSlot)].quantity);
+
+    CraftLogic_SetSlot(gCraftActiveSlot, gSpecialVar_ItemId, tItemCount);
+    RemoveBagItem(gSpecialVar_ItemId, tItemCount);
+    gBagMenu->newScreenCallback = CB2_ReturnToCraftMenu;
+    Task_FadeAndCloseBagMenu(taskId);
 }
 
 static bool8 IsWallysBag(void)

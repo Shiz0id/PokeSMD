@@ -1691,4 +1691,29 @@ void ItemUseOutOfBattle_TownMap(u8 taskId)
     }
 }
 
+static void ItemUseOnFieldCB_CraftBundle(u8 taskId)
+{
+    ScriptContext_SetupScript(Craft_EventScript_OpenCraftMenu);
+    DestroyTask(taskId);
+}
+
+void ItemUseOutOfBattle_CraftBundle(u8 taskId)
+{
+    s16 coordsY;
+    s16 coordsX;
+    u8 behavior;
+    PlayerGetDestCoords(&coordsX, &coordsY);
+    behavior = MapGridGetMetatileBehaviorAt(coordsX, coordsY);
+
+    //If biking or surfing, not a good time to craft
+    if (FlagGet(FLAG_SYS_CYCLING_ROAD) == TRUE || MetatileBehavior_IsVerticalRail(behavior) == TRUE || MetatileBehavior_IsHorizontalRail(behavior) == TRUE || MetatileBehavior_IsIsolatedVerticalRail(behavior) == TRUE || MetatileBehavior_IsIsolatedHorizontalRail(behavior) == TRUE)
+        DisplayCannotDismountBikeMessage(taskId, gTasks[taskId].tUsingRegisteredKeyItem);
+    else if (TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_UNDERWATER) || TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_SURFING) || gWeatherPtr->currWeather == 5 || gWeatherPtr->currWeather == 8 || gWeatherPtr->currWeather == 13) //thunder, sandstorm, downpour
+        DisplayDadsAdviceCannotUseItemMessage(taskId, gTasks[taskId].tUsingRegisteredKeyItem);
+    else {
+        sItemUseOnFieldCB = ItemUseOnFieldCB_CraftBundle;
+        SetUpItemUseOnFieldCallback(taskId);
+    }
+}
+
 #undef tUsingRegisteredKeyItem

@@ -1,0 +1,13 @@
+#ifndef GUARD_CONFIG_CRAFTING_H
+#define GUARD_CONFIG_CRAFTING_H
+
+#define DEBUG_CRAFT_MENU TRUE // Enable crafting debug menu with R
+
+// Auto-craft config (recipe book)
+#define CRAFT_AUTO_CRAFT_OFF         0
+#define CRAFT_AUTO_CRAFT_AFTER_FLAG  1
+#define CRAFT_AUTO_CRAFT_ALWAYS      2
+#define CRAFT_AUTO_CRAFT_MODE CRAFT_AUTO_CRAFT_OFF // [CRAFT_AUTO_CRAFT_OFF, CRAFT_AUTO_CRAFT_AFTER_FLAG, CRAFT_AUTO_CRAFT_ALWAYS]
+#define CRAFT_AUTO_CRAFT_FLAG 0 // If CRAFT_AUTO_CRAFT_MODE is CRAFT_AUTO_CRAFT_AFTER_FLAG, set the flag that enables auto-craft.
+
+#endif // GUARD_CONFIG_CRAFTING_H

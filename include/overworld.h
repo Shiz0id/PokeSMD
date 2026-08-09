@@ -177,6 +177,7 @@ void CB2_ReturnToFieldWithOpenMenu(void);
 void CB2_ReturnToFieldContinueScript(void);
 void CB2_ReturnToFieldContinueScriptPlayMapMusic(void);
 void CB2_ReturnToFieldFadeFromBlack(void);
+void CB2_ReturnToField_OpenCraftMenu(void);
 void CB2_ContinueSavedGame(void);
 void ResetAllMultiplayerState(void);
 u32 GetCableClubPartnersReady(void);
