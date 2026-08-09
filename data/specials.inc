@@ -661,3 +661,4 @@ gSpecials::
 	def_special StartBlockStacker
 	def_special StartBlackJack
 	def_special StartGacha
+	def_special StartDerby

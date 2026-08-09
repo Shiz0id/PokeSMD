@@ -388,7 +388,28 @@ RogueRestStopGames_EventScript_Blackjack::
 
 RogueRestStopGames_EventScript_Derby::
 	lockall
-	msgbox RogueRestStopGames_Text_CabinetOffline, MSGBOX_DEFAULT
+	checkitem ITEM_COIN_CASE
+	goto_if_eq VAR_RESULT, FALSE, RogueRestStopGames_EventScript_NoCoinCase
+	msgbox RogueRestStopGames_Text_Derby, MSGBOX_YESNO
+	closemessage
+	goto_if_eq VAR_RESULT, NO, RogueRestStopGames_CancelBJ
+	playbgm MUS_RG_PEWTER, FALSE
+	special StartDerby
+	waitstate
+	savebgm MUS_DUMMY
+	fadedefaultbgm
+	goto_if_eq VAR_GC_FLIP_WINNINGS, 0, RogueRestStopGames_NoWin
+	showcoinsbox 1, 1
+	buffernumberstring STR_VAR_1, VAR_GC_FLIP_WINNINGS
+	msgbox PB_YOU_WON_TEXT, MSGBOX_DEFAULT
+	waitmessage
+	addcoins VAR_GC_FLIP_WINNINGS
+	setvar VAR_GC_FLIP_WINNINGS, 0
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	delay 40
+	hidecoinsbox 0, 5
+	closemessage
 	releaseall
 	end
 
@@ -2109,7 +2130,7 @@ RogueRestStopGames_Text_CantBuyWithNoCoinCase:
 RogueRestStopGames_Text_Juice:
 	.string "BERRY JUICE!\n"
 	.string "Just 10 COINS.$"	
-RogueRestStopGames_Text_CabinetOffline:
-	.string "The cabinet is dark.\n"
-	.string "Someone forgot to plug it in.$"
+@ RogueRestStopGames_Text_CabinetOffline was here. It backed the sixteen stubbed
+@ cabinet scripts while the minigames were being ported one at a time. All nine
+@ games are in and every cabinet is wired, so nothing references it any more.
 

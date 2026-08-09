@@ -463,6 +463,53 @@ of the 23 levels as the player survives:
 
 That is ~2.7 KB per level change on a 113 KB heap.
 
+### Derby — DONE, and the port is complete
+
+The last of the nine. Two things it needed that nothing else did.
+
+**It INCBINs four species sprites directly** — Ponyta, Rapidash, Rattata,
+Feebas — as `graphics/pokemon/<name>/front.4bpp.lz`. That path does not exist
+here: the expansion's species art is `anim_front.png`, a 64x128 two-frame sheet.
+Repointed to `anim_front.4bpp.lz` with the declared `.size` left at `0x800`,
+which is correct and safe: `LoadCompressedSpriteSheet` sizes its decompression
+buffer from the blob's own header, not from `.size`, so the 8 KB sheet
+decompresses fine and only the first 2 KB — the idle frame — reaches VRAM.
+
+**`port_sprite_sheets.py` refused a site, and it was right to.**
+`sSpriteSheet_Name_Rapidash` declares `.tag = GFX_NAME_RATTATA`, copy-pasted
+from the Rattata sheet below it. Upstream got away with it because the single
+call site hand-wrote `s.tag = GFX_NAME_RAPIDASH` and ignored what the struct
+said — which is exactly the mismatch the refusal exists to catch, since
+`LoadCompressedSpriteSheet` takes the tag off the struct. Corrected the
+declaration; 112 of 112 sites then rewrote.
+
+**`GetNewDerby` is registered as a special upstream and no script ever calls
+it.** It is called from C, gated on `VAR_GC_NEW_DERBY`, so it works without a
+table entry. Not registered here — the port doc's "8 specials" is 7.
+
+Six `maybe-uninitialized` errors, all the familiar shape: five `MenuPosition`
+chains covering 0–5 with no final `else` (now `else`), and `CreateCursor`, whose
+chain is **1-based** over `RacerSelected` 1–6 — so a `RacerSelected` of 0 drew
+the cursor at a stack-garbage y and subpriority. Defaulted to the racer 1 row.
+
+Its header was the **third** to ship `GUARD_BLACKJACK_H`. Its bet-menu
+background leaks on every page flip, the same shape as the gacha's shake and
+pachinko's `LevelChange`; its windows were never freed either.
+
+---
+
+## The stubs are gone
+
+All sixteen cabinet scripts are wired — 15 entry points plus `VF_Loop`'s second
+call. `RogueRestStopGames_Text_CabinetOffline` is deleted; nothing referenced it
+any more.
+
+**Nothing in this room has been played except Voltorb Flip.** Fifteen host-side
+checks pass and none of them look at the game corner at all, so play is the only
+coverage it has. The room itself — 28 object events against `OBJECT_EVENTS_COUNT`
+16, and the chase-light animation writing tile 521 — has still never been on a
+screen. See "Two things only play can settle" above.
+
 ---
 
 ## Order of work, and the number to watch
@@ -478,18 +525,41 @@ Games are ported ascending by size so the cheap ones prove the pattern first:
 | `game_corner_blackjack.c` | 3,403 | **ported, not yet played** |
 | `game_corner_gacha.c` | 4,418 | **ported, not yet played** |
 | `pinball.c` | 5,179 | **ported, not yet played** |
-| `derby.c` | 5,714 | |
+| `derby.c` | 5,714 | **ported, not yet played** |
 | `pachinko.c` | 6,868 | **ported, not yet played** |
 
 **Read the linker line after every single one.** Budget at the start of the
 port, and after each game:
 
+**ALL NINE ARE IN.** Final figures, and the whole cost of the port:
+
 ```
-            start  +VFlip +Flappy +Snake +Stack +BJack +Gacha +Pinbl +Pachi
-EWRAM/262144 227688 227700 227704 227708 227712 227720 227732 227740 227748 (+8 B)
-IWRAM/ 32768  28392  28392  28392  28392  28392  28392  28392  28392  28392 (+0)
-ROM          84.59% 84.69% 84.74% 84.78% 84.84% 85.00% 85.14% 85.53% 85.90% (+~121 KB)
+                 at start      all nine      delta
+EWRAM / 262,144   227,688       227,752      +64 bytes
+IWRAM /  32,768    28,392        28,392      +0
+ROM                84.59%        86.05%      +~490 KB
 ```
+
+Per game, in port order:
+
+```
+            start  +VFlip +Flappy +Snake +Stack +BJack +Gacha +Pinbl +Pachi +Derby
+EWRAM/262144 227688 227700 227704 227708 227712 227720 227732 227740 227748 227752
+IWRAM/ 32768  28392  28392  28392  28392  28392  28392  28392  28392  28392  28392
+ROM          84.59% 84.69% 84.74% 84.78% 84.84% 85.00% 85.14% 85.53% 85.90% 86.05%
+```
+
+**IWRAM never moved. Not once, across nine games.** The doc opened by expecting
+it to bind first; it was the wrong thing to watch from the start, because every
+game puts its state on the heap and only leaves a pointer behind. Sixty-four
+bytes of EWRAM is the entire static cost of the port — the state pointers, plus
+a stray unused `sTextWindowId` in most of them.
+
+ROM took ~490 KB against ~4.4 MB still free, so it is not a constraint either.
+
+**The heap is the only thing that ever mattered here**, and the linker cannot
+see it. `Utilities → Heap usage` is the instrument. Eight of the nine games
+leaked heap; see each section above.
 
 **Four games in, IWRAM has not moved once**, and EWRAM has cost 24 bytes in
 total — six per game, which is the state pointer and a stray unused
