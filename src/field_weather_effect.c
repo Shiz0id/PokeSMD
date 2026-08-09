@@ -1245,7 +1245,22 @@ static void UpdatePetalSprite(struct Sprite *sprite)
     // Off the bottom: respawn at the top with a fresh drift. The snow relies on
     // its flakes being off screen quickly; a petal that hangs would otherwise
     // sit at the bottom edge for a long time.
-    if (sprite->y > 163)
+    //
+    // SCREEN SPACE, not sprite space. sprite->y is stored RELATIVE to
+    // gSpriteCoordOffsetY -- InitPetalSpriteMovement seeds it as
+    // -3 - (gSpriteCoordOffsetY + centerToCornerVecY), and coordOffsetEnabled
+    // adds the offset back at draw time -- so comparing it raw against a screen
+    // bound is only correct while that offset is zero. It is zero on map load
+    // and stops being zero the moment the camera scrolls, which is why this
+    // failed "as soon as you walk": with a negative offset the test fires early
+    // and respawns every petal while it is still near the top, so the field
+    // never crosses the screen. The x wrap directly above already converts
+    // before it compares; this is the same conversion, which it was missing.
+    //
+    // Vanilla snow has no vertical test at all -- its flakes recycle on the
+    // 8-bit OAM y wrap -- which is exactly why WEATHER_SNOW was unaffected while
+    // both of the weathers written here were not.
+    if (sprite->y + sprite->centerToCornerVecY + gSpriteCoordOffsetY > 163)
     {
         // A NEW LANE, not the one it started in. tPetalId picks the 30-pixel
         // column a petal enters from, and it is otherwise fixed for the sprite's
@@ -1477,7 +1492,12 @@ static void UpdateBlizzardSprite(struct Sprite *sprite)
     // keeps a flake alive indefinitely, so without this every flake would end up
     // in the bottom band and the upper screen would empty out - which the snow
     // never has to think about, its flakes leaving downward almost immediately.
-    if (sprite->y > 163)
+    //
+    // SCREEN SPACE, not sprite space, for the reason spelled out on the petals'
+    // copy of this test: sprite->y is relative to gSpriteCoordOffsetY, so raw it
+    // is only right while the camera has not scrolled. The x wrap eight lines up
+    // converts before comparing and this did not, in the same function.
+    if (sprite->y + sprite->centerToCornerVecY + gSpriteCoordOffsetY > 163)
     {
         // A new entry lane too, for the reason the petals re-roll theirs:
         // tBlizzardId picks the 30-pixel column and is otherwise fixed for the
