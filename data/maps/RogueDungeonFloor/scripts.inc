@@ -43,6 +43,13 @@ RogueDungeonFloor_EventScript_ChooseStarters::
 	@ unconditional grant even though the rod is a progression: what improves is
 	@ the technique, not the item.
 	additem ITEM_ROGUE_VARIABLE_ROD, 1
+	@ The fourth tool, same argument as the other three: the workbench is a
+	@ key item you carry, and no map in a run hands one out, so without this
+	@ the entire crafting system is unreachable code. It is granted rather
+	@ than sold because a run's coins already have two sinks and because a
+	@ player who cannot craft cannot discover that materials are worth
+	@ digging for -- and the materials are buried from floor 1.
+	additem ITEM_CRAFT_BUNDLE, 1
 	setvar VAR_ROGUE_RUN_STATE, ROGUE_RUN_ACTIVE
 	releaseall
 	end

@@ -3748,6 +3748,50 @@ STATIC_ASSERT(ITEM_DAWN_STONE    == ITEM_FIRE_STONE + 9, RogueStoneOrderDawn);
 // Quantity is not read here - a tree hands over DUNGEON_BERRY_YIELD of whatever
 // it grew, which is the point of the feature - so it stays 1 to keep the shared
 // struct honest rather than pretending to mean something.
+// WHAT A RUN CAN CRAFT WITH. Every one of these is a vanilla item whose only
+// vanilla purpose is to be SOLD, and a run has no shop that buys -- so before
+// crafting they would have been the worst thing a dowsing machine could find.
+// That is exactly what makes them the right materials: they cost the loot
+// ladder nothing, because they were never on it.
+//
+// DEPTH IS GATED BY THE INGREDIENT, NOT BY A FLAG. A recipe needing a Star
+// Piece cannot be made before floor 55 because nothing drops one before then,
+// and that needs no unlockFlag, no id from the unused pool, and nothing to
+// keep in sync. The bands below ARE the recipe tree's progression.
+//
+// The four shards are deliberately the commonest thing here and never retire.
+// They are what turns the eight evolution stones the Game Corner sells for
+// 1,000 coins into something a run can also earn by digging -- the same gap
+// sBuriedStones only half closes by burying two of the ten.
+static const struct RogueLootEntry sLootMaterials[] =
+{
+    // Shards: four colours, flat weights, live for the whole run. A stone
+    // costs four of one colour, so an even spread is what makes the choice
+    // "which stone am I saving for" rather than "which did the floor give".
+    { ITEM_RED_SHARD,      16,   0, 255, 1 },
+    { ITEM_BLUE_SHARD,     16,   0, 255, 1 },
+    { ITEM_YELLOW_SHARD,   16,   0, 255, 1 },
+    { ITEM_GREEN_SHARD,    16,   0, 255, 1 },
+
+    // Water is the base of every healing recipe and has to be findable from
+    // floor 1, in twos, or the berry half of the tree cannot start.
+    { ITEM_FRESH_WATER,    20,   0, 255, 2 },
+
+    // The early filler. Both retire: a Tiny Mushroom recipe is an answer to
+    // floor 10 and an insult by floor 80.
+    { ITEM_TINY_MUSHROOM,  14,   0,  50, 2 },
+    { ITEM_PEARL,          12,   0,  60, 1 },
+    { ITEM_STARDUST,       12,   0,  70, 1 },
+
+    // The mid and late materials, and the reason the top of the recipe tree
+    // is unreachable early. Heart Scale is the scarcest by design -- it is
+    // the revive line, and revives are what a run dies without.
+    { ITEM_BIG_MUSHROOM,   10,  35, 255, 1 },
+    { ITEM_BIG_PEARL,      10,  45, 255, 1 },
+    { ITEM_STAR_PIECE,      8,  55, 255, 1 },
+    { ITEM_HEART_SCALE,     6,  30, 255, 1 },
+};
+
 static const struct RogueLootEntry sLootBerries[] =
 {
     // In-battle healing and status cover, which is what a berry is for in a
@@ -3819,7 +3863,8 @@ static void RollFromTable(const struct RogueLootEntry *table, u32 count,
 // about: the ball takes the interaction.
 static void PlaceHiddenItems(u16 floor)
 {
-    u32 count = DUNGEON_HIDDEN_MIN + floor / DUNGEON_HIDDEN_FLOORS_PER_EXTRA;
+    u32 heldCount = DUNGEON_HIDDEN_MIN + floor / DUNGEON_HIDDEN_FLOORS_PER_EXTRA;
+    u32 count = heldCount + DUNGEON_MATERIALS_PER_FLOOR;
     const struct RogueDungeonTheme *theme = ThemeForFloor(floor);
     u32 i, j;
     bool32 buryStone;
@@ -3908,6 +3953,14 @@ static void PlaceHiddenItems(u16 floor)
         {
             item = stone;
             quantity = 1;
+        }
+        else if (sHiddenCount >= heldCount)
+        {
+            // The tail of the floor's buried items is materials. Keyed on the
+            // INDEX rather than on a fresh roll, so this adds no draw to the
+            // floor's stream and cannot shift any placement that follows --
+            // the property the two draws above are arranged to preserve.
+            RollFromTable(sLootMaterials, ARRAY_COUNT(sLootMaterials), floor, &item, &quantity);
         }
         else
         {

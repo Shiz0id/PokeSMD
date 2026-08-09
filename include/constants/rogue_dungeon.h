@@ -88,6 +88,19 @@
 #define DUNGEON_STONE_FIRST_FLOOR    4
 #define DUNGEON_STONE_ODDS           7
 
+// Crafting materials are buried too, and they are ADDITIVE rather than a
+// share of the held-item roll. sLootHeld is a graded ladder whose ceiling is
+// checked never to drop, and a Tiny Mushroom has no place on it -- the same
+// argument that gave evolution stones a slot of their own. Substituting
+// materials into that roll would also quietly halve the rate of the held
+// items a run's whole power curve is built on.
+//
+// So a floor buries its usual 2-9 held items AND this many materials. Worst
+// case is floor 115: 2 + 115/16 = 9 held, plus 3, which is 12 against
+// DUNGEON_MAX_HIDDEN 16. That headroom is not spare change -- a hidden
+// item's id IS its flag, so the cap is a flag range, not an array bound.
+#define DUNGEON_MATERIALS_PER_FLOOR  3
+
 // The engine derives a hidden item's flag as
 // hiddenItemId + FLAG_HIDDEN_ITEMS_START, so the ids we choose ARE flags and
 // have to be ones nothing else owns. Vanilla's block runs 0x00..0x6F, and
