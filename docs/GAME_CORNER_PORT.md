@@ -166,6 +166,12 @@ NULL` and `GetBgTilemapBuffer` returns NULL for an invalid or non-visible BG —
 so it frees exactly the three that were allocated and skips the fourth, whose
 `AllocZeroed` upstream left commented out.
 
+**The fix now lives in `src/game_corner.c`.** `GameCorner_FreeBgTilemapBuffers()`
+walks all four backgrounds and frees whatever tilemap each holds; call it from
+each game's exit path before freeing the state struct. It carries the reasoning
+above in one place rather than seven, and it is safe to call even on a path that
+runs before the backgrounds were set up.
+
 **Every remaining game has this shape, so check each one.** Count of
 `SetBgTilemapBuffer(… Alloc …)` call sites upstream:
 
@@ -184,6 +190,33 @@ clean and runs: Voltorb Flip's difficulty ladder, and this. Neither is a port
 artefact — both are upstream's, and both are invisible without either reading
 the code or playing a long session. Assume the remaining seven are the same.
 
+### Snake — DONE, and the compiler found a real bug this time
+
+Three of three games have now needed the same sprite sheet rewrite (53 sites
+here) and the same BG tilemap free (one buffer, 2 KB a session). Neither is
+interesting any more; both are mechanical.
+
+What was new: **`-Werror=maybe-uninitialized` rejected `CreateBerry`**, and it
+was right to. The function picks a random free tile out of `SnakeTilesArray`,
+stores the logical x/y on the state struct, and then re-scans the whole array
+looking for the entry whose x/y match — to recover the pixel coordinates it had
+in hand one line earlier. If that scan ever failed to match, the berry sprite
+would be created at whatever was on the stack.
+
+It cannot fail today, because the value came out of the same array. But it is
+only correct by accident, and the compiler cannot see the invariant. Fixed by
+reading `xReal`/`yReal` at the point the tile is chosen and deleting the scan,
+which is correct by construction and drops a `MAX_TILES` loop.
+
+This is the first thing a modern toolchain caught that reading would probably
+have missed. **Do not `-Wno-` any of these away as port noise** — upstream was
+built by a compiler that did not complain, so the warnings are unread, not
+false.
+
+Left alone deliberately: `snake.c` declares a `static DerbyVBlankCallback` it
+never defines, and carries an unused `CreateBody` and `HandleInput`. Copy-paste
+leftovers from `derby.c`, harmless, and not worth widening the diff over.
+
 ---
 
 ## Order of work, and the number to watch
@@ -194,7 +227,7 @@ Games are ported ascending by size so the cheap ones prove the pattern first:
 |---|---|---|
 | `rogue_voltorbflip.c` | 1,371 | **ported, and confirmed in play** |
 | `flappybird.c` | 1,914 | **ported, not yet played** |
-| `snake.c` | 2,386 | |
+| `snake.c` | 2,386 | **ported, not yet played** |
 | `block_stacker.c` | 2,507 | |
 | `game_corner_blackjack.c` | 3,403 | |
 | `game_corner_gacha.c` | 4,418 | |
@@ -206,10 +239,10 @@ Games are ported ascending by size so the cheap ones prove the pattern first:
 port, and after each game:
 
 ```
-                    at start      + Voltorb Flip    + Flappy Bird
-EWRAM  / 262,144     227,688         227,700          227,704   (+4 B)
-IWRAM  /  32,768      28,392          28,392           28,392   (+0)
-ROM                   84.59%          84.69%           84.74%   (+~16 KB)
+                  at start   + Voltorb Flip   + Flappy Bird   + Snake
+EWRAM / 262,144    227,688       227,700         227,704      227,708  (+4 B)
+IWRAM /  32,768     28,392        28,392          28,392       28,392  (+0)
+ROM                 84.59%        84.69%          84.74%       84.78%  (+~13 KB)
 ```
 
 **Voltorb Flip cost 12 bytes of EWRAM and nothing at all in IWRAM**, which is

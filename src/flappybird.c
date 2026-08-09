@@ -1,4 +1,5 @@
 #include "flappybird.h"
+#include "game_corner.h"
 #include "global.h"
 #include "malloc.h"
 #include "battle.h"
@@ -780,29 +781,10 @@ static void ExitFlappyBird(void)
 {
     if (!gPaletteFade.active)
     {
-        u32 bg;
-
         SetMainCallback2(CB2_ReturnToFieldContinueScriptPlayMapMusic);
-
-        // InitFlappyBirdScreen hands each BG a manually allocated tilemap and
-        // keeps no pointer to it, so the only handle is the BG itself. Freeing
-        // them here is not tidiness: the buffers are 3 x BG_SCREEN_SIZE = 6144
-        // bytes per session against a HEAP_SIZE of 115968, InitHeap runs at
-        // boot and save-load rather than per map, and AllocZeroed calls fatalf
-        // instead of returning NULL - so the leak accumulates across a run and
-        // ends in a hard crash. This is the bug the mining minigame shipped
-        // with; see Mining_FreeResources.
-        for (bg = 0; bg < NUM_BACKGROUNDS; bg++)
-        {
-            void *tilemap = GetBgTilemapBuffer(bg);
-
-            if (tilemap != NULL)
-            {
-                Free(tilemap);
-                UnsetBgTilemapBuffer(bg);
-            }
-        }
-
+        // InitFlappyBirdScreen allocates three of these and keeps no pointer to
+        // any of them. See src/game_corner.c for why that matters.
+        GameCorner_FreeBgTilemapBuffers();
         FREE_AND_SET_NULL(sFlappy);
     }
 }
