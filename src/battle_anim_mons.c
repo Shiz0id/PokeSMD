@@ -38,7 +38,18 @@ const struct UCoords8 sBattlerCoords[BATTLE_COORDS_COUNT][MAX_BATTLERS_COUNT] =
 {
     [BATTLE_COORDS_SINGLES] =
     {
-        [B_POSITION_PLAYER_LEFT]    = { 72, 80 },
+        // 60 rather than vanilla's 72. Nothing was broken - the sprite content
+        // is centred in its 64x64 box to within half a pixel of the stock
+        // sprite, measured across all 386 backs, and this table is otherwise
+        // untouched from upstream - but the BW back sprites read as sitting too
+        // far right against the message box, and 12px left is the whole fix.
+        //
+        // Safe to tune: every position in the battle goes through
+        // GetBattlerSpriteCoord, so move animations, the ball arc, the shadow
+        // and the substitute doll all follow this number. The healthbox does
+        // NOT - it is anchored bottom-right on its own and should stay there.
+        // A 64-wide sprite here spans x 28..92, clear of the screen edge.
+        [B_POSITION_PLAYER_LEFT]    = { 60, 80 },
         [B_POSITION_OPPONENT_LEFT]  = { 176, 40 },
         [B_POSITION_PLAYER_RIGHT]   = { 48, 40 },
         [B_POSITION_OPPONENT_RIGHT] = { 112, 80 },
