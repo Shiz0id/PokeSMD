@@ -79,9 +79,13 @@ callnative PlayPachinko  PlayMeowthPinballGame  PlayDiglettPinballGame
 ```
 
 Upstream inserts its specials at the **top** of `gSpecials`, shifting every
-later index; append instead. Their `include/pinball.h` and `include/pachinko.h`
-are empty guard-only stubs — the callnatives resolve at link time — so add real
-declarations rather than copying the stubs.
+later index; append instead.
+
+**The five callnatives need no registration of any kind.** `callnative` takes
+the function symbol and resolves at link time, so a table only has to exist.
+That is why `include/pinball.h` and `include/pachinko.h` are empty guard-only
+stubs upstream. Declare the functions properly anyway, so a typo in a name is a
+compile error rather than an undefined reference at the very end of a link.
 
 **No duplicate-symbol risk between pinball.c and pachinko.c** even though
 pachinko is clearly a copy of pinball: every shared name (`PlayPinballGame`,
@@ -359,6 +363,61 @@ does that against `pokeemerald.map`; see the note below.
 Gacha's table is entirely Gen 1–3, so it came out clean. Do not take that as a
 reason to skip the check on derby or pachinko.
 
+### Pinball — DONE, and it needed changes outside the game
+
+Four tables (Meowth 25 coins, Diglett 50, Seel 25, Gengar 100), reached by
+**callnative rather than a special**. That turned out to be *less* work, not
+more: `callnative` takes the function symbol and resolves at link time, so there
+is no table to register. The port doc's step 3 overstated this — nothing has to
+be added anywhere for a callnative. Its header is an empty guard upstream for
+that reason; the four are declared properly now so a typo is a compile error
+rather than an undefined reference at the end of a link.
+
+#### `INCBIN_S16` needs preproc taught, not just a macro
+
+The five tilt-delta tables are signed 16-bit. Upstream added `INCBIN_S8/S16/S32`
+to `global.h` **and** to `tools/preproc`. Adding only the macro is the dangerous
+half-fix: `global.h`'s definitions are IDE fallbacks that expand to `{0}`, and
+preproc is what actually substitutes the file contents — so an unrecognised
+identifier means the table silently compiles to a single zero.
+
+Both halves are in. Our `TryConvertIncbin` now carries a table of
+(ident, size, signed, compressed) rather than deriving size from the loop index,
+which keeps `INCBIN_COMP`'s `.smol` suffix working.
+
+**Implemented differently from upstream on purpose.** Their `ExtractData` does
+not sign-extend — it assembles bytes little-endian into 0..65535 and the
+`isSigned` flag only swaps the `printf` specifier, so `-1` is emitted as
+`65535` into an `s16` initialiser and left to the implicit conversion. Same
+bytes in the end, one `-Woverflow` warning per element. Ours sign-extends at
+the print site so the generated source says what the data means.
+
+Verified twice: against a hand-built probe (`ff ff` → `-1`, `2c fe` → `-468`,
+`INCBIN_U16` unchanged), and against the real build — `sTiltLeftOnlyVelocityDeltas`
+is `0x400` bytes in `pinball.o`, exactly the size of the file it came from.
+
+#### Everything else
+
+**`-Wno-missing-braces` for `pinball.o`.** The flipper collision masks are
+`const u8 x[][0x80] = INCBIN_U8(...)` and INCBIN emits one flat brace list.
+`src/graphics.c` already had this exact problem and the Makefile already had the
+per-file override; this follows that precedent rather than inventing one.
+
+**A `==` that should have been `=`.** `ball->yPos == 170 << 8;` before
+`LoseBall()`. The clamp never happened. `LoseBall` changes the game state
+immediately so it is cosmetic on the losing frame rather than a runaway, but the
+statement plainly meant to assign.
+
+**Three `maybe-uninitialized` errors, all the same shape**: a `switch` covering
+every value of the game-type enum with no `default:`, so the compiler cannot
+prove the pointers are assigned. Gengar became `case GAME_TYPE_GENGAR: default:`
+in both collision lookups. The third was `UpdateGhost`'s `multiplier`, tested
+for Gastly and Haunter with no `else` — assigned only because the two call sites
+happen to pass one of those two counters. Now initialised to the Gastly rate.
+
+**16 KB of BG tilemap a session**, two buffers at `BG_SCREEN_SIZE * 4`, the
+largest in the port, plus unfreed window buffers.
+
 ---
 
 ## Order of work, and the number to watch
@@ -373,7 +432,7 @@ Games are ported ascending by size so the cheap ones prove the pattern first:
 | `block_stacker.c` | 2,507 | **ported, not yet played** |
 | `game_corner_blackjack.c` | 3,403 | **ported, not yet played** |
 | `game_corner_gacha.c` | 4,418 | **ported, not yet played** |
-| `pinball.c` | 5,179 | |
+| `pinball.c` | 5,179 | **ported, not yet played** |
 | `derby.c` | 5,714 | |
 | `pachinko.c` | 6,868 | |
 
@@ -381,10 +440,10 @@ Games are ported ascending by size so the cheap ones prove the pattern first:
 port, and after each game:
 
 ```
-              start   +VFlip  +Flappy  +Snake  +Stacker  +BJack  +Gacha
-EWRAM/262,144 227,688 227,700 227,704  227,708 227,712   227,720 227,732 (+12 B)
-IWRAM/ 32,768  28,392  28,392  28,392   28,392  28,392    28,392  28,392 (+0)
-ROM            84.59%  84.69%  84.74%   84.78%  84.84%    85.00%  85.14% (+~47 KB)
+             start  +VFlip +Flappy +Snake +Stacker +BJack +Gacha +Pinball
+EWRAM/262144 227688 227700 227704  227708 227712   227720 227732 227740 (+8 B)
+IWRAM/ 32768  28392  28392  28392   28392  28392    28392  28392  28392 (+0)
+ROM          84.59% 84.69% 84.74%  84.78% 84.84%   85.00% 85.14% 85.53% (+~128 KB)
 ```
 
 **Four games in, IWRAM has not moved once**, and EWRAM has cost 24 bytes in

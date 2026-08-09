@@ -535,25 +535,141 @@ RogueRestStopGames_EventScript_Pachinko::
 
 RogueRestStopGames_EventScript_PinballMeowth::
 	lockall
-	msgbox RogueRestStopGames_Text_CabinetOffline, MSGBOX_DEFAULT
+	checkitem ITEM_COIN_CASE
+	goto_if_eq VAR_RESULT, FALSE, RogueRestStopGames_EventScript_NoCoinCase
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, 25, Pinball_Not_Enough
+	showcoinsbox 1, 1
+	msgbox RogueRestStopGames_Text_Pinball_Meowth, MSGBOX_YESNO
+	closemessage
+	goto_if_eq VAR_RESULT, NO, RogueRestStopGames_CancelVF
+	removecoins 25
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	delay 40
+	hidecoinsbox 0, 5
+	playbgm MUS_RG_POKE_CENTER, FALSE
+	callnative PlayMeowthPinballGame
+	waitstate
+	savebgm MUS_DUMMY
+	fadedefaultbgm
+	goto_if_eq VAR_GC_FLIP_WINNINGS, 0, RogueRestStopGames_NoWin
+	showcoinsbox 1, 1
+	buffernumberstring STR_VAR_1, VAR_GC_FLIP_WINNINGS
+	msgbox PB_YOU_WON_TEXT, MSGBOX_DEFAULT
+	waitmessage
+	addcoins VAR_GC_FLIP_WINNINGS
+	setvar VAR_GC_FLIP_WINNINGS, 0
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	delay 40
+	hidecoinsbox 0, 5
+	closemessage
 	releaseall
 	end
 
 RogueRestStopGames_EventScript_PinballDiglett::
 	lockall
-	msgbox RogueRestStopGames_Text_CabinetOffline, MSGBOX_DEFAULT
+	checkitem ITEM_COIN_CASE
+	goto_if_eq VAR_RESULT, FALSE, RogueRestStopGames_EventScript_NoCoinCase
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, 50, Pinball_Not_Enough
+	showcoinsbox 1, 1
+	msgbox RogueRestStopGames_Text_Pinball_Diglett, MSGBOX_YESNO
+	closemessage
+	goto_if_eq VAR_RESULT, NO, RogueRestStopGames_CancelVF
+	removecoins 50
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	delay 40
+	hidecoinsbox 0, 5
+	playbgm MUS_RG_POKE_JUMP, FALSE
+	callnative PlayDiglettPinballGame
+	waitstate
+	savebgm MUS_DUMMY
+	fadedefaultbgm
+	goto_if_eq VAR_GC_FLIP_WINNINGS, 0, RogueRestStopGames_NoWin
+	showcoinsbox 1, 1
+	buffernumberstring STR_VAR_1, VAR_GC_FLIP_WINNINGS
+	msgbox PB_YOU_WON_TEXT, MSGBOX_DEFAULT
+	waitmessage
+	addcoins VAR_GC_FLIP_WINNINGS
+	setvar VAR_GC_FLIP_WINNINGS, 0
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	delay 40
+	hidecoinsbox 0, 5
+	closemessage
 	releaseall
 	end
 
 RogueRestStopGames_EventScript_PinballSeel::
 	lockall
-	msgbox RogueRestStopGames_Text_CabinetOffline, MSGBOX_DEFAULT
+	checkitem ITEM_COIN_CASE
+	goto_if_eq VAR_RESULT, FALSE, RogueRestStopGames_EventScript_NoCoinCase
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, 25, Pinball_Not_Enough
+	showcoinsbox 1, 1
+	msgbox RogueRestStopGames_Text_Pinball_Seel, MSGBOX_YESNO
+	closemessage
+	goto_if_eq VAR_RESULT, NO, RogueRestStopGames_CancelVF
+	removecoins 25
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	delay 40
+	hidecoinsbox 0, 5
+	playbgm MUS_RG_SS_ANNE, FALSE
+	callnative PlaySeelPinballGame
+	waitstate
+	savebgm MUS_DUMMY
+	fadedefaultbgm
+	goto_if_eq VAR_GC_FLIP_WINNINGS, 0, RogueRestStopGames_NoWin
+	showcoinsbox 1, 1
+	buffernumberstring STR_VAR_1, VAR_GC_FLIP_WINNINGS
+	msgbox PB_YOU_WON_TEXT, MSGBOX_DEFAULT
+	waitmessage
+	addcoins VAR_GC_FLIP_WINNINGS
+	setvar VAR_GC_FLIP_WINNINGS, 0
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	delay 40
+	hidecoinsbox 0, 5
+	closemessage
 	releaseall
 	end
 
 RogueRestStopGames_EventScript_PinballGengar::
 	lockall
-	msgbox RogueRestStopGames_Text_CabinetOffline, MSGBOX_DEFAULT
+	checkitem ITEM_COIN_CASE
+	goto_if_eq VAR_RESULT, FALSE, RogueRestStopGames_EventScript_NoCoinCase
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, 100, Pinball_Not_Enough
+	showcoinsbox 1, 1
+	msgbox RogueRestStopGames_Text_Pinball_Gengar, MSGBOX_YESNO
+	closemessage
+	goto_if_eq VAR_RESULT, NO, RogueRestStopGames_CancelVF
+	removecoins 100
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	delay 40
+	hidecoinsbox 0, 5
+	playbgm MUS_RG_POKE_TOWER, FALSE
+	callnative PlayGengarPinballGame
+	waitstate
+	savebgm MUS_DUMMY
+	fadedefaultbgm
+	goto_if_eq VAR_GC_FLIP_WINNINGS, 0, RogueRestStopGames_NoWin
+	showcoinsbox 1, 1
+	buffernumberstring STR_VAR_1, VAR_GC_FLIP_WINNINGS
+	msgbox PB_YOU_WON_TEXT, MSGBOX_DEFAULT
+	waitmessage
+	addcoins VAR_GC_FLIP_WINNINGS
+	setvar VAR_GC_FLIP_WINNINGS, 0
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	delay 40
+	hidecoinsbox 0, 5
+	closemessage
 	releaseall
 	end
 

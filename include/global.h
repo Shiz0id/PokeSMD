@@ -48,6 +48,12 @@
 #define INCBIN_U16  INCBIN
 #define INCBIN_U32  INCBIN
 #define INCBIN_COMP INCBIN
+// Signed forms, for the game corner's pinball angle and delta tables. These
+// names must also be known to tools/preproc/c_file.cpp -- the macro alone
+// expands to the {0} fallback above and the table silently becomes one zero.
+#define INCBIN_S8   INCBIN
+#define INCBIN_S16  INCBIN
+#define INCBIN_S32  INCBIN
 #define INCGFX(...) {0}
 #define INCGFX_U8   INCGFX
 #define INCGFX_U16  INCGFX
