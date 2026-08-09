@@ -529,7 +529,16 @@ VF_Not_Enough::
 	
 RogueRestStopGames_EventScript_Pachinko::
 	lockall
-	msgbox RogueRestStopGames_Text_CabinetOffline, MSGBOX_DEFAULT
+	checkitem ITEM_COIN_CASE
+	goto_if_eq VAR_RESULT, FALSE, RogueRestStopGames_EventScript_NoCoinCase
+	msgbox RogueRestStopGames_Text_Pachinko, MSGBOX_YESNO
+	closemessage
+	goto_if_eq VAR_RESULT, NO, RogueRestStopGames_CancelVF
+	playbgm MUS_RG_ROUTE1, FALSE
+	callnative PlayPachinko
+	waitstate
+	savebgm MUS_DUMMY
+	fadedefaultbgm
 	releaseall
 	end
 

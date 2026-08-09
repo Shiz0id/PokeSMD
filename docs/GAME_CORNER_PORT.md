@@ -418,6 +418,51 @@ happen to pass one of those two counters. Now initialised to the Gastly rate.
 **16 KB of BG tilemap a session**, two buffers at `BG_SCREEN_SIZE * 4`, the
 largest in the port, plus unfreed window buffers.
 
+### Pachinko — DONE, and being a copy of pinball cut both ways
+
+It is pinball with the flippers and bumpers commented out and a 23-level
+progression bolted on. Every pinball fix reappeared here — the same
+`GetCollisionAttribute` and `GetCollisionMaskRow` switches with no `default:`,
+the same `UpdateGhost` multiplier, the same `-Wno-missing-braces` — and the
+signed INCBIN work from pinball meant its tables just built.
+
+**But commenting a body out leaves the shell behind, and that is where the new
+faults were.** Four things, all consequences of removing the flippers:
+
+- **Three `bool32` functions have entirely commented-out bodies** and fall off
+  the end returning whatever is in r0. Nothing calls them — the call sites are
+  commented out too — but they now `return FALSE` explicitly rather than
+  relying on that.
+- **`HandleBallPhysics` reads `isFlipperColliding` uninitialised** (a hard
+  `-Werror=uninitialized`, not a "maybe") and picks `collisionNormal` from it,
+  with `isObjectColliding` gating the whole physics response. Both are FALSE by
+  construction — the calls that would set them are commented out — so they say
+  so now, which makes `staticCollisionNormal` the only reachable choice.
+- **`GetCollisionMaskRow` returns `ReverseBits(mask)` with `mask` never
+  assigned** for collision attributes 0xE0–0xFF, the flipper mask range. Zero
+  is the right answer for a table with no flippers.
+
+**`SPRITE_SIZE_64x16` does not exist, and never did.** Upstream added it to
+`include/gba/types.h` as `((ST_OAM_SIZE_3 << 2) | (ST_OAM_H_RECTANGLE))` —
+**bit-identical to `SPRITE_SIZE_64x32`**, because the GBA has no 64x16 OBJ size.
+Both `SPRITE_SIZE()` and `SPRITE_SHAPE()` derive from the same macro, so the
+sprite was always a 64x32. Uses `64x32` here rather than adding a fictional
+constant to the engine's types header.
+
+#### It leaks per level, not per session
+
+Worse reach than the gacha's, because a pachinko session moves through as many
+of the 23 levels as the player survives:
+
+- `LevelChange()` allocates a fresh `BG_SCREEN_SIZE` tilemap and abandons the
+  last, because `InitBgsFromTemplates` nulls the pointer first — 2 KB a level,
+  the gacha bug exactly.
+- `RandomLevel()` `Alloc`s a per-level collision map (704 bytes at level 1) into
+  the same field in all 23 branches, and only the exit path ever freed one.
+  Freed once at the top of the function rather than in 23 places.
+
+That is ~2.7 KB per level change on a 113 KB heap.
+
 ---
 
 ## Order of work, and the number to watch
@@ -434,16 +479,16 @@ Games are ported ascending by size so the cheap ones prove the pattern first:
 | `game_corner_gacha.c` | 4,418 | **ported, not yet played** |
 | `pinball.c` | 5,179 | **ported, not yet played** |
 | `derby.c` | 5,714 | |
-| `pachinko.c` | 6,868 | |
+| `pachinko.c` | 6,868 | **ported, not yet played** |
 
 **Read the linker line after every single one.** Budget at the start of the
 port, and after each game:
 
 ```
-             start  +VFlip +Flappy +Snake +Stacker +BJack +Gacha +Pinball
-EWRAM/262144 227688 227700 227704  227708 227712   227720 227732 227740 (+8 B)
-IWRAM/ 32768  28392  28392  28392   28392  28392    28392  28392  28392 (+0)
-ROM          84.59% 84.69% 84.74%  84.78% 84.84%   85.00% 85.14% 85.53% (+~128 KB)
+            start  +VFlip +Flappy +Snake +Stack +BJack +Gacha +Pinbl +Pachi
+EWRAM/262144 227688 227700 227704 227708 227712 227720 227732 227740 227748 (+8 B)
+IWRAM/ 32768  28392  28392  28392  28392  28392  28392  28392  28392  28392 (+0)
+ROM          84.59% 84.69% 84.74% 84.78% 84.84% 85.00% 85.14% 85.53% 85.90% (+~121 KB)
 ```
 
 **Four games in, IWRAM has not moved once**, and EWRAM has cost 24 bytes in
