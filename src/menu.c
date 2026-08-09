@@ -25,6 +25,7 @@
 #include "task.h"
 #include "text_window.h"
 #include "window.h"
+#include "constants/rogue_dungeon.h"
 #include "constants/songs.h"
 
 struct MenuInfoIcon
@@ -1883,9 +1884,6 @@ void BlitMenuInfoIcon(u8 windowId, u8 iconId, u16 x, u16 y)
 
 void BufferSaveMenuText(u8 textId, u8 *dest, u8 color)
 {
-    s32 curFlag;
-    s32 flagCount;
-    u8 *endOfString;
     u8 *string = dest;
 
     *(string++) = EXT_CTRL_CODE_BEGIN;
@@ -1915,14 +1913,20 @@ void BufferSaveMenuText(u8 textId, u8 *dest, u8 color)
     case SAVE_MENU_LOCATION:
         GetMapNameGeneric(string, gMapHeader.regionMapSectionId);
         break;
-    case SAVE_MENU_BADGES:
-        for (curFlag = FLAG_BADGE01_GET, flagCount = 0, endOfString = string + 1; curFlag < FLAG_BADGE01_GET + NUM_BADGES; curFlag++)
-        {
-            if (FlagGet(curFlag))
-                flagCount++;
-        }
-        *string = flagCount + CHAR_0;
-        *endOfString = EOS;
+    // Was SAVE_MENU_BADGES, and dead for exactly the reason the continue
+    // window's badge field was: RogueDungeon_ApplyNewGameUnlocks sets all eight
+    // badge flags at run start so high-level Pokemon obey, so this read 8 on
+    // every save that has ever existed.
+    //
+    // This is a SECOND screen. MainMenu_FormatSavegameRuns covers the
+    // save-select window and shares no code with it - different strings,
+    // different printer, different file - so fixing that one left this one
+    // saying BADGES.
+    //
+    // Five digits, left-aligned, because ShowSaveInfoWindow right-aligns the
+    // result itself and leading zeros would print 00007.
+    case SAVE_MENU_RUNS:
+        ConvertIntToDecimalStringN(string, VarGet(VAR_ROGUE_RUNS_COMPLETED), STR_CONV_MODE_LEFT_ALIGN, 5);
         break;
     }
 }
