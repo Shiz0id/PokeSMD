@@ -4002,8 +4002,12 @@ static void Cmd_getexp(void)
             {
                 gBattleScripting.getexpState = 5;
                 gBattleStruct->battlerExpReward = 0;
-                if (B_MAX_LEVEL_EV_GAINS >= GEN_5)
-                    MonGainEVs(&gParties[B_TRAINER_PLAYER][*expMonId], faintedSpecies);
+                // EVs are no longer earned from battle; they are allocated by
+                // hand in the stat editor. Kept as OUR 1.16.4 call rather than
+                // upstream's 1.16.1 one, so restoring it is uncommenting rather
+                // than re-deriving the identifiers.
+                //if (B_MAX_LEVEL_EV_GAINS >= GEN_5)
+                //    MonGainEVs(&gParties[B_TRAINER_PLAYER][*expMonId], faintedSpecies);
             }
             else
             {
@@ -4071,7 +4075,8 @@ static void Cmd_getexp(void)
                         gBattleStruct->teamGotExpMsgPrinted = TRUE;
                     }
 
-                    MonGainEVs(&gParties[B_TRAINER_PLAYER][*expMonId], faintedSpecies);
+                    // The main EV award. Off for the same reason as above.
+                    //MonGainEVs(&gParties[B_TRAINER_PLAYER][*expMonId], faintedSpecies);
                 }
                 gBattleScripting.getexpState++;
             }

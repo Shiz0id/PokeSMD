@@ -4970,6 +4970,7 @@ s32 CalculateFriendshipBonuses(struct Pokemon *mon, s32 modifier, enum HoldEffec
     return bonus;
 }
 
+// Left compiled; see the note on its prototype in include/pokemon.h.
 void MonGainEVs(struct Pokemon *mon, enum Species defeatedSpecies)
 {
     u8 evs[NUM_STATS];
