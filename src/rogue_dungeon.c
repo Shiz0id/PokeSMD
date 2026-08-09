@@ -1732,6 +1732,22 @@ static const struct RogueDungeonTheme *ThemeForFloor(u16 floor)
 // floor fills only the first NUM_WATER_MONS_ENCOUNTER_SLOTS of it.
 EWRAM_DATA static struct WildPokemon sDungeonWildMons[NUM_LAND_MONS_ENCOUNTER_SLOTS] = {0};
 
+// The rod gets a table of its own rather than sharing the one above, for two
+// reasons that both end in silence rather than a crash.
+//
+// TEN SLOTS AGAINST WATER'S FIVE, and the rod reads them in bands - Old Rod
+// draws slots 0-1, Good Rod 2-4, Super Rod 5-9. Sharing the buffer would hand a
+// Super Rod slots 5-9 of whatever the last surf roll happened to leave there,
+// which on a fresh floor is zeroes: species 0, level 0.
+//
+// AND THE ROTATION STRIDE IS THE SLOT COUNT. Making the shared stride 10 to
+// match would put gcd(10, 12) = 2 between stride and window, and the rotation
+// would then reach only half its ladder - the exact failure check_safari_pool.py
+// exists to catch. Its own rotation keeps the two independent.
+EWRAM_DATA static struct WildPokemon sDungeonFishingMons[NUM_FISHING_MONS_ENCOUNTER_SLOTS] = {0};
+EWRAM_DATA static struct WildPokemonInfo sDungeonFishingInfo = {0};
+EWRAM_DATA static u8 sFishingRotation = 0;
+
 // What the floor's deal was made from, kept so the water branch can re-deal it.
 //
 // WHY WATER RE-DEALS AND LAND DOES NOT. The engine gives water five encounter
@@ -2398,7 +2414,10 @@ bool8 RogueDungeon_TryHandleWhiteOut(void)
 //
 // Takes the LADDER rather than the theme, because the Safari Zone has pools and
 // no theme. Nothing here ever wanted anything else off the theme.
-static void DealWildSlots(const u16 *species, u32 slots,
+//
+// Takes the DESTINATION too, because fishing keeps a table of its own - see
+// sDungeonFishingMons.
+static void DealWildSlots(struct WildPokemon *dst, const u16 *species, u32 slots,
                           u32 bottom, u32 width, u32 rotation, u8 level)
 {
     u32 i;
@@ -2409,9 +2428,9 @@ static void DealWildSlots(const u16 *species, u32 slots,
     // which species lands in the common slots.
     for (i = 0; i < slots; i++)
     {
-        sDungeonWildMons[i].species = species[bottom + (i + rotation) % width];
-        sDungeonWildMons[i].minLevel = level;
-        sDungeonWildMons[i].maxLevel = level + DUNGEON_ENCOUNTER_LEVEL_SPREAD;
+        dst[i].species = species[bottom + (i + rotation) % width];
+        dst[i].minLevel = level;
+        dst[i].maxLevel = level + DUNGEON_ENCOUNTER_LEVEL_SPREAD;
     }
 }
 
@@ -2478,7 +2497,7 @@ static void BuildWildEncounterTable(u16 floor)
     sWildSlots = slots;
     sWildSpecies = theme->species;
 
-    DealWildSlots(theme->species, slots, bottom, width, rotation, level);
+    DealWildSlots(sDungeonWildMons, theme->species, slots, bottom, width, rotation, level);
 
     // encounterRate is read straight off the static table, not from here, so
     // this value is only a sane fallback.
@@ -2563,11 +2582,37 @@ static void BuildSafariEncounterTable(u16 floor, enum WildPokemonArea area)
     sWildSlots = slots;
     sWildSpecies = ladder;
 
-    DealWildSlots(ladder, slots, bottom, width, sWildRotation, level);
+    DealWildSlots(sDungeonWildMons, ladder, slots, bottom, width, sWildRotation, level);
 
     sDungeonWildInfo.encounterRate = 10;
     sDungeonWildInfo.wildPokemon = sDungeonWildMons;
     sDungeonWildArea = area;
+}
+
+// Deals the rod's ten slots from whatever window the water branch has already
+// worked out for this floor. Called only after that window is current.
+//
+// STRIDE 1, and that does not contradict the stride-`slots` finding at
+// sWildRotation. That one was about a table as wide as its window, where
+// advancing by one leaves eleven of twelve species in place and consecutive
+// tables read as identical. Ten slots into a twelve-wide window share eight
+// species at ANY stride, so the thing left worth getting right is which rung
+// lands in the Old Rod's two slots - and 1 is the only stride coprime with
+// every width, so every rung reaches them equally often.
+static const struct WildPokemonInfo *FishingInfoForCurrentWindow(void)
+{
+    // No window means no floor has been built for this surface yet, which is
+    // the one case where the static placeholder is the better answer.
+    if (sWildSpecies == NULL || sWildWidth == 0)
+        return NULL;
+
+    sFishingRotation = (sFishingRotation + 1) % sWildWidth;
+    DealWildSlots(sDungeonFishingMons, sWildSpecies, NUM_FISHING_MONS_ENCOUNTER_SLOTS,
+                  sWildBottom, sWildWidth, sFishingRotation, sWildLevel);
+
+    sDungeonFishingInfo.encounterRate = 10;
+    sDungeonFishingInfo.wildPokemon = sDungeonFishingMons;
+    return &sDungeonFishingInfo;
 }
 
 // Hooked into TryGenerateWildMon. Returning NULL leaves the caller on the
@@ -2584,6 +2629,21 @@ static void BuildSafariEncounterTable(u16 floor, enum WildPokemonArea area)
 // water branch, and before this they fell through to the static placeholder.
 const struct WildPokemonInfo *RogueDungeon_GetWildMonInfo(enum WildPokemonArea area)
 {
+    // FROM HERE DOWN, FISHING IS THE WATER BRANCH. The rod fishes the water the
+    // player would otherwise surf, so it wants the same ladder, the same window
+    // and the same levels; folding it in here rather than adding a third case
+    // means the Safari cache key, the theme's wildArea test and the level curve
+    // all keep working untouched. Only the final deal differs, and that has a
+    // table of its own.
+    //
+    // Which also settles where the rod works: on a floor this passes only when
+    // the theme's own wildArea is WATER, so the ocean and the seafloor - the two
+    // themes that have any water at all - and nowhere else.
+    bool8 fishing = (area == WILD_AREA_FISHING);
+
+    if (fishing)
+        area = WILD_AREA_WATER;
+
     if (IsSafariMap())
     {
         u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
@@ -2608,6 +2668,12 @@ const struct WildPokemonInfo *RogueDungeon_GetWildMonInfo(enum WildPokemonArea a
         if (area != sDungeonWildArea)
             return NULL;
     }
+
+    // The rod leaves here, ABOVE the re-deal below, so that a cast never
+    // advances the surf rotation. The two surfaces share a window, not a
+    // sequence.
+    if (fishing)
+        return FishingInfoForCurrentWindow();
 
     // RE-DEAL WHEN THE WINDOW IS WIDER THAN THE SLOTS, which is exactly when
     // re-dealing buys anything: the window then means "how many species can
@@ -2644,8 +2710,8 @@ const struct WildPokemonInfo *RogueDungeon_GetWildMonInfo(enum WildPokemonArea a
     if (sWildWidth > sWildSlots && sWildSpecies != NULL)
     {
         sWildRotation = (sWildRotation + sWildSlots) % sWildWidth;
-        DealWildSlots(sWildSpecies, sWildSlots, sWildBottom, sWildWidth,
-                      sWildRotation, sWildLevel);
+        DealWildSlots(sDungeonWildMons, sWildSpecies, sWildSlots, sWildBottom,
+                      sWildWidth, sWildRotation, sWildLevel);
     }
 
     return &sDungeonWildInfo;

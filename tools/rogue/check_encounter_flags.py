@@ -102,13 +102,16 @@ def slot_counts():
     text = (REPO / 'include/constants/wild_encounter.h').read_text(errors='replace')
     out = {}
     for area, macro in (('WILD_AREA_LAND', 'NUM_LAND_MONS_ENCOUNTER_SLOTS'),
-                        ('WILD_AREA_WATER', 'NUM_WATER_MONS_ENCOUNTER_SLOTS')):
+                        ('WILD_AREA_WATER', 'NUM_WATER_MONS_ENCOUNTER_SLOTS'),
+                        ('WILD_AREA_FISHING', 'NUM_FISHING_MONS_ENCOUNTER_SLOTS')):
         out[area] = int(re.search(r'#define\s+' + macro + r'\s+\((\d+)\)', text).group(1))
     return out
 
 
 # The JSON key each branch reads its table out of.
-AREA_TABLE = {'WILD_AREA_LAND': 'land_mons', 'WILD_AREA_WATER': 'water_mons'}
+AREA_TABLE = {'WILD_AREA_LAND': 'land_mons',
+              'WILD_AREA_WATER': 'water_mons',
+              'WILD_AREA_FISHING': 'fishing_mons'}
 
 
 def registered_maps():
@@ -337,6 +340,16 @@ def main():
         failures += bad
         print(f'    {"table":10} {line}' if not bad else f'    {line}')
 
+        # A surfable surface is also a FISHABLE one, and the rod reads a table of
+        # its own - ten slots, a different JSON key, and a guard
+        # (DoesCurrentMapHaveFishingMons) that turns a missing entry into "not
+        # even a nibble" rather than into anything visible. RogueDungeon_
+        # GetWildMonInfo folds fishing into the water branch, so a water theme
+        # whose map has no fishing_mons is a rod that never catches anything on
+        # a floor made entirely of water.
+        fish_tables = [(mapped, 'theme')]
+        fish_tables += [(extra, 'override') for extra in overrides.get(theme, [])]
+
         # ... and every map this theme's last floors swap in, held to the same
         # standard by the same function. They inherit the theme's SURFACE, so
         # they inherit its branch and slot count too - an override does not
@@ -345,6 +358,13 @@ def main():
             bad, line = check_registration(extra, table, derived, slots, registered)
             failures += bad
             print(f'    {"override":10} {line}' if not bad else f'    {line}')
+
+        if derived == 'WILD_AREA_WATER':
+            for target, kind in fish_tables:
+                bad, line = check_registration(target, AREA_TABLE['WILD_AREA_FISHING'],
+                                               'WILD_AREA_FISHING', slots, registered)
+                failures += bad
+                print(f'    {"rod":10} {line}' if not bad else f'    {line}')
 
     print()
     print('generator reads the theme table')

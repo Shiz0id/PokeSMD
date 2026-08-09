@@ -32,6 +32,16 @@ RogueDungeonFloor_EventScript_ChooseStarters::
 	@ in a run responds to it: the ocean floor is already water, the seafloor is
 	@ a property of the map, and the jungle's water is MB_PUDDLE on purpose.
 	additem ITEM_ROGUE_SURF_TOOL, 1
+	@ The third tool, and the one that makes the fishing minigame reachable at
+	@ all: no map in a run grants a rod, so without this the whole feature is
+	@ dead code. It works on the two water themes and on the Safari's ponds --
+	@ see RogueDungeon_GetWildMonInfo, which folds fishing into the water branch.
+	@
+	@ DELIBERATELY THE OLD ROD AND DELIBERATELY UNCONDITIONAL. The upgradeable
+	@ rod is the next piece of work and will want to own how a rod is obtained
+	@ and how it improves; this is one line for it to replace rather than a
+	@ progression to unpick.
+	additem ITEM_OLD_ROD, 1
 	setvar VAR_ROGUE_RUN_STATE, ROGUE_RUN_ACTIVE
 	releaseall
 	end
