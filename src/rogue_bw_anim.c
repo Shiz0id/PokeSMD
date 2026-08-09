@@ -128,7 +128,32 @@ static bool32 IsBattlerMonSprite(u32 battler, u16 species)
         return TRUE;
     }
 
-    return spriteId == sBwSpriteId[battler];
+    if (spriteId != sBwSpriteId[battler])
+        return FALSE;
+
+    // THE LATCH ANSWERS "THE STAMP WAS TRAMPLED", NOT "THIS IS STILL OUR
+    // SPRITE", and on its own it cannot tell those apart. A fainting mon's
+    // sprite is DESTROYED and its slot reused, while gBattlerSpriteIds still
+    // holds the old id - so the latch handed whatever claimed that slot next
+    // our permission to write 2 KB into it. That is the healthbox garbage for
+    // the FOURTH time, arriving on faint instead of at send-out, and it is the
+    // hole the latch opened when it fixed the KO freeze.
+    //
+    // A battler's mon sprite draws out of gMonSpritesGfxPtr->frameImages for
+    // its own position; a healthbox, a ball or a weather sprite does not. This
+    // does NOT separate a mon from a TRAINER sprite - they share frameImages
+    // after AllocateMonSpritesGfx - but it does not have to, because a
+    // gBattlerSpriteIds re-pointed at a trainer no longer equals the latch and
+    // has already been rejected above.
+    //
+    // Do not swap this for an `invisible` test: the sprite that took the slot
+    // is perfectly visible, which is exactly why TickBattler's own invisible
+    // guard let this through.
+    if (gMonSpritesGfxPtr == NULL || !gSprites[spriteId].inUse)
+        return FALSE;
+
+    return gSprites[spriteId].images
+        == gMonSpritesGfxPtr->frameImages[GetBattlerPosition(battler)];
 }
 
 // Put a frame where the engine will draw it.
