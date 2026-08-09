@@ -3414,10 +3414,17 @@ static void MoveCursor(int direction)
     }
 }
 
-static void ExitGacha(void)
+static void ExitGacha(u8 taskId)
 {
     if (!gPaletteFade.active)
     {
+        // The main loop is a task, and the overworld runs tasks too -- so
+        // leaving it alive does not stop it, it hands it to the field with
+        // sGacha NULL. It then reads its state byte off address 0 and acts on
+        // whatever comes back, every frame. Voltorb Flip is the only one of
+        // the nine upstream destroys its main task in, and the only one
+        // anyone had played.
+        DestroyTask(taskId);
         SetMainCallback2(CB2_ReturnToFieldContinueScriptPlayMapMusic);
         GameCorner_FreeBgTilemapBuffers();
         // InitGachaScreen calls InitWindows(sGachaWinTemplates) and nothing
@@ -3643,7 +3650,7 @@ static void GachaMain(u8 taskId)
         StartExitGacha();
         break;
     case GACHA_STATE_EXIT:
-        ExitGacha();
+        ExitGacha(taskId);
         break;
 	case STATE_INIT_A: // Initial state
 		sGacha->Input = 1;
