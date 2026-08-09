@@ -248,7 +248,7 @@ static void UpdateCards(void);
 static void SetCardSprite(u8 cardId, u8 cardNum, u8 cardIndex, u8 isPlayerCard);
 static void MoveCursor(int direction);
 static void StartExitBJ(void);
-static void ExitBJ(void);
+static void ExitBJ(u8 taskId);
 static void HandleInput(void);
 static void BJMain(u8 taskId);
 static void HandleInput_BJComplete(void);
@@ -2057,7 +2057,10 @@ static void InitBJScreen(void)
 	
 	
     InitWindows(sBJWinTemplates);
-	sTextWindowId = 1;
+	// Not 1: window 1 is a static template from sBJWinTemplates, and a
+	// BGrefresh() reaching it before the first ShowMessage would remove a
+	// window this game never added.
+	sTextWindowId = WINDOW_NONE;
 
 	LoadPalette(GetTextWindowPalette(2), 11 * 16, 32);
     ShowHelpBar(sHelpBarHitStandText);
@@ -2076,9 +2079,19 @@ static void InitBJScreen(void)
 
 static void BGrefresh(void)
 {
-	//HideBg(BJ_WIN_MENU);
+	// Every hand ends `BGrefresh(); Reset();` and Reset() opens with a
+	// BGrefresh() of its own, so the message window was removed twice. The
+	// second RemoveWindow runs against sDummyWindowTemplate, whose .bg is
+	// 0xFF -- it indexes gWindowBgTilemapBuffers out of bounds and misses
+	// freeing a garbage pointer only because every removed slot also counts
+	// as active on bg 0xFF. Guarded here rather than at the four call sites,
+	// so a fifth cannot reintroduce it.
+	if (sTextWindowId == WINDOW_NONE)
+		return;
+
 	ClearStdWindowAndFrame(sTextWindowId, TRUE);
     RemoveWindow(sTextWindowId);
+	sTextWindowId = WINDOW_NONE;
 }
 
 static void BJMain(u8 taskId)
@@ -2106,7 +2119,7 @@ static void BJMain(u8 taskId)
         StartExitBJ();
         break;
     case BJ_STATE_EXIT:
-        ExitBJ();
+        ExitBJ(taskId);
         break;
     }
 }
@@ -2117,6 +2130,9 @@ static void ShowMessage(const u8 *str)
 	SetWindowTemplateFields(&template, BJ_WIN_MENU, 3, 15, 14, 4, 0xF, 0x194);
 	
     sTextWindowId = AddWindow(&template);
+    if (sTextWindowId == WINDOW_NONE)
+        return;
+
     FillWindowPixelBuffer(sTextWindowId, PIXEL_FILL(0));
     PutWindowTilemap(sTextWindowId);
     LoadUserWindowBorderGfx(sTextWindowId, 0x214, BG_PLTT_ID(14));
@@ -3366,10 +3382,18 @@ static void StartExitBJ(void)
     sBlackJack->state = BJ_STATE_EXIT;
 }
 
-static void ExitBJ(void)
+static void ExitBJ(u8 taskId)
 {
     if (!gPaletteFade.active)
     {
+        // BJMain is a task, and the overworld runs tasks too -- so leaving
+        // it alive here does not stop it, it just hands it to the field with
+        // sBlackJack NULL. It then reads its state byte off address 0 and
+        // indexes gSprites with garbage every frame. Voltorb Flip, the one
+        // game of the nine that has been played, is the only one upstream
+        // destroys its task in; snake, block stacker and flappy bird carry
+        // this same bug untouched.
+        DestroyTask(taskId);
         SetMainCallback2(CB2_ReturnToFieldContinueScriptPlayMapMusic);
         GameCorner_FreeBgTilemapBuffers();
         // InitBJScreen calls InitWindows and nothing ever frees the buffers it
