@@ -656,3 +656,4 @@ gSpecials::
 	def_special RogueDungeon_HideTakenFloorItem
 	def_special RogueDungeon_OnRunCompleted
 	def_special Special_ViewVoltorbFlip
+	def_special StartFlappyBird

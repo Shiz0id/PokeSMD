@@ -391,7 +391,36 @@ RogueRestStopGames_EventScript_Snake::
 
 RogueRestStopGames_EventScript_FlappyBird::
 	lockall
-	msgbox RogueRestStopGames_Text_CabinetOffline, MSGBOX_DEFAULT
+	checkitem ITEM_COIN_CASE
+	goto_if_eq VAR_RESULT, FALSE, RogueRestStopGames_EventScript_NoCoinCase
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, 25, Butterfree_Not_Enough
+	showcoinsbox 1, 1
+	msgbox RogueRestStopGames_Text_Bird, MSGBOX_YESNO
+	closemessage
+	goto_if_eq VAR_RESULT, NO, RogueRestStopGames_CancelVF
+	removecoins 25
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	delay 40
+	hidecoinsbox 0, 5
+	playbgm MUS_NONE, FALSE
+	special StartFlappyBird
+	waitstate
+	savebgm MUS_DUMMY
+	fadedefaultbgm
+	goto_if_eq VAR_GC_FLIP_WINNINGS, 0, RogueRestStopGames_NoWin
+	showcoinsbox 1, 1
+	buffernumberstring STR_VAR_1, VAR_GC_FLIP_WINNINGS
+	msgbox PB_YOU_WON_TEXT, MSGBOX_DEFAULT
+	waitmessage
+	addcoins VAR_GC_FLIP_WINNINGS
+	setvar VAR_GC_FLIP_WINNINGS, 0
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	delay 40
+	hidecoinsbox 0, 5
+	closemessage
 	releaseall
 	end
 

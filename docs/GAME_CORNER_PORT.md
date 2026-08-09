@@ -130,6 +130,60 @@ against a working build, because the author was fighting the RAM and audio
 layout machinery described above. *The parts that compile have not necessarily
 run.* Read what each game does with its vars, and play it.
 
+### Flappy Bird — DONE, same three substitutions, plus a 6 KB leak
+
+Nothing new in the API drift: the identical three fixes, at seventeen sprite
+sheet sites instead of two. `tools/rogue/port_sprite_sheets.py` does that
+rewrite mechanically and **refuses** where a site's hand-written `.size`/`.tag`
+disagree with the struct's own, since `LoadCompressedSpriteSheet` reads both off
+the struct. Use it for the remaining seven; it takes one file.
+
+`StartFlappyBird` was already in `flappybird.c`, so only the `def_special` line
+was needed. Its header also declared `static void FlappyBirdMainCallback(void);`
+— a static forward declaration in a public header, which does nothing useful and
+would warn in any file that included it. Dropped.
+
+#### It leaks 6,144 bytes a session, which is the mining minigame's bug exactly
+
+`InitFlappyBirdScreen` does this:
+
+```c
+SetBgTilemapBuffer(FlappyBird_BG, AllocZeroed(BG_SCREEN_SIZE));
+SetBgTilemapBuffer(FlappyBird_FG, AllocZeroed(BG_SCREEN_SIZE));
+SetBgTilemapBuffer(Arcade_BG,     AllocZeroed(BG_SCREEN_SIZE));
+```
+
+and `ExitFlappyBird` freed only `sFlappy`. No pointer to those three buffers is
+kept anywhere, so they are unreachable the moment the game exits. Same size,
+same cause and the same consequence as `Mining_FreeResources` — `InitHeap` runs
+at boot and save-load rather than per map, and `AllocZeroed` calls `fatalf`
+rather than returning NULL, so it accumulates across a run and ends in a crash.
+The rest stop sits between every dungeon, so the cabinet is very replayable.
+
+`ExitFlappyBird` now walks all four BGs and frees whatever tilemap each holds.
+The loop is safe because `InitBgFromTemplate` sets `sGpuBgConfigs2[bg].tilemap =
+NULL` and `GetBgTilemapBuffer` returns NULL for an invalid or non-visible BG —
+so it frees exactly the three that were allocated and skips the fourth, whose
+`AllocZeroed` upstream left commented out.
+
+**Every remaining game has this shape, so check each one.** Count of
+`SetBgTilemapBuffer(… Alloc …)` call sites upstream:
+
+| | sites | | | sites |
+|---|---|---|---|---|
+| `game_corner_gacha` | 13 | | `pinball` | 2 |
+| `derby` | 4 | | `snake` | 1 |
+| `pachinko` | 3 | | `block_stacker` | 1 |
+| | | | `game_corner_blackjack` | 1 |
+
+Whether each *frees* them is the open question — the count only says where to
+look. Confirm the exit path releases every one before calling a game done.
+
+Note also that two of two games ported so far carried a real defect that builds
+clean and runs: Voltorb Flip's difficulty ladder, and this. Neither is a port
+artefact — both are upstream's, and both are invisible without either reading
+the code or playing a long session. Assume the remaining seven are the same.
+
 ---
 
 ## Order of work, and the number to watch
@@ -139,7 +193,7 @@ Games are ported ascending by size so the cheap ones prove the pattern first:
 | | lines | state |
 |---|---|---|
 | `rogue_voltorbflip.c` | 1,371 | **ported, and confirmed in play** |
-| `flappybird.c` | 1,914 | |
+| `flappybird.c` | 1,914 | **ported, not yet played** |
 | `snake.c` | 2,386 | |
 | `block_stacker.c` | 2,507 | |
 | `game_corner_blackjack.c` | 3,403 | |
@@ -152,10 +206,10 @@ Games are ported ascending by size so the cheap ones prove the pattern first:
 port, and after each game:
 
 ```
-                    at start      + Voltorb Flip
-EWRAM  / 262,144     227,688         227,700   (+12 B)
-IWRAM  /  32,768      28,392          28,392   (+0)
-ROM                   84.59%          84.69%   (+~33 KB)
+                    at start      + Voltorb Flip    + Flappy Bird
+EWRAM  / 262,144     227,688         227,700          227,704   (+4 B)
+IWRAM  /  32,768      28,392          28,392           28,392   (+0)
+ROM                   84.59%          84.69%           84.74%   (+~16 KB)
 ```
 
 **Voltorb Flip cost 12 bytes of EWRAM and nothing at all in IWRAM**, which is
