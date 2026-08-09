@@ -621,25 +621,53 @@ VF_Cash_Out::
 	
 RogueRestStopGames_EventScript_Gacha_Basic::
 	lockall
-	msgbox RogueRestStopGames_Text_CabinetOffline, MSGBOX_DEFAULT
+	checkitem ITEM_COIN_CASE
+	goto_if_eq VAR_RESULT, FALSE, RogueRestStopGames_EventScript_NoCoinCase
+	setvar VAR_0x8004, 1
+	playbgm MUS_RG_CINNABAR, FALSE
+	special StartGacha
+	waitstate
+	savebgm MUS_DUMMY
+	fadedefaultbgm
 	releaseall
 	end
 
 RogueRestStopGames_EventScript_Gacha_Great::
 	lockall
-	msgbox RogueRestStopGames_Text_CabinetOffline, MSGBOX_DEFAULT
+	checkitem ITEM_COIN_CASE
+	goto_if_eq VAR_RESULT, FALSE, RogueRestStopGames_EventScript_NoCoinCase
+	setvar VAR_0x8004, 2
+	playbgm MUS_RG_CINNABAR, FALSE
+	special StartGacha
+	waitstate
+	savebgm MUS_DUMMY
+	fadedefaultbgm
 	releaseall
 	end
 
 RogueRestStopGames_EventScript_Gacha_Ultra::
 	lockall
-	msgbox RogueRestStopGames_Text_CabinetOffline, MSGBOX_DEFAULT
+	checkitem ITEM_COIN_CASE
+	goto_if_eq VAR_RESULT, FALSE, RogueRestStopGames_EventScript_NoCoinCase
+	setvar VAR_0x8004, 3
+	playbgm MUS_RG_CINNABAR, FALSE
+	special StartGacha
+	waitstate
+	savebgm MUS_DUMMY
+	fadedefaultbgm
 	releaseall
 	end
 
 RogueRestStopGames_EventScript_Gacha_Master::
 	lockall
-	msgbox RogueRestStopGames_Text_CabinetOffline, MSGBOX_DEFAULT
+	checkitem ITEM_COIN_CASE
+	goto_if_eq VAR_RESULT, FALSE, RogueRestStopGames_EventScript_NoCoinCase
+	setvar VAR_0x8004, 4
+	playbgm MUS_RG_CINNABAR, FALSE
+	special StartGacha
+	waitstate
+	savebgm MUS_DUMMY
+	fadedefaultbgm
 	releaseall
 	end
 

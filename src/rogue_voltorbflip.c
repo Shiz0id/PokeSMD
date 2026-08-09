@@ -133,9 +133,6 @@ struct VoltorbFlipState
 
 EWRAM_DATA static struct Vflip *sVflip = NULL;
 
-extern const u8 gText_DexNational[];
-extern const u8 gText_DexHoenn[];
-extern const u8 gText_PokedexDiploma[];
 
 static void MainCB2(void);
 static void Task_VoltorbFlipFadeIn(u8);

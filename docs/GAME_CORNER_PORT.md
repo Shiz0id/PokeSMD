@@ -282,6 +282,83 @@ real `bool16 ResetAllPicSprites(void)` in `trainer_pokemon_sprites.h`. It only
 escaped being a conflicting declaration because nothing included both. Trimmed
 to `StartBlackJack`.
 
+### Gacha — DONE, and it is the one that fights the expansion
+
+By far the heaviest port. Everything below is expansion drift the other five did
+not have, because gacha is the only game that touches the Pokémon data layer.
+
+**417 lines of it were a dead copy of vanilla's `sSpeciesToNationalPokedexNum`.**
+Declared, never read, and sized `[NUM_SPECIES - 1]`. It accounted for about half
+the compile errors on its own. Deleted rather than ported — the expansion is in
+national order anyway and has `SpeciesToNationalPokedexNum()` if it is ever
+wanted.
+
+**The mon-giving block had to be rewritten against the current API:**
+
+| upstream | here |
+|---|---|
+| `CreateMon(&mon, species, level, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0)` | `CreateRandomMon(&mon, species, level)` — `CreateMon` is five arguments now and takes a `struct OriginalTrainerId` |
+| `GiveMonToPlayer(&mon)` | `GiveScriptedMonToPlayer(&mon, PARTY_SIZE)` — same return contract, handles a full party |
+| `gSpeciesNames[species]` | `GetSpeciesName(species)` |
+| `gMonFrontPicCoords[species].y_offset` | `gSpeciesInfo[species].frontPicYOffset` |
+
+**Three follow-up calls were deleted, not translated.**
+`CreateMonPicSprite_Affine` in the expansion decompresses the pic into its own
+buffer and loads the palette itself, so `LoadCompressedSpritePalette`,
+`SetMultiuseSpriteTemplateToPokemon` and `HandleLoadSpecialPokePic_2` are all
+redundant after it. The last is worse than redundant: it wrote through
+`gMonSpritesGfxPtr`, which `AllocateMonSpritesGfx` only fills for the duration
+of a battle. **On the field that pointer is NULL.**
+
+**Every prize was drawn shiny.** Upstream passed `SHINY_ODDS` into what is now
+the `bool8 isShiny` parameter of `CreateMonPicSprite_Affine`. Non-zero, so the
+sprite was always the shiny palette regardless of what `CreateRandomMon`
+actually rolled. Now `IsMonShiny(&mon)`, with the mon's real personality
+alongside it instead of a hardcoded 0.
+
+#### The 8 KB-per-pull heap leak
+
+The worst defect in the port, and the only one that compounds *within* a
+session. `BGSetup`, `BGRed`, `Shake1` and `Shake2` each swap the background by
+calling `InitBgsFromTemplates` and then handing `GACHA_BG_BASE` a fresh
+`AllocZeroed(BG_SCREEN_SIZE)`. Nothing frees the one already there — and it
+cannot, because `InitBgFromTemplate` has just set `sGpuBgConfigs2[bg].tilemap`
+to NULL, so the pointer is gone before anything could.
+
+One pull runs BGSetup → Shake1 → Shake2 → BGSetup → BGRed. Five allocations,
+four orphaned: **8 KB of a 113 KB heap per pull**, so a crash in well under
+twenty. `GameCorner_FreeBgTilemapBuffers()` now runs at the top of each of the
+four, **before** `InitBgsFromTemplates` for the reason above.
+
+It leaked window buffers too, same as blackjack.
+
+#### Two quieter ones
+
+**Its include guard was `GUARD_BLACKJACK_H`**, copy-pasted from
+`game_corner_blackjack.h` — so whichever of the two was included second in a
+translation unit would silently vanish.
+
+**`extern const u8 gText_FromGacha[];` in the .c hid a missing definition until
+link time.** Upstream defines it in `src/strings.c`, which this port does not
+take. An extern for a symbol that does not exist is silent until something
+references it — `gText_NicknameGacha` was declared beside it, never used, and
+would have surfaced the same way whenever someone reached for it. Voltorb Flip
+carried three of the same kind (`gText_DexNational`, `gText_DexHoenn`,
+`gText_PokedexDiploma`), all unused; removed.
+
+**Grep every remaining game for `extern const u8 gText_`** before believing it
+links.
+
+#### The prize table is 380 species, and all 380 are in the ROM
+
+Checked rather than assumed, because this build has Gen 5–9 disabled and a
+disabled family still compiles to a zeroed row — which is exactly how the divers
+carried eleven blank party slots. `tools/rogue/check_species_in_rom.py` now
+does that against `pokeemerald.map`; see the note below.
+
+Gacha's table is entirely Gen 1–3, so it came out clean. Do not take that as a
+reason to skip the check on derby or pachinko.
+
 ---
 
 ## Order of work, and the number to watch
@@ -295,7 +372,7 @@ Games are ported ascending by size so the cheap ones prove the pattern first:
 | `snake.c` | 2,386 | **ported, not yet played** |
 | `block_stacker.c` | 2,507 | **ported, not yet played** |
 | `game_corner_blackjack.c` | 3,403 | **ported, not yet played** |
-| `game_corner_gacha.c` | 4,418 | |
+| `game_corner_gacha.c` | 4,418 | **ported, not yet played** |
 | `pinball.c` | 5,179 | |
 | `derby.c` | 5,714 | |
 | `pachinko.c` | 6,868 | |
@@ -304,10 +381,10 @@ Games are ported ascending by size so the cheap ones prove the pattern first:
 port, and after each game:
 
 ```
-                 start   + VFlip   + Flappy   + Snake   + Stacker   + BJack
-EWRAM / 262,144  227,688  227,700   227,704   227,708    227,712    227,720  (+8 B)
-IWRAM /  32,768   28,392   28,392    28,392    28,392     28,392     28,392  (+0)
-ROM               84.59%   84.69%    84.74%    84.78%     84.84%     85.00%  (+~52 KB)
+              start   +VFlip  +Flappy  +Snake  +Stacker  +BJack  +Gacha
+EWRAM/262,144 227,688 227,700 227,704  227,708 227,712   227,720 227,732 (+12 B)
+IWRAM/ 32,768  28,392  28,392  28,392   28,392  28,392    28,392  28,392 (+0)
+ROM            84.59%  84.69%  84.74%   84.78%  84.84%    85.00%  85.14% (+~47 KB)
 ```
 
 **Four games in, IWRAM has not moved once**, and EWRAM has cost 24 bytes in
