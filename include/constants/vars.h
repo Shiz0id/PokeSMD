@@ -119,16 +119,20 @@
 #define VAR_ROUTE102_STATE                               0x4061 // Unused Var
 #define VAR_ROUTE103_STATE                               0x4062 // Unused Var
 #define VAR_ROUTE104_STATE                               0x4063
-#define VAR_ROUTE105_STATE                               0x4064 // Unused Var
-#define VAR_ROUTE106_STATE                               0x4065 // Unused Var
-#define VAR_ROUTE107_STATE                               0x4066 // Unused Var
-#define VAR_ROUTE108_STATE                               0x4067 // Unused Var
-#define VAR_ROUTE109_STATE                               0x4068 // Unused Var
+// Game Corner derby names and misc, in vanilla-unused Route 105-114 slots.
+// These nine did NOT collide with anything - unlike the nine at 0x40F7 that
+// had to be rehoused, see the block below - so they keep upstream's numbering.
+// 0x4069 is skipped because VAR_ROUTE110_STATE is genuinely used.
+#define VAR_GC_RACER_NAME_1                              0x4064
+#define VAR_GC_RACER_NAME_2                              0x4065
+#define VAR_GC_RACER_NAME_3                              0x4066
+#define VAR_GC_RACER_NAME_4                              0x4067
+#define VAR_GC_RACER_NAME_5                              0x4068
 #define VAR_ROUTE110_STATE                               0x4069
-#define VAR_ROUTE111_STATE                               0x406A // Unused Var
-#define VAR_ROUTE112_STATE                               0x406B // Unused Var
-#define VAR_ROUTE113_STATE                               0x406C // Unused Var
-#define VAR_ROUTE114_STATE                               0x406D // Unused Var
+#define VAR_GC_RACER_NAME_6                              0x406A
+#define VAR_GC_NICKNAME_TOGGLE                           0x406B // Confirms if nicknames were set
+#define VAR_GC_FLAPPY_HISCORE                            0x406C
+#define VAR_GC_TRAINER_ID_CHECK                          0x406D // Game corner gag
 #define VAR_ROUTE115_STATE                               0x406E // Unused Var
 #define VAR_ROUTE116_STATE                               0x406F
 #define VAR_ROUTE117_STATE                               0x4070 // Unused Var
@@ -136,21 +140,42 @@
 #define VAR_ROUTE119_STATE                               0x4072
 #define VAR_ROUTE120_STATE                               0x4073 // Unused Var
 #define VAR_ROUTE121_STATE                               0x4074
-#define VAR_ROUTE122_STATE                               0x4075 // Unused Var
-#define VAR_ROUTE123_STATE                               0x4076 // Unused Var
-#define VAR_ROUTE124_STATE                               0x4077 // Unused Var
-#define VAR_ROUTE125_STATE                               0x4078 // Unused Var
-#define VAR_ROUTE126_STATE                               0x4079 // Unused Var
-#define VAR_ROUTE127_STATE                               0x407A // Unused Var
+// Derby race values (species, shiny, condition), one per racer.
+#define VAR_GC_RACER_1                                   0x4075
+#define VAR_GC_RACER_2                                   0x4076
+#define VAR_GC_RACER_3                                   0x4077
+#define VAR_GC_RACER_4                                   0x4078
+#define VAR_GC_RACER_5                                   0x4079
+#define VAR_GC_RACER_6                                   0x407A
 #define VAR_ROUTE128_STATE                               0x407B
-#define VAR_ROUTE129_STATE                               0x407C // Unused Var
-#define VAR_ROUTE130_STATE                               0x407D // Unused Var
-#define VAR_ROUTE131_STATE                               0x407E // Unused Var
-#define VAR_ROUTE132_STATE                               0x407F // Unused Var
-#define VAR_ROUTE133_STATE                               0x4080 // Unused Var
-#define VAR_ROUTE134_STATE                               0x4081 // Unused Var
+#define VAR_GC_NEW_DERBY                                 0x407C // Check for derby reset
+// Game Corner, rehoused into the vanilla-unused Route 130-134 slots.
+//
+// These are DELIBERATELY NOT at 0x40F7-0x40FF, which is where the upstream
+// game corner put them and where the roguelike already lives. Four of its nine
+// landed exactly on ours:
+//
+//   0x40F7 VAR_PLAYER_BJ     vs VAR_ROGUE_RUN_STATE
+//   0x40F8 VAR_DEALER_BJ     vs VAR_ROGUE_RUNS_COMPLETED
+//   0x40FE VAR_FLIP_LEVEL    vs VAR_ROGUE_DUNGEON_SEED
+//   0x40FF VAR_FLIP_WINNINGS vs VAR_ROGUE_DUNGEON_FLOOR
+//
+// A var collision does not fail to build. It corrupts the run in silence, and
+// the game corner sits IN the rest stop - which the player passes through
+// between every dungeon - so a hand of blackjack would have overwritten the
+// run state and the completion counter, and a round of Voltorb Flip would have
+// RESEEDED THE NEXT FLOOR under the player.
+//
+// 0x40F7-0x40FF is roguelike territory. Five of those nine are still free and
+// they are the growth room for things like the shiny counter. Do not put
+// anything else there.
+#define VAR_GC_PLAYER_BJ                                 0x407D
+#define VAR_GC_DEALER_BJ                                 0x407E
+#define VAR_GC_BET_BJ                                    0x407F
+#define VAR_GC_OPTIONS_BJ                                0x4080
+#define VAR_GC_OPTION1_TILENUM                           0x4081
 #define VAR_LITTLEROOT_HOUSES_STATE_MAY                  0x4082
-#define VAR_UNUSED_0x4083                                0x4083 // Unused Var
+#define VAR_GC_OPTION2_TILENUM                           0x4083 // Game Corner - see the block at 0x407D
 #define VAR_BIRCH_LAB_STATE                              0x4084
 #define VAR_PETALBURG_GYM_STATE                          0x4085 // 0-1: Wally tutorial, 2-6: 0-4 badges, 7: Defeated Norman, 8: Rematch Norman
 #define VAR_CONTEST_HALL_STATE                           0x4086
@@ -158,13 +183,13 @@
 #define VAR_CONTEST_TYPE                                 0x4088
 #define VAR_SECRET_BASE_INITIALIZED                      0x4089
 #define VAR_CONTEST_PRIZE_PICKUP                         0x408A
-#define VAR_UNUSED_0x408B                                0x408B // Unused Var
+#define VAR_GC_OPTION3_TILENUM                           0x408B // Game Corner - see the block at 0x407D
 #define VAR_LITTLEROOT_HOUSES_STATE_BRENDAN              0x408C
 #define VAR_LITTLEROOT_RIVAL_STATE                       0x408D
 #define VAR_BOARD_BRINEY_BOAT_STATE                      0x408E
 #define VAR_DEVON_CORP_3F_STATE                          0x408F
 #define VAR_BRINEY_HOUSE_STATE                           0x4090
-#define VAR_UNUSED_0x4091                                0x4091 // Unused Var
+#define VAR_GC_FLIP_LEVEL                                0x4091 // Game Corner - see the block at 0x407D
 #define VAR_LITTLEROOT_INTRO_STATE                       0x4092
 #define VAR_MAUVILLE_GYM_STATE                           0x4093
 #define VAR_LILYCOVE_MUSEUM_2F_STATE                     0x4094
@@ -174,7 +199,7 @@
 #define VAR_PETALBURG_WOODS_STATE                        0x4098
 #define VAR_LILYCOVE_CONTEST_LOBBY_STATE                 0x4099
 #define VAR_RUSTURF_TUNNEL_STATE                         0x409A
-#define VAR_UNUSED_0x409B                                0x409B // Unused Var
+#define VAR_GC_FLIP_WINNINGS                             0x409B // Game Corner - see the block at 0x407D
 #define VAR_ELITE_4_STATE                                0x409C
 #define VAR_UNUSED_0x409D                                0x409D // Unused Var
 #define VAR_MOSSDEEP_SPACE_CENTER_STAIR_GUARD_STATE      0x409E
