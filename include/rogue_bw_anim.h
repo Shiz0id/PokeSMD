@@ -58,6 +58,12 @@ void RogueBwAnim_OnLoadSprite(u32 battler, u16 species);
 // frame. Safe to call when nothing is animating, and before sprites exist.
 void RogueBwAnim_Tick(void);
 
+// Called from FreeMonSprite when a battler's mon sprite is destroyed. Drops the
+// latched sprite id, because a sprite id is a SLOT NUMBER and the slot is about
+// to be handed to something else - the next mon, or the trainer sprite at the
+// end of a battle. Without this the latch keeps naming a slot it no longer owns.
+void RogueBwAnim_OnSpriteFreed(u32 battler);
+
 // Called from FreeMonSpritesGfx. Releases the chunk buffers.
 void RogueBwAnim_Free(void);
 

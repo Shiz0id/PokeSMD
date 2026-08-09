@@ -6,6 +6,7 @@
 #include "battle_arena.h"
 #include "battle_controllers.h"
 #include "battle_gfx_sfx_util.h"
+#include "rogue_bw_anim.h"
 #include "battle_interface.h"
 #include "battle_message.h"
 #include "battle_setup.h"
@@ -2043,6 +2044,11 @@ void StartSendOutAnim(enum BattlerId battler, bool32 dontClearTransform, bool32 
 
 static void FreeMonSprite(enum BattlerId battler)
 {
+    // Tell the BW streamer the slot is gone before it goes. It latches a sprite
+    // id once it has proved that sprite is the battler's mon, because the
+    // engine's stamp does not survive a mon animation - and a sprite id is a
+    // SLOT NUMBER, so the latch outlives the sprite unless it is told.
+    RogueBwAnim_OnSpriteFreed(battler);
     FreeSpriteOamMatrix(&gSprites[gBattlerSpriteIds[battler]]);
     DestroySprite(&gSprites[gBattlerSpriteIds[battler]]);
     if (!IsOnPlayerSide(battler))

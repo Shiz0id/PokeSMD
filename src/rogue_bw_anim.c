@@ -132,28 +132,46 @@ static bool32 IsBattlerMonSprite(u32 battler, u16 species)
         return FALSE;
 
     // THE LATCH ANSWERS "THE STAMP WAS TRAMPLED", NOT "THIS IS STILL OUR
-    // SPRITE", and on its own it cannot tell those apart. A fainting mon's
-    // sprite is DESTROYED and its slot reused, while gBattlerSpriteIds still
-    // holds the old id - so the latch handed whatever claimed that slot next
-    // our permission to write 2 KB into it. That is the healthbox garbage for
-    // the FOURTH time, arriving on faint instead of at send-out, and it is the
-    // hole the latch opened when it fixed the KO freeze.
+    // SPRITE", and on its own it cannot tell those apart. A mon's sprite is
+    // DESTROYED when it leaves the field and its slot is reused, while
+    // gBattlerSpriteIds keeps pointing at the freed slot - so both sides of
+    // the comparison above still hold the old id and whatever claimed that
+    // slot next inherits permission to have 2 KB written into its tiles.
     //
-    // A battler's mon sprite draws out of gMonSpritesGfxPtr->frameImages for
-    // its own position; a healthbox, a ball or a weather sprite does not. This
-    // does NOT separate a mon from a TRAINER sprite - they share frameImages
-    // after AllocateMonSpritesGfx - but it does not have to, because a
-    // gBattlerSpriteIds re-pointed at a trainer no longer equals the latch and
-    // has already been rejected above.
+    // A SPRITE ID IS A SLOT NUMBER, NOT AN IDENTITY. Slot numbers are
+    // recycled, so nothing derived from the id alone can survive the sprite
+    // it named being destroyed.
     //
-    // Do not swap this for an `invisible` test: the sprite that took the slot
-    // is perfectly visible, which is exactly why TickBattler's own invisible
-    // guard let this through.
-    if (gMonSpritesGfxPtr == NULL || !gSprites[spriteId].inUse)
+    // Do not try to re-derive identity from the sprite's CONTENTS either. That
+    // was the first attempt at this and it shipped: comparing `images` against
+    // gMonSpritesGfxPtr->frameImages correctly rejects a healthbox, and does
+    // NOT reject a trainer, because mon and trainer sprites come from the same
+    // gMultiuseSpriteTemplate and share frameImages after AllocateMonSpritesGfx
+    // - which engine-traps.md says in as many words. The healthbox garbage
+    // simply became a Geodude drawn over Roxanne. The stamp is the only content
+    // that ever separated the two, and the stamp is what does not survive.
+    //
+    // So the latch is invalidated at the SOURCE instead - see
+    // RogueBwAnim_OnSpriteFreed - and all that is left here is to notice a slot
+    // that has been freed and not yet reused, and drop the latch then too.
+    if (!gSprites[spriteId].inUse)
+    {
+        sBwSpriteId[battler] = SPRITE_NONE;
         return FALSE;
+    }
 
-    return gSprites[spriteId].images
-        == gMonSpritesGfxPtr->frameImages[GetBattlerPosition(battler)];
+    return TRUE;
+}
+
+// The battler's mon sprite is being destroyed; the latch must die with it.
+//
+// Called from FreeMonSprite, which is the return-to-ball path. A slot freed
+// here is reused almost immediately - by the next mon, or by the trainer
+// sprite at the end of a battle - and the latch would otherwise still name it.
+void RogueBwAnim_OnSpriteFreed(u32 battler)
+{
+    if (battler < MAX_BATTLERS_COUNT)
+        sBwSpriteId[battler] = SPRITE_NONE;
 }
 
 // Put a frame where the engine will draw it.
@@ -248,6 +266,19 @@ static void TickBattler(u32 battler, bool32 *decodedThisFrame)
         return;
     if (info->invisible || info->behindSubstitute)
         return;
+
+    // A FAINTED BATTLER HAS NO MON SPRITE TO ANIMATE. Its sprite is torn down
+    // and its slot handed to whatever comes next - the replacement mon, or the
+    // trainer sprite at the end of a battle - so anything published for it
+    // lands in someone else's tiles. That is what drew a Geodude over Roxanne.
+    //
+    // This is a semantic guard rather than another test on the sprite, and it
+    // is here because sprite identity is exactly what cannot be trusted at
+    // this moment. It deliberately does NOT stop the winner: the KO animation
+    // is played over the loser and reads well against the winner's BW frames,
+    // which is the thing the latch exists to keep working.
+    if (gBattleMons[battler].hp == 0)
+        return;
     if (spriteId == SPRITE_NONE || spriteId >= MAX_SPRITES || gSprites[spriteId].invisible)
         return;
 
@@ -321,6 +352,13 @@ void RogueBwAnim_Free(void)
 bool32 RogueBwAnim_WouldPublish(u32 battler)
 {
     if (battler >= MAX_BATTLERS_COUNT || sBwAnim[battler] == NULL)
+        return FALSE;
+
+    // MIRRORS TickBattler'S FAINT GUARD, and has to. This function exists so
+    // the publish decision is observable from a test, and a guard the tick
+    // applies but this does not is a guard no test can see - which is how the
+    // Geodude-over-Roxanne case would have shipped again.
+    if (gBattleMons[battler].hp == 0)
         return FALSE;
 
     return IsBattlerMonSprite(battler, sBwAnim[battler]->species);

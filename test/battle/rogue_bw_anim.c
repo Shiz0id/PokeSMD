@@ -188,3 +188,46 @@ SINGLE_BATTLE_TEST("BW anim: a KO animation does not freeze the winner")
         EXPECT_EQ(RogueBwAnim_WouldPublish(B_POSITION_OPPONENT_LEFT), TRUE);
     }
 }
+
+// The other half of the KO case, and the one that shipped TWICE.
+//
+// A fainted battler's mon sprite is DESTROYED and its slot handed straight to
+// whatever comes next - the replacement mon, or the trainer sprite at the end
+// of a battle. gBattlerSpriteIds keeps naming that slot and so does the latch,
+// so both still agree it is ours long after it stops being. The first time
+// this wrote a mon frame into the player's healthbox; the second, after a fix
+// that correctly rejected a healthbox but not a trainer, it drew a Geodude
+// over Roxanne.
+//
+// Nothing about sprite CONTENT tells a mon from a trainer - they come from the
+// same gMultiuseSpriteTemplate and share frameImages after
+// AllocateMonSpritesGfx - so the guard cannot be another test on the sprite.
+// It is the semantic one: a fainted battler has no mon sprite to animate.
+//
+// The companion above asserts the WINNER still publishes. Both are needed:
+// stopping too much looks identical to a fix and silently reintroduces the
+// freeze, and that half IS discriminating.
+//
+// THIS HALF IS NOT, AND SAYING SO IS THE POINT. It was broken on purpose -
+// the faint guard neutralised - and it still passed. In the test the freed
+// slot is never reused, so IsBattlerMonSprite rejects on !inUse whatever the
+// guard does; in the GAME the trainer sprite takes that slot, inUse is true,
+// and only the faint guard stops the write. The case that actually corrupts
+// anything needs a sprite to claim the slot, and nothing headless creates one.
+//
+// So this is a regression guard for a property worth keeping, not evidence the
+// Geodude-over-Roxanne bug is fixed. That evidence only exists on a screen -
+// which is what engine-traps.md means by nothing headless knowing which sprite
+// the tiles reached.
+SINGLE_BATTLE_TEST("BW anim: a fainted battler publishes nothing")
+{
+    GIVEN {
+        FORCE_MOVE_ANIM(TRUE);
+        PLAYER(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_GEODUDE) { HP(1); }
+    } WHEN {
+        TURN { MOVE(player, MOVE_TACKLE); }
+    } THEN {
+        EXPECT_EQ(RogueBwAnim_WouldPublish(B_POSITION_OPPONENT_LEFT), FALSE);
+    }
+}
