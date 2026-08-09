@@ -1350,7 +1350,10 @@ void StartMining(void)
 
 static void Mining_Init(MainCallback callback)
 {
-    sMiningUiState = AllocZeroed(sizeof(struct MiningState));
+    // Unchecked for the same reason as the tilemap buffers: the NULL branch
+    // below is a real fallback - return to the field and pretend nothing
+    // happened - and AllocZeroed would fatalf before ever reaching it.
+    sMiningUiState = AllocZeroedUnchecked(sizeof(struct MiningState));
 
     if (sMiningUiState == NULL)
     {
@@ -1494,9 +1497,15 @@ static bool32 Mining_InitBgs(void)
 {
     ResetAllBgsCoordinates();
 
-    sMiningUiState->sBg1TilemapBuffer = AllocZeroed(TILEMAP_BUFFER_SIZE);
-    sMiningUiState->sBg2TilemapBuffer = AllocZeroed(TILEMAP_BUFFER_SIZE);
-    sMiningUiState->sBg3TilemapBuffer = AllocZeroed(TILEMAP_BUFFER_SIZE);
+    // Unchecked, because the three NULL tests below are the whole point of
+    // this function returning bool32 and AllocZeroed can never return NULL -
+    // it calls fatalf. As shipped, the tests were dead code and the caller's
+    // Mining_FadeAndBail branch was unreachable: running out of heap crashed
+    // instead of backing out. The bail path frees whatever did get allocated,
+    // because Mining_FreeResources skips NULL members.
+    sMiningUiState->sBg1TilemapBuffer = AllocZeroedUnchecked(TILEMAP_BUFFER_SIZE);
+    sMiningUiState->sBg2TilemapBuffer = AllocZeroedUnchecked(TILEMAP_BUFFER_SIZE);
+    sMiningUiState->sBg3TilemapBuffer = AllocZeroedUnchecked(TILEMAP_BUFFER_SIZE);
 
     if (sMiningUiState->sBg3TilemapBuffer == NULL)
         return FALSE;
@@ -2771,8 +2780,25 @@ static void Task_MiningFadeAndExitMenu(u8 taskId)
 
 static void Mining_FreeResources(void)
 {
+    // The three BG tilemap buffers hang off the state struct, so they have to
+    // be freed BEFORE it - freeing the struct first loses the only pointers to
+    // them. That was the shipped bug: 3 x TILEMAP_BUFFER_SIZE = 6144 bytes
+    // orphaned per session, against a HEAP_SIZE of 115968. InitHeap runs at
+    // boot and save-load, not per map, so it accumulated across a run and
+    // AllocZeroed calls fatalf rather than returning NULL - about 19 sessions
+    // to a hard crash. FreeAllWindowBuffers does not cover these; those are
+    // window buffers, not manually allocated BG tilemaps.
+    //
+    // Setting the pointer to NULL is the other half. This function is reachable
+    // from both Task_MiningFadeAndExitMenu and Task_Mining_WaitFadeAndBail, and
+    // the old `if (sMiningUiState != NULL)` could not tell freed from live.
     if (sMiningUiState != NULL)
-        Free(sMiningUiState);
+    {
+        TRY_FREE_AND_SET_NULL(sMiningUiState->sBg1TilemapBuffer);
+        TRY_FREE_AND_SET_NULL(sMiningUiState->sBg2TilemapBuffer);
+        TRY_FREE_AND_SET_NULL(sMiningUiState->sBg3TilemapBuffer);
+        FREE_AND_SET_NULL(sMiningUiState);
+    }
 
     FreeAllWindowBuffers();
     ResetSpriteData();

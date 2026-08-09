@@ -414,6 +414,7 @@ extern const u8 Debug_EventScript_EWRAMCounters[];
 extern const u8 Debug_Follower_NPC_Event_Script[];
 extern const u8 Debug_Follower_NPC_Not_Enabled[];
 extern const u8 Debug_EventScript_Mining_Minigame[];
+extern const u8 Debug_EventScript_HeapUsage[];
 extern const u8 Debug_EventScript_Steven_Multi[];
 extern const u8 Debug_EventScript_WallyTutorial[];
 extern const u8 Debug_EventScript_PrintTimeOfDay[];
@@ -595,6 +596,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("Cheat start"),       DebugAction_Util_CheatStart },
     { COMPOUND_STRING("Berry Functions…"),  DebugAction_OpenSubMenu, sDebugMenu_Actions_BerryFunctions },
     { COMPOUND_STRING("EWRAM Counters…"),   DebugAction_ExecuteScript, Debug_EventScript_EWRAMCounters },
+    { COMPOUND_STRING("Heap usage…"),       DebugAction_ExecuteScript, Debug_EventScript_HeapUsage },
     { COMPOUND_STRING("Follower NPC…"),     DebugAction_OpenSubMenu, sDebugMenu_Actions_FollowerNPCMenu },
     { COMPOUND_STRING("Mining Minigame"),   DebugAction_ExecuteScript, Debug_EventScript_Mining_Minigame },
     { COMPOUND_STRING("Wally Tutorial"),    DebugAction_ExecuteScript, Debug_EventScript_WallyTutorial },
@@ -5056,4 +5058,41 @@ void CheckEWRAMCounters(struct ScriptContext *ctx)
 {
     ConvertIntToDecimalStringN(gStringVar1, gFollowerSteps, STR_CONV_MODE_LEFT_ALIGN, 5);
     ConvertIntToDecimalStringN(gStringVar2, gChainFishingDexNavStreak, STR_CONV_MODE_LEFT_ALIGN, 5);
+}
+
+// Free heap, live bytes and the largest contiguous run, walked off HeapHead().
+//
+// This exists to make heap leaks OBSERVABLE. The heap is the binding
+// constraint on the BW animated sprites (chunk size is set by it, not by ROM)
+// and it is what a UI leak eats, but nothing in the build reported it - the
+// mining minigame shipped orphaning 6144 bytes a session and the only symptom
+// would have been a fatalf about twenty sessions later, with nothing pointing
+// at the cause.
+//
+// Read it before and after any full-screen UI: the two numbers must match.
+// InitHeap runs at boot and save-load only, so a difference never comes back
+// on its own.
+void CheckHeapUsage(struct ScriptContext *ctx)
+{
+    const struct MemBlock *head = HeapHead();
+    const struct MemBlock *pos = head;
+    u32 freeBytes = 0, usedBytes = 0, largestFree = 0;
+
+    do {
+        if (pos->allocated)
+        {
+            usedBytes += pos->size;
+        }
+        else
+        {
+            freeBytes += pos->size;
+            if (pos->size > largestFree)
+                largestFree = pos->size;
+        }
+        pos = pos->next;
+    } while (pos != head);
+
+    ConvertIntToDecimalStringN(gStringVar1, freeBytes, STR_CONV_MODE_LEFT_ALIGN, 6);
+    ConvertIntToDecimalStringN(gStringVar2, usedBytes, STR_CONV_MODE_LEFT_ALIGN, 6);
+    ConvertIntToDecimalStringN(gStringVar3, largestFree, STR_CONV_MODE_LEFT_ALIGN, 6);
 }
