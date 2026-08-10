@@ -74,6 +74,7 @@
 #include "constants/trainers.h"
 #include "constants/union_room.h"
 #include "constants/weather.h"
+#include "bw_summary_screen.h"
 
 extern u16 gSpecialVar_ItemId;
 
@@ -5614,8 +5615,16 @@ static void Task_PokemonSummaryAnimateAfterDelay(u8 taskId)
     if (--gTasks[taskId].sAnimDelay == 0)
     {
         StartMonSummaryAnimation(READ_PTR_FROM_TASK(taskId, 0), gTasks[taskId].sAnimId);
+        // Two shadow systems land on this one task field. montmoguri's SwSh
+        // party menu owns tIsShadow and tracks its own shadows via
+        // StopShadowAnimDelayTask; the BW summary screen wants to be told.
+        // Non-shadow still goes to SummaryScreen_SetAnimDelayTaskId, which
+        // itself dispatches to the BW tracker. Behaviour is identical to before
+        // when BW_SUMMARY_SCREEN is FALSE.
         if (!gTasks[taskId].tIsShadow)
             SummaryScreen_SetAnimDelayTaskId(TASK_NONE);
+        else if (BW_SUMMARY_SCREEN)
+            SummaryScreen_SetShadowAnimDelayTaskId_BW(TASK_NONE);
         DestroyTask(taskId);
     }
 }
@@ -5690,6 +5699,8 @@ void PokemonSummaryDoMonAnimation(struct Sprite *sprite, enum Species species, b
 
         if (!isShadow)
             SummaryScreen_SetAnimDelayTaskId(taskId);
+        else if (BW_SUMMARY_SCREEN)
+            SummaryScreen_SetShadowAnimDelayTaskId_BW(taskId);
 
         SetSpriteCB_MonAnimDummy(sprite);
     }

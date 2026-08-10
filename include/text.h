@@ -30,6 +30,10 @@ enum {
     FONT_SHORT_NARROW,
     FONT_SHORT_NARROWER,
     FONT_BATTLE_UI_ELEMENTS, // Outlined BW battle UI lettering; glyphs overlap by a pixel.
+    // Appended rather than inserted next to FONT_SHORT_NARROW, where the vendor
+    // put it. Every existing font id keeps its value that way, and this enum has
+    // already been extended once by the BW battle UI above.
+    FONT_BW_SUMMARY_SCREEN,
 };
 
 #define FONT_MALE FONT_NORMAL

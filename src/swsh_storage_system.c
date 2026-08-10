@@ -49,6 +49,7 @@
 #include "constants/songs.h"
 #include "constants/pokemon_icon.h"
 #include "swsh_storage_system.h"
+#include "bw_summary_screen.h"
 
 /*
     NOTE: This file is large. Some general groups of functions have
@@ -3645,7 +3646,10 @@ static void Task_ChangeScreen(u8 taskId)
         maxMonIndex = sStorage->summaryMaxPos;
         mode = sStorage->summaryScreenMode;
         FreePokeStorageData();
-        ShowPokemonSummaryScreen(mode, boxMons, monIndex, maxMonIndex, CB2_ReturnToPokeStorage);
+        if (BW_SUMMARY_SCREEN)
+            ShowPokemonSummaryScreen_BW(mode, boxMons, monIndex, maxMonIndex, CB2_ReturnToPokeStorage);
+        else
+            ShowPokemonSummaryScreen(mode, boxMons, monIndex, maxMonIndex, CB2_ReturnToPokeStorage);
         break;
     case SCREEN_CHANGE_NAME_BOX:
         FreePokeStorageData();

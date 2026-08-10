@@ -33,6 +33,7 @@ static u16 FontFunc_SmallNarrower(struct TextPrinter *);
 static u16 FontFunc_ShortNarrow(struct TextPrinter *);
 static u16 FontFunc_ShortNarrower(struct TextPrinter *);
 static u16 FontFunc_BattleUIElements(struct TextPrinter *);
+static u16 FontFunc_BwSummaryScreen(struct TextPrinter *);
 static void DecompressGlyph_Small(u16, bool32);
 static void DecompressGlyph_Normal(u16, bool32);
 static void DecompressGlyph_Short(u16, bool32);
@@ -92,6 +93,7 @@ static const struct GlyphWidthFunc sGlyphWidthFuncs[] =
     { FONT_SHORT_NARROW,   GetGlyphWidth_ShortNarrow },
     { FONT_SHORT_NARROWER, GetGlyphWidth_ShortNarrower },
     { FONT_BATTLE_UI_ELEMENTS, GetGlyphWidth_BattleUIElements },
+    { FONT_BW_SUMMARY_SCREEN, GetGlyphWidth_Short },
 };
 
 struct
@@ -285,6 +287,19 @@ static const struct FontInfo sFontInfos[] =
         .color.accent = 4,
         .color.shadow = 3,
     },
+    [FONT_BW_SUMMARY_SCREEN] = {
+        .fontFunction = FontFunc_BwSummaryScreen,
+        .maxLetterWidth = 6,
+        .maxLetterHeight = 14,
+        .letterSpacing = 0,
+        .lineSpacing = 0,
+        // Written in the modern .color spelling; the vendor used the fgColor /
+        // bgColor / shadowColor names, which our text.h still accepts but marks
+        // DEPRECATED. No accent, matching the vendor rather than the neighbours.
+        .color.foreground = 2,
+        .color.background = 1,
+        .color.shadow = 3,
+    },
 };
 
 static const u8 sMenuCursorDimensions[][2] =
@@ -304,6 +319,7 @@ static const u8 sMenuCursorDimensions[][2] =
     [FONT_SHORT_NARROW]   = { 8,  14 },
     [FONT_SHORT_NARROWER] = { 8,  14 },
     [FONT_BATTLE_UI_ELEMENTS] = { 8, 16 },
+    [FONT_BW_SUMMARY_SCREEN] = { 8,  14 },
 };
 
 // these three arrays are most for readability, ie instead of returning a magic number 8
@@ -1199,6 +1215,16 @@ static u16 FontFunc_BattleUIElements(struct TextPrinter *textPrinter)
     return RenderText(textPrinter);
 }
 
+static u16 FontFunc_BwSummaryScreen(struct TextPrinter *textPrinter)
+{
+    if (textPrinter->hasFontIdBeenSet == FALSE)
+    {
+        textPrinter->fontId = FONT_BW_SUMMARY_SCREEN;
+        textPrinter->hasFontIdBeenSet = TRUE;
+    }
+    return RenderText(textPrinter);
+}
+
 void TextPrinterInitDownArrowCounters(struct TextPrinter *textPrinter)
 {
     if (gTextFlags.autoScroll == 1)
@@ -1402,6 +1428,10 @@ static u16 RenderText(struct TextPrinter *textPrinter)
         case CHAR_NEWLINE:
             textPrinter->printerTemplate.currentX = textPrinter->printerTemplate.x;
             textPrinter->printerTemplate.currentY += (gFonts[textPrinter->printerTemplate.fontId].maxLetterHeight + textPrinter->printerTemplate.lineSpacing);
+            // The BW summary screen's move descriptions are laid out for a
+            // 12px line, not the font's 14px maxLetterHeight.
+            if (textPrinter->fontId == FONT_BW_SUMMARY_SCREEN)
+                textPrinter->printerTemplate.currentY -= 2;
             if (textPrinter->printerTemplate.type == SPRITE_TEXT_PRINTER)
             {
                 struct Sprite *sprite = &gSprites[textPrinter->printerTemplate.spriteId];
@@ -1631,6 +1661,7 @@ static u16 RenderText(struct TextPrinter *textPrinter)
         case FONT_SHORT_COPY_1:
         case FONT_SHORT_COPY_2:
         case FONT_SHORT_COPY_3:
+        case FONT_BW_SUMMARY_SCREEN:
             DecompressGlyph_Short(currChar, textPrinter->japanese);
             break;
         case FONT_NARROW:

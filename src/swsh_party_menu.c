@@ -85,6 +85,7 @@
 #include "constants/rgb.h"
 #include "constants/songs.h"
 #include "ui_stat_editor.h"
+#include "bw_summary_screen.h"
 
 
 
@@ -3896,6 +3897,26 @@ static void CursorCb_StatEdit(u8 taskId)
 static const u8 sMultiSummaryMenuToArrayIndex[PARTY_SIZE] = {0, 2, 3, 1, 4, 5};
 static const u8 sMultiSummaryArrayIndexToMenu[PARTY_SIZE] = {0, 3, 1, 2, 4, 5};
 
+// The BW summary screen hooks in at every call site rather than inside
+// ShowPokemonSummaryScreen itself. This file is the live party menu -- the
+// vendor patched src/party_menu.c, which SWSH_PARTY_MENU compiles out -- so the
+// hooks are re-hosted here, behind one helper per entry point.
+static void PartyMenu_ShowSummaryScreen(u8 mode, void *mons, u8 monIndex, u8 maxMonIndex, void (*callback)(void))
+{
+    if (BW_SUMMARY_SCREEN)
+        ShowPokemonSummaryScreen_BW(mode, mons, monIndex, maxMonIndex, callback);
+    else
+        ShowPokemonSummaryScreen(mode, mons, monIndex, maxMonIndex, callback);
+}
+
+static void PartyMenu_ShowSelectMoveSummaryScreen(struct Pokemon *mons, u8 monIndex, void (*callback)(void), u16 newMove)
+{
+    if (BW_SUMMARY_SCREEN)
+        ShowSelectMovePokemonSummaryScreen_BW(mons, monIndex, callback, newMove);
+    else
+        ShowSelectMovePokemonSummaryScreen(mons, monIndex, callback, newMove);
+}
+
 static void CB2_ShowPokemonSummaryScreen(void)
 {
     if (gPartyMenu.menuType == PARTY_MENU_TYPE_IN_BATTLE)
@@ -3911,21 +3932,21 @@ static void CB2_ShowPokemonSummaryScreen(void)
                 GetMultiPartyForSummaryScreen();
         }
         if (gPartyMenu.layout == PARTY_LAYOUT_MULTI_FULL_PARTNER)
-            ShowPokemonSummaryScreen(SUMMARY_MODE_LOCK_MOVES, gParties[B_TRAINER_PARTNER], gPartyMenu.slotId, CalculatePartnerPartyCount() - 1, CB2_ReturnToPartyMenuFromSummaryScreen);
+            PartyMenu_ShowSummaryScreen(SUMMARY_MODE_LOCK_MOVES, gParties[B_TRAINER_PARTNER], gPartyMenu.slotId, CalculatePartnerPartyCount() - 1, CB2_ReturnToPartyMenuFromSummaryScreen);
         else if (gPartyMenu.layout == PARTY_LAYOUT_MULTI_FULL)
-            ShowPokemonSummaryScreen(SUMMARY_MODE_LOCK_MOVES, gParties[B_TRAINER_PLAYER], gPartyMenu.slotId, CalculatePartyCount(B_TRAINER_PLAYER) - 1, CB2_ReturnToPartyMenuFromSummaryScreen);
+            PartyMenu_ShowSummaryScreen(SUMMARY_MODE_LOCK_MOVES, gParties[B_TRAINER_PLAYER], gPartyMenu.slotId, CalculatePartyCount(B_TRAINER_PLAYER) - 1, CB2_ReturnToPartyMenuFromSummaryScreen);
         else if ((gBattleTypeFlags & BATTLE_TYPE_MULTI) && !AreMultiPartiesFullTeams())
-            ShowPokemonSummaryScreen(SUMMARY_MODE_LOCK_MOVES, gParties[B_TRAINER_PLAYER], sMultiSummaryMenuToArrayIndex[gPartyMenu.slotId], CalculatePartyCountOfSide(B_BATTLER_0) - 1, CB2_ReturnToPartyMenuFromSummaryScreen);
+            PartyMenu_ShowSummaryScreen(SUMMARY_MODE_LOCK_MOVES, gParties[B_TRAINER_PLAYER], sMultiSummaryMenuToArrayIndex[gPartyMenu.slotId], CalculatePartyCountOfSide(B_BATTLER_0) - 1, CB2_ReturnToPartyMenuFromSummaryScreen);
         else
-            ShowPokemonSummaryScreen(SUMMARY_MODE_LOCK_MOVES, gParties[B_TRAINER_PLAYER], gPartyMenu.slotId, CalculatePartyCountOfSide(B_BATTLER_0) - 1, CB2_ReturnToPartyMenuFromSummaryScreen);
+            PartyMenu_ShowSummaryScreen(SUMMARY_MODE_LOCK_MOVES, gParties[B_TRAINER_PLAYER], gPartyMenu.slotId, CalculatePartyCountOfSide(B_BATTLER_0) - 1, CB2_ReturnToPartyMenuFromSummaryScreen);
     }
     else if (gPartyMenu.menuType == PARTY_MENU_TYPE_CHOOSE_HALF)
     {
-        ShowPokemonSummaryScreen(SUMMARY_MODE_LOCK_MOVES, gParties[B_TRAINER_PLAYER], gPartyMenu.slotId, gPartiesCount[B_TRAINER_PLAYER] - 1, CB2_ReturnToPartyMenuFromSummaryScreen);
+        PartyMenu_ShowSummaryScreen(SUMMARY_MODE_LOCK_MOVES, gParties[B_TRAINER_PLAYER], gPartyMenu.slotId, gPartiesCount[B_TRAINER_PLAYER] - 1, CB2_ReturnToPartyMenuFromSummaryScreen);
     }
     else
     {
-        ShowPokemonSummaryScreen(SUMMARY_MODE_NORMAL, gParties[B_TRAINER_PLAYER], gPartyMenu.slotId, gPartiesCount[B_TRAINER_PLAYER] - 1, CB2_ReturnToPartyMenuFromSummaryScreen);
+        PartyMenu_ShowSummaryScreen(SUMMARY_MODE_NORMAL, gParties[B_TRAINER_PLAYER], gPartyMenu.slotId, gPartiesCount[B_TRAINER_PLAYER] - 1, CB2_ReturnToPartyMenuFromSummaryScreen);
     }
 }
 
@@ -7386,7 +7407,7 @@ static void Task_ShowSummaryScreenToForgetMove(u8 taskId)
 
 static void CB2_ShowSummaryScreenToForgetMove(void)
 {
-    ShowSelectMovePokemonSummaryScreen(gParties[B_TRAINER_PLAYER], gPartyMenu.slotId, CB2_ReturnToPartyMenuWhileLearningMove, gPartyMenu.data1);
+    PartyMenu_ShowSelectMoveSummaryScreen(gParties[B_TRAINER_PLAYER], gPartyMenu.slotId, CB2_ReturnToPartyMenuWhileLearningMove, gPartyMenu.data1);
 }
 
 static void CB2_ReturnToPartyMenuWhileLearningMove(void)
@@ -10150,7 +10171,7 @@ static void Task_BattlePyramidChooseMonHeldItems(u8 taskId)
 
 void MoveDeleterChooseMoveToForget(void)
 {
-    ShowPokemonSummaryScreen(SUMMARY_MODE_SELECT_MOVE, gParties[B_TRAINER_PLAYER], gSpecialVar_0x8004, gPartiesCount[B_TRAINER_PLAYER] - 1, CB2_ReturnToField);
+    PartyMenu_ShowSummaryScreen(SUMMARY_MODE_SELECT_MOVE, gParties[B_TRAINER_PLAYER], gSpecialVar_0x8004, gPartiesCount[B_TRAINER_PLAYER] - 1, CB2_ReturnToField);
     gFieldCallback = FieldCB_ContinueScriptHandleMusic;
 }
 
