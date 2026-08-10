@@ -327,6 +327,61 @@ static void MoveObjectEventToCoords(u8 localId, s16 targetX, s16 targetY, u8 fac
         DebugPrintf("Path Finding Time: %u", CycleCountEnd());
 }
 
+// The last script handed to ScriptMovement by the silent entry point below,
+// stored as the ALLOCATION BASE rather than what ReconstructPath returns --
+// that pointer is one byte past the base, so freeing it would corrupt the heap.
+static u8 *sTrackedGeneratedScript = NULL;
+
+void PathFinder_ReleaseTrackedScript(void)
+{
+    if (sTrackedGeneratedScript != NULL)
+    {
+        Free(sTrackedGeneratedScript);
+        sTrackedGeneratedScript = NULL;
+    }
+}
+
+bool32 PathFinder_MoveObjectToCoordsSilent(u8 localId, s16 targetX, s16 targetY, u8 facingDirection, u32 speed, u32 maxNodes)
+{
+    u8 objectEventId = GetObjectEventIdByLocalId(localId);
+    struct ObjectEvent *objectEvent;
+    struct PathFinderContext ctx;
+    u8 *movementScript;
+
+    // Checked BEFORE taking the address. GetObjectEventIdByLocalId returns
+    // OBJECT_EVENTS_COUNT on failure, and the vendor's own entry point indexes
+    // with it unguarded -- fine for a script macro naming an object the author
+    // knows exists, not fine for a caller asking about one that may never have
+    // spawned.
+    if (objectEventId >= OBJECT_EVENTS_COUNT)
+        return FALSE;
+
+    objectEvent = &gObjectEvents[objectEventId];
+    if (!objectEvent->active)
+        return FALSE;
+
+    ctx = CreatePathFinderContext(objectEvent, targetX, targetY, facingDirection, speed, maxNodes);
+    movementScript = FindPathForObjectEvent(&ctx, maxNodes);
+    DestroyPathFinderContext(&ctx);
+
+    // No path is an ordinary frame for a hunter, not an error: say nothing, move
+    // nothing, and leave whatever it was already walking alone.
+    if (movementScript == NULL)
+        return FALSE;
+
+    objectEvent->directionOverwrite = DIR_NONE;
+    ScriptMovement_StartObjectMovementScript(localId, gSaveBlock1Ptr->location.mapNum,
+                                             gSaveBlock1Ptr->location.mapGroup, movementScript);
+
+    // Only now is the previous script unreferenced: the call above replaced this
+    // object's entry in sMovementScripts. Freeing before it would hand
+    // ScriptMovement a dangling pointer to walk.
+    PathFinder_ReleaseTrackedScript();
+    sTrackedGeneratedScript = movementScript - 1; // step back over the BEGIN marker
+
+    return TRUE;
+}
+
 static u8 *FindPathForObjectEvent(struct PathFinderContext *ctx, u32 maxNodes)
 {
     assertf(maxNodes != 0, "maxNodes cannot be 0");

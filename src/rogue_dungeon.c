@@ -35,6 +35,7 @@
 #include "constants/rogue_evolution_levels.h"
 #include "constants/rogue_safari_pool.h"
 #include "rogue_dungeon.h"
+#include "rogue_hunt.h"
 
 extern const u8 RogueDungeonFloor_EventScript_Stairs[];
 extern const u8 RogueDungeonFloor_EventScript_Trainer[];
@@ -4805,6 +4806,11 @@ void RogueDungeon_LoadObjectEventTemplates(void)
     // This runs before the map is generated, so roll the floor now - trainer
     // placement needs to see the rooms.
     RogueDungeon_PrepareNewFloor();
+
+    // Hunting is off on a boss arena for the same reason those trainers are
+    // TRAINER_TYPE_NONE: they stand on their own platform, and pathing one off
+    // its rock strands it on the water for good.
+    RogueHunt_OnFloorLoad(!onPlatform);
 
     // An object event whose flagId is set is not spawned. Kept set permanently
     // so leftover placeholder slots stay invisible.

@@ -23,6 +23,7 @@
 #include "constants/field_effects.h"
 #include "constants/script_commands.h"
 #include "constants/trainer_types.h"
+#include "rogue_hunt.h"
 
 // this file's functions
 static u8 CheckTrainer(u8 objectEventId);
@@ -814,8 +815,14 @@ static bool8 TrainerExclamationMark(u8 taskId, struct Task *task, struct ObjectE
 {
     enum Direction direction;
 
-    ObjectEventGetLocalIdAndMap(trainerObj, &gFieldEffectArguments[0], &gFieldEffectArguments[1], &gFieldEffectArguments[2]);
-    FieldEffectStart(FLDEFF_EXCLAMATION_MARK_ICON);
+    // A hunter announces itself with sound and speed, from off-screen. The "!"
+    // is the opposite of that -- it tells the player exactly where and when, and
+    // it fires at the moment the chase should be paying off.
+    if (!RogueHunt_IsHunting(trainerObj->localId))
+    {
+        ObjectEventGetLocalIdAndMap(trainerObj, &gFieldEffectArguments[0], &gFieldEffectArguments[1], &gFieldEffectArguments[2]);
+        FieldEffectStart(FLDEFF_EXCLAMATION_MARK_ICON);
+    }
     direction = GetFaceDirectionMovementAction(trainerObj->facingDirection);
     ObjectEventSetHeldMovement(trainerObj, direction);
     task->tFuncId++; // TRSEE_EXCLAMATION_WAIT
