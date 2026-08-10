@@ -75,6 +75,7 @@
 #include "load_save.h"
 #include "battle_partner.h"
 #include "rogue_dungeon.h"
+#include "rogue_hunt.h"
 
 enum FollowerNPCCreateDebugMenu
 {
@@ -415,6 +416,9 @@ extern const u8 Debug_Follower_NPC_Event_Script[];
 extern const u8 Debug_Follower_NPC_Not_Enabled[];
 extern const u8 Debug_EventScript_Mining_Minigame[];
 extern const u8 Debug_EventScript_HeapUsage[];
+extern const u8 Debug_EventScript_RoguePlaceTrap[];
+extern const u8 Debug_EventScript_RogueHuntMe[];
+extern const u8 Debug_EventScript_RogueHuntStatus[];
 extern const u8 Debug_EventScript_Steven_Multi[];
 extern const u8 Debug_EventScript_WallyTutorial[];
 extern const u8 Debug_EventScript_PrintTimeOfDay[];
@@ -589,6 +593,9 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("Fly to map…"),       DebugAction_Util_Fly },
     { COMPOUND_STRING("Warp to map warp…"), DebugAction_Util_Warp_Warp },
     { COMPOUND_STRING("Rogue floor warp…"), DebugAction_Util_RogueFloor },
+    { COMPOUND_STRING("Rogue trap ahead"),  DebugAction_ExecuteScript, Debug_EventScript_RoguePlaceTrap },
+    { COMPOUND_STRING("Rogue hunt me"),     DebugAction_ExecuteScript, Debug_EventScript_RogueHuntMe },
+    { COMPOUND_STRING("Rogue hunt status"), DebugAction_ExecuteScript, Debug_EventScript_RogueHuntStatus },
     { COMPOUND_STRING("Set weather…"),      DebugAction_Util_Weather },
     { COMPOUND_STRING("Font Test…"),        DebugAction_ExecuteScript, Debug_EventScript_FontTest },
     { COMPOUND_STRING("Time Functions…"),   DebugAction_OpenSubMenu, sDebugMenu_Actions_TimeMenu, },
@@ -5095,4 +5102,107 @@ void CheckHeapUsage(struct ScriptContext *ctx)
     ConvertIntToDecimalStringN(gStringVar1, freeBytes, STR_CONV_MODE_LEFT_ALIGN, 6);
     ConvertIntToDecimalStringN(gStringVar2, usedBytes, STR_CONV_MODE_LEFT_ALIGN, 6);
     ConvertIntToDecimalStringN(gStringVar3, largestFree, STR_CONV_MODE_LEFT_ALIGN, 6);
+}
+
+// Arms an ambush trap on the tile the player is facing, and reports which of the
+// three things happened.
+//
+// The report is not politeness. An armed trap and a refused one are both a tile
+// with nothing drawn on it, so without a message the only way to tell them apart
+// is to step forward and wait to see whether anything comes.
+// Prints what the hunt is doing, in two lines.
+//
+// This exists because both rounds of hunt bugs so far were diagnosed by
+// inference from an empty screen. The two fields that matter most are `spawned`
+// and the search result: an off-screen hunter whose distance is falling is the
+// pursuit working, and one whose distance is frozen at FAILED is not.
+void DebugShowRogueHunt(struct ScriptContext *ctx)
+{
+    struct RogueHuntDebugInfo info;
+
+    RogueHunt_GetDebugInfo(&info);
+
+    if (info.localId == LOCALID_NONE)
+    {
+        StringCopy(gStringVar1, COMPOUND_STRING("No hunt running."));
+        ConvertIntToDecimalStringN(gStringVar3, info.huntable,
+                                   STR_CONV_MODE_LEFT_ALIGN, 2);
+        StringExpandPlaceholders(gStringVar2,
+                                 COMPOUND_STRING("huntable={STR_VAR_3}"));
+        return;
+    }
+
+    // Line 1: who, what state, and whether it currently exists as an object.
+    ConvertIntToDecimalStringN(gStringVar3, info.localId,
+                               STR_CONV_MODE_LEFT_ALIGN, 3);
+    StringCopy(gStringVar1, COMPOUND_STRING("id"));
+    StringAppend(gStringVar1, gStringVar3);
+    StringAppend(gStringVar1, COMPOUND_STRING(" "));
+    StringAppend(gStringVar1, RogueHunt_DebugStateName(info.state));
+    StringAppend(gStringVar1, info.spawned ? COMPOUND_STRING(" onscr d=")
+                                           : COMPOUND_STRING(" OFFSCR d="));
+    ConvertIntToDecimalStringN(gStringVar3, info.distance,
+                               STR_CONV_MODE_LEFT_ALIGN, 3);
+    StringAppend(gStringVar1, gStringVar3);
+
+    // Line 2: why it is or is not moving.
+    StringCopy(gStringVar2, COMPOUND_STRING("path="));
+    StringAppend(gStringVar2, RogueHunt_DebugSearchName(info.lastSearch));
+    StringAppend(gStringVar2, COMPOUND_STRING(" fail="));
+    ConvertIntToDecimalStringN(gStringVar3, info.failedRepaths,
+                               STR_CONV_MODE_LEFT_ALIGN, 2);
+    StringAppend(gStringVar2, gStringVar3);
+    StringAppend(gStringVar2, COMPOUND_STRING(" hunt="));
+    ConvertIntToDecimalStringN(gStringVar3, info.huntable,
+                               STR_CONV_MODE_LEFT_ALIGN, 2);
+    StringAppend(gStringVar2, gStringVar3);
+}
+
+// Toggles the any-map debug hunt: starts the farthest NPC on this map walking at
+// the player, or stops one already walking.
+//
+// A toggle rather than two entries because on a vanilla map NOTHING else ends
+// it. The dungeon hunt stands itself down on the stairs, on a boss floor and on
+// the warp out; here the only stop conditions are arrival, a warp, and running
+// out of failed searches.
+void DebugToggleRogueHunt(struct ScriptContext *ctx)
+{
+    u8 localId;
+
+    if (RogueHunt_IsDebugHunting())
+    {
+        RogueHunt_StopDebugHunt();
+        StringCopy(gStringVar1, COMPOUND_STRING("Hunt stopped."));
+        return;
+    }
+
+    localId = RogueHunt_DebugStartHunt();
+    if (localId == LOCALID_NONE)
+    {
+        // Covers both "the map has only scenery" and "every NPC is walled off
+        // from you", because selection paths rather than assuming. Worth not
+        // splitting: from where the player stands the two are the same fact.
+        StringCopy(gStringVar1, COMPOUND_STRING("No NPC here can reach you."));
+        return;
+    }
+
+    ConvertIntToDecimalStringN(gStringVar2, localId, STR_CONV_MODE_LEFT_ALIGN, 3);
+    StringExpandPlaceholders(gStringVar1,
+                             COMPOUND_STRING("Local ID {STR_VAR_2} is coming for you."));
+}
+
+void DebugPlaceRogueTrap(struct ScriptContext *ctx)
+{
+    switch (RogueDungeon_DebugPlaceTrapAhead())
+    {
+    case DEBUG_TRAP_PLACED:
+        StringCopy(gStringVar1, COMPOUND_STRING("Trap armed on the tile ahead."));
+        break;
+    case DEBUG_TRAP_NOT_A_FLOOR:
+        StringCopy(gStringVar1, COMPOUND_STRING("Not on a dungeon floor."));
+        break;
+    case DEBUG_TRAP_BLOCKED:
+        StringCopy(gStringVar1, COMPOUND_STRING("That tile is solid."));
+        break;
+    }
 }

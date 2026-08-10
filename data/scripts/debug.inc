@@ -682,6 +682,40 @@ Debug_EventScript_HeapUsage_Text::
 	.string "Heap free: {STR_VAR_1}\n"
 	.string "Used: {STR_VAR_2}  Max blk: {STR_VAR_3}$"
 
+@ Arms an ambush trap one tile ahead. The generator places these on 1 floor in 3
+@ and never before floor 3, and a trap has no art at all, so this is the only
+@ practical way to put the stalker chase on a screen on demand.
+Debug_EventScript_RoguePlaceTrap::
+	callnative DebugPlaceRogueTrap
+	msgbox Debug_EventScript_RoguePlaceTrap_Text, MSGBOX_DEFAULT
+	release
+	end
+
+Debug_EventScript_RoguePlaceTrap_Text::
+	.string "{STR_VAR_1}$"
+
+@ Starts or stops the any-map hunt. Unlike the trap above this one works on
+@ vanilla maps, which is the point of it -- it is for watching the A* route
+@ around geometry the dungeon generator never produces.
+Debug_EventScript_RogueHuntMe::
+	callnative DebugToggleRogueHunt
+	msgbox Debug_EventScript_RoguePlaceTrap_Text, MSGBOX_DEFAULT
+	release
+	end
+
+@ What the hunt is doing right now. Reading OFFSCR with a falling distance is the
+@ off-screen pursuit working; OFFSCR with a frozen distance, or path=FAILED, is
+@ the thing to report.
+Debug_EventScript_RogueHuntStatus::
+	callnative DebugShowRogueHunt
+	msgbox Debug_EventScript_RogueHuntStatus_Text, MSGBOX_DEFAULT
+	release
+	end
+
+Debug_EventScript_RogueHuntStatus_Text::
+	.string "{STR_VAR_1}\n"
+	.string "{STR_VAR_2}$"
+
 Debug_EventScript_FontTest_Text_1::
 	.string "{FONT_SMALL_NARROWER}"                 @ Edit this to test your font
 	.string "Angel Adept Blind Bodice Clique\n"

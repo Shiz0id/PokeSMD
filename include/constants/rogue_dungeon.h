@@ -102,6 +102,56 @@
 // Two rather than three, now that the rocks carry the mineral half.
 #define DUNGEON_MATERIALS_PER_FLOOR  2
 
+// AMBUSH TRAPS. A pressure plate that wakes a trainer somewhere else on the
+// floor and sends it after the player.
+//
+// They ride the SAME mechanism the buried items above do, which is why they
+// cost almost nothing: ApplyDungeonEvents already replaces gMapHeader.events
+// with a RAM copy so it can hand the floor a generated bgEvent array, and
+// coordEvents is the field next to it. GetCoordEventScriptAtPosition reads it
+// out of that same RAM header and fires on STEP-ON rather than on interaction.
+// So a trap needs no metatile, which matters: metatile ids are tileset-pair
+// specific, so a trap GRAPHIC would need an entry per theme across all
+// fourteen. There is no art here at all.
+//
+// This exists because the hunt's proximity trigger gives the player nothing to
+// learn -- every trainer is a threat at all times and none of it is anybody's
+// fault. A trap is a mistake you made, and it is the pathfinder's best case:
+// something you cannot see has to work out how to reach you.
+#define DUNGEON_MAX_TRAPS            2
+#define DUNGEON_TRAP_FIRST_FLOOR     3   // The first floors teach the basics.
+#define DUNGEON_TRAP_ODDS            3   // 1 floor in 3 carries any at all.
+
+// One var, and DELIBERATELY not a flag. The roguelike's flag block
+// FLAG_UNUSED_0x918-0x91E is FULL, seven of seven, and the only one left below
+// DAILY_FLAGS_START is 0x91F -- which is cleared by the RTC and would silently
+// re-arm every trap in the run overnight. Four vars remain free at
+// 0x40FA-0x40FD; this takes the first.
+//
+// It is the coord event's `trigger`, compared against `index` 0 by
+// ShouldTriggerScriptRun. So every trap on the floor fires while this is 0 and
+// none of them once the script sets it, which is the rule anyway: one ambush a
+// floor. Cleared by RollNewFloorSeed, so it follows FLAG_ROGUE_BOSS_REWARD_TAKEN
+// exactly -- reset on a genuinely NEW floor and never on a reload, or saving
+// next to a sprung trap and loading would arm it again underneath the player.
+//
+// It must never be 0 for a trap that has fired and must never be
+// TRIGGER_RUN_IMMEDIATELY (which is 0) in the trigger slot, hence a var id here
+// rather than a raw number.
+#define VAR_ROGUE_TRAP_STATE     VAR_UNUSED_0x40FA
+
+// What springing a trap actually did. Here rather than as a C enum because the
+// trap script switches on it and the assembler sees this header.
+//
+// ALL THREE PRINT, and that is the whole reason these exist rather than a bool.
+// A trap has no art of any kind, so a branch that returns silently cannot be
+// told apart from a trap that never fired -- which is exactly how the second
+// trap on a floor read while the "nothing to wake" branch was mute. If a trap
+// ever stops speaking, that is the bug, not the mechanic being subtle.
+#define TRAP_RESULT_WOKE      0   // something is coming
+#define TRAP_RESULT_NOBODY    1   // all beaten, absent, or written off
+#define TRAP_RESULT_ALREADY   2   // one is already hunting; a second adds nothing
+
 // The engine derives a hidden item's flag as
 // hiddenItemId + FLAG_HIDDEN_ITEMS_START, so the ids we choose ARE flags and
 // have to be ones nothing else owns. Vanilla's block runs 0x00..0x6F, and

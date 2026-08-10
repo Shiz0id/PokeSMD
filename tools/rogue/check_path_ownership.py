@@ -196,15 +196,28 @@ def check_hunt(bad):
     # after the assignment -- RogueHunt_OnFloorLoad releases last, the branches
     # in UpdateActiveHunter release first -- and a window wide enough for both
     # is wide enough to read one branch's release as the next branch's.
-    for m in re.finditer(r'sActiveHunter\s*=\s*HUNT_NO_HUNTER', text):
-        block = enclosing_block(text, m.start())
-        if block is None:
-            continue
-        if RELEASE not in block and CANCEL not in block:
-            line_no = text.count('\n', 0, m.start()) + 1
-            bad.append(f'rogue_hunt.c:{line_no}: stands the hunter down without '
-                       f'{RELEASE}() or {CANCEL}() in the same block - the path '
-                       f'it was walking stays owned with nothing to free it')
+    # TWO stand-down markers, because there are two hunts. The dungeon hunt
+    # clears sActiveHunter; the debug any-map hunt clears sDebugHuntLocalId and
+    # never touches sActiveHunter at all -- so a rule written only against the
+    # first read the second as having no stand-down to check, and passed it
+    # vacuously. That was true when the debug hunt landed: deleting its cancel
+    # outright changed nothing here.
+    #
+    # `!=` cannot match: the identifier is followed by `!` before the `=`.
+    stand_downs = (
+        r'sActiveHunter\s*=\s*HUNT_NO_HUNTER',
+        r'sDebugHuntLocalId\s*=\s*LOCALID_NONE',
+    )
+    for pattern in stand_downs:
+        for m in re.finditer(pattern, text):
+            block = enclosing_block(text, m.start())
+            if block is None:
+                continue
+            if RELEASE not in block and CANCEL not in block:
+                line_no = text.count('\n', 0, m.start()) + 1
+                bad.append(f'rogue_hunt.c:{line_no}: stands the hunter down without '
+                           f'{RELEASE}() or {CANCEL}() in the same block - the path '
+                           f'it was walking stays owned with nothing to free it')
 
 
 def main():

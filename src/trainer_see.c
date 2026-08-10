@@ -641,6 +641,16 @@ static u8 CheckTrainer(u8 objectEventId)
     gApproachingTrainers[gNoOfApproachingTrainers].objectEventId = objectEventId;
     gApproachingTrainers[gNoOfApproachingTrainers].trainerScriptPtr = trainerBattlePtr;
     gApproachingTrainers[gNoOfApproachingTrainers].radius = approachDistance;
+
+    // The chase ends the moment the approach is committed, and it has to end
+    // HERE rather than in the hunt's own tick. Everything from this point locks
+    // the player's field controls, and RogueHunt_Tick returns early on exactly
+    // that -- while ScriptMovement keeps stepping the hunter from its own task.
+    // A hunter left walking finishes its committed path underneath the
+    // exclamation mark and the intro textbox, straight through the player,
+    // because scripted movement actions are forced.
+    RogueHunt_OnTrainerSpotted(gObjectEvents[objectEventId].localId);
+
     InitTrainerApproachTask(&gObjectEvents[objectEventId], approachDistance - 1);
     gNoOfApproachingTrainers++;
 

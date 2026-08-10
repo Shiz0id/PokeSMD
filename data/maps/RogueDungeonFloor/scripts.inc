@@ -132,7 +132,12 @@ RogueDungeonFloor_EventScript_Trainer::
 	goto EventScript_TryDoNormalTrainerBattle
 
 @ Where SetTrainerBattleEndScript points, so gotopostbattlescript lands here.
+@ The tail every beaten dungeon trainer ends on. Removing the object here rather
+@ than leaving it standing is not just tidiness: a defeated trainer is still a
+@ solid object, and on a generated floor one of them in a one-wide corridor can
+@ wall the player off from the stairs.
 RogueDungeonFloor_EventScript_TrainerDone::
+	special RogueDungeon_HideBeatenTrainer
 	releaseall
 	end
 
@@ -319,6 +324,28 @@ RogueDungeonFloor_Text_AceNoRoom:
 RogueDungeonFloor_Text_GotTM:
 	.string "You received {STR_VAR_1}!$"
 
+@ The message is doing as much work here as the mechanic is. A chase announces
+@ itself with a panned sound and nothing else, so a player who has never met one
+@ has no idea what the noise meant -- this is what turns it into a rule they
+@ know. It deliberately does not say WHERE: that is what the panning is for.
+RogueDungeonFloor_Text_HuntTrap:
+	.string "The floor gives under your foot.\p"
+	.string "Somewhere behind you, something\n"
+	.string "stops what it was doing.$"
+
+@ The trap worked; there was simply nothing left on the floor to answer it. Said
+@ plainly, because the alternative -- silence -- is what a broken trap says.
+RogueDungeonFloor_Text_HuntTrapNobody:
+	.string "The floor gives under your foot.\p"
+	.string "Nothing answers.$"
+
+@ Already being hunted. This doubles as the cue that the thing from the last trap
+@ is still out there and still coming.
+RogueDungeonFloor_Text_HuntTrapAlready:
+	.string "The floor gives under your foot.\p"
+	.string "Whatever is already following you\n"
+	.string "does not need telling twice.$"
+
 @ A mining rock. The minigame is a special, so this is a lock, a call and a
 @ cleanup -- StartMining sets its own callback and returns to the field itself,
 @ which is why nothing here waits on it.
@@ -331,5 +358,47 @@ RogueDungeonFloor_EventScript_MiningRock::
 	faceplayer
 	special RogueDungeon_HideMinedRock
 	special StartMining
+	releaseall
+	end
+
+@ An ambush trap. This is a COORD EVENT, generated into EWRAM by PlaceTraps and
+@ installed through the RAM map header ApplyDungeonEvents already maintains for
+@ the buried items -- there is no trap in any map.json and there is no metatile.
+@
+@ It lives in this one file and all seven dungeon maps use it, because the
+@ script pointer is ours rather than something the map declares. That is the
+@ opposite of the object event templates, where the same script had to be named
+@ in seven separate events.inc files.
+@
+@ lockall rather than lock: there is no object to face, and the player is
+@ standing ON the thing that fired.
+RogueDungeonFloor_EventScript_HuntTrap::
+	lockall
+	specialvar VAR_RESULT, RogueDungeon_SpringHuntTrap
+	@ Disarmed BEFORE the branch, and therefore on every branch. Two reasons: one
+	@ ambush a floor is the rule whatever the trap found, and leaving it armed
+	@ re-runs this script on every step back onto the tile, each run locking and
+	@ unlocking the player, which reads as a stutter rather than as nothing.
+	setvar VAR_ROGUE_TRAP_STATE, 1
+	switch VAR_RESULT
+	case TRAP_RESULT_NOBODY,  RogueDungeonFloor_EventScript_HuntTrapNobody
+	case TRAP_RESULT_ALREADY, RogueDungeonFloor_EventScript_HuntTrapAlready
+	msgbox RogueDungeonFloor_Text_HuntTrap, MSGBOX_DEFAULT
+	releaseall
+	end
+
+@ Nothing left to wake: every trainer beaten, not spawned, or already written off
+@ as unable to path here. This branch printed NOTHING until it was reported from
+@ play, which made a working trap and a broken one look identical.
+RogueDungeonFloor_EventScript_HuntTrapNobody::
+	msgbox RogueDungeonFloor_Text_HuntTrapNobody, MSGBOX_DEFAULT
+	releaseall
+	end
+
+@ One is already hunting. This is the COMMON case rather than a rare one: a
+@ stalker holds the single hunter slot until it catches the player, so every trap
+@ after the first lands here for as long as the player keeps running from it.
+RogueDungeonFloor_EventScript_HuntTrapAlready::
+	msgbox RogueDungeonFloor_Text_HuntTrapAlready, MSGBOX_DEFAULT
 	releaseall
 	end

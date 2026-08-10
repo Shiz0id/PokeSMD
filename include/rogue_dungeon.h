@@ -1471,6 +1471,25 @@ void RogueDungeon_SeedRestStopUnown(void);      // who is watching, and from whe
 u16 RogueDungeon_PrepareFloorItem(void);
 void RogueDungeon_HideTakenFloorItem(void);
 
+// specialvar target for an ambush trap. TRUE if a trainer was actually woken.
+u16 RogueDungeon_SpringHuntTrap(void);
+
+// Removes a beaten dungeon trainer and parks its template, from the shared
+// trainer script tail. Bosses are exempt -- they have their own tail and stand
+// where the arena generator put them.
+void RogueDungeon_HideBeatenTrainer(void);
+
+// Why the debug menu could not put a trap in front of the player. Traps have no
+// art at all, so "it worked" and "nothing happened" look identical without this.
+enum DebugTrapResult
+{
+    DEBUG_TRAP_PLACED,
+    DEBUG_TRAP_NOT_A_FLOOR,  // not standing on a generated dungeon floor
+    DEBUG_TRAP_BLOCKED,      // facing a wall, which is a trap that could never fire
+};
+
+enum DebugTrapResult RogueDungeon_DebugPlaceTrapAhead(void);
+
 // Credits a finished run. From the boss script's run-complete branch only -
 // ResetRun is shared with the whiteout and must not count a loss as a win.
 void RogueDungeon_OnRunCompleted(void);

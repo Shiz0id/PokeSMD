@@ -664,3 +664,5 @@ gSpecials::
 	def_special StartGacha
 	def_special StartDerby
 	def_special RogueDungeon_HideMinedRock
+	def_special RogueDungeon_SpringHuntTrap
+	def_special RogueDungeon_HideBeatenTrainer

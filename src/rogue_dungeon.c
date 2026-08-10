@@ -11,6 +11,7 @@
 #include "battle_setup.h"
 #include "event_object_movement.h"
 #include "field_camera.h"
+#include "field_player_avatar.h"   // GetXYCoordsOneStepInFrontOfPlayer, for the debug trap
 #include "overworld.h"
 #include "field_screen_effect.h"   // DoWarp, for the script-side floor warp
 #include "item.h"
@@ -42,6 +43,7 @@ extern const u8 RogueDungeonFloor_EventScript_Trainer[];
 extern const u8 RogueDungeonFloor_EventScript_TrainerDone[];
 extern const u8 RogueDungeonFloor_EventScript_ItemBall[];
 extern const u8 RogueDungeonFloor_EventScript_MiningRock[];
+extern const u8 RogueDungeonFloor_EventScript_HuntTrap[];
 extern const u8 RogueDungeonFloor_EventScript_BossDone[];
 extern const u8 RogueDungeonFloor_Text_TrainerIntro[];
 extern const u8 RogueDungeonFloor_Text_TrainerDefeat[];
@@ -1942,6 +1944,11 @@ EWRAM_DATA static struct BgEvent sHiddenItems[DUNGEON_MAX_HIDDEN] = {0};
 EWRAM_DATA static struct MapEvents sDungeonEvents = {0};
 EWRAM_DATA static u8 sHiddenCount = 0;
 
+// Ambush traps, generated the same way and installed through the same RAM map
+// header. 12 bytes each, so the whole feature is 24 bytes of EWRAM.
+EWRAM_DATA static struct CoordEvent sTrapEvents[DUNGEON_MAX_TRAPS] = {0};
+EWRAM_DATA static u8 sTrapCount = 0;
+
 // A wrong id here would clear or read a VANILLA hidden item's flag. Checked at
 // compile time because the two constants live in different headers and the
 // relationship between them is arithmetic nobody would re-derive by eye.
@@ -2274,6 +2281,11 @@ void RogueDungeon_ResetRun(void)
     // leave a fresh Old-Rod-only run fishing at whatever it last chose. OLD_ROD
     // is 0, so this is also the value a save that never opened the menu holds.
     VarSet(VAR_ROGUE_ROD_TECHNIQUE, OLD_ROD);
+
+    // Belt and braces against a wiped run inheriting a spent floor: 0 is armed
+    // and RollNewFloorSeed sets it on every new floor anyway, so this only
+    // matters if a reset ever stops going through one.
+    VarSet(VAR_ROGUE_TRAP_STATE, 0);
 }
 
 // Maps that replace a theme's own for the last few floors of its dungeon. See
@@ -4113,6 +4125,121 @@ static void PlaceHiddenItems(u16 floor)
     }
 }
 
+// Scatters ambush traps. Runs last of all the placement passes, after even the
+// hidden items, because a trap has to avoid every tile that already owns an
+// interaction AND the one the player arrives on.
+//
+// A trap is invisible in this prototype. That is the open design question, not
+// an oversight: an invisible trap with no counterplay is a coin flip rather
+// than a decision, and the two ways out are a visible tile the player pays
+// distance to walk around, or making the Dowsing Machine find them. A visible
+// one needs a metatile per theme across all fourteen, which is why it is not
+// what a prototype starts with.
+static void PlaceTraps(u16 floor)
+{
+    u32 i, j;
+    u32 count;
+
+    sTrapCount = 0;
+
+    // The draw happens before every early return, so it is a fixed step of the
+    // floor's random stream rather than one that depends on the floor's shape.
+    // Same discipline as the stone roll in PlaceHiddenItems, and for the same
+    // reason: a conditional draw shifts every placement that follows it.
+    count = (DungeonRandom() % DUNGEON_TRAP_ODDS) == 0 ? DUNGEON_MAX_TRAPS : 0;
+
+    if (sRoomCount == 0 || floor < DUNGEON_TRAP_FIRST_FLOOR)
+        return;
+
+    // Nothing to wake. A boss floor has its boss and nothing else, and
+    // RogueDungeon_GetHuntableTrainerCount returns 0 there - so a trap would
+    // spring and produce silence.
+    if (RogueDungeon_IsBossFloor(floor) || sTrainerCount == 0)
+        return;
+
+    for (i = 0; i < count; i++)
+    {
+        u32 room = DungeonRandom() % sRoomCount;
+        u8 x = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
+        u8 y = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
+
+        // Never where the player lands. The floor would spring its ambush
+        // before the player had taken a step, which reads as the game doing it
+        // TO them rather than as a mistake they made - and that distinction is
+        // the entire argument for traps over proximity.
+        if (x == sSpawnX && y == sSpawnY)
+            continue;
+
+        // Never on the exit either: a trap on the stairs is one the player has
+        // no way to decline.
+        if (x == sStairsX && y == sStairsY)
+            continue;
+
+        // Everything solid stands on its own tile and the player cannot step
+        // there, so a trap under one never fires.
+        for (j = 0; j < sItemCount; j++)
+        {
+            if (sItemX[j] == x && sItemY[j] == y)
+                break;
+        }
+        if (j != sItemCount)
+            continue;
+
+        for (j = 0; j < sTrainerCount; j++)
+        {
+            if (sTrainerX[j] == x && sTrainerY[j] == y)
+                break;
+        }
+        if (j != sTrainerCount)
+            continue;
+
+        for (j = 0; j < sBerryCount; j++)
+        {
+            if (sBerryX[j] == x && sBerryY[j] == y)
+                break;
+        }
+        if (j != sBerryCount)
+            continue;
+
+        for (j = 0; j < sRockCount; j++)
+        {
+            if (sRockX[j] == x && sRockY[j] == y)
+                break;
+        }
+        if (j != sRockCount)
+            continue;
+
+        for (j = 0; j < sTrapCount; j++)
+        {
+            if (sTrapEvents[j].x == x && sTrapEvents[j].y == y)
+                break;
+        }
+        if (j != sTrapCount)
+            continue;
+
+        // A buried item is NOT avoided, deliberately. It is interacted with
+        // and a trap is stepped on, so they do not contest a tile - and a
+        // dowsing hit that turns out to be standing on a pressure plate is the
+        // best thing that can happen to either feature.
+
+        sTrapEvents[sTrapCount].x = x;
+        sTrapEvents[sTrapCount].y = y;
+        // ELEVATION_TRANSITION for exactly the reason the hidden items give:
+        // GetCoordEventScriptAtPosition matches on the PLAYER'S elevation or on
+        // transition, and a per-theme elevation hard-coded here is the recurring
+        // bug in this project. The ocean walks at 1 where everything else walks
+        // at 3.
+        sTrapEvents[sTrapCount].elevation = ELEVATION_TRANSITION;
+        // trigger/index is a var comparison: this fires while the var reads 0.
+        // The script sets it, which disarms every trap on the floor at once -
+        // one ambush a floor, which is the rule regardless.
+        sTrapEvents[sTrapCount].trigger = VAR_ROGUE_TRAP_STATE;
+        sTrapEvents[sTrapCount].index = 0;
+        sTrapEvents[sTrapCount].script = RogueDungeonFloor_EventScript_HuntTrap;
+        sTrapCount++;
+    }
+}
+
 // Chooses where berry trees stand and what grows on them. Positions and berries
 // only - nothing is planted here, because this runs on every load of a floor
 // and planting writes the save block.
@@ -4282,6 +4409,12 @@ static void ApplyDungeonEvents(void)
     sDungeonEvents = *gMapHeader.events;
     sDungeonEvents.bgEvents = sHiddenItems;
     sDungeonEvents.bgEventCount = sHiddenCount;
+    // Ambush traps, on the same terms. The seven dungeon maps declare no coord
+    // events of their own, so nothing is being replaced here - but note this is
+    // an OVERWRITE, not an append, and a coord event added to any of those
+    // map.json files later would silently stop working.
+    sDungeonEvents.coordEvents = sTrapEvents;
+    sDungeonEvents.coordEventCount = sTrapCount;
     gMapHeader.events = &sDungeonEvents;
 }
 
@@ -4536,6 +4669,8 @@ static void PrepareFloor(u16 seed)
     // Last, so it can avoid every solid thing already placed - a hidden item
     // under a ball or a tree is one the player can never be told about.
     PlaceHiddenItems(floor);
+    // After that again, because a trap avoids everything solid AND the spawn.
+    PlaceTraps(floor);
     sFloorPrepared = TRUE;
 }
 
@@ -4782,6 +4917,12 @@ static u16 RollNewFloorSeed(void)
     VarSet(VAR_ROGUE_DUNGEON_SEED, seed);
     FlagClear(FLAG_ROGUE_BOSS_REWARD_TAKEN);
 
+    // The floor's ambush is unspent. Here rather than on every load for exactly
+    // the reason the boss reward is: this runs only for a genuinely NEW floor,
+    // so saving next to a trap the player already sprung and reloading does not
+    // arm it again under their feet.
+    VarSet(VAR_ROGUE_TRAP_STATE, 0);
+
     // Buried items are marked collected by FLAG, and the ids repeat every
     // floor, so last floor's finds would read as already taken on this one.
     //
@@ -4991,6 +5132,144 @@ void RogueDungeon_HideMinedRock(void)
                                      gSaveBlock1Ptr->location.mapGroup);
 }
 
+// specialvar target, called by the trap the player just stepped on. Returns
+// whether anything was actually woken, so the script can stay silent rather
+// than promise an ambush that is not coming - every trainer on the floor may
+// already have been beaten, which is the ordinary state of a floor on the way
+// back to the stairs.
+u16 RogueDungeon_SpringHuntTrap(void)
+{
+    return RogueHunt_SpringAmbush();
+}
+
+// Removes a dungeon trainer that has just been beaten, from the tail of the
+// shared trainer script.
+//
+// Mirrors RogueDungeon_HideTakenFloorItem exactly, because it is the same
+// problem: the object has to go now, and the TEMPLATE has to be parked or the
+// next camera-driven spawn pass puts it straight back. Trainers occupy templates
+// 0..DUNGEON_MAX_TRAINERS-1, which is why the item version offsets by
+// DUNGEON_MAX_TRAINERS and this one does not.
+//
+// A defeated trainer left standing is not only clutter -- it is a solid object,
+// and PrepareArenaFloor already has to place the boss out of the chokepoint for
+// exactly this reason. On a generated floor a beaten trainer in a one-wide
+// corridor can wall the player off from the stairs.
+void RogueDungeon_HideBeatenTrainer(void)
+{
+    struct ObjectEventTemplate *templates = gSaveBlock1Ptr->objectEventTemplates;
+    u32 slot;
+
+    // Bosses are deliberately exempt. The boss floor has its own script tail
+    // (RogueDungeonFloor_EventScript_BossDone), and the boss stands where the
+    // arena generator put it because that is where the reward conversation and
+    // the exit reveal happen.
+    if (RogueDungeon_IsBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
+        return;
+
+    // SWEEPS ALL SLOTS rather than acting on gSpecialVar_LastTalked, and the
+    // reason is the double battle. Two dungeon trainers can spot the player at
+    // once and fill slots A and B -- RogueDungeon_SetUpTrainerBattle is written
+    // for exactly that -- but only one of them is the last talked to, so acting
+    // on that one alone would leave the other standing having just been beaten.
+    //
+    // Sweeping also means the defeat FLAG is the authority rather than the
+    // script path, so any future way of beating a trainer is covered without
+    // this needing to know about it. Four slots; the cost is nothing.
+    for (slot = 0; slot < sTrainerCount; slot++)
+    {
+        u8 localId = slot + 1;
+        u8 objectEventId;
+
+        if (!FlagGet(TRAINER_FLAGS_START + sTrainerIds[slot]))
+            continue;
+        if (templates[slot].x == INT16_MAX)
+            continue;   // already gone
+
+        // Told before the object goes, so a trap cannot wake it afterwards.
+        RogueHunt_MarkTrainerBeaten(localId);
+
+        templates[slot].x = INT16_MAX;
+        templates[slot].y = INT16_MAX;
+
+        // TryGet... returns TRUE when it did NOT find one, so this is "still
+        // here". A beaten trainer can legitimately be absent already: it may
+        // have been outside the spawn window when the battle ended.
+        if (!TryGetObjectEventIdByLocalIdAndMap(localId,
+                                                gSaveBlock1Ptr->location.mapNum,
+                                                gSaveBlock1Ptr->location.mapGroup,
+                                                &objectEventId))
+            RemoveObjectEventByLocalIdAndMap(localId,
+                                             gSaveBlock1Ptr->location.mapNum,
+                                             gSaveBlock1Ptr->location.mapGroup);
+    }
+}
+
+// Debug: arms an ambush trap on the tile the player is facing.
+//
+// Traps are invisible, sparse and 1-in-3, so waiting for the generator to hand
+// you one is not a way to exercise the feature. This gives the whole chain -
+// coord event, script, SpringAmbush, the stalker's long path - a trigger you can
+// stand next to.
+//
+// Two things have to be poked here that PlaceTraps never touches, because that
+// runs during generation and this runs long after it:
+//
+//   - sDungeonEvents.coordEventCount is a COPY of sTrapCount, not a view of it,
+//     so a new trap is invisible to the engine until the count is raised too.
+//   - the floor's ambush may already have been spent, and that disarms every
+//     trap on the floor - including this one, before it has been stepped on.
+//
+// Returns why it declined, so the menu can say which of the three happened
+// rather than appearing to do nothing.
+enum DebugTrapResult RogueDungeon_DebugPlaceTrapAhead(void)
+{
+    s16 x, y;
+    u32 slot;
+
+    if (gMapHeader.mapLayoutId != LAYOUT_ROGUE_DUNGEON_FLOOR)
+        return DEBUG_TRAP_NOT_A_FLOOR;
+
+    GetXYCoordsOneStepInFrontOfPlayer(&x, &y);
+
+    // A trap on a tile the player cannot enter is exactly the silent failure
+    // DropUnreachableTraps exists to prevent, so refuse it here too rather than
+    // placing one that quietly does nothing.
+    if (MapGridGetCollisionAt(x, y) != 0)
+        return DEBUG_TRAP_BLOCKED;
+
+    // Coord events are stored in MAP space: GetCoordEventScriptAtPosition is
+    // handed position->x - MAP_OFFSET and compares raw. The avatar helper answers
+    // in object space, so it has to come back down.
+    x -= MAP_OFFSET;
+    y -= MAP_OFFSET;
+
+    // A full array is overwritten rather than refused. The debug user asked for
+    // a trap on this tile, and slot 0 is a cheaper answer than an explanation.
+    slot = (sTrapCount < DUNGEON_MAX_TRAPS) ? sTrapCount : 0;
+
+    sTrapEvents[slot].x = x;
+    sTrapEvents[slot].y = y;
+    sTrapEvents[slot].elevation = ELEVATION_TRANSITION;
+    sTrapEvents[slot].trigger = VAR_ROGUE_TRAP_STATE;
+    sTrapEvents[slot].index = 0;
+    sTrapEvents[slot].script = RogueDungeonFloor_EventScript_HuntTrap;
+
+    if (slot == sTrapCount)
+        sTrapCount++;
+
+    sDungeonEvents.coordEventCount = sTrapCount;
+    VarSet(VAR_ROGUE_TRAP_STATE, 0);
+
+    // Re-arming the var alone is not enough to make this re-testable, and that
+    // cost a play session to find. A stalker holds the single hunter slot until
+    // it catches the player, so a second debug trap sprung while the first
+    // stalker is still walking answers TRAP_RESULT_ALREADY -- correct, and
+    // useless when the thing being tested is the walk itself.
+    RogueHunt_DebugStandDown();
+    return DEBUG_TRAP_PLACED;
+}
+
 // Maps a talked-to object event back to its item ball slot, the same way
 // RogueDungeon_HasTrainerBeenBeaten maps one back to its trainer. Returns
 // DUNGEON_MAX_ITEMS when the object is not an item ball.
@@ -5176,6 +5455,7 @@ static void ApplyRunConfig(void)
 }
 
 static void RelocateTrainersOffWalls(const u16 *map);
+static void DropUnreachableTraps(const u16 *map);
 
 void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
 {
@@ -5205,16 +5485,35 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
         PrepareFloor(seed);
     }
 
-    // After PrepareFloor, which is what decides the hidden items, and on every
-    // load rather than only on new floors - gMapHeader is re-copied from ROM
-    // each time, so the pointer has to be put back each time too.
-    ApplyDungeonEvents();
+    // PAINT FIRST. Both passes below read collision out of backupMapData, and
+    // WriteFloorBlocks is the only thing that ever writes it -- it is also what
+    // sets gBackupMapLayout.width, the stride IsWallAt indexes with.
+    //
+    // Relocation used to run BEFORE this, on the reasoning that it was "the last
+    // chance to see the grid the player will walk on". It was the first chance:
+    // InitRogueDungeonMap CpuFastFill16s the whole buffer with MAPGRID_UNDEFINED
+    // immediately before calling this, and MAPGRID_UNDEFINED is 0x03FF, which
+    // masks to zero under MAPGRID_COLLISION_MASK. So IsWallAt answered "open"
+    // for every in-bounds tile and RelocateTrainersOffWalls never moved a single
+    // trainer. It failed the way everything here fails: silently, by doing
+    // nothing, on a floor that loaded perfectly.
+    WriteFloorBlocks(backupMapData);
 
-    // Must run on the FINISHED map and before WriteFloorBlocks, which is the
-    // last chance to see the same grid the player will walk on.
     RelocateTrainersOffWalls(backupMapData);
 
-    WriteFloorBlocks(backupMapData);
+    // After the relocation rather than before, because that pass moves trainers
+    // onto tiles a trap may already own -- and a trainer object standing on a
+    // pressure plate is another trap that can never fire.
+    DropUnreachableTraps(backupMapData);
+
+    // Last of the three, because DropUnreachableTraps changes sTrapCount and
+    // sDungeonEvents holds that count BY VALUE - only coordEvents itself is a
+    // pointer into sTrapEvents. Publishing the events first would hand the
+    // engine the pre-drop count and put the dropped traps straight back.
+    //
+    // On every load rather than only on new floors: gMapHeader is re-copied from
+    // ROM each time, so the pointer has to be put back each time too.
+    ApplyDungeonEvents();
 
     if (setPlayerPosition == FALSE && sRoomCount != 0)
     {
@@ -5311,6 +5610,47 @@ static void RelocateTrainersOffWalls(const u16 *map)
         templates[i].x = bestX;
         templates[i].y = bestY;
     }
+}
+
+// Throws away any ambush trap the player can never step on.
+//
+// PlaceTraps chooses from sRooms on the same unscaled `x + rand % w` pick that
+// puts trainers inside geometry - the woods generator carving in 2x2 cells so an
+// odd room dimension leaves its last row and column uncarved, the arena platform
+// dropping a wall, any later pass that writes a solid block. A trap in rock does
+// not look wrong; it simply never fires, which is indistinguishable from the two
+// floors in three that roll no ambush at all.
+//
+// DROPPED rather than spiralled out the way a trainer is, and the difference is
+// intent. A trainer is placed to guard a room, so the nearest open tile still
+// serves that; a trap's tile carries no meaning beyond being somewhere the player
+// might walk, so a moved trap is just a different trap - and spiralling could
+// walk it onto the spawn or the stairs, the two tiles PlaceTraps went out of its
+// way to keep clear.
+static void DropUnreachableTraps(const u16 *map)
+{
+    u32 i, j;
+    u32 kept = 0;
+
+    for (i = 0; i < sTrapCount; i++)
+    {
+        if (IsWallAt(map, sTrapEvents[i].x, sTrapEvents[i].y))
+            continue;
+
+        for (j = 0; j < sTrainerCount; j++)
+        {
+            if (sTrainerX[j] == sTrapEvents[i].x && sTrainerY[j] == sTrapEvents[i].y)
+                break;
+        }
+        if (j != sTrainerCount)
+            continue;
+
+        // Compacted in place. kept <= i always, so this can only ever overwrite
+        // an entry already examined.
+        sTrapEvents[kept++] = sTrapEvents[i];
+    }
+
+    sTrapCount = kept;
 }
 
 // Which graphic FLDEFF_LONG_GRASS should wear on this floor.
