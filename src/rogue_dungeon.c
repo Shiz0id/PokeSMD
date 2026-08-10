@@ -3508,6 +3508,23 @@ bool8 RogueDungeon_IsBossFloor(u16 floor)
     return IsMiniBossFloor(floor) || IsDungeonBossFloor(floor);
 }
 
+// How many of this floor's trainers the hunt may take, which is NOT the same as
+// how many are placed. Zero on a boss floor, and that is the whole point:
+// PrepareArenaFloor places the boss as trainer 0, at localId 1, structurally
+// identical to an ordinary dungeon trainer. The hunt used to ask only whether
+// the arena was a PLATFORM -- true on 2 of the 14 themes -- so on the other
+// twelve the boss and the mini boss both got up and walked off to find the
+// player, which reads from the arena as a boss that failed to spawn.
+//
+// A boss is a set piece. It waits.
+u8 RogueDungeon_GetHuntableTrainerCount(void)
+{
+    if (RogueDungeon_IsBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
+        return 0;
+
+    return sTrainerCount;
+}
+
 // The Wave Charm. A run grants no field moves at all, so the Safari Zone's
 // water surface used to be reachable only on a Mudkip run - Mudkip learns Surf
 // at 30 and Swampert has it at 1, and no other starter pick learns it by level.
@@ -4807,10 +4824,13 @@ void RogueDungeon_LoadObjectEventTemplates(void)
     // placement needs to see the rooms.
     RogueDungeon_PrepareNewFloor();
 
-    // Hunting is off on a boss arena for the same reason those trainers are
-    // TRAINER_TYPE_NONE: they stand on their own platform, and pathing one off
-    // its rock strands it on the water for good.
-    RogueHunt_OnFloorLoad(!onPlatform);
+    // Resets the chase state for the new floor. Whether hunting may happen here
+    // at all is NOT decided by this call - RogueHunt_Tick derives that live,
+    // via RogueDungeon_GetHuntableTrainerCount, which returns 0 on every boss
+    // floor. This used to pass `!onPlatform`, which is a far narrower thing than
+    // it looks: arenaPlatform is TRUE on 2 of the 14 themes, so on the other
+    // twelve the boss and the mini boss both hunted.
+    RogueHunt_OnFloorLoad();
 
     // An object event whose flagId is set is not spawned. Kept set permanently
     // so leftover placeholder slots stay invisible.

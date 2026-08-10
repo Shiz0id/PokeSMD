@@ -330,7 +330,17 @@ static void MoveObjectEventToCoords(u8 localId, s16 targetX, s16 targetY, u8 fac
 // The last script handed to ScriptMovement by the silent entry point below,
 // stored as the ALLOCATION BASE rather than what ReconstructPath returns --
 // that pointer is one byte past the base, so freeing it would corrupt the heap.
+//
+// NULL means nothing here owns a buffer, which is the state after
+// script_movement.c has freed one itself. See path_finding.h: this pointer is
+// NOT the only owner, and treating it as one is a double free.
 static u8 *sTrackedGeneratedScript = NULL;
+
+void PathFinder_OnGeneratedScriptFreed(const u8 *allocationBase)
+{
+    if (sTrackedGeneratedScript == allocationBase)
+        sTrackedGeneratedScript = NULL;
+}
 
 void PathFinder_ReleaseTrackedScript(void)
 {
@@ -339,6 +349,16 @@ void PathFinder_ReleaseTrackedScript(void)
         Free(sTrackedGeneratedScript);
         sTrackedGeneratedScript = NULL;
     }
+}
+
+void PathFinder_CancelTrackedMovement(u8 localId)
+{
+    // Order matters: end the walk while the pointer is still valid, then free.
+    // ScriptMovement_StopObjectMovement deliberately frees nothing -- whoever
+    // installed a generated script owns it, and that is this file.
+    ScriptMovement_StopObjectMovement(localId, gSaveBlock1Ptr->location.mapNum,
+                                      gSaveBlock1Ptr->location.mapGroup);
+    PathFinder_ReleaseTrackedScript();
 }
 
 bool32 PathFinder_MoveObjectToCoordsSilent(u8 localId, s16 targetX, s16 targetY, u8 facingDirection, u32 speed, u32 maxNodes)

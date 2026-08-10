@@ -14,12 +14,19 @@
 // trainer_see spots it and runs RogueDungeonFloor_EventScript_Trainer. Nothing
 // here starts a battle, so none of that machinery had to be duplicated.
 
-// Per floor. `enabled` is FALSE on floors whose trainers stand on their own
-// platforms -- those are TRAINER_TYPE_NONE precisely because walking them off
-// the rock strands them on water, and a hunt would do exactly that.
-void RogueHunt_OnFloorLoad(bool8 enabled);
+// Per floor. Resets the chase state and releases any path still in flight from
+// the floor being left.
+//
+// It takes no "enabled" argument, and that is deliberate. Whether hunting may
+// happen at all is derived live inside RogueHunt_Tick, from the current map's
+// layout and from RogueDungeon_GetHuntableTrainerCount -- because this function
+// is reached only on a dungeon floor while the tick runs on every map, so
+// anything latched here stays latched across the warp out to the rest stop.
+void RogueHunt_OnFloorLoad(void);
 
-// Once per overworld frame, from OverworldBasic.
+// Once per overworld frame, from OverworldBasic -- on EVERY map, including the
+// rest stop, the game corner and the Safari. It gates itself, and a caller-side
+// gate is exactly the bug it was written to remove; do not add one back.
 void RogueHunt_Tick(void);
 
 // TRUE while this local id is actively chasing. trainer_see asks so it can skip

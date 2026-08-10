@@ -3,11 +3,13 @@
 #include "field_player_avatar.h"
 #include "fieldmap.h" // MAP_OFFSET
 #include "path_finding.h"
+#include "rogue_dungeon.h"
 #include "rogue_hunt.h"
 #include "script.h"
 #include "script_movement.h"
 #include "sound.h"
 #include "constants/event_object_movement.h"
+#include "constants/layouts.h"
 #include "constants/rogue_dungeon.h"
 #include "constants/songs.h"
 
@@ -48,14 +50,40 @@ enum {
 
 EWRAM_DATA static u8 sHuntState[DUNGEON_MAX_TRAINERS] = {0};
 // One hunter at a time: heap and CPU budget. Zero-initialised because EWRAM_DATA
-// lands in .sbss, which permits nothing else; RogueHunt_OnFloorLoad establishes
-// HUNT_NO_HUNTER before sEnabled can be TRUE, and sEnabled gates every read.
+// lands in .sbss, which permits nothing else; HuntableTrainerCount() returns 0
+// until a dungeon floor is loaded, and it gates every read of this.
 EWRAM_DATA static u8 sActiveHunter = 0;
 EWRAM_DATA static u8 sRepathTimer = 0;
 EWRAM_DATA static u8 sStepSeTimer = 0;
-EWRAM_DATA static bool8 sEnabled = FALSE;
 
 // ---------------------------------------------------------------------------
+
+// There is deliberately NO latched "hunting is on" flag any more, and the bug
+// that took it away is worth keeping in view.
+//
+// RogueHunt_OnFloorLoad is reached only from
+// RogueDungeon_LoadObjectEventTemplates, which LoadMapFromWarp calls only when
+// the layout is LAYOUT_ROGUE_DUNGEON_FLOOR. But RogueHunt_Tick runs from
+// OverworldBasic, on EVERY map in the game. So a flag set on the last dungeon
+// floor survived the warp, and the rest stop, the game corner room and all six
+// Safari maps went on hunting -- with the shopkeeper, the archivist and the
+// nurse standing on the local ids the hunt reads as trainers 1 to 4.
+//
+// Everything is derived live instead. Both tests below are re-read on the frame
+// they matter, so there is no state left behind to go stale across a warp.
+static u32 HuntableTrainerCount(void)
+{
+    // The map is the gate, and this is the same test LoadMapFromWarp uses to
+    // decide the floor is ours at all. All seven dungeon maps -- base, the five
+    // weather variants and Underwater -- share this one layout, and the rest
+    // stop and the Safari have their own.
+    if (gMapHeader.mapLayoutId != LAYOUT_ROGUE_DUNGEON_FLOOR)
+        return 0;
+
+    // Zero on a boss floor. rogue_dungeon owns that decision, because it is what
+    // knows the boss was placed as trainer 0 like any other.
+    return RogueDungeon_GetHuntableTrainerCount();
+}
 
 static s16 ChebyshevToPlayer(struct ObjectEvent *obj, s16 playerX, s16 playerY)
 {
@@ -124,7 +152,7 @@ static void GetChaseTarget(struct ObjectEvent *obj, s16 playerX, s16 playerY,
         *targetY += (dy > 0) ? 1 : -1;
 }
 
-void RogueHunt_OnFloorLoad(bool8 enabled)
+void RogueHunt_OnFloorLoad(void)
 {
     u32 i;
 
@@ -134,31 +162,34 @@ void RogueHunt_OnFloorLoad(bool8 enabled)
     sActiveHunter = HUNT_NO_HUNTER;
     sRepathTimer = 0;
     sStepSeTimer = 0;
-    sEnabled = enabled;
 
     // The last floor's path must not outlive the floor it was computed for.
+    // This is the one release that has no new path replacing it, and it frees
+    // only a buffer script_movement.c has not already freed -- see path_finding.h.
     PathFinder_ReleaseTrackedScript();
 }
 
 bool8 RogueHunt_IsHunting(u8 localId)
 {
     // Deliberately CHASING *or* SPENT, and not just the currently active
-    // hunter. The handoff happens at HUNT_HANDOFF_RADIUS, two tiles out -- the
-    // hunter is marked spent and stops steering while it finishes walking the
-    // last of its path. That is precisely the moment trainer_see fires, so
-    // testing only the active hunter would pop the "!" back up at the worst
-    // possible time, at the end of the chase it exists to replace.
-    if (!sEnabled || localId == 0 || localId > DUNGEON_MAX_TRAINERS)
+    // hunter. The handoff happens at HUNT_HANDOFF_RADIUS, two tiles out, and
+    // that is precisely the moment trainer_see fires -- so testing only the
+    // active hunter would pop the "!" back up at the worst possible time, at
+    // the end of the chase it exists to replace.
+    if (localId == 0 || localId > HuntableTrainerCount())
         return FALSE;
 
     return sHuntState[localId - 1] != HUNT_IDLE;
 }
 
-static void TryNoticePlayer(s16 playerX, s16 playerY)
+static void TryNoticePlayer(u32 huntable, s16 playerX, s16 playerY)
 {
     u32 i;
 
-    for (i = 0; i < DUNGEON_MAX_TRAINERS; i++)
+    // Bounded by the trainers actually placed on THIS floor, not by the size of
+    // the array. Iterating to DUNGEON_MAX_TRAINERS reaches local ids 1 to 4
+    // whatever happens to be standing on them.
+    for (i = 0; i < huntable; i++)
     {
         struct ObjectEvent *obj;
 
@@ -187,8 +218,15 @@ static void UpdateActiveHunter(s16 playerX, s16 playerY)
     struct ObjectEvent *obj = GetHunterObject(slot);
     s16 distance;
 
+    // Despawned mid-chase. GetObjectEventIdByLocalId can start failing at any
+    // time here: the floor declares 28 templates against an OBJECT_EVENTS_COUNT
+    // of 16, so a trainer in a crowded corner is genuinely not always resident.
+    // Release the path as well as the slot -- otherwise the buffer stays owned
+    // with nothing walking it, and the next hunter's first repath is what
+    // finally frees it, a floor's worth of heap later.
     if (obj == NULL)
     {
+        PathFinder_ReleaseTrackedScript();
         sHuntState[slot] = HUNT_SPENT;
         sActiveHunter = HUNT_NO_HUNTER;
         return;
@@ -197,18 +235,29 @@ static void UpdateActiveHunter(s16 playerX, s16 playerY)
     distance = ChebyshevToPlayer(obj, playerX, playerY);
 
     // Close enough that vanilla trainer_see will line it up and start the
-    // battle. Stop steering, and never hunt with this one again -- otherwise a
-    // defeated trainer would go straight back to chasing.
+    // battle. Never hunt with this one again -- otherwise a defeated trainer
+    // would go straight back to chasing.
+    //
+    // The path is CANCELLED here, not merely left unsteered. Scripted movement
+    // actions are forced and do not test collision, so a hunter allowed to walk
+    // out a path computed for where the player was two seconds ago walks
+    // straight through them and then turns around to start the battle from the
+    // far side. Stopping it where it stands is also the better read: it caught
+    // you, and the battle opens from the tile it caught you on.
     if (distance <= HUNT_HANDOFF_RADIUS)
     {
+        PathFinder_CancelTrackedMovement(slot + 1);
         sHuntState[slot] = HUNT_SPENT;
         sActiveHunter = HUNT_NO_HUNTER;
         return;
     }
 
+    // Outrun. It stops where it is and may notice again later, so a floor the
+    // player has crossed reads as one that has been disturbed.
     if (distance > HUNT_GIVE_UP_RADIUS)
     {
-        sHuntState[slot] = HUNT_IDLE; // may notice again later
+        PathFinder_CancelTrackedMovement(slot + 1);
+        sHuntState[slot] = HUNT_IDLE;
         sActiveHunter = HUNT_NO_HUNTER;
         return;
     }
@@ -251,10 +300,26 @@ static void UpdateActiveHunter(s16 playerX, s16 playerY)
 
 void RogueHunt_Tick(void)
 {
+    u32 huntable = HuntableTrainerCount();
     s16 playerX, playerY;
 
-    if (!sEnabled)
+    // Zero on every map that is not a dungeon floor, and on every boss floor.
+    // This runs from OverworldBasic, so it is reached on the rest stop, in the
+    // game corner and across the Safari as well -- there is no caller-side gate
+    // and there must not be one, because a gate that is set on entry is a gate
+    // that is still set after the warp out.
+    if (huntable == 0)
+    {
+        // Also the teardown for leaving a dungeon floor by any route that is
+        // not another dungeon floor -- the rest stop, the game corner, a Safari
+        // gate. RogueHunt_OnFloorLoad does not run on those maps, so without
+        // this a chase interrupted by the stairs keeps its path buffer for the
+        // rest of the run. Safe to repeat: the release NULLs what it frees, and
+        // ResetTasks has already destroyed anything that could still walk it.
+        PathFinder_ReleaseTrackedScript();
+        sActiveHunter = HUNT_NO_HUNTER;
         return;
+    }
 
     // Covers scripts, battles, warps and menus in one test. Without it the hunt
     // would keep repathing underneath a trainer battle it just caused.
@@ -268,8 +333,11 @@ void RogueHunt_Tick(void)
 
     PlayerGetDestCoords(&playerX, &playerY);
 
-    if (sActiveHunter == HUNT_NO_HUNTER)
-        TryNoticePlayer(playerX, playerY);
+    // The active hunter is re-bounds-checked rather than trusted: huntable can
+    // shrink under it -- a floor with fewer trainers, or an arena -- between the
+    // frame it started chasing and this one.
+    if (sActiveHunter == HUNT_NO_HUNTER || sActiveHunter >= huntable)
+        TryNoticePlayer(huntable, playerX, playerY);
     else
         UpdateActiveHunter(playerX, playerY);
 }

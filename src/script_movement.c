@@ -3,6 +3,7 @@
 #include "event_object_movement.h"
 #include "event_scripts.h"
 #include "malloc.h"
+#include "path_finding.h"
 #include "task.h"
 #include "util.h"
 #include "constants/event_objects.h"
@@ -13,6 +14,9 @@ static u8 GetMoveObjectsTaskId(void);
 static bool8 ScriptMovement_TryAddNewMovement(u8 taskId, u8 objEventId, const u8 *movementScript);
 static u8 GetMovementScriptIdFromObjectEventId(u8 taskId, u8 objEventId);
 static bool8 IsMovementScriptFinished(u8 taskId, u8 moveScrId);
+// Both defined below their first use, by ScriptMovement_StopObjectMovement.
+static void SetMovementScriptFinished(u8 taskId, u8 moveScrId);
+static void SetMovementScript(u8 moveScrId, const u8 *movementScript);
 static void ScriptMovement_AddNewMovement(u8 taskId, u8 moveScrId, u8 objEventId, const u8 *movementScript);
 static void ScriptMovement_UnfreezeActiveObjects(u8 taskId);
 static void ScriptMovement_MoveObjects(u8 taskId);
@@ -59,6 +63,47 @@ bool32 ScriptMovement_IsAllObjectMovementFinished(void)
                 return FALSE;
         }
     }
+    return TRUE;
+}
+
+// Ends one object's scripted walk immediately, without touching the rest.
+// ScriptMovement_UnfreezeObjectEvents is the only other way to stop one and it
+// destroys the whole task, which would cancel every other object's movement too.
+//
+// It FREES NOTHING on purpose. A generated path is owned by whoever installed
+// it -- path_finding.c -- and it releases the block itself once this returns.
+// Freeing here as the GENERATED_END branch does would be wrong, because a
+// caller may equally be stopping a plain ROM movement script.
+//
+// The object finishes the tile it is mid-way through rather than stopping
+// between tiles: the held movement is left to complete and only the script is
+// ended, so nothing is left standing on a half-step.
+bool8 ScriptMovement_StopObjectMovement(u8 localId, u8 mapNum, u8 mapGroup)
+{
+    static const u8 sStopMovement = MOVEMENT_ACTION_STEP_END;
+    u8 objEventId;
+    u8 taskId;
+    u8 moveScrId;
+
+    // Inverted, like every Try* in this file: TRUE means it was NOT found.
+    if (TryGetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup, &objEventId))
+        return FALSE;
+
+    taskId = GetMoveObjectsTaskId();
+    if (taskId == TASK_NONE)
+        return FALSE;
+
+    moveScrId = GetMovementScriptIdFromObjectEventId(taskId, objEventId);
+    if (moveScrId == OBJECT_EVENTS_COUNT)
+        return FALSE;
+
+    SetMovementScriptFinished(taskId, moveScrId);
+    SetMovementScript(moveScrId, &sStopMovement);
+
+    // Deliberately NOT FreezeObjectEvent, which is what both completion paths
+    // above do. The hunt hands its trainer straight to trainer_see, and that
+    // wants an object it can turn and walk itself.
+    UnfreezeObjectEvent(&gObjectEvents[objEventId]);
     return TRUE;
 }
 
@@ -266,6 +311,14 @@ static void ScriptMovement_TakeStep(u8 taskId, u8 moveScrId, u8 objEventId, cons
             startPtr--;
 
         Free(startPtr);
+        // This is the ONLY place a completed generated path is freed, and
+        // path_finding.c is still tracking that same block so it can release the
+        // paths that never reach here (rejected at install, cancelled at the
+        // hunt's handoff, or in flight when the floor changes). Tell it, or its
+        // next release frees this a second time -- and because the hunt only
+        // repaths once the previous path has hit this branch, that double free
+        // is guaranteed rather than unlucky.
+        PathFinder_OnGeneratedScriptFreed(startPtr);
         static const u8 dummyMovement = MOVEMENT_ACTION_STEP_END;
         SetMovementScript(moveScrId, &dummyMovement);
     }

@@ -1444,6 +1444,12 @@ bool8 RogueDungeon_IsGeneratedTrainer(void);
 bool8 RogueDungeon_HasTrainerBeenBeaten(u8 objectEventId);
 bool8 RogueDungeon_IsBossFloor(u16 floor);
 
+// Trainers the hunt is allowed to move, in template slot order from 0. Zero on
+// a boss floor: the boss occupies slot 0 like any other trainer, so without this
+// the hunt cannot tell a gym leader from a Bug Catcher and walks them off their
+// arena. Read live rather than latched -- see rogue_hunt.c.
+u8 RogueDungeon_GetHuntableTrainerCount(void);
+
 // TRUE while the player carries the Wave Charm. Hooked into PartyHasMonWithSurf
 // and ScrCmd_checkfieldmove so the lead Pokemon can carry the player over water
 // without anyone in the party knowing Surf. See the ITEM_ROGUE_SURF_TOOL entry
