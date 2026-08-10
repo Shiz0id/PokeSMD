@@ -9,8 +9,13 @@ typedef u16 uQ8_8;
 typedef s16 sQ8_8;
 typedef s32 sQ24_8;
 
-#define IWRAM_CODE __attribute__((section(".iwram"), long_call))
-#define IWRAM_CODE_DATA __attribute__((section(".iwram")))
+// Upstream puts the three lookup tables and Cbrt in IWRAM. Dropped, and the
+// reason is the budget rather than taste: IWRAM is 28460/32768 on this branch,
+// so 544 bytes of table is an eighth of everything left, and this code runs
+// once per palette load -- on a sprite appearing, not per frame. ROM is at
+// 86.67% with megabytes free. Trading the scarce region for the abundant one
+// to speed up something that is not in a frame loop is the wrong way round.
+#define CV_TABLE_DATA
 
 #if FALSE
 #define DebugPrintfCV DebugPrintf
@@ -104,7 +109,7 @@ static inline u16 Rgb555Pack(u8 r5, u8 g5, u8 b5)
   return (u16)((r5 & 31u) | ((u16)(g5 & 31u) << 5) | ((u16)(b5 & 31u) << 10));
 }
 
-static const IWRAM_CODE_DATA u8 cbrt_q0_8_lut[256] = {
+static const CV_TABLE_DATA u8 cbrt_q0_8_lut[256] = {
       0,  40,  51,  58,  64,  69,  73,  77,  80,  84,  87,  89,  92,  95,  97,  99,
     101, 103, 105, 107, 109, 111, 113, 114, 116, 118, 119, 121, 122, 124, 125, 126,
     128, 129, 130, 132, 133, 134, 135, 136, 138, 139, 140, 141, 142, 143, 144, 145,
@@ -124,7 +129,7 @@ static const IWRAM_CODE_DATA u8 cbrt_q0_8_lut[256] = {
 };
 
 // Cube root
-static inline IWRAM_CODE u8 Cbrt(u8 x)
+static inline u8 Cbrt(u8 x)
 {
   return cbrt_q0_8_lut[x];
 }
@@ -140,14 +145,14 @@ static inline u8 Atan2(s16 y, s16 x)
 
 /* -------- Colourspace conversions -------- */
 
-static const IWRAM_CODE_DATA uQ0_8 rgb5_to_linear_rgb_q_0_8[32] = {
+static const CV_TABLE_DATA uQ0_8 rgb5_to_linear_rgb_q_0_8[32] = {
     0,   1,   1,   2,   4,   6,   8,  11,
    14,  18,  22,  26,  32,  38,  44,  51,
    59,  67,  76,  85,  96, 107, 118, 130,
   143, 158, 172, 187, 203, 221, 238, 255
 };
 
-static const IWRAM_CODE_DATA u8 linear_rgb_q0_8_to_rgb5[256] = {
+static const CV_TABLE_DATA u8 linear_rgb_q0_8_to_rgb5[256] = {
    0,  2,  3,  3,  4,  5,  5,  6,  6,  6,  7,  7,  7,  8,  8,  9,
    9,  9,  9, 10, 10, 10, 10, 10, 11, 11, 11, 11, 12, 12, 12, 12,
   12, 12, 13, 13, 13, 13, 13, 13, 14, 14, 14, 14, 14, 14, 15, 15,
@@ -241,22 +246,88 @@ static inline void OklchToRgb5(uQ0_8 L, uQ0_8 C, uQ0_8 H, u8 *r, u8 *g, u8 *b)
 
 /* -------- Variants data -------- */
 
+// Upstream keeps these three tables in the HEADER as `static const`, which
+// gives every translation unit that includes it a private copy. That was
+// invisible upstream because exactly one file included it; here the header is
+// pulled in by pokemon.c and rogue_bw_anim.c as well, and gSpeciesVariants is
+// NUM_SPECIES * 4 bytes, so it would have been three copies of several KB.
+// The table is private to this file and reached through GetSpeciesVariants,
+// which is the accessor upstream already provided and then bypassed.
+
+// Precomputed hue-amount table
+// Code uses hue in [0..255] instead of [0..360]
+// {0,10,20,30,45,60,90,180} -> {0,7,14,21,32,43,64,128}
+static const u8 sHueTable[8] = {0, 7, 14, 21, 32, 43, 64, 128};
+static const u8 sCLTable[4] = {0, 5, 10, 25};
+
+// What a species with no entry of its own gets. A hue swing of +/-10 degrees
+// and nothing else: enough that two Zubats in the same corridor are not the
+// same Zubat, small enough that nobody misreads it as a shiny.
+#define DEFAULT_SPECIES_VARIANT \
+  {                             \
+      PAL1(1, 15),              \
+      HCL1(10, 0, 0, FALSE),    \
+  }
+
+static const struct SpeciesVariant sDefaultSpeciesVariant = DEFAULT_SPECIES_VARIANT;
+
+static const struct SpeciesVariant gSpeciesVariants[NUM_SPECIES] = {
+    [SPECIES_POOCHYENA] = {
+        PAL1(1, 5),
+        HCL1(0, 25, 5, FALSE),
+    },
+    [SPECIES_MIGHTYENA] = {
+        PAL1(1, 5),
+        HCL1(0, 25, 5, FALSE),
+    },
+    [SPECIES_ZIGZAGOON] = {
+        PAL1(5, 8),
+        HCL1(10, 25, 5, FALSE),
+    },
+    [SPECIES_LINOONE] = {
+        PAL1(1, 3),
+        HCL1(10, 25, 5, FALSE),
+    },
+    [SPECIES_WURMPLE] = {
+        PAL1(1, 4),
+        HCL1(30, 5, 0, TRUE),
+    },
+    [SPECIES_TYRANITAR] = {
+        PAL1(11, 3),
+        HCL1(30, 25, 0, TRUE),
+        PAL2(1, 5),
+        HCL2(0, 0, 10, FALSE),
+    },
+};
+
 const struct SpeciesVariant *GetSpeciesVariants(u32 species)
 {
-  const struct SpeciesVariant *l = &gSpeciesVariants[species];
+  const struct SpeciesVariant *l;
+
+  // A species id past the end of the table indexes ROM that is not the table.
+  // Every caller here comes through SanitizeSpeciesId already, so this is the
+  // belt to that braces -- but the table is indexed by a value the caller
+  // supplies, and that is exactly the shape this project keeps getting wrong.
+  if (species >= NUM_SPECIES)
+    return &sDefaultSpeciesVariant;
+
+  l = &gSpeciesVariants[species];
 
   // Treat an all-zero entry as "no variant" and return default.
   if (l->pv1.length == 0 && l->pv2.length == 0 &&
       l->pv1.hue_amount == 0 && l->pv1.chr_amount == 0 && l->pv1.lum_amount == 0 &&
       l->pv2.hue_amount == 0 && l->pv2.chr_amount == 0 && l->pv2.lum_amount == 0)
   {
-    DebugPrintf("%d - Default variant", species);
-    static const struct SpeciesVariant s = DEFAULT_SPECIES_VARIANT;
-    return &s;
+    // Upstream calls DebugPrintf here rather than its own gated DebugPrintfCV.
+    // It is a no-op in a default build, but this runs on every palette load of
+    // every mon, so turning mgba logging on would flood the log and cost real
+    // time per sprite. Gated like the rest of the file.
+    DebugPrintfCV("%d - Default variant", species);
+    return &sDefaultSpeciesVariant;
   }
   else
   {
-    DebugPrintf("%d - Custom variant", species);
+    DebugPrintfCV("%d - Custom variant", species);
   }
   return l;
 }
@@ -280,8 +351,14 @@ void ApplyPaletteVariantToPaletteBuffer(u16 pal16[16], const struct PaletteVaria
   if ((hmax | cmax | lmax) == 0)
     return;
 
+  // End is exclusive (the loop below is `i < iEnd`), so it clamps to 16 and
+  // not to 15. Upstream clamps to 15, which means colour index 15 can never be
+  // shifted by any entry: the widest range expressible in a 4-bit start and a
+  // 4-bit length is PAL(1,15), and that reaches 1..14. A sprite using index 15
+  // would keep one original colour while the other fourteen moved, which reads
+  // as a stray wrong pixel rather than as a variant.
   u8 iStart = ClampU8(start, 0, 15);
-  u8 iEnd = ClampU8((u16)start + (u16)len, 0, 15);
+  u8 iEnd = ClampU8((u16)start + (u16)len, 0, 16);
 
   // Derive shifts/directions from the 16-bit PRN
   u32 rnd = (u32)prn16;
@@ -324,7 +401,7 @@ void ApplyPaletteVariantToPaletteBuffer(u16 pal16[16], const struct PaletteVaria
   }
 }
 
-void ApplyCustomRestrictionToPalletteBuffer(u8 hMin, u8 hMax, u8 cMin, u8 cMax, u8 lMin, u8 lMax, u16 pal16[16])
+void ApplyCustomRestrictionToPaletteBuffer(u8 hMin, u8 hMax, u8 cMin, u8 cMax, u8 lMin, u8 lMax, u16 pal16[16])
 {
 
   for (u8 i = 1; i <= 15; ++i)
@@ -361,4 +438,78 @@ void ApplyMonSpeciesVariantToPaletteBuffer(u32 species, bool8 shiny, u32 origina
     u16 prn2 = (u16)BITS(originalPID, 16, 16);
     ApplyPaletteVariantToPaletteBuffer(pal16, &sv->pv2, prn2);
   }
+}
+
+// -------- Entry points --------
+//
+// Upstream's README says to rewrite GetMonSpritePalFromSpecies and invent a
+// personality-taking wrapper. Both already exist here, and the personality is
+// already threaded to them, so the hook is a filter on the way out instead.
+
+// Whether this mon gets shifted at all. Split out because two call sites ask
+// the same question and one of them (the BW animation) is nowhere near the
+// other.
+static bool32 MonWantsVariant(u32 species, bool32 isShiny, bool32 isEgg)
+{
+#if !VARIANT_COLOURS
+  return FALSE;
+#else
+  const struct SpeciesVariant *sv;
+
+  // An egg's palette is the egg's, not the species'. Shifting it would leak
+  // what is inside -- every egg would be a slightly different colour, and the
+  // colour would be a function of the mon it hatches into.
+  if (isEgg)
+    return FALSE;
+
+#if !VARIANT_COLOURS_SHINY
+  if (isShiny)
+    return FALSE;
+#endif
+
+  sv = GetSpeciesVariants(species);
+  if (sv == NULL)
+    return FALSE;
+
+  // An entry that asks for no shift on either variant is not worth a copy.
+  return (sv->pv1.hue_amount || sv->pv1.chr_amount || sv->pv1.lum_amount
+       || sv->pv2.hue_amount || sv->pv2.chr_amount || sv->pv2.lum_amount);
+#endif
+}
+
+#if VARIANT_COLOURS
+// See VARIANT_PAL_RING in the header for why this is a ring and not one buffer.
+static EWRAM_DATA u16 sVariantPal[VARIANT_PAL_RING][16] = {0};
+static EWRAM_DATA u8 sVariantPalNext = 0;
+#endif
+
+const u16 *GetMonSpritePalVariant(const u16 *src, u32 species, bool32 isShiny, bool32 isEgg, u32 personality)
+{
+#if !VARIANT_COLOURS
+  return src;
+#else
+  u16 *dst;
+
+  if (src == NULL || !MonWantsVariant(species, isShiny, isEgg))
+    return src;
+
+  dst = sVariantPal[sVariantPalNext];
+  sVariantPalNext = (sVariantPalNext + 1) % VARIANT_PAL_RING;
+
+  CpuCopy16(src, dst, 16 * sizeof(u16));
+  ApplyMonSpeciesVariantToPaletteBuffer(species, isShiny, personality, dst);
+  return dst;
+#endif
+}
+
+void ApplyMonSpritePalVariantTo(u16 dst[16], const u16 *src, u32 species, bool32 isShiny, u32 personality)
+{
+  CpuCopy16(src, dst, 16 * sizeof(u16));
+
+  // isEgg is FALSE unconditionally: this path is a battle sprite, and an egg
+  // is never a battler.
+  if (!MonWantsVariant(species, isShiny, FALSE))
+    return;
+
+  ApplyMonSpeciesVariantToPaletteBuffer(species, isShiny, personality, dst);
 }
