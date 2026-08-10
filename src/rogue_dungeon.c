@@ -134,9 +134,21 @@ static const u16 sCaveSpecies[] =
     SPECIES_ZUBAT, SPECIES_WHISMUR, SPECIES_GEODUDE, SPECIES_MAKUHITA,
     SPECIES_ARON, SPECIES_NOSEPASS, SPECIES_DUGTRIO, SPECIES_SABLEYE,
     SPECIES_MAWILE, SPECIES_GOLBAT, SPECIES_LOUDRED, SPECIES_GRAVELER,
-    SPECIES_SUDOWOODO, SPECIES_LAIRON, SPECIES_ONIX, SPECIES_HARIYAMA,
-    SPECIES_GOLEM, SPECIES_SHUCKLE, SPECIES_CLAYDOL, SPECIES_CROBAT,
-    SPECIES_URSARING,
+    // SUDOWOODO, CLAYDOL and URSARING were here and none of them lives in a
+    // cave. Sudowoodo mimics a TREE and stands on routes; Ursaring is a forest
+    // bear; and Claydol was also in sMirageTowerSpecies, where desert ruins are
+    // its actual home, so the cave was the duplicate. Replaced with Granite
+    // Cave's own vocabulary: Medicham for Meditite's cave line, Solrock from
+    // Meteor Falls, and Aggron to finish the Aron at 4 and Lairon at 13.
+    //
+    // AGGRON RATHER THAN STEELIX, and the difference is the evolution method
+    // rather than the flavour. Onix to Steelix is a TRADE and carries no level,
+    // so DevolveForLevel has nothing to key on and a Steelix would stand on
+    // floor 19 at level 16 exactly as Graveler used to. Aron to Lairon is 32
+    // and Lairon to Aggron is 42, so the same slot self-corrects with depth.
+    SPECIES_MEDICHAM, SPECIES_LAIRON, SPECIES_ONIX, SPECIES_HARIYAMA,
+    SPECIES_GOLEM, SPECIES_SHUCKLE, SPECIES_SOLROCK, SPECIES_CROBAT,
+    SPECIES_AGGRON,
 };
 
 static const u16 sWoodsSpecies[] =
@@ -145,8 +157,11 @@ static const u16 sWoodsSpecies[] =
     SPECIES_SEEDOT, SPECIES_LOTAD, SPECIES_TAILLOW, SPECIES_SILCOON,
     SPECIES_CASCOON, SPECIES_NINJASK, SPECIES_SHROOMISH, SPECIES_NINCADA,
     SPECIES_BEAUTIFLY, SPECIES_DUSTOX, SPECIES_NUZLEAF, SPECIES_LOMBRE,
+    // AMBIPOM moved to the jungle, where Aipom actually lives. Scyther takes
+    // the top slot: same 500 BST as the Heracross beside it, and a forest
+    // ambusher is what this pool wanted there.
     SPECIES_LINOONE, SPECIES_SWELLOW, SPECIES_BRELOOM, SPECIES_HERACROSS,
-    SPECIES_AMBIPOM,
+    SPECIES_SCYTHER,
 };
 
 // The woods' whole cosmetic vocabulary, and the first thing this theme has ever
@@ -166,10 +181,19 @@ static const struct RogueDecor sWoodsDecor[] =
 // magnet types the facility already houses.
 static const u16 sNewMauvilleSpecies[] =
 {
+    // CHINCHOU and LANTURN were here and are DEEP SEA ANGLERFISH. Electric
+    // typing is not enough: this theme's wildArea is LAND, so they were walking
+    // around a generator hall, and both were already in sUnderwaterSpecies
+    // where they belong. Replaced with the Shinx line, which gives the pool a
+    // family ladder into the Luxray it already ends on.
     SPECIES_MAGNEMITE, SPECIES_VOLTORB, SPECIES_PIKACHU, SPECIES_ELECTRIKE,
-    SPECIES_PLUSLE, SPECIES_MINUN, SPECIES_CHINCHOU, SPECIES_PACHIRISU,
-    SPECIES_MAREEP, SPECIES_MAGNETON, SPECIES_ELECTRODE, SPECIES_PORYGON2,
-    SPECIES_FLAAFFY, SPECIES_LANTURN, SPECIES_MANECTRIC, SPECIES_ROTOM,
+    SPECIES_PLUSLE, SPECIES_MINUN, SPECIES_SHINX, SPECIES_PACHIRISU,
+    // PORYGON rather than PORYGON2: the upgrade is a TRADE and carries no
+    // level, so a Porygon2 sat at index 11 arrived on floor 20 at level 17 with
+    // nothing able to walk it back. Porygon is the base form and the pool
+    // already climbs past it.
+    SPECIES_MAREEP, SPECIES_MAGNETON, SPECIES_ELECTRODE, SPECIES_PORYGON,
+    SPECIES_FLAAFFY, SPECIES_LUXIO, SPECIES_MANECTRIC, SPECIES_ROTOM,
     SPECIES_RAICHU, SPECIES_ELECTABUZZ, SPECIES_AMPHAROS,
     SPECIES_ELECTIVIRE, SPECIES_LUXRAY,
 };
@@ -226,8 +250,12 @@ static const u16 sFieryPathSpecies[] =
     SPECIES_SLUGMA, SPECIES_KOFFING, SPECIES_NUMEL, SPECIES_GRIMER,
     SPECIES_MACHOP, SPECIES_GROWLITHE, SPECIES_VULPIX, SPECIES_HOUNDOUR,
     SPECIES_TORKOAL, SPECIES_MAGCARGO, SPECIES_WEEZING, SPECIES_CAMERUPT,
+    // FLAREON out: Eevee is a STARTER PICK here, so meeting its evolutions in
+    // the wild undercuts the one choice the run opens on, and a lone
+    // eeveelution in a volcanic pool never read as anything but a stray.
+    // Rapidash is the fire horse the slot wanted, at the same 500 BST.
     SPECIES_MACHOKE, SPECIES_ARCANINE, SPECIES_MAGMAR, SPECIES_MUK,
-    SPECIES_FLAREON, SPECIES_HOUNDOOM, SPECIES_NINETALES, SPECIES_MAGMORTAR,
+    SPECIES_RAPIDASH, SPECIES_HOUNDOOM, SPECIES_NINETALES, SPECIES_MAGMORTAR,
     SPECIES_MACHAMP,
 };
 
@@ -324,7 +352,12 @@ static const u16 sJungleSpecies[] =
     SPECIES_ILLUMISE, SPECIES_ROSELIA, SPECIES_CARNIVINE, SPECIES_SLAKOTH,
     SPECIES_KECLEON, SPECIES_GLOOM, SPECIES_MASQUERAIN, SPECIES_LUDICOLO,
     SPECIES_AZUMARILL, SPECIES_VIGOROTH, SPECIES_VESPIQUEN, SPECIES_TROPIUS,
-    SPECIES_ZANGOOSE, SPECIES_SEVIPER, SPECIES_ABSOL, SPECIES_YANMEGA,
+    // ABSOL out, AMBIPOM in. Absol is a MOUNTAIN Pokemon and was already in
+    // sSidneySpecies, where a Dark-type gauntlet is its real home; Aipom is
+    // tropical and was sitting in the woods. A straight swap rather than an
+    // addition, because a gym pool has exactly window + dungeonLength - 1 = 21
+    // reachable entries and a twenty-second could never be dealt.
+    SPECIES_ZANGOOSE, SPECIES_SEVIPER, SPECIES_AMBIPOM, SPECIES_YANMEGA,
     SPECIES_TOXICROAK,
 };
 

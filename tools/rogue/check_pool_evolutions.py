@@ -56,6 +56,25 @@ CONST_NAMES = [
 # within a pool is not depth within the run.
 STAGED_LEVEL_CEILING = 30
 
+# STAGED IS INFORMATIONAL AND EARLY IS THE FAILURE, and the reason is a
+# structural limit rather than a tolerance.
+#
+# A stone, trade or item-trade evolution carries NO level, so there is no fact
+# of the matter about it being "early" -- an Arcanine is legal at level 5, and a
+# wild Arcanine, Ninetales or Raichu is an ordinary sight in the series. More to
+# the point, the five that remain sit in dungeons 2 and 3, whose ENTIRE level
+# band runs 15-26. No ordering inside those pools can put a species past level
+# 30, because the dungeon never gets there. Failing the build on it would be
+# demanding something the run's shape cannot supply.
+#
+# What IS a fact, and what this check fails on, is a species needing a level the
+# floor cannot reach. That set is objective, it was 45, and it is now 0.
+#
+# Accepted, and re-examine if play says otherwise:
+#   Raichu, Electivire   New Mauville, levels 19 and 21
+#   Arcanine, Ninetales, Magmortar   Fiery Path, levels 23-26
+ACCEPTED_STAGED = 5
+
 
 def die(msg):
     print("check_pool_evolutions: %s" % msg, file=sys.stderr)
@@ -249,9 +268,44 @@ def read_evolutions(repo):
     return evo
 
 
-def build_prevo(evo):
+def read_babies(repo):
+    """Species a RUN can never obtain, read out of gen_safari_pool.py's EXCLUDE.
+
+    A baby comes only from breeding and a run has no access to it -- the same
+    reasoning that keeps Cleffa deliberately unreachable while Clefairy is a
+    starter pick. So a species whose only pre-evolution is a baby is a BASE
+    form as far as this game is concerned, and treating Pikachu as evolved
+    because Pichu exists reports a wild Pikachu at level 17 as a problem when
+    it is the most ordinary encounter in the series.
+
+    READ FROM THE OTHER SCRIPT RATHER THAN RESTATED. The first attempt tested
+    `.isBabyPokemon = TRUE`, a field this expansion does not have -- so it
+    matched nothing, returned an empty set, and the rule was a NO-OP that
+    looked exactly like a rule. The project had already made this judgement
+    once, by name and with a reason per species, and a second list would drift
+    from the first in silence.
+    """
+    path = repo / "tools/rogue/gen_safari_pool.py"
+    if not path.is_file():
+        die("no tools/rogue/gen_safari_pool.py to read the exclusion list from")
+    text = path.read_text(encoding="utf-8")
+
+    m = re.search(r"^EXCLUDE\s*=\s*\{(.*?)^\}", text, re.S | re.M)
+    if m is None:
+        die("could not find the EXCLUDE table in gen_safari_pool.py")
+
+    names = set(re.findall(r"'(SPECIES_\w+)'", m.group(1)))
+    if not names:
+        die("the EXCLUDE table in gen_safari_pool.py parsed as empty, which "
+            "would make this rule a no-op")
+    return names
+
+
+def build_prevo(evo, babies=frozenset()):
     prevo = {}
     for src, branches in evo.items():
+        if src in babies:
+            continue
         for method, param, target in branches:
             prevo.setdefault(target, []).append((src, method, param))
     return prevo
@@ -343,7 +397,7 @@ def main(argv):
     read_consts(repo)
     pools, themes = read_pools(repo)
     evo = read_evolutions(repo)
-    prevo = build_prevo(evo)
+    prevo = build_prevo(evo, read_babies(repo))
 
     spread = CONSTS["DUNGEON_ENCOUNTER_LEVEL_SPREAD"]
     default_window = CONSTS["DUNGEON_ENCOUNTER_WINDOW"]
@@ -415,6 +469,7 @@ def main(argv):
 
     if staged:
         print()
+        print("INFORMATIONAL, not a failure. See ACCEPTED_STAGED in this file.")
         print("FULLY EVOLVED BELOW LEVEL %d -- DevolveForLevel cannot help here,"
               % STAGED_LEVEL_CEILING)
         print("because a stone, trade or friendship evolution carries no level.")
@@ -427,7 +482,7 @@ def main(argv):
                   % (d, pool.replace("Species", ""), s[len("SPECIES_"):],
                      floor, lvl, stage, note))
 
-    return 1 if (early or staged) else 0
+    return 1 if early else 0
 
 
 if __name__ == "__main__":

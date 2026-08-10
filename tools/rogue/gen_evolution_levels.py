@@ -27,7 +27,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from check_pool_evolutions import (  # noqa: E402
-    build_prevo, min_level, read_evolutions,
+    build_prevo, min_level, read_babies, read_evolutions,
 )
 
 HEADER = """#ifndef GUARD_CONSTANTS_ROGUE_EVOLUTION_LEVELS_H
@@ -90,7 +90,14 @@ def in_rom(repo):
 
 def build(repo):
     evo = read_evolutions(repo)
-    prevo = build_prevo(evo)
+
+    # BABIES ARE EXCLUDED AS DEVOLVE TARGETS, and this is not tidiness. A baby
+    # comes only from breeding and a run has no access to it -- the same reason
+    # Cleffa is deliberately unreachable while Clefairy is a starter pick. Left
+    # in, DevolveForLevel would put a Wynaut in the grass on an early floor,
+    # which is a species the run is built never to hand out. Every other route
+    # in stays available because build_prevo drops only the baby as a PARENT.
+    prevo = build_prevo(evo, read_babies(repo))
     rom = in_rom(repo)
 
     rows = []
