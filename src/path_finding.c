@@ -370,12 +370,24 @@ bool32 PathFinder_MoveObjectToCoordsSilent(u8 localId, s16 targetX, s16 targetY,
         return FALSE;
 
     objectEvent->directionOverwrite = DIR_NONE;
-    ScriptMovement_StartObjectMovementScript(localId, gSaveBlock1Ptr->location.mapNum,
-                                             gSaveBlock1Ptr->location.mapGroup, movementScript);
+
+    // Inverted convention: ScriptMovement_StartObjectMovementScript returns
+    // FALSE on SUCCESS. It returns TRUE when the object still has an unfinished
+    // script, in which case the new one was REJECTED and the old pointer is
+    // still installed and still being walked.
+    //
+    // Getting this backwards frees a script ScriptMovement is mid-way through,
+    // which is a use-after-free that would read as garbage movement long before
+    // it read as a crash.
+    if (ScriptMovement_StartObjectMovementScript(localId, gSaveBlock1Ptr->location.mapNum,
+                                                 gSaveBlock1Ptr->location.mapGroup, movementScript))
+    {
+        Free(movementScript - 1); // rejected, and nothing else owns it
+        return FALSE;
+    }
 
     // Only now is the previous script unreferenced: the call above replaced this
-    // object's entry in sMovementScripts. Freeing before it would hand
-    // ScriptMovement a dangling pointer to walk.
+    // object's entry in sMovementScripts.
     PathFinder_ReleaseTrackedScript();
     sTrackedGeneratedScript = movementScript - 1; // step back over the BEGIN marker
 

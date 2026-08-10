@@ -1,9 +1,11 @@
 #include "global.h"
 #include "event_object_movement.h"
 #include "field_player_avatar.h"
+#include "fieldmap.h" // MAP_OFFSET
 #include "path_finding.h"
 #include "rogue_hunt.h"
 #include "script.h"
+#include "script_movement.h"
 #include "sound.h"
 #include "constants/event_object_movement.h"
 #include "constants/rogue_dungeon.h"
@@ -93,6 +95,28 @@ static struct ObjectEvent *GetHunterObject(u32 slot)
     return &gObjectEvents[objectEventId];
 }
 
+// The player's own tile is not a reachable destination: the collision test the
+// path finder uses runs DoesObjectCollideWithObjectAt, and the player is an
+// object event standing on it. Aiming there makes every single search fail.
+// Aim one tile short instead, on the side the hunter is coming from, which is
+// also where it wants to end up to be spotted.
+static void GetChaseTarget(struct ObjectEvent *obj, s16 playerX, s16 playerY,
+                           s16 *targetX, s16 *targetY)
+{
+    s16 dx = obj->currentCoords.x - playerX;
+    s16 dy = obj->currentCoords.y - playerY;
+    s16 adx = (dx < 0) ? -dx : dx;
+    s16 ady = (dy < 0) ? -dy : dy;
+
+    *targetX = playerX;
+    *targetY = playerY;
+
+    if (adx >= ady)
+        *targetX += (dx > 0) ? 1 : -1;
+    else
+        *targetY += (dy > 0) ? 1 : -1;
+}
+
 void RogueHunt_OnFloorLoad(bool8 enabled)
 {
     u32 i;
@@ -111,13 +135,16 @@ void RogueHunt_OnFloorLoad(bool8 enabled)
 
 bool8 RogueHunt_IsHunting(u8 localId)
 {
-    u32 slot;
-
-    if (!sEnabled || sActiveHunter == HUNT_NO_HUNTER)
+    // Deliberately CHASING *or* SPENT, and not just the currently active
+    // hunter. The handoff happens at HUNT_HANDOFF_RADIUS, two tiles out -- the
+    // hunter is marked spent and stops steering while it finishes walking the
+    // last of its path. That is precisely the moment trainer_see fires, so
+    // testing only the active hunter would pop the "!" back up at the worst
+    // possible time, at the end of the chase it exists to replace.
+    if (!sEnabled || localId == 0 || localId > DUNGEON_MAX_TRAINERS)
         return FALSE;
 
-    slot = sActiveHunter;
-    return (localId == slot + 1) && (sHuntState[slot] == HUNT_CHASING);
+    return sHuntState[localId - 1] != HUNT_IDLE;
 }
 
 static void TryNoticePlayer(s16 playerX, s16 playerY)
@@ -185,9 +212,31 @@ static void UpdateActiveHunter(s16 playerX, s16 playerY)
         sStepSeTimer = HUNT_STEP_SE_FRAMES;
     }
 
-    if (sRepathTimer == 0)
+    // Repath only once the current path has been walked. ScriptMovement rejects
+    // a new script while the old one is unfinished, so asking sooner burns an
+    // A* search for nothing -- and the timer alone would have done exactly that
+    // every 48 frames. This also means the hunter COMMITS to a path: it walks to
+    // where you were, which is both cheaper and better to play against than
+    // something that re-aims every step.
+    if (sRepathTimer == 0
+     && ScriptMovement_IsObjectMovementFinished(slot + 1,
+                                                gSaveBlock1Ptr->location.mapNum,
+                                                gSaveBlock1Ptr->location.mapGroup))
     {
-        PathFinder_MoveObjectToCoordsSilent(slot + 1, playerX, playerY,
+        s16 targetX, targetY;
+
+        GetChaseTarget(obj, playerX, playerY, &targetX, &targetY);
+
+        // TWO COORDINATE SPACES, and they are one tile-border apart.
+        // CreatePathFinderContext takes ctx.start straight from
+        // objectEvent->currentCoords, which already includes MAP_OFFSET, but
+        // does `ctx.target = target + MAP_OFFSET` because its callers are script
+        // macros passing raw map coordinates. playerX/playerY here come from
+        // PlayerGetDestCoords, which is object space -- so they must come back
+        // DOWN by MAP_OFFSET or the hunter paths seven tiles past the player on
+        // both axes, which looks exactly like running away.
+        PathFinder_MoveObjectToCoordsSilent(slot + 1,
+                                            targetX - MAP_OFFSET, targetY - MAP_OFFSET,
                                             DIR_NONE, HUNT_SPEED, HUNT_MAX_NODES);
         sRepathTimer = HUNT_REPATH_FRAMES;
     }
