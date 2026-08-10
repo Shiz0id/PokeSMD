@@ -166,27 +166,61 @@ the answer** — a single worst-of-15 reads "error 6" and makes the conversion
 look broken, when the colours that matter come back at 1 and 0. Per-instance,
 never in aggregate.
 
-**How much variety it actually produces.** Distinct colours in one palette slot
-across all 128 PIDs the shift can distinguish — which is the whole space, not a
-sample:
+## Why the default is hue 30 + chroma 25 + luma 25
 
-| | at 10° | at 20° (current) |
+**This shipped as a hue-only shift and was reported from play as looking like
+stock colours, on a wild Aron.** Every host-side number said the feature worked,
+and it did — it was just invisible.
+
+**Hue is meaningless at zero chroma.** The more desaturated a species is, the
+less a hue rotation can do to it, and a great many of the species a run meets in
+caves and on rock floors are grey. Mean channel delta out of 31, over a full
+16-bit PRN sweep against the real palettes:
+
+| setting | Aron (grey) | Zubat (coloured) |
 |---|---|---|
-| saturated primary | 6 | **10** |
-| muddy mid-tone | — | **7** |
+| hue 20 alone *(as shipped)* | 0.87 | 1.87 |
+| hue 20 + chroma 10 + luma 10 | 1.33 | — |
+| hue 30 + chroma 25 + luma 10 | 1.77 | 3.18 |
+| **hue 30 + chroma 25 + luma 25** | **2.32** | **3.93** |
+| hue 45 + chroma 25 + luma 25 | 2.46 | — |
 
-Of a theoretical 15 shifts at 20°, RGB555 quantisation collapses the rest.
+The shipped setting moved a colour by **under 3% of its range**, and a grey
+species got **less than half** what a coloured one did from the same numbers.
+Chroma and luminance are the axes that work on a desaturated palette: chroma
+tints a grey, luminance lightens or darkens it, and neither cares about hue.
 
-## Why the default is 20° and not 15°
+**45° was rejected.** It buys Aron almost nothing over 30° — 2.46 against 2.32,
+because hue is the axis with the least left to give here — while rotating a
+coloured species far enough to start reading as a shiny.
 
-**15 is not a legal value.** The set is `{0, 10, 20, 30, 45, 60, 90, 180}`, and
-`HUE_INDEX` is a ternary chain with no else branch, so 15 falls through to the
-`<= 20` case and silently yields **19.7°**. Writing 20 is the same shift, legal,
-and visible to `check_variant_colours.py`.
+End to end through the shipped path, against real palettes:
 
-30° is available and is the next rung. It was not taken by default because a 30°
-rotation starts moving a brown Pokémon toward purple, which risks the thing the
-shiny exclusion exists to protect — a variant that reads as a shiny at a glance.
+| | max delta /31 | colours moving /15 |
+|---|---|---|
+| Aron, hue-only | 6 | 9 |
+| **Aron, now** | **13** | **12** |
+| **Zubat, now** | **17** | **15** |
+
+**15 is not a legal hue value.** The set is `{0, 10, 20, 30, 45, 60, 90, 180}`,
+and `HUE_INDEX` is a ternary chain with no else branch, so 15 falls through to
+the `<= 20` case and silently yields 19.7°. `check_variant_colours.py` fails on
+anything off the set precisely so that substitution is never made silently.
+
+## Two measurement traps that both produced confident wrong answers
+
+**The PRN is sixteen bits and each field owns a slice of it** — hue in bits
+0..6, chroma in 7..9, luminance in 10..12, directions in 13..15. Sweeping PIDs
+`0..127` exercises **hue and nothing else**, pinning chroma and luma to zero
+however large the entry asks for them to be. A calibration run done that way
+reported that adding chroma and luminance changed the mean by *exactly nothing*.
+`PRN_STRIDE` sweeps the full range.
+
+**Max hid the answer where mean did not.** The shift is drawn uniformly from
+`0..hmax`, so half of all Pokémon get less than half the headline figure. A
+max-of-everything said the hue-only setting moved Aron by 6 levels; the mean
+said 0.87, which is what a player actually sees. Same rule as the healing-power
+average: measure per instance, and never average across mixed categories.
 
 ## Not on a screen
 

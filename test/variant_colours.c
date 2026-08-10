@@ -2,21 +2,29 @@
 #include "test/test.h"
 #include "variant_colours.h"
 
-// These run the real code on the emulator, which is the only way to exercise
-// the fixed-point OkLCH pipeline honestly: it leans on Sin, Cos, ArcTan2 and
+// These run the real code on the emulator, which is the only honest way to
+// exercise the fixed-point OkLCH pipeline: it leans on Sin, Cos, ArcTan2 and
 // Sqrt, and a host reimplementation of those is a model of the maths rather
 // than the maths.
 //
-// The question these exist to answer is not "does it compile". It is whether
-// the conversion is lossless enough to be invisible when it is asked to do
-// nothing -- because EVERY species without a table entry takes the default
-// variant and goes through the full round trip, so conversion loss is not a
-// per-species problem, it is a whole-dex recolour that nobody asked for.
+// Two of these tests exist because of bugs that reached a screen, and both
+// bugs were invisible to a measurement that looked almost right.
+
+// THE PRN IS SIXTEEN BITS AND EACH FIELD OWNS ITS OWN SLICE: hue in bits 0..6,
+// chroma in 7..9, luminance in 10..12, and the three direction bits in 13..15.
+//
+// Sweeping 0..127 therefore exercises hue AND NOTHING ELSE -- it pins chroma
+// and luma to zero however large the entry asks for them to be. A calibration
+// run done that way reported that adding chroma and luminance changed the mean
+// delta by exactly nothing, which is true of the sweep and false of the code.
+// A coprime stride over the full range reaches every field.
+#define PRN_STRIDE 37
 
 // A spread of real palette colours rather than a gradient: saturated primaries
 // where hue is meaningful, muddy mid-tones where most Pokemon actually live,
 // and the near-greys that outlines and eyes are made of and where hue means
 // nothing at all.
+//
 // Raw RGB555 literals rather than RGB(): that macro is not a constant
 // expression in this tree, so it cannot initialise a static.
 static const u16 sTestPal[16] = {
@@ -56,7 +64,7 @@ static u32 ChannelError(u16 a, u16 b)
     s32 dr = (s32)(a & 0x1F) - (s32)(b & 0x1F);
     s32 dg = (s32)((a >> 5) & 0x1F) - (s32)((b >> 5) & 0x1F);
     s32 db = (s32)((a >> 10) & 0x1F) - (s32)((b >> 10) & 0x1F);
-    u32 e = 0;
+    u32 e;
 
     if (dr < 0) dr = -dr;
     if (dg < 0) dg = -dg;
@@ -68,12 +76,14 @@ static u32 ChannelError(u16 a, u16 b)
     return e;
 }
 
-// Split by colour family, one test each, because the runner prints only the
-// first failing assertion per test and these three numbers are the whole
-// diagnosis: which kinds of colour the conversion cannot return unchanged.
-// Measuring them as one aggregate hid the answer -- a single worst-of-15 said
-// "error 6" and made the conversion look broken, when 6 is one gamut corner
-// and the colours real sprites are made of come back at 1 and 0.
+// ---------------------------------------------------------------------------
+// Round-trip fidelity, split by colour family.
+//
+// SPLIT, because measuring it as one aggregate said "worst error 6 of 31" and
+// made the conversion look broken. It is not: 6 is one gamut corner, and the
+// colours real sprites are made of come back at 1 and 0. Per instance, never
+// in aggregate, and never averaged across mixed categories.
+
 static u32 RoundTripWorst(u32 lo, u32 hi)
 {
     u32 i, worst = 0;
@@ -93,40 +103,38 @@ static u32 RoundTripWorst(u32 lo, u32 hi)
     return worst;
 }
 
-TEST("variant colours: round trip loss on saturated primaries")
+TEST("variant colours: round trip loss on greys and outlines")
 {
-    // SIX levels of 31, and this is the only place the conversion is anything
-    // but faithful. It is gamut clipping rather than lost precision: chroma is
-    // stored doubled in a u8 and a fully saturated RGB555 primary drives that
-    // past 255, so it clamps and comes back less saturated than it went in.
-    // Tolerated because a fully saturated primary is a corner of the colour
-    // space that Pokemon palettes almost never contain -- and because the two
-    // families that DO make up real sprites are measured below at 1 and 0.
-    EXPECT_LE(RoundTripWorst(1, 6), 6);
+    // EXACT, and this is the most important number here. Outlines, eyes and
+    // shading are where an error would be most visible, and hue is meaningless
+    // at zero chroma so nothing moves them at all.
+    EXPECT_EQ(RoundTripWorst(12, 15), 0);
 }
 
 TEST("variant colours: round trip loss on muddy mid-tones")
 {
     // One level of 31, on the colour family most of every Pokemon is made of.
-    // Imperceptible, and the reason the whole-dex recolour this test was
-    // written to look for is not happening.
     EXPECT_LE(RoundTripWorst(7, 11), 1);
 }
 
-TEST("variant colours: round trip loss on greys and outlines")
+TEST("variant colours: round trip loss on saturated primaries")
 {
-    // EXACT, which is the single most important number here. Outlines, eyes
-    // and shading are where an error would be most visible, and hue is
-    // meaningless at zero chroma so nothing moves them at all.
-    EXPECT_EQ(RoundTripWorst(12, 15), 0);
+    // Six levels, and it is gamut clipping rather than lost precision: chroma
+    // is stored doubled in a u8, and a fully saturated RGB555 primary drives
+    // that past 255 and clamps. A corner of the colour space that Pokemon
+    // palettes almost never contain.
+    EXPECT_LE(RoundTripWorst(1, 6), 6);
 }
+
+// ---------------------------------------------------------------------------
+// Behaviour of the getter.
 
 TEST("variant colours: a shiny keeps the palette it was handed")
 {
     const u16 *out = GetMonSpritePalVariant(sTestPal, SPECIES_ZUBAT, TRUE, FALSE, 0x12345678);
 
-    // Pointer identity, not contents: the whole point is that no copy is made
-    // and the caller keeps its pointer into ROM.
+    // Pointer identity, not contents: the point is that no copy is made and the
+    // caller keeps its pointer into ROM.
     EXPECT_EQ(out, sTestPal);
 }
 
@@ -147,8 +155,8 @@ TEST("variant colours: the same mon is the same colour every time")
     for (i = 0; i < 16; i++)
         first[i] = a[i];
 
-    // Deliberately churns the ring in between, so this also proves a mon does
-    // not depend on which ring slot it lands in.
+    // Churns the ring in between, so this also proves a mon does not depend on
+    // which ring slot it lands in.
     GetMonSpritePalVariant(sTestPal, SPECIES_ZUBAT, FALSE, FALSE, 0x11111111);
     GetMonSpritePalVariant(sTestPal, SPECIES_ZUBAT, FALSE, FALSE, 0x22222222);
     GetMonSpritePalVariant(sTestPal, SPECIES_ZUBAT, FALSE, FALSE, 0x33333333);
@@ -160,67 +168,98 @@ TEST("variant colours: the same mon is the same colour every time")
         EXPECT_EQ(b[i], first[i]);
 }
 
-TEST("variant colours: the default variant actually changes the palette")
+// ---------------------------------------------------------------------------
+// End to end against REAL species palettes, through the functions the game
+// actually calls.
+//
+// GetMonSpritePalFromSpecies is the unhooked getter -- it takes isFemale and
+// has no personality -- so it returns the stock palette and is a free control.
+// GetMonSpritePalFromSpeciesAndPersonality is the hooked one. The difference
+// between the two IS the feature.
+//
+// ARON IS HERE BECAUSE IT SHIPPED LOOKING WRONG. It is a nearly grey species,
+// the variant was hue-only, and hue is meaningless at zero chroma -- so it came
+// out looking like stock colours in play while every host-side number said the
+// feature worked. A grey species is the worst case and therefore the one worth
+// asserting on.
+
+static u32 RealSpeciesMaxDelta(u32 species)
 {
-    const u16 *out = GetMonSpritePalVariant(sTestPal, SPECIES_ZUBAT, FALSE, FALSE, 0x0000007F);
-    u32 i, changed = 0;
+    const u16 *stock = GetMonSpritePalFromSpecies(species, FALSE, FALSE);
+    u16 stockCopy[16];
+    u32 pid, i, worst = 0;
+
+    for (i = 0; i < 16; i++)
+        stockCopy[i] = stock[i];
+
+    for (pid = 0; pid < 65536; pid += PRN_STRIDE)
+    {
+        const u16 *out = GetMonSpritePalFromSpeciesAndPersonality(species, FALSE, pid);
+
+        for (i = 1; i < 16; i++)
+        {
+            u32 e = ChannelError(out[i], stockCopy[i]);
+            if (e > worst)
+                worst = e;
+        }
+    }
+    return worst;
+}
+
+// How many of the fifteen real colours ever move. A single colour shifting hard
+// while the rest sit still is what "it looks stock" is made of -- the body
+// dominates what the eye sees, and a max-of-everything hides that completely.
+static u32 RealSpeciesColoursThatMove(u32 species)
+{
+    const u16 *stock = GetMonSpritePalFromSpecies(species, FALSE, FALSE);
+    u16 stockCopy[16];
+    bool32 movesAtAll[16] = {FALSE};
+    u32 pid, i, moved = 0;
+
+    for (i = 0; i < 16; i++)
+        stockCopy[i] = stock[i];
+
+    for (pid = 0; pid < 65536; pid += PRN_STRIDE)
+    {
+        const u16 *out = GetMonSpritePalFromSpeciesAndPersonality(species, FALSE, pid);
+
+        for (i = 1; i < 16; i++)
+        {
+            if (ChannelError(out[i], stockCopy[i]) != 0)
+                movesAtAll[i] = TRUE;
+        }
+    }
 
     for (i = 1; i < 16; i++)
     {
-        if (out[i] != sTestPal[i])
-            changed++;
+        if (movesAtAll[i])
+            moved++;
     }
-
-    // If this is zero the feature does nothing at all, which is the failure
-    // mode that would otherwise only show up as "I cannot see any difference".
-    EXPECT_GT(changed, 0);
+    return moved;
 }
 
-// How many visibly different colours the variant actually produces in one
-// palette slot, sweeping every PID the shift can distinguish.
-//
-// The hue shift is drawn from 7 bits of the PID scaled into 0..hmax, so 128
-// PIDs is the WHOLE space rather than a sample. hmax is 14 at the default
-// hue_amount of 20 degrees, giving 15 possible shifts -- and the answer is
-// always lower than that, because RGB555 has 32 levels per channel and a small
-// hue rotation lands several shifts on the same quantised colour.
-static u32 DistinctColoursAt(u32 index)
+TEST("variant colours: a grey species (Aron) moves enough to see")
 {
-    u16 seen[64];
-    u32 nSeen = 0;
-    u32 pid, i;
-
-    for (pid = 0; pid < 128; pid++)
-    {
-        const u16 *out = GetMonSpritePalVariant(sTestPal, SPECIES_ZUBAT, FALSE, FALSE, pid);
-        u16 c = out[index];
-        bool32 dup = FALSE;
-
-        for (i = 0; i < nSeen; i++)
-        {
-            if (seen[i] == c)
-            {
-                dup = TRUE;
-                break;
-            }
-        }
-        if (!dup && nSeen < ARRAY_COUNT(seen))
-            seen[nSeen++] = c;
-    }
-    return nSeen;
+    // 13 of 31 levels at the time of writing, against 6 when the variant was
+    // hue-only and Aron looked stock on a screen.
+    EXPECT_GE(RealSpeciesMaxDelta(SPECIES_ARON), 12);
 }
 
-TEST("variant colours: distinct colours produced on a saturated primary")
+TEST("variant colours: most of a grey species' colours move")
 {
-    // 10 of a possible 15 at the default 20 degrees. Was 6 at 10 degrees,
-    // which is what the widening bought.
-    EXPECT_GE(DistinctColoursAt(1), 10);
+    // 12 of 15, against 9 when it was hue-only.
+    EXPECT_GE(RealSpeciesColoursThatMove(SPECIES_ARON), 11);
 }
 
-TEST("variant colours: distinct colours produced on a muddy mid-tone")
+TEST("variant colours: a coloured species (Zubat) moves enough to see")
 {
-    // The one that matters. Saturated primaries are rare in Pokemon palettes
-    // and are also where the round trip clips; this is the colour family real
-    // sprites are mostly made of.
-    EXPECT_GE(DistinctColoursAt(7), 7);
+    // 17 of 31. A coloured species gets roughly twice what a grey one does from
+    // the same setting, which is exactly why calibrating on a coloured species
+    // alone is how a grey one ends up looking untouched.
+    EXPECT_GE(RealSpeciesMaxDelta(SPECIES_ZUBAT), 16);
+}
+
+TEST("variant colours: all of a coloured species' colours move")
+{
+    EXPECT_GE(RealSpeciesColoursThatMove(SPECIES_ZUBAT), 14);
 }

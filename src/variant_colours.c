@@ -260,24 +260,41 @@ static inline void OklchToRgb5(uQ0_8 L, uQ0_8 C, uQ0_8 H, u8 *r, u8 *g, u8 *b)
 static const u8 sHueTable[8] = {0, 7, 14, 21, 32, 43, 64, 128};
 static const u8 sCLTable[4] = {0, 5, 10, 25};
 
-// What a species with no entry of its own gets. A hue swing of +/-20 degrees
-// and nothing else: enough that two Zubats in the same corridor are not the
-// same Zubat, small enough that nobody misreads it as a shiny.
+// What a species with no entry of its own gets: hue +/-30 degrees, chroma
+// +/-25 and luminance +/-25.
 //
-// 20 AND NOT 15, and the difference is only that 20 is what 15 means. The
-// legal hue values are 0, 10, 20, 30, 45, 60, 90 and 180; HUE_INDEX is a
-// ternary chain with no else, so 15 falls through to the <=20 branch and
-// silently yields 19.7 degrees. Writing 20 is the same shift, legal, and
-// visible to check_variant_colours.py, which fails on anything off the set
-// precisely so that this substitution is never made silently.
+// HUE ALONE WAS NOT ENOUGH AND A GREY POKEMON IS WHY. This shipped as a
+// hue-only shift and was reported from play as looking like stock colours, on
+// a wild Aron. Hue is meaningless at zero chroma, so the more desaturated a
+// species is the less a hue rotation can do to it -- and a great many of the
+// species a run meets in caves and on rock floors are grey. Measured as mean
+// channel delta over a full 16-bit PRN sweep against the real palettes:
 //
-// Measured, not guessed: at 10 degrees a sweep of all 128 reachable PIDs
-// produced only 6 distinct colours in a palette slot, because RGB555
-// quantisation collapses shifts that small. See test/variant_colours.c.
+//                              Aron (grey)   Zubat (coloured)
+//   hue 20 alone (as shipped)      0.87           1.87
+//   hue 30 + chroma 25 + luma 10   1.77           3.18
+//   hue 30 + chroma 25 + luma 25   2.32           3.93
+//   hue 45 + chroma 25 + luma 25   2.46             --
+//
+// out of 31 levels per channel. The shipped setting moved a colour by under 3%
+// of its range, which is invisible, and a grey species got less than HALF what
+// a coloured one did from the same numbers. Chroma and luminance are the axes
+// that work on a desaturated palette: chroma tints a grey, luminance lightens
+// or darkens it, and neither cares what the hue is.
+//
+// 45 degrees was rejected. It buys Aron almost nothing over 30 (2.46 against
+// 2.32, because hue is the axis with the least left to give here) while
+// rotating a coloured species far enough to start reading as a shiny -- which
+// is the thing the shiny exclusion exists to protect.
+//
+// 30 AND NOT 15. The legal hue values are 0, 10, 20, 30, 45, 60, 90 and 180;
+// HUE_INDEX is a ternary chain with no else, so 15 falls through to the <=20
+// branch and silently yields 19.7 degrees. check_variant_colours.py fails on
+// anything off the set precisely so that substitution is never made silently.
 #define DEFAULT_SPECIES_VARIANT \
   {                             \
       PAL1(1, 15),              \
-      HCL1(20, 0, 0, FALSE),    \
+      HCL1(30, 25, 25, FALSE),  \
   }
 
 static const struct SpeciesVariant sDefaultSpeciesVariant = DEFAULT_SPECIES_VARIANT;
