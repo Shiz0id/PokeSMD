@@ -134,16 +134,68 @@ Broken five ways on purpose and fires on all five. **With the table empty it
 passes vacuously** — that is what the break test is for, and it is the reason to
 re-run it after adding the first real entry.
 
+## Measured on the emulator
+
+`test/variant_colours.c`, nine tests, run with:
+
+```bash
+make check TESTS="variant colours"
+```
+
+They run the real code on real hardware, which is the only honest way to
+exercise this: the pipeline leans on `Sin`, `Cos`, `ArcTan2` and `Sqrt`, and a
+host reimplementation of those would be a model of the maths rather than the
+maths.
+
+**Round-trip fidelity at zero shift.** The concern was that every species
+without a table entry goes through the full conversion, so a lossy round trip
+would recolour the whole dex before any variant applied. Measured as max
+channel error out of 31:
+
+| colour family | error | |
+|---|---|---|
+| greys, outlines, near-black | **0** | exact |
+| muddy mid-tones | **1** | imperceptible, and this is what sprites are made of |
+| fully saturated primaries | **6** | gamut clipping, see below |
+
+**The 6 is gamut clipping, not lost precision.** Chroma is stored doubled in a
+`u8`, and a fully saturated RGB555 primary drives that past 255, so it clamps
+and returns less saturated. It is a corner of the colour space that Pokémon
+palettes almost never contain. **Measuring this as one aggregate actively hid
+the answer** — a single worst-of-15 reads "error 6" and makes the conversion
+look broken, when the colours that matter come back at 1 and 0. Per-instance,
+never in aggregate.
+
+**How much variety it actually produces.** Distinct colours in one palette slot
+across all 128 PIDs the shift can distinguish — which is the whole space, not a
+sample:
+
+| | at 10° | at 20° (current) |
+|---|---|---|
+| saturated primary | 6 | **10** |
+| muddy mid-tone | — | **7** |
+
+Of a theoretical 15 shifts at 20°, RGB555 quantisation collapses the rest.
+
+## Why the default is 20° and not 15°
+
+**15 is not a legal value.** The set is `{0, 10, 20, 30, 45, 60, 90, 180}`, and
+`HUE_INDEX` is a ternary chain with no else branch, so 15 falls through to the
+`<= 20` case and silently yields **19.7°**. Writing 20 is the same shift, legal,
+and visible to `check_variant_colours.py`.
+
+30° is available and is the next rung. It was not taken by default because a 30°
+rotation starts moving a brown Pokémon toward purple, which risks the thing the
+shiny exclusion exists to protect — a variant that reads as a shiny at a glance.
+
 ## Not on a screen
 
-Nothing here is verified in play, and this is a feature whose entire output is
-pixels. Specifically unverified:
+Still unverified, and this is a feature whose entire output is pixels:
 
-- whether ±10° is too subtle to notice or already too much
-- whether the **fixed-point OkLCH round trip is lossless enough at zero shift** —
-  every species without an entry goes through the full round trip, so if the
-  conversion itself is lossy, every mon is slightly recoloured before any
-  variant is applied. This is measurable host-side against the game's own
-  `gSineTable`/`ArcTan2`/`Sqrt`, and has not been measured.
-- the transformed and illusion paths, which pass a substituted PID
+- whether 20° reads as *variety* or as *wrong* on an actual sprite in motion
 - whether a variant Pokémon reads as a shiny to a player at a glance
+- the transformed and illusion paths, which pass a substituted PID — covered by
+  reasoning and by the BW tests continuing to pass, not by looking
+- the overworld follower, which has no personality threaded to it and so is
+  still on stock colours while its battle sprite is not. **That inconsistency is
+  visible in normal play** and is the most likely thing to be noticed first.

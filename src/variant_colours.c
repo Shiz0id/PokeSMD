@@ -260,13 +260,24 @@ static inline void OklchToRgb5(uQ0_8 L, uQ0_8 C, uQ0_8 H, u8 *r, u8 *g, u8 *b)
 static const u8 sHueTable[8] = {0, 7, 14, 21, 32, 43, 64, 128};
 static const u8 sCLTable[4] = {0, 5, 10, 25};
 
-// What a species with no entry of its own gets. A hue swing of +/-10 degrees
+// What a species with no entry of its own gets. A hue swing of +/-20 degrees
 // and nothing else: enough that two Zubats in the same corridor are not the
 // same Zubat, small enough that nobody misreads it as a shiny.
+//
+// 20 AND NOT 15, and the difference is only that 20 is what 15 means. The
+// legal hue values are 0, 10, 20, 30, 45, 60, 90 and 180; HUE_INDEX is a
+// ternary chain with no else, so 15 falls through to the <=20 branch and
+// silently yields 19.7 degrees. Writing 20 is the same shift, legal, and
+// visible to check_variant_colours.py, which fails on anything off the set
+// precisely so that this substitution is never made silently.
+//
+// Measured, not guessed: at 10 degrees a sweep of all 128 reachable PIDs
+// produced only 6 distinct colours in a palette slot, because RGB555
+// quantisation collapses shifts that small. See test/variant_colours.c.
 #define DEFAULT_SPECIES_VARIANT \
   {                             \
       PAL1(1, 15),              \
-      HCL1(10, 0, 0, FALSE),    \
+      HCL1(20, 0, 0, FALSE),    \
   }
 
 static const struct SpeciesVariant sDefaultSpeciesVariant = DEFAULT_SPECIES_VARIANT;
