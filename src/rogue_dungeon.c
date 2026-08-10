@@ -5224,13 +5224,16 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
 static void RelocateTrainersOffWalls(const u16 *map)
 {
     struct ObjectEventTemplate *templates = gSaveBlock1Ptr->objectEventTemplates;
-    bool8 arena = RogueDungeon_IsBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR))
-               && ThemeForFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR))->arenaPlatform;
     u32 i;
 
-    // The boss of an arena floor stands on its platform on purpose - that wall
-    // block IS the platform, and moving it off would undo the arena.
-    if (arena)
+    // EVERY boss floor is skipped, not just the ones with a platform. A boss is
+    // positioned by the arena generator at a spot chosen against that arena --
+    // deliberately out of the chokepoint, because a defeated trainer object
+    // still blocks movement and would wall the exit off -- so there is nothing
+    // here to improve and a real chance of making it worse. The platform floors
+    // additionally need it, since that wall block under the boss IS the
+    // platform.
+    if (RogueDungeon_IsBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
         return;
 
     for (i = 0; i < sTrainerCount; i++)
