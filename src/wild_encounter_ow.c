@@ -2019,7 +2019,7 @@ static void Task_OWEApproachForBattle(u8 taskId)
             u32 collidingObject;
 
             MoveCoords(OWE->movementDirection, &x, &y);
-            collidingObject = GetObjectObjectCollidesWith(OWE, x, y, FALSE);
+            collidingObject = GetObjectObjectCollidesWith(OWE, x, y, OWE->currentElevation, FALSE);
 
             if (collidingObject == GetObjectEventIdByLocalId(followerMon->localId) && followerMon != NULL && !followerMon->invisible)
             {
