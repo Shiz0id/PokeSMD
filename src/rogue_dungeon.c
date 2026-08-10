@@ -5155,6 +5155,8 @@ static void ApplyRunConfig(void)
         FlagSet(FLAG_ROGUE_ROD_SUPER_TECHNIQUE);
 }
 
+static void RelocateTrainersOffWalls(const u16 *map);
+
 void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
 {
     ApplyRunConfig();
@@ -5188,6 +5190,10 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
     // each time, so the pointer has to be put back each time too.
     ApplyDungeonEvents();
 
+    // Must run on the FINISHED map and before WriteFloorBlocks, which is the
+    // last chance to see the same grid the player will walk on.
+    RelocateTrainersOffWalls(backupMapData);
+
     WriteFloorBlocks(backupMapData);
 
     if (setPlayerPosition == FALSE && sRoomCount != 0)
@@ -5199,6 +5205,89 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
     // Consumed. The next map load must prepare afresh, or it would repaint this
     // floor instead of generating the next one.
     sFloorPrepared = FALSE;
+}
+
+// Trainers are placed from sRooms during PrepareFloor, which runs BEFORE a
+// single block is painted, and their object event templates are written before
+// that too. Everything in between - the woods generator carving rooms in 2x2
+// cells so an odd room dimension leaves its last row uncarved, the arena
+// platform deliberately dropping a wall under the boss, any future pass that
+// writes a solid block - can leave a trainer standing inside geometry.
+//
+// So this does not try to predict the layout. It reads the finished grid and
+// moves anything solid out, which fixes every cause at once including the ones
+// not yet found.
+//
+// A relocated trainer must move in the TEMPLATE as well as in sTrainerX/Y: the
+// template is what the engine spawns from, and the arrays are what the hunt,
+// the item placer and the hidden-item placer read.
+static void RelocateTrainersOffWalls(const u16 *map)
+{
+    struct ObjectEventTemplate *templates = gSaveBlock1Ptr->objectEventTemplates;
+    bool8 arena = RogueDungeon_IsBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR))
+               && ThemeForFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR))->arenaPlatform;
+    u32 i;
+
+    // The boss of an arena floor stands on its platform on purpose - that wall
+    // block IS the platform, and moving it off would undo the arena.
+    if (arena)
+        return;
+
+    for (i = 0; i < sTrainerCount; i++)
+    {
+        s32 radius;
+        s32 bestX = sTrainerX[i];
+        s32 bestY = sTrainerY[i];
+
+        if (!IsWallAt(map, bestX, bestY))
+            continue;
+
+        // Spiral outwards for the nearest open tile. Bounded rather than
+        // exhaustive: a trainer with nothing open within 6 tiles is on a floor
+        // so solid that leaving it buried is better than teleporting it across
+        // the map away from the room it was meant to guard.
+        for (radius = 1; radius <= 6; radius++)
+        {
+            s32 dx, dy;
+            bool8 found = FALSE;
+
+            for (dy = -radius; dy <= radius && !found; dy++)
+            {
+                for (dx = -radius; dx <= radius; dx++)
+                {
+                    s32 nx, ny;
+
+                    // Ring only: the interior was covered by smaller radii.
+                    if (dy > -radius && dy < radius && dx > -radius && dx < radius)
+                        continue;
+
+                    nx = (s32)sTrainerX[i] + dx;
+                    ny = (s32)sTrainerY[i] + dy;
+
+                    if (IsWallAt(map, nx, ny))
+                        continue;
+                    if (nx == sStairsX && ny == sStairsY)
+                        continue; // never block the exit
+
+                    bestX = nx;
+                    bestY = ny;
+                    found = TRUE;
+                    break;
+                }
+            }
+
+            if (found)
+                break;
+        }
+
+        if (bestX == sTrainerX[i] && bestY == sTrainerY[i])
+            continue; // nothing open nearby; leave it rather than fling it
+
+        sTrainerX[i] = bestX;
+        sTrainerY[i] = bestY;
+        templates[i].x = bestX;
+        templates[i].y = bestY;
+    }
 }
 
 // Which graphic FLDEFF_LONG_GRASS should wear on this floor.

@@ -16,8 +16,15 @@
 // so expect to move them after playing rather than reasoning about them.
 // ---------------------------------------------------------------------------
 
-#define HUNT_NOTICE_RADIUS      7   // Chebyshev tiles. Through walls, on purpose.
-#define HUNT_GIVE_UP_RADIUS    14   // Outrun it and it loses interest.
+// The screen is 15x10 blocks, so a notice radius of 7 was almost exactly "once
+// it is already on screen" -- which is the one range at which a hunter cannot be
+// dreadful, because you can see it. 11 means it commits from beyond the edge of
+// the screen and you meet it as a sound first.
+#define HUNT_NOTICE_RADIUS     11   // Chebyshev tiles. Through walls, on purpose.
+// Was 14, barely past the notice ring: a hunter gave up almost as soon as it
+// had started. It should cost real distance to shake, and A* is only paid for
+// on repath, so a long leash is cheap.
+#define HUNT_GIVE_UP_RADIUS    24   // Outrun it and it loses interest.
 #define HUNT_HANDOFF_RADIUS     2   // Stop repathing; let trainer_see take the battle.
 
 #define HUNT_REPATH_FRAMES     48   // ~0.8s. Each repath is one A* search.
