@@ -271,33 +271,35 @@ static const u8 sCLTable[4] = {0, 5, 10, 25};
 
 static const struct SpeciesVariant sDefaultSpeciesVariant = DEFAULT_SPECIES_VARIANT;
 
+// DELIBERATELY EMPTY, and this is a decision rather than an unfinished job.
+//
+// Upstream's five Hoenn entries were its own sample content -- the same thing
+// the crafting merge arrived with, and dropped for the same reason. They are
+// removed rather than kept, because a per-species entry is a claim about WHICH
+// PALETTE INDICES ARE WHICH PART OF THE SPRITE, and that claim cannot be made
+// from a species name. PAL1(11, 3) on Tyranitar says indices 11 to 13 are the
+// part worth hue-shifting. Nothing in this file, or in any name, tells you
+// whether that is the belly plates or the eyes, and a hue rotation aimed at
+// the wrong three indices does not fail -- it produces a mon with the wrong
+// colour eyes, on a screen, months later.
+//
+// This is the census rule the tileset work has already paid for twice: the
+// answer is in the real palette data, it is cheap to count, and every attempt
+// to reason it out from what a thing is called has been wrong.
+//
+// So every species takes sDefaultSpeciesVariant until an entry is authored
+// against rendered evidence. That default is a hue swing of +/-10 degrees
+// across indices 1..15, which is uniform, subtle and safe on any sprite: the
+// near-greys and blacks that make up outlines, eyes and shading have almost no
+// chroma, and hue is meaningless at zero chroma, so the shift lands on the
+// coloured body and leaves the drawing alone. It is the whole feature for now
+// and it is a defensible one -- two Zubats in a corridor stop being the same
+// Zubat.
+//
+// To author an entry: render the species' palette, decide the range from what
+// is actually in it, and add it here. tools/rogue/check_variant_colours.py
+// holds whatever is added to the legal value sets.
 static const struct SpeciesVariant gSpeciesVariants[NUM_SPECIES] = {
-    [SPECIES_POOCHYENA] = {
-        PAL1(1, 5),
-        HCL1(0, 25, 5, FALSE),
-    },
-    [SPECIES_MIGHTYENA] = {
-        PAL1(1, 5),
-        HCL1(0, 25, 5, FALSE),
-    },
-    [SPECIES_ZIGZAGOON] = {
-        PAL1(5, 8),
-        HCL1(10, 25, 5, FALSE),
-    },
-    [SPECIES_LINOONE] = {
-        PAL1(1, 3),
-        HCL1(10, 25, 5, FALSE),
-    },
-    [SPECIES_WURMPLE] = {
-        PAL1(1, 4),
-        HCL1(30, 5, 0, TRUE),
-    },
-    [SPECIES_TYRANITAR] = {
-        PAL1(11, 3),
-        HCL1(30, 25, 0, TRUE),
-        PAL2(1, 5),
-        HCL2(0, 0, 10, FALSE),
-    },
 };
 
 const struct SpeciesVariant *GetSpeciesVariants(u32 species)
