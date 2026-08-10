@@ -54,6 +54,7 @@
 #include "trainer.h"
 #include "trainer_hill.h"
 #include "util.h"
+#include "variant_colours.h"
 #include "constants/abilities.h"
 #include "constants/battle_frontier.h"
 #include "constants/battle_move_effects.h"
@@ -5315,14 +5316,28 @@ const u16 *GetMonFrontSpritePal(struct Pokemon *mon)
     return GetMonSpritePalFromSpeciesAndPersonalityIsEgg(species, isShiny, personality, isEgg);
 }
 
+// These two are the choke point for the colour variants, and they are the
+// choke point because they are the only palette getters that are handed a
+// personality -- which is what the shift is derived from. GetMonSpritePalFromSpecies
+// below takes isFemale instead and has no personality to work with, so the
+// overworld follower and the sprite visualiser keep stock colours. That is a
+// gap rather than a decision, and it is written down in docs/COLOUR_VARIANTS.md
+// rather than left to be rediscovered.
+//
+// Hooking here rather than in GetMonSpritePalFromSpeciesIsEgg keeps every
+// caller that has no personality on the untouched ROM pointer, and means the
+// egg and shiny branches inside it are still the things that decide which
+// palette gets shifted in the first place.
 const u16 *GetMonSpritePalFromSpeciesAndPersonality(enum Species species, bool32 isShiny, u32 personality)
 {
-    return GetMonSpritePalFromSpeciesIsEgg(species, isShiny, IsPersonalityFemale(species, personality), FALSE);
+    const u16 *pal = GetMonSpritePalFromSpeciesIsEgg(species, isShiny, IsPersonalityFemale(species, personality), FALSE);
+    return GetMonSpritePalVariant(pal, species, isShiny, FALSE, personality);
 }
 
 const u16 *GetMonSpritePalFromSpeciesAndPersonalityIsEgg(enum Species species, bool32 isShiny, u32 personality, bool32 isEgg)
 {
-    return GetMonSpritePalFromSpeciesIsEgg(species, isShiny, IsPersonalityFemale(species, personality), isEgg);
+    const u16 *pal = GetMonSpritePalFromSpeciesIsEgg(species, isShiny, IsPersonalityFemale(species, personality), isEgg);
+    return GetMonSpritePalVariant(pal, species, isShiny, isEgg, personality);
 }
 
 const u16 *GetMonSpritePalFromSpecies(enum Species species, bool32 isShiny, bool32 isFemale)

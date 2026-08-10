@@ -7,6 +7,7 @@
 #include "pokemon.h"
 #include "sprite.h"
 #include "constants/species.h"
+#include "variant_colours.h"
 
 #include "data/rogue_bw_anim.h"
 
@@ -203,11 +204,12 @@ static void PublishBwFrame(u32 battler, u16 species, const u8 *frame, u32 size)
                                     gMonSpritesGfxPtr->frameImages[position]);
 }
 
-void RogueBwAnim_OnLoadSprite(u32 battler, u16 species)
+void RogueBwAnim_OnLoadSprite(u32 battler, u16 species, bool32 isShiny, u32 personality)
 {
     const struct BwAnim *anim;
     struct BattleSpriteInfo *info;
     u32 chunk, frame;
+    u16 pal[16];
 
     ClearBwState(battler);
 
@@ -251,8 +253,21 @@ void RogueBwAnim_OnLoadSprite(u32 battler, u16 species)
     // sprite uses - so the palette has to be taken over along with the pixels
     // or the mon arrives in the right shape and the wrong colours. This
     // overwrites the LoadPalette the caller just did.
-    LoadPalette(anim->palette, OBJ_PLTT_ID(battler), PLTT_SIZE_4BPP);
-    LoadPalette(anim->palette, BG_PLTT_ID(8) + BG_PLTT_ID(battler), PLTT_SIZE_4BPP);
+    //
+    // WHICH IS WHY THE COLOUR VARIANT HAS TO BE APPLIED HERE TOO. The caller
+    // hands GetMonSpritePalVariant a shifted palette and then this function
+    // throws it away, so hooking only the generic getter would leave variants
+    // working everywhere except the one screen anybody looks at, and only for
+    // the 772 species that have a BW container - which is most of the ones a
+    // run actually meets. It would have looked like the feature half worked.
+    //
+    // Keyed on `species` rather than anim->species so that the shift matches
+    // the one the party menu and the box will compute for the same mon: this
+    // palette is replacing the one the caller derived from `species`, and two
+    // screens disagreeing about a mon's colour is worse than no variant.
+    ApplyMonSpritePalVariantTo(pal, anim->palette, species, isShiny, personality);
+    LoadPalette(pal, OBJ_PLTT_ID(battler), PLTT_SIZE_4BPP);
+    LoadPalette(pal, BG_PLTT_ID(8) + BG_PLTT_ID(battler), PLTT_SIZE_4BPP);
 }
 
 static void TickBattler(u32 battler, bool32 *decodedThisFrame)

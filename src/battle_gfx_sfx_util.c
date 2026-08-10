@@ -667,7 +667,11 @@ void BattleLoadMonSpriteGfx(struct Pokemon *mon, enum BattlerId battler)
     // than at the end of the function: it replaces the palette just loaded, and
     // the tints below - transform, dynamax, tera - must still apply on top of
     // whichever palette won.
-    RogueBwAnim_OnLoadSprite(battler, species);
+    // isShiny and personalityValue are passed rather than re-derived inside:
+    // both locals have already been corrected for illusion and for transform
+    // above, so a Ditto wearing another mon takes the colour of what it copied
+    // and the derivation stays in exactly one place.
+    RogueBwAnim_OnLoadSprite(battler, species, isShiny, personalityValue);
 
     // transform's pink color
     if (gBattleMons[battler].volatiles.transformed)

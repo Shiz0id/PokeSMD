@@ -52,7 +52,9 @@ const struct BwAnim *GetBwAnim(u16 species, bool32 isBack);
 // palette. Takes over both when the species has an animation, and clears any
 // previous one when it does not - which is what makes it correct on switch-in
 // AND on transform, since that function is the hook for both.
-void RogueBwAnim_OnLoadSprite(u32 battler, u16 species);
+// isShiny and personality are carried only to pick the colour variant, which
+// has to be applied to the animation's OWN palette -- see the call site.
+void RogueBwAnim_OnLoadSprite(u32 battler, u16 species, bool32 isShiny, u32 personality);
 
 // Called from BattleMainCB2. Advances every animating battler by one video
 // frame. Safe to call when nothing is animating, and before sprites exist.
