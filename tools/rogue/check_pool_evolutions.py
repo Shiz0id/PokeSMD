@@ -148,6 +148,53 @@ def read_pools(repo):
     return pools, themes
 
 
+def top_level_braces(text):
+    """Yield the contents of each OUTERMOST {...} group.
+
+    A regex of the shape \\{([^{}]*)\\} cannot do this, and gets it wrong in the
+    most expensive way -- it matches the INNERMOST braces, so a branch written
+
+        {EVO_LEVEL, 7, SPECIES_SILCOON, CONDITIONS({IF_PID_UPPER_MODULO_10_GT, 4})}
+
+    yields the CONDITIONS clause and the branch itself is skipped in silence.
+    Every conditional evolution in the game vanished that way: Silcoon, Cascoon
+    and Crobat were simply absent from the emitted table, so the runtime found
+    no step for them and handed them back unchanged -- which is identical in
+    behaviour to the bug the table exists to fix.
+
+    Third variant of the same trap now. Reading one line loses branches; a
+    non-nesting pattern loses conditional ones; and both look like success.
+    """
+    depth, start = 0, None
+    for i, ch in enumerate(text):
+        if ch == "{":
+            if depth == 0:
+                start = i + 1
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0 and start is not None:
+                yield text[start:i]
+                start = None
+
+
+def split_top_level(text):
+    """Split on commas that are not inside brackets of any kind."""
+    parts, depth, cur = [], 0, ""
+    for ch in text:
+        if ch in "({[":
+            depth += 1
+        elif ch in ")}]":
+            depth -= 1
+        if ch == "," and depth == 0:
+            parts.append(cur.strip())
+            cur = ""
+        else:
+            cur += ch
+    parts.append(cur.strip())
+    return parts
+
+
 def read_evolutions(repo):
     """species -> list of (method, param, target), across every species_info file."""
     evo = {}
@@ -183,12 +230,18 @@ def read_evolutions(repo):
             body = blob[j:k]
 
             branches = []
-            for br in re.findall(r"\{([^{}]*)\}", body):
-                parts = [p.strip() for p in br.split(",")]
+            for br in top_level_braces(body):
+                parts = split_top_level(br)
                 if len(parts) < 3:
                     continue
                 method, param, target = parts[0], parts[1], parts[2]
-                if not target.startswith("SPECIES_"):
+
+                # Must be a whole identifier, not a macro template. The form
+                # families are declared through a #define that pastes tokens --
+                # `SPECIES_VIVILLON_##evolution` and friends -- and a
+                # startswith test happily accepts those, then hands the caller
+                # a species name that exists nowhere in the enum.
+                if not re.fullmatch(r"SPECIES_[A-Z0-9_]+", target):
                     continue
                 branches.append((method, param, target))
             if branches:
@@ -247,6 +300,38 @@ def stage_of(species, prevo, seen=None):
     return 1 + max(stage_of(s, prevo, seen) for s, _, _ in parents)
 
 
+def devolve_for_level(species, level, prevo, guard=0):
+    """Mirror of RogueDungeon_DevolveForLevel in src/rogue_dungeon.c.
+
+    Kept deliberately in step with the C, including the four-step guard, so
+    that a disagreement between them shows up as an EARLY finding the report
+    calls impossible rather than as a quietly different answer.
+    """
+    if guard >= 4:
+        return species
+    if min_level(species, prevo) <= level:
+        return species
+
+    parents = prevo.get(species)
+    if not parents:
+        return species
+
+    best = None
+    for src, method, param in parents:
+        need = min_level(src, prevo)
+        if method.startswith("EVO_LEVEL"):
+            try:
+                need = max(need, int(param))
+            except ValueError:
+                pass
+        if best is None or need < best[0]:
+            best = (need, src)
+
+    if best is None or best[1] == species:
+        return species
+    return devolve_for_level(best[1], level, prevo, guard + 1)
+
+
 def main(argv):
     if len(argv) != 2:
         print(__doc__)
@@ -287,25 +372,40 @@ def main(argv):
                     first_seen[s] = floor
 
         for s, floor in sorted(first_seen.items(), key=lambda kv: kv[1]):
-            top_level = floor_target_level(floor) + spread
-            need = min_level(s, prevo)
+            base_level = floor_target_level(floor)
+            top_level = base_level + spread
+
+            # WHAT THE PLAYER ACTUALLY MEETS, not what the pool says. The
+            # runtime walks a species down its chain in DevolveForLevel before
+            # dealing it, keyed on the floor's BASE level, so judging the raw
+            # pool entry now measures something that no longer reaches a screen.
+            dealt = devolve_for_level(s, base_level, prevo)
+            need = min_level(dealt, prevo)
+
             if need > top_level:
                 early.append((need - top_level, d, pool_name, floor,
-                              top_level, s, need))
-            elif stage_of(s, prevo) >= 1 and top_level < STAGED_LEVEL_CEILING:
-                staged.append((d, pool_name, floor, top_level, s,
-                               stage_of(s, prevo)))
+                              top_level, dealt, need))
+            # need == 0 is the discriminator, not the stage. A Flaaffy at level
+            # 17 is perfectly legitimate -- Mareep evolves at 15 -- and
+            # flagging it because it is "evolved and early" is the aggregate
+            # mistake again in a new costume. What is worth reporting is a
+            # species whose whole chain carries NO level requirement, because
+            # that is exactly the set DevolveForLevel is powerless over.
+            elif (need == 0 and stage_of(dealt, prevo) >= 1
+                  and top_level < STAGED_LEVEL_CEILING):
+                staged.append((d, pool_name, floor, top_level, dealt,
+                               stage_of(dealt, prevo), s))
 
     early.sort(reverse=True)
 
-    print("check_pool_evolutions: %d species arrive below their evolution level, "
-          "%d evolved species arrive in the shallow half of a pool"
-          % (len(early), len(staged)))
+    print("check_pool_evolutions: %d species still arrive below their evolution "
+          "level after devolving, %d fully evolved species arrive below level %d"
+          % (len(early), len(staged), STAGED_LEVEL_CEILING))
 
     if early:
         print()
-        print("BELOW THEIR EVOLUTION LEVEL (floor is 0-based, level includes the "
-              "+%d spread)" % spread)
+        print("BELOW THEIR EVOLUTION LEVEL AFTER DEVOLVING -- this should be")
+        print("impossible, so it means the runtime and this check disagree")
         print("  %-5s %-22s %-16s %6s %6s %6s" %
               ("dgn", "pool", "species", "floor", "level", "needs"))
         for deficit, d, pool, floor, lvl, s, need in early:
@@ -315,13 +415,19 @@ def main(argv):
 
     if staged:
         print()
-        print("FULLY EVOLVED, NO LEVEL REQUIREMENT, ARRIVING IN THE SHALLOW HALF")
-        for d, pool, floor, lvl, s, stage in staged:
-            print("  %-5d %-22s %-16s %6d %6d   stage %d"
+        print("FULLY EVOLVED BELOW LEVEL %d -- DevolveForLevel cannot help here,"
+              % STAGED_LEVEL_CEILING)
+        print("because a stone, trade or friendship evolution carries no level.")
+        print("These are a CURATION problem: move them up their pool, or out.")
+        print("  %-5s %-22s %-16s %6s %6s" %
+              ("dgn", "pool", "species", "floor", "level"))
+        for d, pool, floor, lvl, s, stage, raw in staged:
+            note = "" if raw == s else "   (pool says %s)" % raw[len("SPECIES_"):]
+            print("  %-5d %-22s %-16s %6d %6d   stage %d%s"
                   % (d, pool.replace("Species", ""), s[len("SPECIES_"):],
-                     floor, lvl, stage))
+                     floor, lvl, stage, note))
 
-    return 1 if early else 0
+    return 1 if (early or staged) else 0
 
 
 if __name__ == "__main__":

@@ -1411,6 +1411,17 @@ bool8 RogueDungeon_TryStartStairsScript(struct MapPosition *position);
 // gets blossoms and the jungle keeps its blades.
 u8 RogueDungeon_LongGrassFieldEffectObj(void);
 const struct WildPokemonInfo *RogueDungeon_GetWildMonInfo(enum WildPokemonArea area);
+
+// Walks a species DOWN its evolution chain until `level` could have produced
+// it, so a floor stops offering a Graveler at level 10.
+//
+// Exported only so test/rogue_encounters.c can reach it. The risk in this
+// function is the BISECTION: it depends on a generated table being in
+// species-enum order, and a search over a mis-sorted table does not fail -- it
+// returns NULL and quietly leaves the species exactly as it was, which looks
+// identical to the bug it was written to fix.
+u16 RogueDungeon_DevolveForLevel(u16 species, u8 level);
+
 void RogueDungeon_ApplyNewGameUnlocks(void);
 void RogueDungeon_GetFloorName(u8 *dest);
 void RogueDungeon_PrepareNewFloor(void);

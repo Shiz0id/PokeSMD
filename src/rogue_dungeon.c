@@ -32,6 +32,7 @@
 #include "constants/event_object_movement.h"
 #include "constants/rogue_dungeon_trainers.h"
 #include "constants/rogue_dungeon_starters.h"
+#include "constants/rogue_evolution_levels.h"
 #include "constants/rogue_safari_pool.h"
 #include "rogue_dungeon.h"
 
@@ -2434,6 +2435,74 @@ bool8 RogueDungeon_TryHandleWhiteOut(void)
 //
 // Takes the DESTINATION too, because fishing keeps a table of its own - see
 // sDungeonFishingMons.
+// The lowest level a species could legitimately have reached, or NULL for one
+// with no pre-evolution.
+//
+// Bisects sRogueEvoSteps, emitted in species-enum order by
+// tools/rogue/gen_evolution_levels.py. The ordering IS the contract, and it is
+// the same one the BW animation table depends on: emit_bw_anim.py sorts by
+// NUMERIC id because sorting by name puts CLAYDOL before GEODUDE while their
+// ids run the other way, and a bisection would then silently miss them.
+static const struct RogueEvoStep *FindEvoStep(u16 species)
+{
+    u32 lo = 0, hi = ARRAY_COUNT(sRogueEvoSteps);
+
+    while (lo < hi)
+    {
+        u32 mid = (lo + hi) / 2;
+        u16 got = sRogueEvoSteps[mid].species;
+
+        if (got == species)
+            return &sRogueEvoSteps[mid];
+        if (got < species)
+            lo = mid + 1;
+        else
+            hi = mid;
+    }
+    return NULL;
+}
+
+// Walk a species DOWN its chain until the floor's level could have produced it.
+//
+// THE POOLS CANNOT SOLVE THIS BY ORDERING, which is why it lives here and not
+// in the data. A gym theme reads a window TWELVE wide, and bottom is tiers
+// minus window, so the two cancel on a dungeon's first floor and the opening
+// floor already exposes the first twelve entries of a twenty-one entry pool. A
+// gym dungeon meanwhile moves about five levels end to end. So whatever sits at
+// index 11 arrives at the dungeon's STARTING level however carefully the ladder
+// is sorted - which is how the cave came to offer Graveler at level 10 against
+// a Geodude that cannot evolve until 25, and Dugtrio at 10 against 26.
+//
+// Keyed on the floor's BASE level rather than base + spread, so every roll in
+// the encounter's range is legitimate rather than only the luckiest one. The
+// cost is that a mon at the top of the range is sometimes one stage below what
+// it could have been, which is what wild Pokemon look like anyway.
+//
+// It does NOT fix a stone, trade or friendship evolution. Those carry no level
+// at all, so an Arcanine is legal at any level and only the pool can decide it
+// is out of place - the STAGED findings in check_pool_evolutions.py are a
+// curation problem and not this one.
+u16 RogueDungeon_DevolveForLevel(u16 species, u8 level)
+{
+    const struct RogueEvoStep *step;
+    u32 guard;
+
+    // The longest chain in Gen 1-4 is three stages, so two steps is the real
+    // bound. The guard is against a CYCLE in the generated table rather than a
+    // long chain: this reads emitted data, and a table pointing a species at
+    // itself would hang the floor load with no other symptom.
+    for (guard = 0; guard < 4; guard++)
+    {
+        step = FindEvoStep(species);
+        if (step == NULL || step->minLevel <= level)
+            break;
+        if (step->preEvo == species)
+            break;
+        species = step->preEvo;
+    }
+    return species;
+}
+
 static void DealWildSlots(struct WildPokemon *dst, const u16 *species, u32 slots,
                           u32 bottom, u32 width, u32 rotation, u8 level)
 {
@@ -2445,7 +2514,12 @@ static void DealWildSlots(struct WildPokemon *dst, const u16 *species, u32 slots
     // which species lands in the common slots.
     for (i = 0; i < slots; i++)
     {
-        dst[i].species = species[bottom + (i + rotation) % width];
+        // Devolved HERE rather than in the pools, so the one hook covers land,
+        // water, fishing and the Safari Zone - every caller comes through this
+        // function, which is why it takes the ladder and the destination rather
+        // than the theme.
+        dst[i].species = RogueDungeon_DevolveForLevel(species[bottom + (i + rotation) % width],
+                                         level);
         dst[i].minLevel = level;
         dst[i].maxLevel = level + DUNGEON_ENCOUNTER_LEVEL_SPREAD;
     }

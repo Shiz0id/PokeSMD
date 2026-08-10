@@ -4,7 +4,7 @@
 # FOUR of them take the repo POSITIONALLY and the rest take --repo. Passing
 # --repo uniformly reports those four as failures that are not real, which has
 # already wasted time once. Keep this list in step with the checks.
-POSITIONAL="check_safari_pool.py check_species_in_rom.py check_craft_recipes.py check_variant_colours.py"
+POSITIONAL="check_safari_pool.py check_species_in_rom.py check_craft_recipes.py check_variant_colours.py check_pool_evolutions.py"
 
 cd "$(dirname "$0")/../.." || exit 2
 repo="$PWD"
