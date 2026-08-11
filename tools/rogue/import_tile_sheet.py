@@ -33,6 +33,7 @@ Usage:
     python import_tile_sheet.py lapis --write    # write the tileset
     python import_tile_sheet.py lapis --decls    # print the C declarations
 """
+import struct
 import sys
 from pathlib import Path
 
@@ -134,6 +135,90 @@ SHEET_GEOMETRY = dict(
 # THE ORDER HERE IS THE METATILE ORDER, and metatile ids are what the theme
 # table names, so appending a block is safe and reordering one is not.
 TILESETS = {
+    # Wallace's, the flower meadow. Ever Grande ran on vanilla gTileset_EverGrande
+    # and read as a tidy garden path rather than a meadow, and it is the one
+    # theme whose vertical sliver slots are FALLBACKS rather than art -
+    # WALL_SLIVER_VERT and its top and bottom variants all point at
+    # WALL_INTERIOR_M - which is why its corridorWidth is 5. Five is what stops
+    # the vertical sliver ever firing. A legend-driven import fills all twenty
+    # slots and takes that constraint away.
+    #
+    # THE HEDGE IS THE DARK SHEET'S, NOT THE LIGHT ONE'S, and that was measured
+    # rather than chosen. Against Purity Forest's grass the light hedge sits at
+    # a luminance gap of -21 and a hue gap of -25: yellow-olive, and right on
+    # the ~20 boundary where a wall stops reading as a wall at 1x. The dark
+    # hedge is -45 and -5 - same hue family as the grass, far enough apart in
+    # value and much stronger in saturation, which is the vanilla
+    # trees-against-grass relationship. Pulling the LIGHT hedge's hue toward the
+    # grass was tried in mock and is worse: they were already too close, and
+    # closing the gap further is the wrong direction.
+    #
+    # Note the two Western Cave rips are NOT a palette swap of each other -
+    # 47/47 cells share a silhouette but only 1/47 an interior pattern - so the
+    # light sheet is not a free second theme off this import.
+    'meadow': dict(
+        out='data/tilesets/secondary/rogue_flower_meadow',
+        symbol='RogueFlowerMeadow',
+        prefix='MEADOW',
+        blocks=[
+            # 0x0008 is cave 0x201: MB_CAVE, layer NORMAL.
+            dict(name='wall', sheet='western_cave_dark', col='walls',
+                 pal=6, attr=0x0008),
+            # THIRTY alternate wall cells against the jungle's five. This is
+            # where the sheet actually pays: a 47-case autotile only buys 0.6 to
+            # 4.6% of visible walls (measured per generator), but decor is a
+            # face for every wall block and scatters by decorRarity.
+            dict(name='walldecor1', sheet='western_cave_dark', col='wall_alt1',
+                 pal=6, attr=0x0008, varies='wall'),
+            dict(name='walldecor2', sheet='western_cave_dark', col='wall_alt2',
+                 pal=6, attr=0x0008, varies='wall'),
+            # Grass from Purity Forest. attr is left at MB_NORMAL for now:
+            # THE ENCOUNTER SURFACE IS AN OPEN DESIGN QUESTION, because vanilla
+            # Ever Grande's two surfaces were its flower beds and its flowery
+            # long grass and neither survives an art replacement. Do not read
+            # this 0x0000 as a decision.
+            dict(name='ground', sheet='purity_forest', col='ground',
+                 pal=7, attr=0x0000),
+            dict(name='decor1', sheet='purity_forest', col='ground_alt1',
+                 pal=7, attr=0x0000, varies='ground'),
+            dict(name='decor2', sheet='purity_forest', col='ground_alt2',
+                 pal=7, attr=0x0000, varies='ground'),
+            # The plaza, and it is AUTOTILED on purpose. Gap 4 in the state file
+            # is that Ever Grande's terrace is a path and not a region -
+            # 0x23C/0x23D/0x23E is left edge, fill, right edge with no north or
+            # south edge art at all - so a plaza laid as a patch had hard cuts
+            # top and bottom. A legend-driven region has all twenty edges, which
+            # closes that outright.
+            dict(name='plaza', sheet='western_cave_dark', col='ground',
+                 pal=9, attr=0x0000, autotile=True),
+            # Water as a patch region, the way the jungle lays its puddles.
+            dict(name='water', sheet='purity_forest', col='water',
+                 pal=8, attr=0x0016, autotile=True, over='ground'),
+
+            # THE TWO ENCOUNTER SURFACES, and they are the only thing carried
+            # over from vanilla Ever Grande. This theme is the only one with
+            # two, split by HEIGHT rather than by decoration - see
+            # graft_evergrande_flowers.
+            #
+            # The TALL one: vanilla long grass with its blades taken from the
+            # hedge palette, so they are the same greens as the foliage above
+            # them, and its ground band from the IMPORTED grass, so the fringe
+            # reads as this floor rather than as the route grass it was drawn
+            # against. That second ramp is the whole reason this is a graft and
+            # not a copy.
+            dict(name='grass', graft='vanilla_long_grass', pal=12,
+                 blades_from=6, ground_from=7),
+            # The SHORT one, in both of vanilla's colourways. 0x0005 is
+            # MB_UNUSED_05: encounters and nothing else. Vanilla uses one
+            # colourway per field and never mixes them, so these are two fields
+            # to choose between, not sixteen variants to scatter.
+            dict(name='bedpink', graft='evergrande_flowers', pal=10,
+                 from_pal=10, first=0x288, count=8, attr=0x0005,
+                 label='bedpink'),
+            dict(name='bedyellow', graft='evergrande_flowers', pal=11,
+                 from_pal=11, first=0x290, count=8, attr=0x0005,
+                 label='bedyellow'),
+        ]),
     # Glacia's. Lapis Cave's crystal walls over Mt. Freeze's snow: the crystal
     # is the better wall art and the snow is the better floor for a theme that
     # is snowing on the player, and neither sheet has both.
@@ -560,7 +645,50 @@ def graft_long_grass(palettes, cfg):
     ])
 
 
-GRAFTS = {'vanilla_long_grass': graft_long_grass}
+def graft_evergrande_flowers(palettes, cfg):
+    """Ever Grande's flower beds, carried into an imported tileset.
+
+    THE SHORT ENCOUNTER SURFACE. This theme is the only one with two, and the
+    split is by HEIGHT, not by decoration: the beds are bold and low and the
+    player walks over them, while the long grass is a full-height curtain that
+    hides their lower half. They were both MB_LONG_GRASS once and seeing it in
+    situ is what separated them, so do not quietly re-merge them.
+
+    The beds carry MB_UNUSED_05, which this project wired to
+    TILE_FLAG_HAS_ENCOUNTERS in metatile_behavior.c and nothing else. That is an
+    ENGINE change, not a tileset one, so it survives replacing the art - but it
+    also means these metatiles are the theme's only short encounter surface and
+    a wrong attribute here is a floor with no wild Pokemon and no complaint.
+
+    Measured before porting rather than assumed: bottom layer only, no flip bits
+    anywhere, one palette per metatile, 32 distinct tiles across all sixteen.
+    That is what lets a single-layer graft unit carry them unchanged.
+
+    EIGHT PHASES, NOT EIGHT VARIANTS. The set is eight frames of a diagonal
+    banding that RoguePatchLayer.phase paints, so the ORDER must stay ascending;
+    shuffling them turns a field into noise.
+    """
+    eg = _tile_reader('data/tilesets/secondary/ever_grande/tiles.png')
+    mt = (REPO / 'data/tilesets/secondary/ever_grande/metatiles.bin').read_bytes()
+
+    src = (REPO / ('data/tilesets/secondary/ever_grande/palettes/%02d.pal'
+                   % cfg['from_pal'])).read_text()
+    pal = [tuple(int(v) for v in line.split())
+           for line in src.splitlines()[4:19]]
+
+    units = []
+    for n in range(cfg['count']):
+        mid = cfg['first'] + n
+        e = struct.unpack_from('<8H', mt, (mid - 0x200) * 16)
+        # bottom layer only - the census says the top four entries are all zero
+        ids = [(v & 0x3FF) - NUM_TILES_IN_PRIMARY for v in e[:4]]
+        units.append(('%s%d' % (cfg.get('label', 'flower'), n),
+                      _quad(eg, ids), cfg['attr']))
+    return dict(palette=pal, units=units)
+
+
+GRAFTS = {'vanilla_long_grass': graft_long_grass,
+          'evergrande_flowers': graft_evergrande_flowers}
 
 
 # ---------------------------------------------------------------- stairs
