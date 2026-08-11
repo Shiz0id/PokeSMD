@@ -1736,9 +1736,29 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         // stop the vertical sliver firing on a tileset that had no art for one -
         // and this tileset has all seven, so the reason is gone with it.
         .generator = DUNGEON_GEN_TRAILS,
-        .trailClearings = 9,
-        .trailLobe = 5,
-        .trailLobes = 3,
+        // Sixteen clearings on a 4x4 jittered grid, built from only TWO small
+        // unanchored lobes each. Chosen off a rendered sweep rather than by
+        // reasoning, and the numbers behind it, averaged over 40 seeds a config:
+        //
+        //   clr lobe lobes  distinct  open   narrow  biggest clearing
+        //     9    5     3       5.8  22.9%   16.3%   142
+        //    16    3     3       7.3  24.5%   20.7%   191
+        //    16    3     2       9.2  21.2%   21.7%   104   <- this
+        //    16    5     2       6.0  28.5%   11.0%   249
+        //
+        // Nine clearings on a 3x3 grid sit too far apart: they clump in the
+        // middle and leave the map edges empty, with long corridors between.
+        // Sixteen fills the space and the links become short necks. Two lobes
+        // rather than three is what halves the biggest clearing, 191 -> 104, so
+        // the pockets stay pockets.
+        //
+        // The known cost: two rectangles cannot build much of an irregular
+        // outline, so the clearings are more angular here than at three lobes and
+        // the drift is doing most of the shape work. If that reads blocky on a
+        // screen, three lobes is the fallback and drift 3 is the untried middle.
+        .trailClearings = 16,
+        .trailLobe = 3,
+        .trailLobes = 2,
         .trailLobeDrift = 2,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
