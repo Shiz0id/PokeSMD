@@ -47,15 +47,63 @@ NUM_PALS_TOTAL = 13
 
 # ---------------------------------------------------------------- sheet specs
 
-# A SHEET is a source image. Every rip SilverDeoxys563 has formatted shares one
-# geometry, verified identical on both sheets here, so a new one is a one-line
-# entry until a sheet turns up that disagrees.
-SHEETS = {
-    'lapis_cave': dict(source='tools/rogue/sheets/lapis_cave.png'),
-    'mt_freeze': dict(source='tools/rogue/sheets/mt_freeze.png'),
-    'howling_jungle': dict(source='tools/rogue/sheets/howling_jungle.png'),
-    'murky_cave': dict(source='tools/rogue/sheets/murky_cave.png'),
+# COLUMN LAYOUT IS PER SHEET, AND A SHEET HAS TURNED UP THAT DISAGREES.
+#
+# This used to be one global COL, on the reasoning that every rip
+# SilverDeoxys563 has formatted shares one geometry. The pixel GEOMETRY is
+# indeed identical on all seven sheets here - same origin, same 25px pitch,
+# same 24px cell, verified - but the Western Cave rips carry an extra Ground
+# Alt group, which shifts everything after it by three columns. Their water is
+# at grid column 24 where the older rips put it at 21, and column 21 on those
+# sheets holds Unused Ground: ONE cell.
+#
+# Left global, adding a Western Cave sheet as the "one-line entry" this comment
+# used to invite would have imported a single blank cell as the entire water
+# block, and the only symptom would have been water that did not look like
+# water. Hence resolve_col below, and the assertion in convert().
+COL_LAYOUTS = {
+    # Lapis Cave, Mt Freeze, Howling Jungle, Murky Cave, Purity Forest.
+    'ground_alt_x1': dict(walls=3, wall_alt1=6, wall_alt2=9, ground=12,
+                          ground_alt1=15, ground_alt2=18, water=21, sparkle=24),
+    # Western Cave light and dark: a second Ground Alt group before Unused.
+    'ground_alt_x2': dict(walls=3, wall_alt1=6, wall_alt2=9, ground=12,
+                          ground_alt1=15, ground_alt2=18, unused=21,
+                          water=24, sparkle=27),
 }
+
+SHEETS = {
+    'lapis_cave': dict(source='tools/rogue/sheets/lapis_cave.png',
+                       cols='ground_alt_x1'),
+    'mt_freeze': dict(source='tools/rogue/sheets/mt_freeze.png',
+                      cols='ground_alt_x1'),
+    'howling_jungle': dict(source='tools/rogue/sheets/howling_jungle.png',
+                           cols='ground_alt_x1'),
+    'murky_cave': dict(source='tools/rogue/sheets/murky_cave.png',
+                       cols='ground_alt_x1'),
+    # The Flower Meadow candidates.
+    'purity_forest': dict(source='tools/rogue/sheets/purity_forest.png',
+                          cols='ground_alt_x1'),
+    'western_cave_light': dict(source='tools/rogue/sheets/western_cave_light.png',
+                               cols='ground_alt_x2'),
+    'western_cave_dark': dict(source='tools/rogue/sheets/western_cave_dark.png',
+                              cols='ground_alt_x2'),
+}
+
+
+def resolve_col(sheet_name, col):
+    """A block names its column; the SHEET decides where that column is.
+
+    Accepts an int for the odd hand-placed case, but naming is the safe form -
+    an int is what let one sheet's layout be applied to another's.
+    """
+    if isinstance(col, int):
+        return col
+    layout = COL_LAYOUTS[SHEETS[sheet_name]['cols']]
+    if col not in layout:
+        raise SystemExit('sheet %s (%s) has no column %r; it has %s'
+                         % (sheet_name, SHEETS[sheet_name]['cols'], col,
+                            ', '.join(sorted(layout))))
+    return layout[col]
 
 SHEET_GEOMETRY = dict(
     origin=(8, 162),        # top-left of the first grid RULE, not the cell
@@ -68,10 +116,17 @@ SHEET_GEOMETRY = dict(
 
 # Each NAMED column on these sheets is three grid cells wide, and the Legend
 # carries one 3x3 mask per cell, so a block is addressed by the first of its
-# three. The Alt groups hold a single cell each on both sheets - they are
-# variants of the plain fill, not autotile cases.
-COL = dict(walls=3, wall_alt1=6, wall_alt2=9,
-           ground=12, ground_alt1=15, ground_alt2=18, water=21)
+# three.
+#
+# THE ALT GROUPS ARE NOT ALWAYS SINGLE CELLS. This comment used to say they
+# were, describing the four sheets that happened to be here; the Western Cave
+# rips carry NINETEEN cells in Wall Alt 1 and eleven in Wall Alt 2, which are
+# whole alternate wall sets rather than variants of the plain fill. Nothing in
+# the code assumed the old claim - `varies` pairs an alt to its base by (row, k)
+# and so handles any number - but the comment would have talked the next reader
+# out of looking. What actually limits a big alt set is COLOUR, not count: the
+# jungle's flowered Wall Alt 1 needed 17 in a 15-colour palette and was left
+# out for that reason.
 
 # A TILESET is what gets written. Blocks may come from DIFFERENT sheets, and
 # blocks sharing a palette slot are quantised together against one palette.
@@ -90,16 +145,16 @@ TILESETS = {
             # attr is behaviour+layer type copied from a vanilla donor metatile
             # rather than synthesised - see the module docstring. 0x0008 is cave
             # 0x201: MB_CAVE, layer NORMAL, so wild encounters fire.
-            dict(name='wall', sheet='lapis_cave', col=COL['walls'], pal=6, attr=0x0008),
-            dict(name='ground', sheet='mt_freeze', col=COL['ground'], pal=7, attr=0x0008),
+            dict(name='wall', sheet='lapis_cave', col='walls', pal=6, attr=0x0008),
+            dict(name='ground', sheet='mt_freeze', col='ground', pal=7, attr=0x0008),
             # The decor variants MUST carry the ground's attribute, not a bare
             # one: they replace floor blocks in place, and a decorated block
             # with no encounter flag would be a dead spot the player cannot see.
-            dict(name='decor1', sheet='mt_freeze', col=COL['ground_alt1'], pal=7, attr=0x0008),
-            dict(name='decor2', sheet='mt_freeze', col=COL['ground_alt2'], pal=7, attr=0x0008),
+            dict(name='decor1', sheet='mt_freeze', col='ground_alt1', pal=7, attr=0x0008),
+            dict(name='decor2', sheet='mt_freeze', col='ground_alt2', pal=7, attr=0x0008),
             # Never painted by the theme - kept because it is what the sheet
             # has, and dropping it would move every metatile id after it.
-            dict(name='water', sheet='lapis_cave', col=COL['water'], pal=8, attr=0x0008),
+            dict(name='water', sheet='lapis_cave', col='water', pal=8, attr=0x0008),
             # A crack in the ice. Drawn in slot 7, the snow, so the corners are
             # the snowfield itself - but snow has NO dark tone at all (157 to
             # 240 luminance), so the mouth and the rim are appended out of
@@ -131,12 +186,12 @@ TILESETS = {
         prefix='JUNGLE',
         blocks=[
             # 0x0008 is cave 0x201: MB_CAVE, layer NORMAL.
-            dict(name='wall', sheet='howling_jungle', col=COL['walls'], pal=6, attr=0x0008),
+            dict(name='wall', sheet='howling_jungle', col='walls', pal=6, attr=0x0008),
             # Wall Alt 2 costs NOTHING: walls alone need 14 colours and walls
             # plus this need 14, so it is scatter for free. Wall Alt 1 is the
             # flowered set and needs 17 - over the 4bpp limit - so it is left
             # out rather than given a slot of its own for five cells.
-            dict(name='walldecor', sheet='howling_jungle', col=COL['wall_alt2'],
+            dict(name='walldecor', sheet='howling_jungle', col='wall_alt2',
                  pal=6, attr=0x0008, varies='wall'),
             # 0x0000 is General 0x001, the plain route grass this floor
             # replaces: MB_NORMAL, so it carries NO encounters. That is the
@@ -145,16 +200,16 @@ TILESETS = {
             # is somewhere safe to cross. The cave's 0x0008 would have been the
             # obvious copy-paste and would have silently turned wild battles on
             # across the whole floor.
-            dict(name='ground', sheet='howling_jungle', col=COL['ground'], pal=7, attr=0x0000),
+            dict(name='ground', sheet='howling_jungle', col='ground', pal=7, attr=0x0000),
             # Ground plus both variants is EXACTLY 15 colours - the 4bpp limit,
             # with no headroom at all. Anything else wanting slot 7 has to
             # displace one of these. They take the ground's attribute, not a
             # bare one, for the same reason Lapis' decor takes its ground's: a
             # decor block that disagrees with the floor it replaces is a patch
             # of different rules wearing the same paint.
-            dict(name='decor1', sheet='howling_jungle', col=COL['ground_alt1'],
+            dict(name='decor1', sheet='howling_jungle', col='ground_alt1',
                  pal=7, attr=0x0000, varies='ground'),
-            dict(name='decor2', sheet='howling_jungle', col=COL['ground_alt2'],
+            dict(name='decor2', sheet='howling_jungle', col='ground_alt2',
                  pal=7, attr=0x0000, varies='ground'),
             # 0x16 is MB_PUDDLE, and it is chosen rather than inherited. It is
             # in MetatileBehavior_IsReflective, so the player REFLECTS in it for
@@ -166,7 +221,7 @@ TILESETS = {
             #
             # autotile: this block gets the same nine-mask treatment the walls
             # do, because it is laid as a patch region and needs its own edges.
-            dict(name='water', sheet='howling_jungle', col=COL['water'],
+            dict(name='water', sheet='howling_jungle', col='water',
                  pal=8, attr=0x0016, autotile=True, over='ground'),
             # The Sparkle column is still not imported - 98% transparent, a
             # different animation rate, and the user does not want it.
@@ -215,21 +270,21 @@ TILESETS = {
             # SEVENTEEN colours before reduction, the first block on any sheet
             # that does not fit 4bpp. Both wall Alt columns are free on top of
             # that - they add no colour the walls do not already have.
-            dict(name='wall', sheet='murky_cave', col=COL['walls'], pal=6, attr=0x0008),
-            dict(name='walldecor1', sheet='murky_cave', col=COL['wall_alt1'],
+            dict(name='wall', sheet='murky_cave', col='walls', pal=6, attr=0x0008),
+            dict(name='walldecor1', sheet='murky_cave', col='wall_alt1',
                  pal=6, attr=0x0008, varies='wall'),
-            dict(name='walldecor2', sheet='murky_cave', col=COL['wall_alt2'],
+            dict(name='walldecor2', sheet='murky_cave', col='wall_alt2',
                  pal=6, attr=0x0008, varies='wall'),
             # MB_CAVE here, unlike the jungle: this is a cave, and a cave's
             # floor is its encounter surface. There is no grass layer to take
             # that job, the way there is in the woods and the jungle.
-            dict(name='ground', sheet='murky_cave', col=COL['ground'], pal=7, attr=0x0008),
-            dict(name='decor1', sheet='murky_cave', col=COL['ground_alt1'],
+            dict(name='ground', sheet='murky_cave', col='ground', pal=7, attr=0x0008),
+            dict(name='decor1', sheet='murky_cave', col='ground_alt1',
                  pal=7, attr=0x0008, varies='ground'),
-            dict(name='decor2', sheet='murky_cave', col=COL['ground_alt2'],
+            dict(name='decor2', sheet='murky_cave', col='ground_alt2',
                  pal=7, attr=0x0008, varies='ground'),
             # MB_PUDDLE again: reflective, walkable, and off the water branch.
-            dict(name='water', sheet='murky_cave', col=COL['water'],
+            dict(name='water', sheet='murky_cave', col='water',
                  pal=8, attr=0x0016, autotile=True, over='ground'),
             # THE ONE THAT IS CUT. Not rounded: it runs square to the tile edge
             # with no floor showing at any corner, because this is the only one
@@ -662,10 +717,26 @@ def convert(ts, verbose=True):
             blocks.append({**b, 'sh': None, 'cells': []})
             continue
         sh = sheet(b['sheet'])
-        cells = [(r, k, sh.cell(b['col'] + k, r))
+        col = resolve_col(b['sheet'], b['col'])
+        cells = [(r, k, sh.cell(col + k, r))
                  for r in range(len(sh.ys))
                  for k in range(3)
-                 if b['col'] + k < len(sh.xs) and sh.filled(b['col'] + k, r)]
+                 if col + k < len(sh.xs) and sh.filled(col + k, r)]
+
+        # A TERRAIN BLOCK THAT CAME BACK NEARLY EMPTY IS A MIS-MAPPED COLUMN,
+        # not a sparse sheet. An autotiled block has to fill twenty slots off a
+        # legend that specifies all eight neighbours, so these sheets draw 47
+        # cells for one; anything under twenty cannot. This is the assertion
+        # that would have caught Western Cave's water resolving onto Unused
+        # Ground - one cell, and otherwise silent until someone looked at a
+        # pond and found a patch of dirt.
+        if (b.get('autotile') or b['name'] in ('wall', 'ground')) \
+                and len(cells) < 20:
+            raise SystemExit(
+                'block %r on sheet %s resolved to column %d and found only %d '
+                'cells; an autotiled terrain needs the full mask set (these '
+                'sheets draw 47). Check the sheet\'s cols layout in SHEETS.'
+                % (b['name'], b['sheet'], col, len(cells)))
 
         # `over` flattens a block onto another block's plain fill BEFORE any
         # colour is extracted. These sheets draw a terrain's EDGE cells with
