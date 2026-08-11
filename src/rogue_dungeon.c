@@ -828,10 +828,15 @@ static const struct RoguePatchLayer sMeadowPatch[] =
         .blobs = 6,
         .radius = 4,
     },
-    // The plaza, and this is the other difference: a REAL nine-sliced region.
-    // The terrace it replaces was left edge / fill / right edge with no north or
-    // south art at all, so every one of those slots got W/MID/E and a blob had
-    // hard cuts along its top and bottom. Closes gap 4.
+    // THE COBBLE, and it is rare and small on purpose: three 2x2 squares a floor,
+    // the only sign anything was ever built out here. A 2x2 of a nine-sliced
+    // region is exactly its four CORNERS, so it draws as a small closed square
+    // with no repeating middle - see RoguePatchLayer.square.
+    //
+    // The nine-slice is still worth having even though a 2x2 never uses five of
+    // its slots: it is what closes gap 4, because the terrace this replaces had
+    // no north or south edge art at all and could not be laid as a region of ANY
+    // size without hard cuts.
     {
         .tile =
         {
@@ -848,8 +853,8 @@ static const struct RoguePatchLayer sMeadowPatch[] =
             [PATCH_N_WALL]  = MEADOW_METATILE_PLAZA_N,
             [PATCH_NE_WALL] = MEADOW_METATILE_PLAZA_NE,
         },
-        .blobs = 5,
-        .radius = 4,
+        .blobs = 3,
+        .square = 2,
     },
 };
 
@@ -1720,17 +1725,21 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         // WEATHER rather than for this theme, so a later one can point here too.
         .mapId = MAP_ROGUE_DUNGEON_PETALS,
         .mapSecId = MAPSEC_ROGUE_EVERGRANDE,
-        .generator = DUNGEON_GEN_CAVE,
+
+        // An overgrown prairie thicket: many small bedded-down clearings joined
+        // by narrow paths the Pokemon wore themselves. Sixteen clearings at a
+        // lobe of three rather than the jungle's twelve at five, which is what
+        // makes them small enough to read as nests instead of rooms.
+        //
+        // roomCount/roomMin/roomMax and corridorWidth are GONE, not zeroed:
+        // TRAILS reads none of them. corridorWidth was 5 for one reason - to
+        // stop the vertical sliver firing on a tileset that had no art for one -
+        // and this tileset has all seven, so the reason is gone with it.
+        .generator = DUNGEON_GEN_TRAILS,
+        .trailClearings = 16,
+        .trailLobe = 3,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
-        .roomCount = 12,
-        .roomMin = 7,
-        .roomMax = 13,
-        // STILL 5, AND NOW ONLY BY INERTIA. Five was chosen to stop the vertical
-        // sliver firing, because the old tileset had no art for one. That is
-        // fixed, so this is free to drop - deliberately not changed in the same
-        // commit as the art, so the art can be looked at on its own first.
-        .corridorWidth = 5,
         .floor = MEADOW_METATILE_FLOOR,
         .tallGrass = 0,
         .longGrass = MEADOW_METATILE_GRASS,
@@ -3095,6 +3104,7 @@ struct PatchBlob
 {
     s16 cx, cy;
     u8 rx, ry;
+    bool8 square;   // rx/ry are a half-extent in blocks, not an ellipse radius
 };
 
 // Derived from the seed alone, never from the dungeon RNG, for the same reason
@@ -3131,10 +3141,21 @@ static u32 BuildPatchBlobs(const struct RoguePatchLayer *layer, u32 which,
 
         blobs[i].cx = a % DUNGEON_WIDTH;
         blobs[i].cy = b % DUNGEON_HEIGHT;
-        // Radius varies either side of the nominal so blobs do not all read as
-        // the same stamp repeated.
-        blobs[i].rx = layer->radius + ((a >> 8) % 3) - 1;
-        blobs[i].ry = layer->radius + ((b >> 8) % 3) - 1;
+        blobs[i].square = (layer->square != 0);
+        if (layer->square)
+        {
+            // Deliberate, so NO variation: same size every time, which is the
+            // whole point of it reading as built rather than grown.
+            blobs[i].rx = layer->square - 1;
+            blobs[i].ry = layer->square - 1;
+        }
+        else
+        {
+            // Radius varies either side of the nominal so blobs do not all read
+            // as the same stamp repeated.
+            blobs[i].rx = layer->radius + ((a >> 8) % 3) - 1;
+            blobs[i].ry = layer->radius + ((b >> 8) % 3) - 1;
+        }
     }
     return count;
 }
@@ -3168,6 +3189,12 @@ static bool8 InPatchBlob(const u16 *map, const struct PatchBlob *blobs,
             dy = -dy;
         if ((u32)dx > rx || (u32)dy > ry)
             continue;
+
+        // A square stamp is already fully described by the reject above - every
+        // cell inside the extent is in. Falling through to the ellipse test
+        // would round its corners off, which is the one thing it must not do.
+        if (blobs[i].square)
+            return TRUE;
 
         if ((u32)(dx * dx) * ry * ry + (u32)(dy * dy) * rx * rx <= rx * rx * ry * ry)
             return TRUE;
@@ -5188,12 +5215,25 @@ static void GenerateTrailFloor(const struct RogueDungeonTheme *theme)
 
         // A clump of overlapping rectangles, so the outline is irregular. One
         // rectangle is exactly the silhouette this generator exists to avoid.
+        //
+        // EVERY LOBE MUST COVER THE CLEARING CENTRE, and that is a correctness
+        // requirement rather than a shape preference. The trail into a clearing
+        // arrives at its centre, so a lobe that does not contain the centre is
+        // only connected to the rest of its own clearing by luck of overlap.
+        //
+        // The offset used to be `px - lw/2 + rand(5) - 2`, which at the jungle's
+        // lobe of 5 always overlapped and at the meadow's lobe of 3 did not:
+        // check_trail_floor.py found seed 173 leaving 9 of 625 open blocks
+        // unreachable from the spawn. Anchoring the offset into
+        // [px - lw + 1, px] makes containment arithmetic instead of chance, and
+        // keeps the outline irregular because the lobes still slide about within
+        // that range.
         for (j = 0; j < TRAIL_LOBES_PER_CLEARING; j++)
         {
             s32 lw = 3 + (DungeonRandom() % lobe);
             s32 lh = 3 + (DungeonRandom() % lobe);
-            s32 ox = px - lw / 2 + (DungeonRandom() % 5) - 2;
-            s32 oy = py - lh / 2 + (DungeonRandom() % 5) - 2;
+            s32 ox = px - (s32)(DungeonRandom() % lw);
+            s32 oy = py - (s32)(DungeonRandom() % lh);
             s32 dx, dy;
 
             for (dy = 0; dy < lh; dy++)

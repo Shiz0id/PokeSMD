@@ -1146,8 +1146,23 @@ enum DungeonPatchSlot
 struct RoguePatchLayer
 {
     u16 tile[PATCH_SLOT_COUNT];
-    u8 blobs;    // ellipses stamped per floor, capped at DUNGEON_MAX_PATCH_BLOBS
+    u8 blobs;    // stamps per floor, capped at DUNGEON_MAX_PATCH_BLOBS
     u8 radius;   // nominal; each blob varies a little either way
+
+    // Nonzero makes every stamp a SQUARE of this many blocks instead of an
+    // ellipse of `radius`, with no size variation at all. `radius` is ignored.
+    //
+    // This exists for the meadow's cobble. Everything else this pass draws wants
+    // to look grown - eroded round, varying, indefinite - and an ellipse is
+    // exactly that. A thing that was BUILT has to look deliberate, and the
+    // cheapest way to say deliberate is a right angle with a fixed size.
+    //
+    // Two blocks is the useful size, and not arbitrarily: four cells of a
+    // nine-sliced region are exactly its four CORNERS - no mid, no edges - so a
+    // 2x2 draws as a small closed square with nothing repeating inside it. At 3
+    // it grows a mid and starts reading as a floor; at 1 it is a single corner
+    // and reads as litter.
+    u8 square;
 
     // Nonzero makes each slot's id the BASE of `phase` consecutive metatiles,
     // and the one actually painted is base + (y - x) mod phase.

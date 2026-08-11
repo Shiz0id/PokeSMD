@@ -68,8 +68,9 @@ def generate(seed, clearings, lobe, wander, maxrooms, straight_tail=True):
         for _ in range(LOBES):
             lw = 3 + rng.next() % lobe
             lh = 3 + rng.next() % lobe
-            ox = px - lw // 2 + rng.next() % 5 - 2
-            oy = py - lh // 2 + rng.next() % 5 - 2
+            # anchored so the lobe always contains (px, py) - see the C
+            ox = px - rng.next() % lw
+            oy = py - rng.next() % lh
             for dy in range(lh):
                 for dx in range(lw):
                     carve(ox + dx, oy + dy)
