@@ -4123,9 +4123,26 @@ static void PinballMain(u8 taskId)
 			if (IsFanfareTaskInactive())
 			{
 				//ResetMessage();
-				PlaySE(SE_SHOP);
-				AddCoins(50 * sScore->Multiplier);
-				sScore->Winnings = (sScore->Winnings + (50 * sScore->Multiplier));
+				// AddCoins refuses and returns FALSE once the case is at MAX_COINS.
+				// Ignoring that made a full case look like a broken machine: fanfare,
+				// flash, and no coins. Winnings must not advance either -- a board
+				// cleared on a payout that never happened is the same lie one step on.
+				u16 award = 50 * sScore->Multiplier;
+
+				if (AddCoins(award))
+				{
+					PlaySE(SE_SHOP);
+					sScore->Winnings = (sScore->Winnings + award);
+				}
+				else
+				{
+					PlaySE(SE_FAILURE);
+				}
+
+				// Spent, whether or not it could be paid: the ball that earned it is
+				// gone either way.
+				sScore->Multiplier = 1;
+				gSprites[sScore->MultiplierSpriteId].animNum = 0;
 				SetPlayerDigits(GetCoins());
 				DestroyWin();
 				if (sScore->Winnings < 30)
@@ -4154,9 +4171,26 @@ static void PinballMain(u8 taskId)
 			if (IsFanfareTaskInactive())
 			{
 				//ResetMessage();
-				PlaySE(SE_SHOP);
-				AddCoins(6 * sScore->Multiplier);
-				sScore->Winnings = (sScore->Winnings + (6 * sScore->Multiplier));
+				// AddCoins refuses and returns FALSE once the case is at MAX_COINS.
+				// Ignoring that made a full case look like a broken machine: fanfare,
+				// flash, and no coins. Winnings must not advance either -- a board
+				// cleared on a payout that never happened is the same lie one step on.
+				u16 award = 6 * sScore->Multiplier;
+
+				if (AddCoins(award))
+				{
+					PlaySE(SE_SHOP);
+					sScore->Winnings = (sScore->Winnings + award);
+				}
+				else
+				{
+					PlaySE(SE_FAILURE);
+				}
+
+				// Spent, whether or not it could be paid: the ball that earned it is
+				// gone either way.
+				sScore->Multiplier = 1;
+				gSprites[sScore->MultiplierSpriteId].animNum = 0;
 				SetPlayerDigits(GetCoins());
 				DestroyWin();
 				if (sScore->Winnings < 30)
@@ -4515,13 +4549,16 @@ static void LoseBall(void)
 	sScore->Lives--;
     if (PlayAnotherBall())
     {
+		// The multiplier deliberately SURVIVES a lost ball. Hitting a x2 or x3
+		// target consumes the ball that hit it, so resetting here meant the
+		// multiplier had to be cashed on the very next ball or not at all -- and
+		// with one to three win holes among as many as 91 pegs, it was almost
+		// never cashed. It is spent when a win pays out instead.
 		PlaySE(SE_FAINT);
-		sScore->Multiplier = 1;
 		sScore->GameStart = 0;
 		sScore->StartDelayMax = 2;
 		sScore->StartDelayTimer = sScore->StartDelayMax;
 		sScore->SecondDelay = 30;
-		gSprites[sScore->MultiplierSpriteId].animNum = 0;
 		gSprites[sPinballGame->ball.spriteId].invisible = TRUE;
 		UpdateLives();
         sPinballGame->state = PINBALL_LOST_BALL_FADE_OUT;
