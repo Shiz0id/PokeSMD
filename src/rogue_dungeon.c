@@ -1883,7 +1883,15 @@ EWRAM_DATA static bool8 sFloorPrepared = FALSE;
 
 // Grass blobs, in cell coordinates. Stored as centres and radii rather than a
 // grid, which is a handful of bytes instead of a 576-cell map.
-#define DUNGEON_MAX_GRASS_PATCHES 12
+//
+// This budget has to clear the room cap, because the patch loop runs ONCE PER
+// ROOM and stops at the ceiling rather than spreading what it has. At twelve
+// patches against ten rooms drawing 0-2 each it saturated on 23% of floors,
+// and a saturated floor is not merely thinner - the loop walks rooms in index
+// order, so every missing patch comes off the LAST rooms and the grass quietly
+// migrates to the start of the chain. Sixteen clears ten rooms outright.
+// Costs 16 bytes of EWRAM across the four arrays below.
+#define DUNGEON_MAX_GRASS_PATCHES 16
 EWRAM_DATA static u8 sGrassPatchX[DUNGEON_MAX_GRASS_PATCHES] = {0};
 EWRAM_DATA static u8 sGrassPatchY[DUNGEON_MAX_GRASS_PATCHES] = {0};
 EWRAM_DATA static u8 sGrassPatchRadius[DUNGEON_MAX_GRASS_PATCHES] = {0};

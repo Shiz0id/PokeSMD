@@ -1310,10 +1310,31 @@ struct RogueFloorMapOverride
 #define DUNGEON_ARENA_WIDTH  15
 #define DUNGEON_ARENA_HEIGHT 13
 
-// The array bound. Themes ask for fewer through roomCount; only the jungle
-// wants more than the cave's eight, and the extra four rooms cost 16 bytes.
+// The array bound, at 4 bytes a room. Themes ask for fewer through roomCount.
+//
+// THE CAP AND THE SAMPLER ARE TWO DIFFERENT CEILINGS, and which one binds
+// depends on room SIZE. Rejection-sampling non-overlapping rooms into 48x48
+// with a block of padding saturates on its own, so a cap above that point buys
+// nothing. Measured over 500 seeds a shape:
+//
+//   rooms 5-10 (the cave)  cap 8 -> 8.0   cap 10 -> 10.0   cap 12 -> 11.7
+//   rooms 7-13 (the open)  cap 8 -> 7.3   cap 12 ->  7.9   cap 24 ->  8.4
+//   rooms 4-8              cap 16 -> 15.9
+//   rooms 3-6              cap 24 -> 24.0
+//
+// So the four themes that set roomCount = 12 (jungle, ocean, underwater, Ever
+// Grande) do NOT get twelve rooms - their 7-13 rooms saturate below eight, and
+// they run FEWER rooms than the cave does. Their openness comes from corridor
+// width, not from room count. Leave the 12 alone; it is a harmless cap, but do
+// not read it as a description of the floor.
+//
+// The cave's own cap DOES bind, which is why it is 10 rather than 8: at 5-10
+// the sampler will place exactly what it is asked for up to ten, so this is a
+// deterministic +2 rooms and +5.4pp coverage rather than sampler noise. Twelve
+// was measured too and rejected - it lands at 11.7 (so the count goes variable)
+// and saturates the grass budget on half of all floors.
 #define DUNGEON_MAX_ROOMS 12
-#define DUNGEON_ROOMS_DEFAULT 8
+#define DUNGEON_ROOMS_DEFAULT 10
 #define DUNGEON_ROOM_MIN   5
 #define DUNGEON_ROOM_MAX  10
 

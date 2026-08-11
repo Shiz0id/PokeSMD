@@ -5,11 +5,38 @@ invariants over many seeds before trusting it on hardware.
 Checks: every floor tile is reachable from the player spawn, the spawn is on
 floor, rooms never overlap, and nothing is written out of bounds.
 """
+import os
 import random
+import re
 from collections import deque
 
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def _const(name):
+    """Read a #define out of include/rogue_dungeon.h.
+
+    The cave's numbers are NOT restated here. This check ports the generator,
+    so a constant copied into it is a constant that can drift - and a drifted
+    copy does not fail, it silently verifies a floor the game stopped
+    generating. That already happened once: DUNGEON_ROOMS_DEFAULT went 8 -> 10
+    and this file kept checking eight-room floors, which is 70 of the run's
+    115 floors going unverified while the check printed PASS.
+    """
+    path = os.path.join(REPO, 'include', 'rogue_dungeon.h')
+    with open(path, encoding='utf-8') as fh:
+        m = re.search(r'^#define\s+%s\s+(\d+)' % name, fh.read(), re.M)
+    if not m:
+        raise SystemExit('%s not found in %s' % (name, path))
+    return int(m.group(1))
+
+
 W, H = 48, 48
-MAX_ROOMS, RMIN, RMAX = 8, 5, 10
+CAVE_ROOMS = _const('DUNGEON_ROOMS_DEFAULT')
+CAVE_RMIN = _const('DUNGEON_ROOM_MIN')
+CAVE_RMAX = _const('DUNGEON_ROOM_MAX')
+
+MAX_ROOMS, RMIN, RMAX = CAVE_ROOMS, CAVE_RMIN, CAVE_RMAX
 CORRIDOR = 1
 FLOOR, WALL = '.', '#'
 
@@ -17,7 +44,10 @@ FLOOR, WALL = '.', '#'
 # for its shape too. Keyed to the roomCount/roomMin/roomMax/corridorWidth fields
 # of struct RogueDungeonTheme.
 SHAPES = {
-    'cave (default)': dict(rooms=8, rmin=5, rmax=10, corridor=1),
+    # Read from the header, never restated - see _const above. This is the
+    # shape of 70 of the run's 115 floors, so it is the row that matters most.
+    'cave (default)': dict(rooms=CAVE_ROOMS, rmin=CAVE_RMIN, rmax=CAVE_RMAX,
+                           corridor=1),
     'jungle': dict(rooms=12, rmin=7, rmax=13, corridor=3),
     # The most open shape in the game, and worth its own row rather than
     # trusting the jungle's: 5-wide corridors are where a carve would start
@@ -154,7 +184,7 @@ def main():
     for name, shape in SHAPES.items():
         run_shape(name, shape)
     # Back to the cave's shape so the sample floor below is the familiar one.
-    MAX_ROOMS, RMIN, RMAX, CORRIDOR = 8, 5, 10, 1
+    MAX_ROOMS, RMIN, RMAX, CORRIDOR = CAVE_ROOMS, CAVE_RMIN, CAVE_RMAX, 1
 
     print('\nsample floor (seed 7), @ = spawn:')
     grid, rooms, spawn, _ = generate(random.Random(7))
