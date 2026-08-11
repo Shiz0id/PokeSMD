@@ -309,6 +309,8 @@ enum {
 #define UP 1
 #define RIGHT 2
 #define LEFT 3
+#define DIR_NONE 0xFF // nothing queued
+#define DIR_QUEUE_LEN 2 // turns a player may bank ahead of the snake
 
 struct Snake {
 	u8 state;
@@ -336,6 +338,8 @@ struct Snake {
 	u8 BodyCount;
 	u8 Direction; // 0 = Down, 1 = Up, 2 = Right, 3 = Left
 	u8 LastDirection;
+	u8 DirQueue[DIR_QUEUE_LEN]; // turns pressed but not yet taken
+	u8 DirQueueCount;
 	u32 FrameCount;
 	u32 delay;
 	u8 CanMove;
@@ -1928,12 +1932,110 @@ static void CreateMenu(void)
 	sSnake->MenuSpriteId = CreateSprite(&sSpriteTemplate_Menu, 40, 24, 1); 
 }
 
+// Would turning from `heading` to `dir` be a reversal into the snake's own neck?
+static bool8 IsReversal(u8 dir, u8 heading)
+{
+	return (dir == UP && heading == DOWN)
+	    || (dir == DOWN && heading == UP)
+	    || (dir == LEFT && heading == RIGHT)
+	    || (dir == RIGHT && heading == LEFT);
+}
+
+// The heading the snake will have once everything already queued has been taken.
+//
+// This is what a new press must be judged against, NOT the current heading. A
+// player rounding a corner presses right then up while the snake is still going
+// right; judged against the current heading "up" is fine, but the second press
+// of a left-then-down would be rejected for reversing a heading the snake will
+// no longer have by the time it matters.
+static u8 PendingHeading(void)
+{
+	if (sSnake->DirQueueCount > 0)
+		return sSnake->DirQueue[sSnake->DirQueueCount - 1];
+
+	return sSnake->Direction;
+}
+
+// Banks a turn, if it is one worth banking.
+//
+// A repeat of where the snake is already heading, and a reversal into its own
+// neck, are both dropped rather than queued. Either would spend one of two
+// slots on an input that can never do anything -- and on a two-slot queue that
+// is the difference between a double-turn landing and the snake hitting a wall
+// still holding the press that would have saved it.
+static void PushDirection(u8 dir)
+{
+	u8 heading = PendingHeading();
+
+	if (dir == heading || IsReversal(dir, heading))
+		return;
+
+	if (sSnake->DirQueueCount < DIR_QUEUE_LEN)
+		sSnake->DirQueue[sSnake->DirQueueCount++] = dir;
+}
+
+// Every frame. The snake only turns on a cell boundary, and that boundary is
+// one frame out of about sixteen -- reading the D-pad only there meant a tap
+// had to coincide with it, so input was not late, it was discarded.
+static void PollDirectionBuffer(void)
+{
+	if (JOY_NEW(DPAD_UP))
+		PushDirection(UP);
+	else if (JOY_NEW(DPAD_DOWN))
+		PushDirection(DOWN);
+	else if (JOY_NEW(DPAD_LEFT))
+		PushDirection(LEFT);
+	else if (JOY_NEW(DPAD_RIGHT))
+		PushDirection(RIGHT);
+}
+
+// Takes one turn off the queue at the cell boundary.
+//
+// Falls back to the HELD direction when nothing is queued, so holding the D-pad
+// steers exactly as it did before -- this adds responsiveness rather than
+// trading one input style for another.
+//
+// The reversal test is repeated here against LastDirection, which MOVEMENT_LOOP
+// has just latched. PushDirection already checked against the predicted
+// heading, so this only bites if the two ever disagree; it costs nothing and a
+// wrong turn here is an instant loss the player did not ask for.
+static void ApplyBufferedDirection(void)
+{
+	u8 want = DIR_NONE;
+
+	if (sSnake->DirQueueCount > 0)
+	{
+		u32 i;
+
+		want = sSnake->DirQueue[0];
+		for (i = 1; i < sSnake->DirQueueCount; i++)
+			sSnake->DirQueue[i - 1] = sSnake->DirQueue[i];
+		sSnake->DirQueueCount--;
+	}
+	else if (JOY_HELD(DPAD_UP))
+		want = UP;
+	else if (JOY_HELD(DPAD_DOWN))
+		want = DOWN;
+	else if (JOY_HELD(DPAD_LEFT))
+		want = LEFT;
+	else if (JOY_HELD(DPAD_RIGHT))
+		want = RIGHT;
+
+	if (want != DIR_NONE && !IsReversal(want, sSnake->LastDirection))
+		sSnake->Direction = want;
+}
+
 static void SnakeMain(u8 taskId)
 {
 	u8 Count = sSnake->BodyCount - 3;
 	int j;
 	int i;
 	
+	if (sSnake->state == SNAKE_STATE_MOVEMENT_LOOP
+	 || sSnake->state == SNAKE_STATE_PROCESS_INPUT
+	 || sSnake->state == SNAKE_STATE_SPRITE_UPDATE)
+		PollDirectionBuffer();
+
 	switch (sSnake->state)
 	{
 		case SNAKE_STATE_INIT:
@@ -2006,48 +2108,17 @@ static void SnakeMain(u8 taskId)
 			}
 			break;
 		case SNAKE_STATE_PROCESS_INPUT:
-			if (sSnake->delay == 0)
-			{
-				UpdateLocations();
-				if (((JOY_HELD(DPAD_UP)) || (JOY_NEW(DPAD_UP))) && sSnake->LastDirection != DOWN)
-				{
-					sSnake->Direction = UP;
-				}
-				else if (((JOY_HELD(DPAD_DOWN)) || (JOY_NEW(DPAD_DOWN))) && sSnake->LastDirection != UP)
-				{
-					sSnake->Direction = DOWN;
-				}
-				else if (((JOY_HELD(DPAD_LEFT)) || (JOY_NEW(DPAD_LEFT)))  && sSnake->LastDirection != RIGHT)
-				{
-					sSnake->Direction = LEFT;
-				}
-				else if (((JOY_HELD(DPAD_RIGHT)) || (JOY_NEW(DPAD_RIGHT)))  && sSnake->LastDirection != LEFT)
-				{
-					sSnake->Direction = RIGHT;
-				}
-				sSnake->state = SNAKE_STATE_SPRITE_UPDATE;
-			}
-			else
-			{
-				UpdateLocations();
-				if (((JOY_HELD(DPAD_UP)) || (JOY_NEW(DPAD_UP))) && sSnake->LastDirection != DOWN)
-				{
-					sSnake->Direction = UP;
-				}
-				else if (((JOY_HELD(DPAD_DOWN)) || (JOY_NEW(DPAD_DOWN))) && sSnake->LastDirection != UP)
-				{
-					sSnake->Direction = DOWN;
-				}
-				else if (((JOY_HELD(DPAD_LEFT)) || (JOY_NEW(DPAD_LEFT))) && sSnake->LastDirection != RIGHT)
-				{
-					sSnake->Direction = LEFT;
-				}
-				else if (((JOY_HELD(DPAD_RIGHT)) || (JOY_NEW(DPAD_RIGHT))) && sSnake->LastDirection != LEFT)
-				{
-					sSnake->Direction = RIGHT;
-				}
-				sSnake->delay--;
-			}
+			// The cell boundary, and the only place the snake may change heading.
+			// This lasts a single frame; PollDirectionBuffer above is what lets a
+			// press made during the other fifteen survive to be read here.
+			//
+			// The old code read the D-pad twice, once in each branch of an
+			// `if (delay == 0)`, and the else was dead -- MOVEMENT_LOOP sets delay
+			// to 0 immediately before entering this state, and that is the only
+			// way in.
+			UpdateLocations();
+			ApplyBufferedDirection();
+			sSnake->state = SNAKE_STATE_SPRITE_UPDATE;
 			break;
 		case SNAKE_STATE_SPRITE_UPDATE:
 			if (sSnake->Direction == DOWN)
@@ -2155,6 +2226,7 @@ static void InitSnakeScreen(void)
 	sSnake->delay = MAX_DELAY;
 	sSnake->FrameCount = MAX_FRAME_COUNT;
 	sSnake->Direction = DOWN;
+	sSnake->DirQueueCount = 0;
 	sSnake->Body1Direction = DOWN;
 	sSnake->Body2Direction = DOWN;
 	sSnake->Loop = 2;

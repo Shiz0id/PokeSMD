@@ -1034,7 +1034,7 @@ static void CreateButterfree(void)
 {
 		LoadCompressedSpriteSheet(&sSpriteSheet_Butterfree);
 	
-	sFlappy->ButterfreeSpriteId = CreateSprite(&sSpriteTemplate_Butterfree, gSprites[sFlappy->ButterfreeHitboxSpriteId].x - 5, gSprites[sFlappy->ButterfreeHitboxSpriteId].y - 6, 1);
+	sFlappy->ButterfreeSpriteId = CreateSprite(&sSpriteTemplate_Butterfree, gSprites[sFlappy->ButterfreeHitboxSpriteId].x - 5, gSprites[sFlappy->ButterfreeHitboxSpriteId].y, 1);
 }
 
 static void CreateDamage(void)
@@ -1042,7 +1042,7 @@ static void CreateDamage(void)
 		LoadSpritePalettes(sSpritePalettes);
 		LoadCompressedSpriteSheet(&sSpriteSheet_Damage);
 	
-	sFlappy->DamageSpriteId = CreateSprite(&sSpriteTemplate_Damage, gSprites[sFlappy->ButterfreeHitboxSpriteId].x - 5, gSprites[sFlappy->ButterfreeHitboxSpriteId].y - 6, 1);
+	sFlappy->DamageSpriteId = CreateSprite(&sSpriteTemplate_Damage, gSprites[sFlappy->ButterfreeHitboxSpriteId].x - 5, gSprites[sFlappy->ButterfreeHitboxSpriteId].y, 1);
 }
 
 static void CreateTrail(void)
@@ -1535,32 +1535,36 @@ static void FlappyBirdMain(u8 taskId)
 				ChangeObstacle2();
 			}
 			
-			if ((sFlappy->bg2ScrollX > 48) && (sFlappy->bg2ScrollX < 97)) // Within Collision Range
+			// Pipe 1 is tilemap columns 12-15, so BG x 96-128, and the bird sits at
+			// screen x 40 -- it overlaps the bird for scroll 56..87 and no longer.
+			// This was 48..97, a 48px window for a 32px pipe, which killed the bird
+			// 7px before the pipe arrived and 8px after it had gone.
+			if ((sFlappy->bg2ScrollX > 55) && (sFlappy->bg2ScrollX < 88)) // Within Collision Range
 			{
 				if (sFlappy->Obstacle1Id == 1)
 				{
-					sFlappy->MAX_Y = 26;
-					sFlappy->MIN_Y = sFlappy->MAX_Y + 42;
+					sFlappy->MAX_Y = 24;
+					sFlappy->MIN_Y = sFlappy->MAX_Y + 48;
 				}
 				else if (sFlappy->Obstacle1Id == 2)
 				{
-					sFlappy->MAX_Y = 34;
-					sFlappy->MIN_Y = sFlappy->MAX_Y + 42;
+					sFlappy->MAX_Y = 32;
+					sFlappy->MIN_Y = sFlappy->MAX_Y + 48;
 				}
 				else if (sFlappy->Obstacle1Id == 3)
 				{
-					sFlappy->MAX_Y = 42;
-					sFlappy->MIN_Y = sFlappy->MAX_Y + 42;
+					sFlappy->MAX_Y = 40;
+					sFlappy->MIN_Y = sFlappy->MAX_Y + 48;
 				}
 				else if (sFlappy->Obstacle1Id == 4)
 				{
-					sFlappy->MAX_Y = 50;
-					sFlappy->MIN_Y = sFlappy->MAX_Y + 42;
+					sFlappy->MAX_Y = 48;
+					sFlappy->MIN_Y = sFlappy->MAX_Y + 48;
 				}
 				else if (sFlappy->Obstacle1Id == 5)
 				{
-					sFlappy->MAX_Y = 58;
-					sFlappy->MIN_Y = sFlappy->MAX_Y + 42;
+					sFlappy->MAX_Y = 56;
+					sFlappy->MIN_Y = sFlappy->MAX_Y + 48;
 				}
 				else
 				{
@@ -1568,32 +1572,34 @@ static void FlappyBirdMain(u8 taskId)
 					sFlappy->MIN_Y = MIN_Y_POSITION;
 				}
 			}
-			else if ((sFlappy->bg2ScrollX > 176) && (sFlappy->bg2ScrollX < 224)) // Within Collision Range 2
+			// Pipe 2 is columns 28-31, BG x 224-256, so it overlaps the bird for
+			// scroll 184..215. Same 7-and-9 pixel error as pipe 1.
+			else if ((sFlappy->bg2ScrollX > 183) && (sFlappy->bg2ScrollX < 216)) // Within Collision Range 2
 			{
 				if (sFlappy->Obstacle2Id == 1)
 				{
-					sFlappy->MAX_Y = 26;
-					sFlappy->MIN_Y = sFlappy->MAX_Y + 42;
+					sFlappy->MAX_Y = 24;
+					sFlappy->MIN_Y = sFlappy->MAX_Y + 48;
 				}
 				else if (sFlappy->Obstacle2Id == 2)
 				{
-					sFlappy->MAX_Y = 34;
-					sFlappy->MIN_Y = sFlappy->MAX_Y + 42;
+					sFlappy->MAX_Y = 32;
+					sFlappy->MIN_Y = sFlappy->MAX_Y + 48;
 				}
 				else if (sFlappy->Obstacle2Id == 3)
 				{
-					sFlappy->MAX_Y = 42;
-					sFlappy->MIN_Y = sFlappy->MAX_Y + 42;
+					sFlappy->MAX_Y = 40;
+					sFlappy->MIN_Y = sFlappy->MAX_Y + 48;
 				}
 				else if (sFlappy->Obstacle2Id == 4)
 				{
-					sFlappy->MAX_Y = 50;
-					sFlappy->MIN_Y = sFlappy->MAX_Y + 42;
+					sFlappy->MAX_Y = 48;
+					sFlappy->MIN_Y = sFlappy->MAX_Y + 48;
 				}
 				else if (sFlappy->Obstacle2Id == 5)
 				{
-					sFlappy->MAX_Y = 58;
-					sFlappy->MIN_Y = sFlappy->MAX_Y + 42;
+					sFlappy->MAX_Y = 56;
+					sFlappy->MIN_Y = sFlappy->MAX_Y + 48;
 				}
 				else
 				{
@@ -1627,7 +1633,11 @@ static void FlappyBirdMain(u8 taskId)
 
             gSprites[sFlappy->ButterfreeHitboxSpriteId].y = sFlappy->pos_y;
 			gSprites[sFlappy->ButterfreeSpriteId].x = gSprites[sFlappy->ButterfreeHitboxSpriteId].x - 5;
-			gSprites[sFlappy->ButterfreeSpriteId].y = gSprites[sFlappy->ButterfreeHitboxSpriteId].y - 6;
+			// No offset: the art is centred in its 64x64 frame, so the sprite's own y
+			// IS the centre of the visible bird. The -6 that used to be here put the
+			// tested point near the bird's feet, which is what made clearance read as
+			// available when it was not.
+			gSprites[sFlappy->ButterfreeSpriteId].y = gSprites[sFlappy->ButterfreeHitboxSpriteId].y;
 
             if (sFlappy->delay == 0) {
 				UpdateTrailSprite(gSprites[sFlappy->ButterfreeHitboxSpriteId].x, gSprites[sFlappy->ButterfreeHitboxSpriteId].y);
