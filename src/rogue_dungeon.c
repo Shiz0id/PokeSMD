@@ -1110,7 +1110,7 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .mapSecId = MAPSEC_ROGUE_JUNGLE,
 
         .berries = TRUE,   // open sky and soil
-        .generator = DUNGEON_GEN_CAVE,   // the canopy tiles 1x1, unlike the woods
+        .generator = DUNGEON_GEN_TRAILS,   // the canopy tiles 1x1, unlike the woods
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
 
@@ -4594,7 +4594,7 @@ static void GenerateOrganicCave(const struct RogueDungeonTheme *theme)
         }
     }
 
-    // A fill so dense it opened nothing. Leave the plane solid; FitOrganicRooms
+    // A fill so dense it opened nothing. Leave the plane solid; FitPlaneRooms
     // then finds no rooms and PrepareFloor's existing sRoomCount == 0 guards
     // take over, exactly as they do for a room sampler that placed nothing.
     if (bestX < 0)
@@ -4608,7 +4608,8 @@ static void GenerateOrganicCave(const struct RogueDungeonTheme *theme)
                 CaveSet(sCaveBits, x, y, TRUE);
 }
 
-// The cave has no rooms, but everything downstream is written against them:
+// Neither the cave nor the trails have rooms, but everything downstream is
+// written against them:
 // PlaceTrainers, PlaceItems, PlaceBerryTrees, PlaceRocks, PlaceHiddenItems and
 // the grass pass all pick a room and then a point inside it, and every one of
 // them relies on the whole room being floor. The spawn and the stairs are
@@ -4617,10 +4618,10 @@ static void GenerateOrganicCave(const struct RogueDungeonTheme *theme)
 // So rather than teach six callers a second world model, the cave synthesises
 // the interface they already speak - small squares that are entirely open -
 // and NOTHING downstream changes. Measured over 120 seeds this places 9.8 of
-// the ten it asks for.
+// the ten it asks for on a cave, and 10.0 on a trail floor.
 #define CAVE_ROOM_SIZE 3
 
-static void FitOrganicRooms(void)
+static void FitPlaneRooms(void)
 {
     u32 cap = DUNGEON_ROOMS_DEFAULT;
     s32 attempt, i, x, y, dx, dy;
@@ -4938,6 +4939,185 @@ static void GenerateFacilityFloor(const struct RogueDungeonTheme *theme)
     }
 }
 
+// ---------------------------------------------------------------------------
+// DUNGEON_GEN_TRAILS - irregular clearings joined by meandering trails.
+//
+// Paints through sCaveBits like the other two plane generators, so it costs no
+// RAM of its own.
+
+#define TRAIL_CLEARINGS_DEFAULT 12
+#define TRAIL_LOBE_DEFAULT       5
+#define TRAIL_WANDER_DEFAULT    35
+#define TRAIL_LOBES_PER_CLEARING 4
+#define TRAIL_MARGIN             3
+
+static void TrailCarve(s32 x, s32 y)
+{
+    if (x >= TRAIL_MARGIN && x < DUNGEON_WIDTH - TRAIL_MARGIN
+     && y >= TRAIL_MARGIN && y < DUNGEON_HEIGHT - TRAIL_MARGIN)
+        CaveSet(sCaveBits, x, y, FALSE);
+}
+
+// A walk that drifts but always finishes. The drift is what makes it read as a
+// trail; the straight finish is what makes the floor connected BY CONSTRUCTION,
+// so this generator needs no repair pass and no largest-region flood the way
+// the cellular automaton does.
+//
+// THE STRAIGHT TAIL IS DEAD CODE AT THE DEFAULT WANDER AND ESSENTIAL ABOVE IT.
+// Measured over 4,788 walks, the budget is exhausted 0% of the time at wander
+// 50, 0.40% at 60, 7.73% at 70 and 42.61% at 80. So at the shipped 35 the drift
+// always arrives on its own and deleting the tail changes nothing - but
+// trailWander is a field a theme may set, and past about 60 the tail is the
+// only thing connecting the floor. Do not remove it because it never fires;
+// check_trail_floor.py carries a wander-80 stress row precisely so that the
+// assertion guarding it is not vacuous.
+static void TrailWalk(s32 x, s32 y, s32 tx, s32 ty, u32 wander)
+{
+    s32 budget = (abs(tx - x) + abs(ty - y)) * 4 + 40;
+
+    while ((x != tx || y != ty) && budget-- > 0)
+    {
+        TrailCarve(x, y);
+
+        if ((DungeonRandom() % 100) < wander)
+        {
+            s32 d = DungeonRandom() % 4;
+            s32 nx = x + (d == 0 ? 1 : d == 1 ? -1 : 0);
+            s32 ny = y + (d == 2 ? 1 : d == 3 ? -1 : 0);
+
+            if (nx >= TRAIL_MARGIN && nx < DUNGEON_WIDTH - TRAIL_MARGIN
+             && ny >= TRAIL_MARGIN && ny < DUNGEON_HEIGHT - TRAIL_MARGIN)
+            {
+                x = nx;
+                y = ny;
+            }
+            continue;
+        }
+
+        if (abs(tx - x) > abs(ty - y))
+            x += (tx > x) ? 1 : -1;
+        else if (ty != y)
+            y += (ty > y) ? 1 : -1;
+        else
+            x += (tx > x) ? 1 : -1;
+    }
+
+    while (x != tx)
+    {
+        TrailCarve(x, y);
+        x += (tx > x) ? 1 : -1;
+    }
+    while (y != ty)
+    {
+        TrailCarve(x, y);
+        y += (ty > y) ? 1 : -1;
+    }
+    TrailCarve(x, y);
+}
+
+static void GenerateTrailFloor(const struct RogueDungeonTheme *theme)
+{
+    u32 clearings = theme->trailClearings ? theme->trailClearings
+                                          : TRAIL_CLEARINGS_DEFAULT;
+    u32 lobe = theme->trailLobe ? theme->trailLobe : TRAIL_LOBE_DEFAULT;
+    u32 wander = theme->trailWander ? theme->trailWander : TRAIL_WANDER_DEFAULT;
+    u8 cx[DUNGEON_MAX_ROOMS], cy[DUNGEON_MAX_ROOMS];
+    u8 order[DUNGEON_MAX_ROOMS];
+    bool8 used[DUNGEON_MAX_ROOMS];
+    u32 cols, rows, cw, ch, n;
+    s32 i, j, cur;
+
+    if (clearings > DUNGEON_MAX_ROOMS)
+        clearings = DUNGEON_MAX_ROOMS;
+
+    for (i = 0; i < CAVE_PLANE_BYTES; i++)
+        sCaveBits[i] = 0xFF;
+
+    // Jittered grid. Shuffling which cells get used, rather than taking the
+    // first N, is what stops every floor filling the same corner first.
+    cols = (clearings <= 9) ? 3 : 4;
+    rows = (clearings + cols - 1) / cols;
+    cw = (DUNGEON_WIDTH - 2 * TRAIL_MARGIN - 8) / cols;
+    ch = (DUNGEON_HEIGHT - 2 * TRAIL_MARGIN - 8) / rows;
+    if (cw == 0)
+        cw = 1;
+    if (ch == 0)
+        ch = 1;
+
+    n = cols * rows;
+    if (n > DUNGEON_MAX_ROOMS)
+        n = DUNGEON_MAX_ROOMS;
+    for (i = 0; i < (s32)n; i++)
+        order[i] = i;
+    for (i = n - 1; i > 0; i--)
+    {
+        u32 k = DungeonRandom() % (i + 1);
+        u8 t = order[i];
+
+        order[i] = order[k];
+        order[k] = t;
+    }
+    if (clearings > n)
+        clearings = n;
+
+    for (i = 0; i < (s32)clearings; i++)
+    {
+        u32 gx = order[i] % cols;
+        u32 gy = order[i] / cols;
+        s32 px = TRAIL_MARGIN + 4 + gx * cw + (DungeonRandom() % cw);
+        s32 py = TRAIL_MARGIN + 4 + gy * ch + (DungeonRandom() % ch);
+
+        cx[i] = px;
+        cy[i] = py;
+
+        // A clump of overlapping rectangles, so the outline is irregular. One
+        // rectangle is exactly the silhouette this generator exists to avoid.
+        for (j = 0; j < TRAIL_LOBES_PER_CLEARING; j++)
+        {
+            s32 lw = 3 + (DungeonRandom() % lobe);
+            s32 lh = 3 + (DungeonRandom() % lobe);
+            s32 ox = px - lw / 2 + (DungeonRandom() % 5) - 2;
+            s32 oy = py - lh / 2 + (DungeonRandom() % 5) - 2;
+            s32 dx, dy;
+
+            for (dy = 0; dy < lh; dy++)
+                for (dx = 0; dx < lw; dx++)
+                    TrailCarve(ox + dx, oy + dy);
+        }
+    }
+
+    // Chain nearest-unvisited, so a trail joins neighbouring clearings rather
+    // than striking across the map to whichever was sampled next.
+    for (i = 0; i < (s32)clearings; i++)
+        used[i] = FALSE;
+    used[0] = TRUE;
+    cur = 0;
+    for (;;)
+    {
+        s32 best = -1, bestD = 0;
+
+        for (i = 0; i < (s32)clearings; i++)
+        {
+            s32 d;
+
+            if (used[i])
+                continue;
+            d = abs((s32)cx[i] - (s32)cx[cur]) + abs((s32)cy[i] - (s32)cy[cur]);
+            if (best < 0 || d < bestD)
+            {
+                best = i;
+                bestD = d;
+            }
+        }
+        if (best < 0)
+            break;
+
+        TrailWalk(cx[cur], cy[cur], cx[best], cy[best], wander);
+        used[best] = TRUE;
+        cur = best;
+    }
+}
+
 // Everything a floor is, derived from its seed. Touches no map memory, so it
 // can run at object-event-template load time - which happens before the map is
 // generated, and is where trainers have to be placed.
@@ -5002,7 +5182,13 @@ static void PrepareFloor(u16 seed)
     if (theme->generator == DUNGEON_GEN_ORGANIC)
     {
         GenerateOrganicCave(theme);
-        FitOrganicRooms();
+        FitPlaneRooms();
+        attempts = 0;
+    }
+    else if (theme->generator == DUNGEON_GEN_TRAILS)
+    {
+        GenerateTrailFloor(theme);
+        FitPlaneRooms();
         attempts = 0;
     }
     else if (theme->generator == DUNGEON_GEN_FACILITY)
@@ -5289,7 +5475,8 @@ static void WriteFloorBlocks(u16 *backupMapData)
     // already set sRooms up for that, so the shared path below is correct for
     // them whatever the theme's generator says.
     if ((theme->generator == DUNGEON_GEN_ORGANIC
-         || theme->generator == DUNGEON_GEN_FACILITY)
+         || theme->generator == DUNGEON_GEN_FACILITY
+         || theme->generator == DUNGEON_GEN_TRAILS)
         && !RogueDungeon_IsBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
     {
         for (y = 0; y < DUNGEON_HEIGHT; y++)

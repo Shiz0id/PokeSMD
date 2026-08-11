@@ -1004,6 +1004,15 @@ enum DungeonGenerator
     // Mauville's wall table being the only one with a full set of thin-wall
     // art. See facilityVThick for how the two directions are drawn.
     DUNGEON_GEN_FACILITY,
+    // Irregular clearings joined by narrow meandering trails. For the jungle,
+    // whose 3-wide L-shaped corridors between rectangles were a boulevard grid
+    // - the least jungle-like shape available, and the current generator
+    // actively fighting the theme.
+    //
+    // The rhythm is the point: clearings are generous and hold the long grass,
+    // which is where this theme's encounters fire; trails are one block wide
+    // and are transit. Nothing else in the run has that split.
+    DUNGEON_GEN_TRAILS,
 };
 
 // Slots in a theme wall table, in the order the autotile rule tests them.
@@ -1210,6 +1219,22 @@ struct RogueDungeonTheme
     // wants more than one way round. The tree alone is what guarantees the
     // floor connects.
     u8 facilityExtraDoors;
+
+    // DUNGEON_GEN_TRAILS only. Zero takes the defaults.
+    //
+    // Clearings are placed on a JITTERED GRID rather than at random, and that
+    // is not tidiness - random placement clusters them, and a clustered floor
+    // has a short traverse however much the trails wander. Measured at span 58
+    // against the old generator's 72, which is the wrong direction; on a grid
+    // it is 70-77.
+    //
+    // trailLobe is the size of the overlapping rectangles each clearing is
+    // built from. Bigger lobes give more floor but adjacent clearings start to
+    // merge, and a floor whose clearings have merged reads as one amoeba
+    // rather than as trails - five is where that stays rare.
+    u8 trailClearings;
+    u8 trailLobe;
+    u8 trailWander;   // percent chance a trail step drifts instead of advancing
 
     // Berries grow here. Set on the themes that are OUTDOORS in the sense that
     // matters - open sky and soil - which is Petalburg Woods, the Jungle and
