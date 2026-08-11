@@ -990,6 +990,20 @@ enum DungeonGenerator
     //    instead converges in 4.2 passes on average and 7 at worst over 300
     //    seeds, and needs one bitplane.
     DUNGEON_GEN_ORGANIC,
+    // A floorplan, for the one theme that is a BUILT thing. Partitions the map
+    // into rooms that SHARE WALLS and connects them with doors punched through
+    // those walls - no corridors at all.
+    //
+    // The first attempt at this was BSP with a margin round each room, and it
+    // measured as a tidier version of what New Mauville already was: isolated
+    // rectangles joined by threads through void, which is the silhouette of
+    // every other floor in the game. Rooms sharing walls is the thing that
+    // reads as architecture.
+    //
+    // It works HERE and would not work elsewhere, because it leans on New
+    // Mauville's wall table being the only one with a full set of thin-wall
+    // art. See facilityVThick for how the two directions are drawn.
+    DUNGEON_GEN_FACILITY,
 };
 
 // Slots in a theme wall table, in the order the autotile rule tests them.
@@ -1181,6 +1195,21 @@ struct RogueDungeonTheme
     // so it is a smoothness control, not a density one. Four is the default.
     u8 caveFill;
     u8 caveIters;
+
+    // DUNGEON_GEN_FACILITY only. Zero takes the defaults.
+    //
+    // facilityLeaves is how many rooms to subdivide into and facilityMinLeaf is
+    // the smallest partition that may be split again - together they set room
+    // size, which is the knob that matters at GBA camera scale. Ten leaves
+    // gives a median room of 16 blocks, which is two screens across and reads
+    // as an empty metal box; fourteen leaves at a minimum of eight gives a
+    // median of 13 and a spread of sizes. Eighteen is cramped and repetitive.
+    u8 facilityLeaves;
+    u8 facilityMinLeaf;
+    // Doors beyond the spanning tree. Each one closes a loop, and a building
+    // wants more than one way round. The tree alone is what guarantees the
+    // floor connects.
+    u8 facilityExtraDoors;
 
     // Berries grow here. Set on the themes that are OUTDOORS in the sense that
     // matters - open sky and soil - which is Petalburg Woods, the Jungle and
@@ -1377,7 +1406,11 @@ struct RogueFloorMapOverride
 // deterministic +2 rooms and +5.4pp coverage rather than sampler noise. Twelve
 // was measured too and rejected - it lands at 11.7 (so the count goes variable)
 // and saturates the grass budget on half of all floors.
-#define DUNGEON_MAX_ROOMS 12
+// Sixteen rather than twelve for DUNGEON_GEN_FACILITY, which subdivides
+// rather than rejection-samples and so actually reaches its cap. Costs 4 bytes
+// a room. Nothing else changes: every other theme asks for 10 or 12, both
+// still under the ceiling.
+#define DUNGEON_MAX_ROOMS 16
 #define DUNGEON_ROOMS_DEFAULT 10
 #define DUNGEON_ROOM_MIN   5
 #define DUNGEON_ROOM_MAX  10
