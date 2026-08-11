@@ -21,7 +21,6 @@ from collections import deque
 
 W = H = 48
 MARGIN = 3
-LOBES = 4
 
 
 def cdef(src, name, default):
@@ -38,7 +37,8 @@ class Lcg:
         return (self.v >> 16) & 0xFFFF
 
 
-def generate(seed, clearings, lobe, wander, maxrooms, straight_tail=True):
+def generate(seed, clearings, lobe, wander, maxrooms, lobes=4, drift=0,
+             straight_tail=True, stub=True):
     rng = Lcg(seed)
     g = [[1] * W for _ in range(H)]
 
@@ -65,15 +65,28 @@ def generate(seed, clearings, lobe, wander, maxrooms, straight_tail=True):
         py = MARGIN + 4 + gy * ch + rng.next() % ch
         cx.append(px)
         cy.append(py)
-        for _ in range(LOBES):
+        for _ in range(lobes):
             lw = 3 + rng.next() % lobe
             lh = 3 + rng.next() % lobe
-            # anchored so the lobe always contains (px, py) - see the C
-            ox = px - rng.next() % lw
-            oy = py - rng.next() % lh
+            if drift:
+                ox = px - lw // 2 + rng.next() % (drift*2 + 1) - drift
+                oy = py - lh // 2 + rng.next() % (drift*2 + 1) - drift
+            else:
+                # anchored so the lobe always contains (px, py) - see the C
+                ox = px - rng.next() % lw
+                oy = py - rng.next() % lh
             for dy in range(lh):
                 for dx in range(lw):
                     carve(ox + dx, oy + dy)
+            # the stub that makes an unanchored lobe reachable. `stub=False` is
+            # the deliberate break: it reproduces the bug seed 173 found.
+            if drift and stub:
+                lx, ly = ox + lw // 2, oy + lh // 2
+                while lx != px:
+                    carve(lx, ly); lx += 1 if px > lx else -1
+                while ly != py:
+                    carve(lx, ly); ly += 1 if py > ly else -1
+                carve(lx, ly)
 
     def walk(x, y, tx, ty):
         budget = (abs(tx - x) + abs(ty - y)) * 4 + 40
@@ -186,6 +199,9 @@ def main():
     ap.add_argument('--no-straight-tail', action='store_true',
                     help='deliberately break TrailWalk, to prove the '
                          'connectivity assertion is not vacuous')
+    ap.add_argument('--no-stub', action='store_true',
+                    help='deliberately drop the stub that joins an unanchored '
+                         'lobe to its clearing - reproduces the seed 173 orphan')
     a = ap.parse_args()
     repo = os.path.abspath(a.repo)
 
@@ -195,6 +211,7 @@ def main():
     dc = cdef(csrc, 'TRAIL_CLEARINGS_DEFAULT', 12)
     dl = cdef(csrc, 'TRAIL_LOBE_DEFAULT', 5)
     dw = cdef(csrc, 'TRAIL_WANDER_DEFAULT', 35)
+    dlb = cdef(csrc, 'TRAIL_LOBES_DEFAULT', 4)
     maxrooms = cdef(hsrc, 'DUNGEON_MAX_ROOMS', 16)
     cap = min(cdef(hsrc, 'DUNGEON_ROOMS_DEFAULT', 10), maxrooms)
 
@@ -207,7 +224,8 @@ def main():
         gv = lambda nm: (lambda x: int(x.group(1)) if x else 0)(
             re.search(r'\.%s\s*=\s*(\d+)' % nm, blk))
         themes.append((m.group(1) if m else '?', gv('trailClearings'),
-                       gv('trailLobe'), gv('trailWander')))
+                       gv('trailLobe'), gv('trailWander'),
+                       gv('trailLobes'), gv('trailLobeDrift')))
 
     if not themes:
         print('no theme uses DUNGEON_GEN_TRAILS - nothing to check')
@@ -225,16 +243,25 @@ def main():
     # above it, and trailWander is a field a theme may set.
     #
     # This row exercises the guard at a setting where it is load-bearing.
-    themes = list(themes) + [("(stress) wander 80", dc, dl, 80)]
+    # STRESS ROWS, run whatever the table says - see the note above. The second
+    # is the worst case for the STUB rather than the tail: maximum drift with the
+    # fewest lobes is where an unanchored lobe is most likely to land clear of its
+    # own clearing, which is the shape that orphaned seed 173.
+    themes = list(themes) + [
+        ("(stress) wander 80", dc, dl, 80, 0, 0),
+        ("(stress) drift 4, 2 lobes", dc, dl, dw, 2, 4),
+    ]
 
     fail = 0
-    for (name, c, l, w) in themes:
+    for (name, c, l, w, lb, dr) in themes:
         c, l, w = c or dc, l or dl, w or dw
+        lb = lb or dlb
         bad = 0
         cov, nr = [], []
         for seed in range(1, a.seeds + 1):
-            g, rng = generate(seed, c, l, w, maxrooms,
-                              straight_tail=not a.no_straight_tail)
+            g, rng = generate(seed, c, l, w, maxrooms, lobes=lb, drift=dr,
+                              straight_tail=not a.no_straight_tail,
+                              stub=not a.no_stub)
             rooms = fit_rooms(g, rng, cap)
             probs = check(g, rooms)
             cov.append(sum(1 for y in range(H) for x in range(W)
@@ -244,9 +271,9 @@ def main():
                 bad += 1
                 if bad <= 3:
                     print('FAIL %s seed %d: %s' % (name, seed, '; '.join(probs[:2])))
-        print('%-28s clearings %d lobe %d wander %d  seeds %d  bad %d  '
+        print('%-28s clr %d lobe %d wnd %d lobes %d drift %d  seeds %d  bad %d  '
               'cover %.1f%%  rooms %.1f  [%s]'
-              % (name, c, l, w, a.seeds, bad, sum(cov) / len(cov),
+              % (name, c, l, w, lb, dr, a.seeds, bad, sum(cov) / len(cov),
                  sum(nr) / len(nr), 'ok' if bad == 0 else 'FAILED'))
         if bad:
             fail = 1

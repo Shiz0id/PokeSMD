@@ -1313,6 +1313,32 @@ struct RogueDungeonTheme
     u8 trailLobe;
     u8 trailWander;   // percent chance a trail step drifts instead of advancing
 
+    // Lobes per clearing. THIS IS THE KNOB FOR HOW MUCH CLEARINGS MERGE, and
+    // lobe SIZE is not - measured over 40 seeds a config, at 16 clearings and a
+    // lobe of 3 the count of clearings that stay distinct goes 7.3 at four
+    // lobes, 8.6 at three, 9.8 at two, while the biggest single clearing falls
+    // 178 -> 145 -> 94 blocks. Asked-for clearings never all survive; merging
+    // roughly halves the number whatever the size.
+    u8 trailLobes;
+
+    // Nonzero UNANCHORS the lobes: each is offset by up to this many blocks
+    // either way from the clearing centre instead of being placed to contain it.
+    // Two reproduces the original look.
+    //
+    // THIS IS THE SETTING THAT ORPHANED A FLOOR, so it does not come for free.
+    // The trail into a clearing arrives at the clearing CENTRE, so a lobe that
+    // does not contain the centre is connected to the rest of its clearing only
+    // by luck of overlap - check_trail_floor.py caught seed 173 leaving 9 of 625
+    // open blocks unreachable from the spawn, at three lobes where the jungle's
+    // five had always happened to overlap.
+    //
+    // It is safe here because a drifted lobe gets a STUB carved from its own
+    // centre back to the clearing centre. That keeps connectivity a property of
+    // the construction rather than of a repair pass, which is the whole reason
+    // this generator needs no flood fill, while leaving the outline as ragged as
+    // an unanchored lobe makes it.
+    u8 trailLobeDrift;
+
     // Berries grow here. Set on the themes that are OUTDOORS in the sense that
     // matters - open sky and soil - which is Petalburg Woods, the Jungle and
     // Ever Grande, and not the caves, New Mauville, the tower or the sea. Left

@@ -1736,8 +1736,10 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         // stop the vertical sliver firing on a tileset that had no art for one -
         // and this tileset has all seven, so the reason is gone with it.
         .generator = DUNGEON_GEN_TRAILS,
-        .trailClearings = 16,
-        .trailLobe = 3,
+        .trailClearings = 9,
+        .trailLobe = 5,
+        .trailLobes = 3,
+        .trailLobeDrift = 2,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
         .floor = MEADOW_METATILE_FLOOR,
@@ -5091,7 +5093,7 @@ static void GenerateFacilityFloor(const struct RogueDungeonTheme *theme)
 #define TRAIL_CLEARINGS_DEFAULT 12
 #define TRAIL_LOBE_DEFAULT       5
 #define TRAIL_WANDER_DEFAULT    35
-#define TRAIL_LOBES_PER_CLEARING 4
+#define TRAIL_LOBES_DEFAULT      4
 #define TRAIL_MARGIN             3
 
 static void TrailCarve(s32 x, s32 y)
@@ -5164,6 +5166,8 @@ static void GenerateTrailFloor(const struct RogueDungeonTheme *theme)
                                           : TRAIL_CLEARINGS_DEFAULT;
     u32 lobe = theme->trailLobe ? theme->trailLobe : TRAIL_LOBE_DEFAULT;
     u32 wander = theme->trailWander ? theme->trailWander : TRAIL_WANDER_DEFAULT;
+    u32 lobes = theme->trailLobes ? theme->trailLobes : TRAIL_LOBES_DEFAULT;
+    u32 drift = theme->trailLobeDrift;
     u8 cx[DUNGEON_MAX_ROOMS], cy[DUNGEON_MAX_ROOMS];
     u8 order[DUNGEON_MAX_ROOMS];
     bool8 used[DUNGEON_MAX_ROOMS];
@@ -5216,29 +5220,58 @@ static void GenerateTrailFloor(const struct RogueDungeonTheme *theme)
         // A clump of overlapping rectangles, so the outline is irregular. One
         // rectangle is exactly the silhouette this generator exists to avoid.
         //
-        // EVERY LOBE MUST COVER THE CLEARING CENTRE, and that is a correctness
-        // requirement rather than a shape preference. The trail into a clearing
-        // arrives at its centre, so a lobe that does not contain the centre is
-        // only connected to the rest of its own clearing by luck of overlap.
+        // EVERY LOBE MUST REACH THE CLEARING CENTRE, one way or the other, and
+        // that is a correctness requirement rather than a shape preference. The
+        // trail into a clearing arrives at its centre, so a lobe that cannot be
+        // reached from the centre is unreachable from the whole floor.
         //
-        // The offset used to be `px - lw/2 + rand(5) - 2`, which at the jungle's
-        // lobe of 5 always overlapped and at the meadow's lobe of 3 did not:
-        // check_trail_floor.py found seed 173 leaving 9 of 625 open blocks
-        // unreachable from the spawn. Anchoring the offset into
-        // [px - lw + 1, px] makes containment arithmetic instead of chance, and
-        // keeps the outline irregular because the lobes still slide about within
-        // that range.
-        for (j = 0; j < TRAIL_LOBES_PER_CLEARING; j++)
+        // ANCHORED (drift 0) does it by placing the offset in
+        // [px - lw + 1, px], so the lobe contains the centre arithmetically.
+        //
+        // UNANCHORED (drift n) lets the lobe wander +/- n and then carves a STUB
+        // from the lobe's own centre back to the clearing centre. Same
+        // guarantee, ragged outline. The old code did the wandering WITHOUT the
+        // stub and that is the bug check_trail_floor.py found on seed 173 - nine
+        // of 625 open blocks unreachable, because a lobe had drifted clear.
+        for (j = 0; j < (s32)lobes; j++)
         {
             s32 lw = 3 + (DungeonRandom() % lobe);
             s32 lh = 3 + (DungeonRandom() % lobe);
-            s32 ox = px - (s32)(DungeonRandom() % lw);
-            s32 oy = py - (s32)(DungeonRandom() % lh);
-            s32 dx, dy;
+            s32 ox, oy, dx, dy;
+
+            if (drift != 0)
+            {
+                ox = px - lw / 2 + (DungeonRandom() % (drift * 2 + 1)) - (s32)drift;
+                oy = py - lh / 2 + (DungeonRandom() % (drift * 2 + 1)) - (s32)drift;
+            }
+            else
+            {
+                ox = px - (s32)(DungeonRandom() % lw);
+                oy = py - (s32)(DungeonRandom() % lh);
+            }
 
             for (dy = 0; dy < lh; dy++)
                 for (dx = 0; dx < lw; dx++)
                     TrailCarve(ox + dx, oy + dy);
+
+            // The stub. Straight, from a point guaranteed inside the lobe to the
+            // clearing centre - so the lobe is joined whatever it did.
+            if (drift != 0)
+            {
+                s32 lx = ox + lw / 2, ly = oy + lh / 2;
+
+                while (lx != px)
+                {
+                    TrailCarve(lx, ly);
+                    lx += (px > lx) ? 1 : -1;
+                }
+                while (ly != py)
+                {
+                    TrailCarve(lx, ly);
+                    ly += (py > ly) ? 1 : -1;
+                }
+                TrailCarve(lx, ly);
+            }
         }
     }
 
