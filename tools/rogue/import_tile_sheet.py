@@ -214,7 +214,7 @@ TILESETS = {
             # and this floor is grass. Left at the default the fringe band came
             # out bright yellow off Purity Forest's warm accents.
             dict(name='grass', graft='vanilla_long_grass', pal=12,
-                 blades_from=7, ground_from=7, ground_pick='green'),
+                 blades_from=6, ground_from=7, ground_pick='green'),
             # The SHORT one, in both of vanilla's colourways. 0x0005 is
             # MB_UNUSED_05: encounters and nothing else. Vanilla uses one
             # colourway per field and never mixes them, so these are two fields
