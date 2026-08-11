@@ -191,9 +191,13 @@ TILESETS = {
             # closes that outright.
             dict(name='plaza', sheet='western_cave_dark', col='ground',
                  pal=9, attr=0x0000, autotile=True),
-            # Water as a patch region, the way the jungle lays its puddles.
-            dict(name='water', sheet='purity_forest', col='water',
-                 pal=8, attr=0x0016, autotile=True, over='ground'),
+            # NO WATER, and that is a decision rather than an omission. The
+            # sheet ships it as 13-frame water plus a SEPARATE 7-frame Sparkle
+            # overlay, and this importer does neither the animation nor the
+            # top-layer compositing the sparkle needs - so importing it buys a
+            # STATIC pond for 94 tiles and a whole palette slot, on a tileset
+            # that had exactly one slot left. The jungle dropped its water for
+            # the same reason. Slot 8 goes to the stairs instead.
 
             # THE TWO ENCOUNTER SURFACES, and they are the only thing carried
             # over from vanilla Ever Grande. This theme is the only one with
@@ -206,18 +210,71 @@ TILESETS = {
             # reads as this floor rather than as the route grass it was drawn
             # against. That second ramp is the whole reason this is a graft and
             # not a copy.
+            # ground_pick='green' is load-bearing: the default is a DIRT rule,
+            # and this floor is grass. Left at the default the fringe band came
+            # out bright yellow off Purity Forest's warm accents.
             dict(name='grass', graft='vanilla_long_grass', pal=12,
-                 blades_from=6, ground_from=7),
+                 blades_from=6, ground_from=7, ground_pick='green'),
             # The SHORT one, in both of vanilla's colourways. 0x0005 is
             # MB_UNUSED_05: encounters and nothing else. Vanilla uses one
             # colourway per field and never mixes them, so these are two fields
             # to choose between, not sixteen variants to scatter.
             dict(name='bedpink', graft='evergrande_flowers', pal=10,
                  from_pal=10, first=0x288, count=8, attr=0x0005,
-                 label='bedpink'),
+                 label='bedpink', grass_from=7),
             dict(name='bedyellow', graft='evergrande_flowers', pal=11,
                  from_pal=11, first=0x290, count=8, attr=0x0005,
-                 label='bedyellow'),
+                 label='bedyellow', grass_from=7),
+
+            # The descent: a hollow dug in the earth, not a stone stairwell.
+            # make_evergrande_tiles.py's composed exit does NOT come across -
+            # it is four top-layer tiles over vanilla's cobble bottom layer,
+            # and neither of those exists here.
+            #
+            # Drawn in slot 12, the long-grass graft's palette, for exactly the
+            # reason the jungle draws in its own: graft_long_grass starts from
+            # vanilla General palette 02 and overwrites ONLY the blade ramp
+            # (indices 1-4) and the ground ramp (13-15), so indices 5-12 are
+            # still vanilla's - including 0x413931, the colour the woods stairs
+            # use for their void, and the tan ramp above it. A meadow's descent
+            # is therefore the woods' descent in the woods' own tones, which is
+            # the right echo: both are holes dug in soil.
+            #
+            # It MUST come after the grass block, because draw_stairs reads the
+            # palette that block installed and then writes it back.
+            #
+            # Corners seat in `ground` - the imported grass - re-quantised into
+            # this palette, which is what `rounded` is for: an opening in the
+            # ground rather than a plate lying on it.
+            #
+            # THE JUNGLE'S ROLE COLOURS DO NOT TRANSFER, and the importer said
+            # so rather than quantising nearby - which is the whole point of
+            # that check. Its rim tones 0x5A4A21 and 0x947331 are not vanilla
+            # General 02's at all: they are the jungle's own DIRT, installed at
+            # indices 13-15 by its graft's ground ramp. This graft's ground ramp
+            # is the imported GRASS, so 13-15 are greens here and there is no
+            # brown rim to bind to.
+            #
+            # These five are all vanilla General 02 survivors from indices 5-12,
+            # which the graft leaves alone, and they ramp monotonically the way
+            # stairs_rows needs - void darkest, then inner rim, outer rim,
+            # tread, lit edge:
+            #
+            #   d 0x413931 lum  58   the void, and the same dark the woods use
+            #   r 0x6A5A5A lum  93   inner rim, turning the corner into the well
+            #   R 0xA4625A lum 111   outer rim, the row that meets the floor
+            #   t 0xDE9473 lum 161   tread
+            #   e 0xFFC594 lum 206   lit leading edge
+            #
+            # They carry a reddish cast, being General's earth tones rather than
+            # a meadow's. Worth a look on screen against the grass; the fix if
+            # it reads wrong is an `append` of two soil tones, the way Lapis
+            # lifts its stairwell colours out of the crystal palette.
+            dict(name='stairs', pal=12, attr=0x0000, stairs=dict(
+                rounded=True,
+                roles=dict(d=(0x41, 0x39, 0x31), r=(0x6A, 0x5A, 0x5A),
+                           R=(0xA4, 0x62, 0x5A), t=(0xDE, 0x94, 0x73),
+                           e=(0xFF, 0xC5, 0x94)))),
         ]),
     # Glacia's. Lapis Cave's crystal walls over Mt. Freeze's snow: the crystal
     # is the better wall art and the snow is the better floor for a theme that
@@ -607,6 +664,22 @@ def _ramp(palette, want, pick):
 GRASS_BLADE_IDX = [1, 2, 3, 4]     # lightest to darkest
 GRASS_GROUND_IDX = [13, 14, 15]    # lightest to darkest
 
+# WHAT COUNTS AS GROUND DEPENDS ON WHAT THE THEME STANDS ON, and getting this
+# wrong does not fail - it picks something.
+#
+# 'dirt' (r >= g > b) is right for the jungle, whose floor is soil, and was the
+# only rule here. The meadow stands on GRASS, and Purity Forest's palette
+# carries warm accent tones that satisfy the dirt rule perfectly well - so the
+# fringe band under its long grass came out 0xF7BD52, a bright yellow, and
+# nothing said so. Rendering the written tileset is what showed it.
+#
+# Note that _ramp ALSO falls back to plain luminance order when a filter matches
+# too few colours, so a mismatched picker is silent twice over.
+PICKERS = {
+    'dirt': lambda c: c[0] >= c[1] > c[2],
+    'green': lambda c: c[1] > c[0] and c[1] >= c[2],
+}
+
 
 def graft_long_grass(palettes, cfg):
     """Vanilla long grass and its south fringe, recoloured onto this tileset.
@@ -621,9 +694,9 @@ def graft_long_grass(palettes, cfg):
     fortree = _tile_reader('data/tilesets/secondary/fortree/tiles.png')
 
     blades = _ramp(palettes[cfg['blades_from']], len(GRASS_BLADE_IDX),
-                   lambda c: c[1] > c[0] and c[1] > c[2])
+                   PICKERS[cfg.get('blades_pick', 'green')])
     ground = _ramp(palettes[cfg['ground_from']], len(GRASS_GROUND_IDX),
-                   lambda c: c[0] >= c[1] > c[2])
+                   PICKERS[cfg.get('ground_pick', 'dirt')])
 
     # Start from vanilla's own palette so untouched indices stay sane, then
     # overwrite only the two ramps the grass actually draws with.
@@ -643,6 +716,10 @@ def graft_long_grass(palettes, cfg):
         # MB_LONG_GRASS_SOUTH_EDGE, carrying no encounters, exactly as vanilla.
         ('fringe', _quad(fortree, [0x10A, 0x10B, 0x11A, 0x11B]), 0x0009),
     ])
+
+
+# The bed background ramp, lightest to darkest. See graft_evergrande_flowers.
+BED_GRASS_IDX = [12, 13, 14, 15]
 
 
 def graft_evergrande_flowers(palettes, cfg):
@@ -675,6 +752,24 @@ def graft_evergrande_flowers(palettes, cfg):
                    % cfg['from_pal'])).read_text()
     pal = [tuple(int(v) for v in line.split())
            for line in src.splitlines()[4:19]]
+
+    # THE BED'S BACKGROUND IS NOT THE BLOOMS, and it has to become the floor
+    # this tileset actually imported or the beds read as pale patches lying on
+    # a different grass.
+    #
+    # Indices 12-15 are that background: a mint ramp, 0x73C5A4 dominant, which
+    # both vanilla bed palettes share with General's palette 2. The blooms live
+    # at 5-11 and are left completely alone - recolouring those would be
+    # recolouring the flowers, which is the one thing being carried over.
+    #
+    # 1-4 are a yellow-green ramp the art also uses, more sparsely. Left alone
+    # for now: they read as the blooms' own foliage, and replacing them is the
+    # next thing to try if the beds still fight the floor on screen.
+    if 'grass_from' in cfg:
+        greens = _ramp(palettes[cfg['grass_from']], len(BED_GRASS_IDX),
+                       PICKERS['green'])
+        for i, c in zip(BED_GRASS_IDX, greens):
+            pal[i - 1] = c
 
     units = []
     for n in range(cfg['count']):
