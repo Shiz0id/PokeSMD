@@ -751,6 +751,108 @@ static const struct RoguePatchLayer sMurkyPatches[] =
 // Layer 2 is brick, and it is a path rather than a region: no north or south
 // edge art exists, so a blob's top and bottom are hard cuts. Small and sparse
 // on purpose, and last so it reads as laid ON the planting.
+// Thirty-two wall and floor variants out of the sheet's two Wall Alt columns,
+// which is the reason this import was worth taking - a wall mass gets a face per
+// block instead of one picture repeated.
+//
+// SIXTEEN OF THESE CAN NEVER FIRE TODAY, and that is worth knowing before
+// counting them as thirty-two. The sheet keys its cells on all eight neighbours
+// and draws 47; ApplyWallAutotiling reads four and the theme names 20, so every
+// pair whose BASE is one of the other 27 is unreachable. They are kept because
+// they cost a few bytes, they are correct, and a 47-case autotile would light
+// them all at once. The live ones are the pairs based on 0x203/0x204/0x205/
+// 0x207/0x21D/0x21E/0x21F/0x220 and the two on the floor.
+static const struct RogueDecor sMeadowDecor[] =
+{
+    { 0x203, 0x22F }, { 0x204, 0x230 }, { 0x205, 0x231 }, { 0x207, 0x232 },
+    { 0x215, 0x233 }, { 0x217, 0x234 }, { 0x219, 0x235 }, { 0x21A, 0x236 },
+    { 0x21D, 0x237 }, { 0x21E, 0x238 }, { 0x21F, 0x239 }, { 0x220, 0x23A },
+    { 0x222, 0x23B }, { 0x224, 0x23C }, { 0x226, 0x23D }, { 0x228, 0x23E },
+    { 0x229, 0x23F }, { 0x22C, 0x240 }, { 0x22E, 0x241 },
+    { 0x204, 0x242 }, { 0x207, 0x243 }, { 0x219, 0x244 }, { 0x21B, 0x245 },
+    { 0x21C, 0x246 }, { 0x21D, 0x247 }, { 0x21E, 0x248 }, { 0x21F, 0x249 },
+    { 0x220, 0x24A }, { 0x227, 0x24B }, { 0x229, 0x24C },
+    { MEADOW_METATILE_FLOOR, 0x27C }, { MEADOW_METATILE_FLOOR, 0x27D },
+};
+
+// Three layers, in order, so a later one wins where they overlap. Same shape as
+// the tileset it replaces, with two differences that matter.
+static const struct RoguePatchLayer sMeadowPatch[] =
+{
+    // The SHORT encounter surface. Eight phases of a diagonal banding, which is
+    // what `phase` paints - vanilla satisfies variant = (y - x + k) mod 8 across
+    // 85% of Ever Grande City's own flower blocks, so this is the real rule and
+    // not a scatter.
+    {
+        .tile =
+        {
+            [PATCH_NW] = MEADOW_METATILE_BEDPINK,
+            [PATCH_N]  = MEADOW_METATILE_BEDPINK,
+            [PATCH_NE] = MEADOW_METATILE_BEDPINK,
+            [PATCH_W]  = MEADOW_METATILE_BEDPINK,
+            [PATCH_MID]= MEADOW_METATILE_BEDPINK,
+            [PATCH_E]  = MEADOW_METATILE_BEDPINK,
+            [PATCH_SW] = MEADOW_METATILE_BEDPINK,
+            [PATCH_S]  = MEADOW_METATILE_BEDPINK,
+            [PATCH_SE] = MEADOW_METATILE_BEDPINK,
+            [PATCH_NW_WALL] = MEADOW_METATILE_BEDPINK,
+            [PATCH_N_WALL]  = MEADOW_METATILE_BEDPINK,
+            [PATCH_NE_WALL] = MEADOW_METATILE_BEDPINK,
+        },
+        .blobs = 11,
+        .radius = 6,
+        .phase = MEADOW_FLOWER_PHASE,
+    },
+    // The TALL one. DIFFERENT FROM WHAT IT REPLACES: the grafted long grass is
+    // one metatile with a real south fringe rather than eight phases, so the S
+    // row takes the fringe and there is no phase. The fringe carries
+    // MB_LONG_GRASS_SOUTH_EDGE and therefore no encounters, which is vanilla's
+    // own arrangement - the bottom row of a grass patch is where the blades are
+    // cut off, not more grass.
+    {
+        .tile =
+        {
+            [PATCH_NW] = MEADOW_METATILE_GRASS,
+            [PATCH_N]  = MEADOW_METATILE_GRASS,
+            [PATCH_NE] = MEADOW_METATILE_GRASS,
+            [PATCH_W]  = MEADOW_METATILE_GRASS,
+            [PATCH_MID]= MEADOW_METATILE_GRASS,
+            [PATCH_E]  = MEADOW_METATILE_GRASS,
+            [PATCH_SW] = MEADOW_METATILE_FRINGE,
+            [PATCH_S]  = MEADOW_METATILE_FRINGE,
+            [PATCH_SE] = MEADOW_METATILE_FRINGE,
+            [PATCH_NW_WALL] = MEADOW_METATILE_GRASS,
+            [PATCH_N_WALL]  = MEADOW_METATILE_GRASS,
+            [PATCH_NE_WALL] = MEADOW_METATILE_GRASS,
+        },
+        .blobs = 6,
+        .radius = 4,
+    },
+    // The plaza, and this is the other difference: a REAL nine-sliced region.
+    // The terrace it replaces was left edge / fill / right edge with no north or
+    // south art at all, so every one of those slots got W/MID/E and a blob had
+    // hard cuts along its top and bottom. Closes gap 4.
+    {
+        .tile =
+        {
+            [PATCH_NW] = MEADOW_METATILE_PLAZA_NW,
+            [PATCH_N]  = MEADOW_METATILE_PLAZA_N,
+            [PATCH_NE] = MEADOW_METATILE_PLAZA_NE,
+            [PATCH_W]  = MEADOW_METATILE_PLAZA_W,
+            [PATCH_MID]= MEADOW_METATILE_PLAZA_MID,
+            [PATCH_E]  = MEADOW_METATILE_PLAZA_E,
+            [PATCH_SW] = MEADOW_METATILE_PLAZA_SW,
+            [PATCH_S]  = MEADOW_METATILE_PLAZA_S,
+            [PATCH_SE] = MEADOW_METATILE_PLAZA_SE,
+            [PATCH_NW_WALL] = MEADOW_METATILE_PLAZA_NW,
+            [PATCH_N_WALL]  = MEADOW_METATILE_PLAZA_N,
+            [PATCH_NE_WALL] = MEADOW_METATILE_PLAZA_NE,
+        },
+        .blobs = 5,
+        .radius = 4,
+    },
+};
+
 static const struct RoguePatchLayer sEverGrandePatch[] =
 {
     {
@@ -1624,41 +1726,55 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .roomCount = 12,
         .roomMin = 7,
         .roomMax = 13,
+        // STILL 5, AND NOW ONLY BY INERTIA. Five was chosen to stop the vertical
+        // sliver firing, because the old tileset had no art for one. That is
+        // fixed, so this is free to drop - deliberately not changed in the same
+        // commit as the art, so the art can be looked at on its own first.
         .corridorWidth = 5,
-        .floor = EVERGRANDE_METATILE_FLOOR,
+        .floor = MEADOW_METATILE_FLOOR,
         .tallGrass = 0,
-        .longGrass = EVERGRANDE_METATILE_LONG_GRASS,
-        .stairsDown = EVERGRANDE_METATILE_STAIRS_DOWN,
-        .stairsUp = EVERGRANDE_METATILE_STAIRS_DOWN,
+        .longGrass = MEADOW_METATILE_GRASS,
+        .stairsDown = MEADOW_METATILE_STAIRS,
+        .stairsUp = MEADOW_METATILE_STAIRS,
         .wall =
         {
-            [WALL_NORTH_LEFT]     = EVERGRANDE_METATILE_WALL_NORTH_L,
-            [WALL_NORTH_MID]      = EVERGRANDE_METATILE_WALL_NORTH_M,
-            [WALL_NORTH_RIGHT]    = EVERGRANDE_METATILE_WALL_NORTH_R,
-            [WALL_INTERIOR_LEFT]  = EVERGRANDE_METATILE_WALL_INTERIOR_L,
-            [WALL_INTERIOR_MID]   = EVERGRANDE_METATILE_WALL_INTERIOR_M,
-            [WALL_INTERIOR_RIGHT] = EVERGRANDE_METATILE_WALL_INTERIOR_R,
-            [WALL_FACE_LEFT]      = EVERGRANDE_METATILE_WALL_FACE_L,
-            [WALL_FACE_MID]       = EVERGRANDE_METATILE_WALL_FACE_M,
-            [WALL_FACE_RIGHT]     = EVERGRANDE_METATILE_WALL_FACE_R,
-            [WALL_CORNER_OPEN_SE] = EVERGRANDE_METATILE_CORNER_OPEN_SE,
-            [WALL_CORNER_OPEN_SW] = EVERGRANDE_METATILE_CORNER_OPEN_SW,
-            [WALL_CORNER_OPEN_NW] = EVERGRANDE_METATILE_CORNER_OPEN_NW,
-            [WALL_CORNER_OPEN_NE] = EVERGRANDE_METATILE_CORNER_OPEN_NE,
-            // The horizontal three are the cliff's own south face; the vertical
-            // three never fire at this corridor width and sit on the interior.
-            [WALL_SLIVER_HORZ]    = EVERGRANDE_METATILE_SLIVER_HORZ,
-            [WALL_SLIVER_HORZ_L]  = EVERGRANDE_METATILE_SLIVER_HORZ,
-            [WALL_SLIVER_HORZ_R]  = EVERGRANDE_METATILE_SLIVER_HORZ,
-            [WALL_SLIVER_VERT]    = EVERGRANDE_METATILE_WALL_INTERIOR_M,
-            [WALL_SLIVER_VERT_TOP]= EVERGRANDE_METATILE_WALL_INTERIOR_M,
-            [WALL_SLIVER_VERT_BOT]= EVERGRANDE_METATILE_WALL_INTERIOR_M,
-            // Wallace's dais. arenaPlatform paints one wall block ringed by
-            // floor, which resolves here.
-            [WALL_SLIVER_ISOLATED]= EVERGRANDE_METATILE_COBBLE,
+            [WALL_NORTH_LEFT]     = MEADOW_METATILE_NORTH_LEFT,
+            [WALL_NORTH_MID]      = MEADOW_METATILE_NORTH_MID,
+            [WALL_NORTH_RIGHT]    = MEADOW_METATILE_NORTH_RIGHT,
+            [WALL_INTERIOR_LEFT]  = MEADOW_METATILE_INTERIOR_LEFT,
+            [WALL_INTERIOR_MID]   = MEADOW_METATILE_INTERIOR_MID,
+            [WALL_INTERIOR_RIGHT] = MEADOW_METATILE_INTERIOR_RIGHT,
+            [WALL_FACE_LEFT]      = MEADOW_METATILE_FACE_LEFT,
+            [WALL_FACE_MID]       = MEADOW_METATILE_FACE_MID,
+            [WALL_FACE_RIGHT]     = MEADOW_METATILE_FACE_RIGHT,
+            [WALL_CORNER_OPEN_SE] = MEADOW_METATILE_CORNER_OPEN_SE,
+            [WALL_CORNER_OPEN_SW] = MEADOW_METATILE_CORNER_OPEN_SW,
+            [WALL_CORNER_OPEN_NW] = MEADOW_METATILE_CORNER_OPEN_NW,
+            [WALL_CORNER_OPEN_NE] = MEADOW_METATILE_CORNER_OPEN_NE,
+            // ALL SEVEN SLIVERS ARE REAL ART NOW. The old table pointed the
+            // vertical three at WALL_INTERIOR_M because the tileset had nothing
+            // to draw, and corridorWidth 5 existed to stop them ever firing.
+            // Both of those workarounds are now unnecessary - see the note on
+            // corridorWidth below.
+            [WALL_SLIVER_HORZ]    = MEADOW_METATILE_SLIVER_HORZ,
+            [WALL_SLIVER_HORZ_L]  = MEADOW_METATILE_SLIVER_HORZ_L,
+            [WALL_SLIVER_HORZ_R]  = MEADOW_METATILE_SLIVER_HORZ_R,
+            [WALL_SLIVER_VERT]    = MEADOW_METATILE_SLIVER_VERT,
+            [WALL_SLIVER_VERT_TOP]= MEADOW_METATILE_SLIVER_VERT_TOP,
+            [WALL_SLIVER_VERT_BOT]= MEADOW_METATILE_SLIVER_VERT_BOT,
+            // Wallace's dais - arenaPlatform paints one wall block ringed by
+            // floor, which resolves here. It used to be COBBLE because that was
+            // the only sensible thing in the old tileset; it is now the real
+            // isolated sliver, so the dais is a lone flowering shrub. Defensible
+            // in a meadow and solid either way, but it is a visible change and
+            // wants looking at on floor 105.
+            [WALL_SLIVER_ISOLATED]= MEADOW_METATILE_SLIVER_ISOLATED,
         },
-        .patches = sEverGrandePatch,
-        .patchCount = ARRAY_COUNT(sEverGrandePatch),
+        .decor = sMeadowDecor,
+        .decorCount = ARRAY_COUNT(sMeadowDecor),
+        .decorRarity = 10,
+        .patches = sMeadowPatch,
+        .patchCount = ARRAY_COUNT(sMeadowPatch),
         .arenaPlatform = TRUE,
         .species = sEverGrandeSpecies,
         .speciesCount = ARRAY_COUNT(sEverGrandeSpecies),

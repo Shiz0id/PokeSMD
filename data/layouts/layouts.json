@@ -9450,7 +9450,7 @@
       "width": 48,
       "height": 48,
       "primary_tileset": "gTileset_General",
-      "secondary_tileset": "gTileset_EverGrande",
+      "secondary_tileset": "gTileset_RogueFlowerMeadow",
       "border_filepath": "data/layouts/RogueDungeonEverGrande/border.bin",
       "blockdata_filepath": "data/layouts/RogueDungeonEverGrande/map.bin"
     },

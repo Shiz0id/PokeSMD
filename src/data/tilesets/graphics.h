@@ -1767,6 +1767,28 @@ const u16 gTilesetPalettes_RogueLapisCave[][16] =
 // long grass - which is GRAFTED, vanilla's own pixels recoloured into this
 // tileset rather than anything the sheet supplies. The sheet's Sparkle overlay
 // is still not imported; the water here is static.
+const u32 gTilesetTiles_RogueFlowerMeadow[] = INCGFX_U32("data/tilesets/secondary/rogue_flower_meadow/tiles.png", ".4bpp.fastSmol", "-num_tiles 271 -Wnum_tiles");
+
+const u16 gTilesetPalettes_RogueFlowerMeadow[][16] =
+{
+    INCGFX_U16("data/tilesets/secondary/rogue_flower_meadow/palettes/00.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_flower_meadow/palettes/01.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_flower_meadow/palettes/02.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_flower_meadow/palettes/03.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_flower_meadow/palettes/04.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_flower_meadow/palettes/05.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_flower_meadow/palettes/06.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_flower_meadow/palettes/07.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_flower_meadow/palettes/08.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_flower_meadow/palettes/09.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_flower_meadow/palettes/10.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_flower_meadow/palettes/11.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_flower_meadow/palettes/12.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_flower_meadow/palettes/13.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_flower_meadow/palettes/14.pal", ".gbapal"),
+    INCGFX_U16("data/tilesets/secondary/rogue_flower_meadow/palettes/15.pal", ".gbapal"),
+};
+
 const u32 gTilesetTiles_RogueHowlingJungle[] = INCGFX_U32("data/tilesets/secondary/rogue_howling_jungle/tiles.png", ".4bpp.fastSmol", "-num_tiles 288 -Wnum_tiles");
 
 const u16 gTilesetPalettes_RogueHowlingJungle[][16] =

@@ -918,6 +918,17 @@ const struct Tileset gTileset_RogueLapisCave =
 // has is its water, and this theme does not paint it yet. That callback is what
 // will have to exist when it does, and this sheet needs TWO rates: 14 frames
 // for the water and 6 for the sparkle layer over it.
+const struct Tileset gTileset_RogueFlowerMeadow =
+{
+    .isCompressed = TRUE,
+    .isSecondary = TRUE,
+    .tiles = gTilesetTiles_RogueFlowerMeadow,
+    .palettes = gTilesetPalettes_RogueFlowerMeadow,
+    .metatiles = gMetatiles_RogueFlowerMeadow,
+    .metatileAttributes = gMetatileAttributes_RogueFlowerMeadow,
+    .callback = NULL,
+};
+
 const struct Tileset gTileset_RogueHowlingJungle =
 {
     .isCompressed = TRUE,
