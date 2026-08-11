@@ -1736,36 +1736,44 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         // stop the vertical sliver firing on a tileset that had no art for one -
         // and this tileset has all seven, so the reason is gone with it.
         .generator = DUNGEON_GEN_TRAILS,
-        // Sixteen clearings on a 4x4 jittered grid, built from TWO small lobes
-        // each, ANCHORED. Chosen off rendered sweeps rather than by reasoning;
-        // averaged over 40 seeds a config:
+        // Sixteen clearings on a 4x4 jittered grid, four small lobes each,
+        // ANCHORED. Settled by rendering every candidate against the real tileset
+        // and picking one, not by optimising a number - which matters here,
+        // because the number and the eye disagreed. Averaged over 40 seeds:
         //
         //   clr lobe lobes drift  distinct  open   narrow  biggest clearing
+        //    12    5     4     0       4.4  27.1%   10.7%   304   (jungle's)
         //     9    5     3     2       5.8  22.9%   16.3%   142
-        //    16    3     3     2       7.3  24.5%   20.7%   191
         //    16    5     2     2       6.0  28.5%   11.0%   249
+        //    16    3     4     0       7.3  25.7%   13.9%   178   <- this
+        //    16    3     3     2       7.3  24.5%   20.7%   191
+        //    16    3     3     0       8.6  22.8%   20.0%   145
         //    16    3     2     2       9.2  21.2%   21.7%   104
-        //    16    3     2     0       9.8  20.7%   24.7%    94   <- this
+        //    16    3     2     0       9.8  20.7%   24.7%    94
         //
-        // Nine clearings on a 3x3 grid sit too far apart: they clump in the
-        // middle, leave the map edges empty, and the trails between them run
-        // long. Sixteen on a 4x4 fills the space and the links become short
-        // necks. Two lobes rather than three halves the biggest clearing, so the
-        // pockets stay pockets. Lobe 5 is out at any count - it wants to merge.
+        // NOTE THAT THIS IS NOT THE TOP OF THAT TABLE ON ANY COLUMN. Fewer lobes
+        // score better on every metric I built - more clearings stay distinct,
+        // the biggest gets smaller, more of the floor is narrow - and two lobes
+        // was set on that basis and then rejected on sight. Two rectangles make
+        // an angular pocket, and a floor of angular pockets reads worse than the
+        // metrics say it should. Four lobes is rounder and more connected.
         //
-        // ANCHORED RATHER THAN DRIFTING, and it wins on every measure as well as
-        // on the look: more clearings stay distinct, the biggest is smaller, and
-        // a quarter of the walkable floor is narrow enough to be a path rather
-        // than a space. Drift was built, tried at 2, and rejected - it reads as
-        // detached chunks where anchoring gives connected pockets on necks.
+        // So: do not "improve" this by chasing distinct-clearing count. The
+        // metric measures separation, and separation past a point is just a
+        // sparser floor.
         //
-        // trailLobeDrift is therefore 0 here, which is also the default, and is
-        // left unwritten. The field stays because it is exercised by
-        // check_trail_floor.py's drift-4 stress row, and because the stub it
-        // needs is the only reason drift is safe at all.
+        // Nine clearings on a 3x3 grid clump into the middle and leave the map
+        // edges empty; sixteen on a 4x4 fills it. Lobe 5 is out at any count -
+        // it wants to merge, 249 to 304 block clearings.
+        //
+        // Anchored rather than drifting: drift was built for this theme, tried at
+        // 2, and rejected - it reads as detached chunks. trailLobeDrift is 0 and
+        // left unwritten. The FIELD stays, because check_trail_floor.py's drift-4
+        // stress row is the only test of the stub, and that stub is the only
+        // thing making unanchored lobes safe at all.
         .trailClearings = 16,
         .trailLobe = 3,
-        .trailLobes = 2,
+        .trailLobes = 4,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
         .floor = MEADOW_METATILE_FLOOR,
