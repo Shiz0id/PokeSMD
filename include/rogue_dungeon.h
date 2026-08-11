@@ -964,6 +964,32 @@ enum DungeonGenerator
 {
     DUNGEON_GEN_CAVE,   // 1x1 carve, then a nine-case wall autotile
     DUNGEON_GEN_WOODS,  // 2x2 stamps on a half-resolution grid
+    // Cellular automata: no rooms and no corridors, just a cave. Shares the
+    // cave's 1x1 carve, wall autotile and cosmetic passes - the ONLY thing it
+    // replaces is the part that decides which blocks are open.
+    //
+    // It exists because every lever the room generator exposes moves coverage
+    // and nothing else. Measured over the deployed shapes, room count and
+    // corridor width both leave the off-route fraction at ~88% and both make
+    // the walk SHORTER (more rooms packs the chain tighter, so the stairs land
+    // nearer). A CA cave is the first shape measured that goes the other way:
+    // spanning traverse ~85 tiles against the room generator's 37-41.
+    //
+    // Two fears about it were measured and were both wrong, so do not
+    // re-derive them:
+    //
+    //  - "It will need sliver art we do not have." A CA cave produces FEWER
+    //    one-block-thick walls than rooms-and-corridors does, 0.9% of walls
+    //    against the cave's 1.15%, because a corridor running alongside a room
+    //    is exactly what makes a sliver and a blobby cave has no corridors. No
+    //    new art is needed and no smoothing pass either - one was written,
+    //    measured at 0.0% slivers, and deleted as buying nothing.
+    //
+    //  - "It will need a BFS queue we cannot afford." A queue over 2304 cells
+    //    is up to 4608 bytes. The queueless alternating-direction relabel used
+    //    instead converges in 4.2 passes on average and 7 at worst over 300
+    //    seeds, and needs one bitplane.
+    DUNGEON_GEN_ORGANIC,
 };
 
 // Slots in a theme wall table, in the order the autotile rule tests them.
@@ -1137,6 +1163,24 @@ struct RogueDungeonTheme
     u8 roomCount;       // cap, up to DUNGEON_MAX_ROOMS
     u8 roomMin, roomMax;
     u8 corridorWidth;   // odd, centred on the path; 0 or 1 is the cave's
+
+    // DUNGEON_GEN_ORGANIC only. Zero takes the defaults below, which is what a
+    // designated initialiser gives the thirteen themes that do not use it.
+    //
+    // caveFill is the percentage of blocks seeded as wall before the automaton
+    // runs, and it is the ONLY knob that matters - it sets how much of the map
+    // ends up walkable, and it is sharply non-linear because the automaton
+    // amplifies whichever side of the threshold the seed lands on:
+    //
+    //   42% -> 64.5% walkable (a field with rocks in it)
+    //   45% -> 53.6% walkable (a cavern)
+    //   48% -> 37.4% walkable (a cave, and the closest to the room
+    //                          generator's 29.4% while looking nothing like it)
+    //
+    // caveIters barely moves anything past three - 37.1/37.4/37.5% at 3/4/5 -
+    // so it is a smoothness control, not a density one. Four is the default.
+    u8 caveFill;
+    u8 caveIters;
 
     // Berries grow here. Set on the themes that are OUTDOORS in the sense that
     // matters - open sky and soil - which is Petalburg Woods, the Jungle and
