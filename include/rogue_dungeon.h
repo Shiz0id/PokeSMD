@@ -183,9 +183,31 @@
 #define NEWMAUVILLE_METATILE_WALL_FACE_R     0x293  // floor south and east
 #define NEWMAUVILLE_METATILE_WALL_NORTH_L    0x296  // floor north and west
 #define NEWMAUVILLE_METATILE_WALL_NORTH_R    0x295  // floor north and east
+// The one-wide vertical run. Unreachable under DUNGEON_GEN_FACILITY as it
+// stands - FACILITY_VTHICK is 2, so these three fired 0 times over 300 floors -
+// but vanilla's own floorplan is full of one-wide columns, so a carve aimed at
+// that shape brings them straight back. Kept correct rather than kept dead.
+//
+// Vanilla's column is THREE pieces, censused 3/3 in NewMauville_Inside:
+//   0x290  body, repeating
+//   0x298  the shoulder, one block above the base   <- WALL_SLIVER_VERT_BOT_UPPER
+//   0x2A0  the flat brown base, the block on the floor
+// and 0x27F on the floor beneath it, which the skirt table supplies.
 #define NEWMAUVILLE_METATILE_WALL_PILLAR     0x290  // one-wide vertical run
 #define NEWMAUVILLE_METATILE_WALL_PILLAR_TOP 0x288
-#define NEWMAUVILLE_METATILE_WALL_PILLAR_BOT 0x298
+#define NEWMAUVILLE_METATILE_WALL_PILLAR_BOT 0x298  // the shoulder, not the base
+#define NEWMAUVILLE_METATILE_WALL_PILLAR_BASE 0x2A0 // the block touching floor
+
+// The cap row. This wall is TWO metatiles tall - the tan face the camera sees,
+// and a white top surface above it - and no neighbour mask can find that,
+// because a cap's eight neighbours are all wall exactly like deep interior.
+// Censused over both vanilla layouts on the cell ABOVE a face: 0x28C sits over
+// 0x294 8/8, 0x28B over 0x293 8/8, and a face with wall above it is capped
+// 35/35. Without them a partition ending in floor is one metatile of wall on
+// top of nothing, which is what left generated rooms notched at the bottom.
+#define NEWMAUVILLE_METATILE_WALL_CAP        0x21F  // over the band
+#define NEWMAUVILLE_METATILE_WALL_CAP_L      0x28C  // over face-left
+#define NEWMAUVILLE_METATILE_WALL_CAP_R      0x28B  // over face-right
 
 // Wall skirts: the wall's own edge art spilling into the adjacent floor tile,
 // keyed to the specific wall metatile. From NewMauville_Inside, split by
@@ -197,14 +219,62 @@
 #define NEWMAUVILLE_METATILE_SKIRT_E        0x27D
 #define NEWMAUVILLE_METATILE_SKIRT_CORNER   0x275
 
-// Wall decoration. All are drop-in replacements for the wall band, so they keep
-// the collision they replace. Vanilla interleaves these along a wall run. The
-// bookcase is a 2-wide unit; vanilla places its halves adjacent essentially
-// always (6 pairs, 1 stray in NewMauville_Inside).
+// The four convex corners. Vanilla continues the column through them rather
+// than dropping to void (0x270 59% / 0x272 47% / 0x280 57% / 0x282 73%,
+// censused on "all four cardinals wall, exactly one diagonal floor"). Void in
+// these slots is what notched every room outline. SE and SW are the same art as
+// the interior columns, which is why only two constants are new here.
+#define NEWMAUVILLE_METATILE_CORNER_NE        0x280
+#define NEWMAUVILLE_METATILE_CORNER_NW        0x282
+
+// A vertical run does not just stop. Censused over MAXIMAL runs - counting
+// every cell of a run only tells you the run continues, which is the 39% that
+// reads as "no answer" and is not one.
+//
+// The head is NOT 0x268/0x26A despite those winning at 47%/50%: their top third
+// is pure black, because vanilla uses them where the mass really does continue
+// into a dark recess, so painting one above a column adds void instead of
+// pruning it. 0x295/0x296 are the runners-up at 33%/21% and are opaque top to
+// bottom. Both are the north-facing wall ends, reused.
+#define NEWMAUVILLE_METATILE_COLUMN_HEAD_E    0x295  // over a 0x270 run
+#define NEWMAUVILLE_METATILE_COLUMN_HEAD_W    0x296  // over a 0x272 run
+#define NEWMAUVILLE_METATILE_COLUMN_FOOT_E    0x278
+#define NEWMAUVILLE_METATILE_COLUMN_FOOT_W    0x27A
+
+// Wall decoration - THREE rows, not one. Every vanilla wall object occupies a
+// cap row, the wall face, and the floor block below it, and the bookcase is two
+// of those side by side. Censused over both layouts; see
+// docs/NEWMAUVILLE_TILESET.md for the table and tools/rogue/newmauville/nm_v4.py
+// for the prototype these came from.
+//
+// The vent is the odd one and keys on FLOOR ABOVE: vanilla only ever puts it on
+// a one-thick partition (above it is 0x26F, passable, 100%), because its art is
+// drawn against the room above. On a thick wall it floats mid-band.
+//
+// 0x2A0 is deliberately absent - it renders as flat brown, which is wall mass,
+// not furniture, and is the column base above.
 #define NEWMAUVILLE_METATILE_WALL_VENT        0x277
 #define NEWMAUVILLE_METATILE_WALL_COUNTER     0x2B4
+#define NEWMAUVILLE_METATILE_WALL_COUNTER_F   0x2BC
 #define NEWMAUVILLE_METATILE_WALL_BOOKCASE_L  0x2A1
 #define NEWMAUVILLE_METATILE_WALL_BOOKCASE_R  0x2A2
+#define NEWMAUVILLE_METATILE_WALL_BOOKCASE_CL 0x299
+#define NEWMAUVILLE_METATILE_WALL_BOOKCASE_CR 0x29A
+#define NEWMAUVILLE_METATILE_WALL_BOOKCASE_FL 0x2A9
+#define NEWMAUVILLE_METATILE_WALL_BOOKCASE_FR 0x2AA
+#define NEWMAUVILLE_METATILE_WALL_CONSOLE_L   0x2D6
+#define NEWMAUVILLE_METATILE_WALL_CONSOLE_R   0x2D7
+#define NEWMAUVILLE_METATILE_WALL_CONSOLE_FL  0x2DE
+#define NEWMAUVILLE_METATILE_WALL_CONSOLE_FR  0x2DF
+#define NEWMAUVILLE_METATILE_WALL_SHELF_CAP   0x2A8
+#define NEWMAUVILLE_METATILE_WALL_SHELF_L     0x2B0
+#define NEWMAUVILLE_METATILE_WALL_SHELF_R     0x2B1
+#define NEWMAUVILLE_METATILE_WALL_SHELF_FL    0x2B8
+#define NEWMAUVILLE_METATILE_WALL_SHELF_FR    0x2B9
+#define NEWMAUVILLE_METATILE_WALL_BOX         0x2B2
+#define NEWMAUVILLE_METATILE_WALL_BOX_F       0x2BA
+#define NEWMAUVILLE_METATILE_WALL_CRATE       0x2B3
+#define NEWMAUVILLE_METATILE_WALL_CRATE_F     0x2BB
 
 // The facility tileset has no stairs of its own, but 0x0AF lives in the primary
 // and so is available under any pair. Grey steps read as a service stairwell
@@ -1098,6 +1168,19 @@ enum DungeonWallSlot
     WALL_SLIVER_VERT,   WALL_SLIVER_HORZ,
     WALL_SLIVER_VERT_TOP, WALL_SLIVER_VERT_BOT,
     WALL_SLIVER_HORZ_L,   WALL_SLIVER_HORZ_R, WALL_SLIVER_ISOLATED,
+
+    // The row directly above a WALL_FACE_*, for a tileset whose wall is two
+    // metatiles tall. Not a neighbour case: it is chosen by distance to floor
+    // going south (see WallCapFor). A theme that leaves all three at 0 keeps
+    // the behaviour it had before these existed, which is why only New
+    // Mauville sets them.
+    WALL_CAP_LEFT, WALL_CAP_MID, WALL_CAP_RIGHT,
+
+    // The block above WALL_SLIVER_VERT_BOT, for a column that stands on a base
+    // two metatiles tall. Same shape of rule as the cap and the same default:
+    // 0 falls back to WALL_SLIVER_VERT, so a theme whose column ends in one
+    // block is untouched.
+    WALL_SLIVER_VERT_BOT_UPPER,
     WALL_SLOT_COUNT,
 };
 
@@ -1194,6 +1277,68 @@ struct RogueDecor
     u16 base;
     u16 variant;
     u16 variantEast;
+};
+
+// A wall decoration as vanilla actually builds one: a cap row, the wall face,
+// and the floor block below. RogueDecor swaps a single block, which is right
+// for a sand drift or an ember sparkle and wrong for furniture - a bookcase
+// painted that way is headless and footless.
+//
+// This REPLACES RogueDecor for a theme that has it; the two must not both run,
+// or the wall carries two differently-aligned sets of the same objects.
+//
+// 0 in cap[] or below[] leaves that cell as the autotiler left it, which is how
+// a piece with no special top (the counter) or no floor row (the vent) is
+// expressed. The floor row is written as passable floor: a decoration must
+// never change what is reachable.
+struct RogueWallStamp
+{
+    u8 width;                 // 1 or 2 blocks, paired horizontally
+    // The vent, and only the vent: it is drawn against the room ABOVE it, so
+    // it belongs on a one-thick partition. Everything else needs a cap above.
+    bool8 needsFloorAbove;
+    // Percentage of the cells this piece FITS that actually take it. Per piece
+    // and not per theme, because the two populations are different sizes and
+    // do not overlap: a thin partition is the only place the vent fits and the
+    // only place nothing else does, so one shared gate put a vent on every
+    // partition in the facility while the prototype - tuned on the cave carve,
+    // where thin partitions are rare - never showed it.
+    u8 chance;
+    u16 cap[2];
+    u16 face[2];
+    u16 below[2];
+};
+
+// A solid object, stamped as a rectangle of metatiles.
+//
+// These are NOT decorations. Their body is collision in every cell, so placing
+// one can cut the walkable floor in two - it did, on 3 of 200 seeds in the
+// prototype, once splitting 526 cells into 263 + 251 with the stairs on the far
+// side and nothing downstream reporting it. Every placement is flood-filled
+// before it is kept.
+//
+// `wallMounted` pieces hang off a wall: the top row replaces a run of wall face
+// with its cap above, and the body projects out over the floor. The rest stand
+// free in open floor and need a clear ring, or they read as part of a wall.
+struct RogueSetPiece
+{
+    u8 width;
+    u8 height;
+    u8 count;          // how many to try to place; 0 for a clutter shape, which
+                       // is drawn from at random up to the theme's clutter cap
+    bool8 wallMounted;
+    const u16 *rows;   // width * height ids, top row first
+};
+
+// The blocks that terminate a vertical run of `column`, painted into the cell
+// above and below it. Only ever written over the theme's WALL_INTERIOR_MID,
+// since a run ending against real wall art already terminates against
+// something. 0 means this column has no art for that end.
+struct RogueColumnEnd
+{
+    u16 column;
+    u16 head;
+    u16 foot;
 };
 
 // If the block north of a floor tile is `wall`, that floor becomes `south`;
@@ -1385,6 +1530,28 @@ struct RogueDungeonTheme
     u8 decorCount;
     u8 decorRarity;    // 1 in N eligible blocks; 0 disables
 
+    // Three-row wall furniture, for a tileset whose decorations are assemblies
+    // rather than single blocks. MUTUALLY EXCLUSIVE with decor above: running
+    // both puts two differently-aligned sets of the same objects on one wall,
+    // so a theme sets one or the other.
+    // Density lives on each stamp as a percentage, not here as a 1-in-N: a
+    // modulo cannot reach the right density because most of the cells it
+    // selects cannot host a stamp at all, so the rate it controls is not the
+    // rate that reaches the wall.
+    const struct RogueWallStamp *stamps;
+    u8 stampCount;
+
+    // The blocks that finish a vertical run of column art, top and bottom.
+    const struct RogueColumnEnd *columnEnds;
+    u8 columnEndCount;
+
+    // Solid objects. Both tables are connectivity checked; see RogueSetPiece.
+    const struct RogueSetPiece *pieces;      // wall-mounted, fixed counts
+    u8 pieceCount;
+    const struct RogueSetPiece *clutter;     // free-standing shapes, drawn from
+    u8 clutterCount;
+    u8 clutterMax;                           // how many to stand on one floor
+
     // Ordinary trainers stand wherever the generator drops them, so their sprite
     // has to suit the surface they are standing on - a hiker on the open sea
     // reads as a bug. Two of them so a floor is not all one figure; zero for
@@ -1539,6 +1706,15 @@ struct RogueFloorMapOverride
 // a room. Nothing else changes: every other theme asks for 10 or 12, both
 // still under the ceiling.
 #define DUNGEON_MAX_ROOMS 16
+
+// How many wall stamps may be eligible at one cell. Sized to the largest table
+// rather than guessed: New Mauville declares seven.
+#define DUNGEON_MAX_WALL_STAMPS 8
+
+// The largest set piece, in blocks. The generator is 4x4; the buffer exists so
+// a placement that breaks connectivity can be rolled back.
+#define DUNGEON_SET_PIECE_MAX_CELLS 16
+
 #define DUNGEON_ROOMS_DEFAULT 10
 #define DUNGEON_ROOM_MIN   5
 #define DUNGEON_ROOM_MAX  10

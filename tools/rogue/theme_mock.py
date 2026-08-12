@@ -10,10 +10,9 @@ Usage:  python theme_mock.py newmauville
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageDraw
-
-import tileset_atlas as ta
-from tileset_resolve import TilesetResolver
+# Pillow and the atlas are imported inside main(). carve() and paint() are the
+# only parts a check needs, and requiring Pillow to reach them kept the wall
+# dispatch out of run_all_checks.sh - which is why nothing verified it.
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -25,7 +24,8 @@ SLOTS = ('INTERIOR_LEFT', 'INTERIOR_MID', 'INTERIOR_RIGHT',
          'CORNER_OPEN_SE', 'CORNER_OPEN_SW',
          'CORNER_OPEN_NW', 'CORNER_OPEN_NE',
          'SLIVER_VERT', 'SLIVER_HORZ', 'SLIVER_VERT_TOP', 'SLIVER_VERT_BOT',
-         'SLIVER_HORZ_L', 'SLIVER_HORZ_R', 'SLIVER_ISOLATED')
+         'SLIVER_HORZ_L', 'SLIVER_HORZ_R', 'SLIVER_ISOLATED',
+         'CAP_LEFT', 'CAP_MID', 'CAP_RIGHT', 'SLIVER_VERT_BOT_UPPER')
 
 PATCH_SLOTS = ('NW', 'N', 'NE', 'W', 'MID', 'E', 'SW', 'S', 'SE',
                'NW_WALL', 'N_WALL', 'NE_WALL')
@@ -37,18 +37,38 @@ THEMES = {
         skirts={0x227: (0x22F, 0), 0x294: (0x27F, 0), 0x293: (0x22F, 0x27D),
                 0x270: (0, 0x27D), 0x295: (0, 0x27D)},
         shadow_corner=0x275,
-        decor=[(0x227, 0x277, 0), (0x227, 0x2B4, 0), (0x227, 0x2A1, 0x2A2)],
-        decor_rarity=12,
+        # Three-row furniture replaces the single-block decor here; the two are
+        # mutually exclusive. (width, needs_floor_above, cap, face, below);
+        # None in cap/below leaves that cell alone.
+        # (width, needs_floor_above, chance%, cap, face, below). The chance is
+        # per piece: vanilla puts a vent on 7 of its 53 thin partitions, and a
+        # shared gate makes that 100% because nothing else fits there.
+        stamps=[
+            (2, False, 27, (0x299, 0x29A), (0x2A1, 0x2A2), (0x2A9, 0x2AA)),  # bookcase
+            (2, False, 27, (None, None),   (0x2D6, 0x2D7), (0x2DE, 0x2DF)),  # console
+            (2, False, 27, (0x2A8, None),  (0x2B0, 0x2B1), (0x2B8, 0x2B9)),  # crate shelf
+            (1, False, 27, (None,),        (0x2B2,),       (0x2BA,)),        # box shelf
+            (1, False, 27, (None,),        (0x2B4,),       (0x2BC,)),        # counter
+            (1, False, 27, (None,),        (0x2B3,),       (0x2BB,)),        # crate unit
+            (1, True,  13, (None,),        (0x277,),       (None,)),         # vent
+        ],
+        column_ends=[(0x270, 0x295, 0x278), (0x272, 0x296, 0x27A)],
         wall={
             'INTERIOR_LEFT': 0x272, 'INTERIOR_MID': 0x208, 'INTERIOR_RIGHT': 0x270,
             'FACE_LEFT': 0x294, 'FACE_MID': 0x227, 'FACE_RIGHT': 0x293,
             'NORTH_LEFT': 0x296, 'NORTH_MID': 0x227, 'NORTH_RIGHT': 0x295,
-            'CORNER_OPEN_SE': 0x208, 'CORNER_OPEN_SW': 0x208,
-            'CORNER_OPEN_NW': 0x208, 'CORNER_OPEN_NE': 0x208,
+            # Deep interior is void at 79%; the corners are not - vanilla
+            # continues the column through them.
+            'CORNER_OPEN_SE': 0x270, 'CORNER_OPEN_SW': 0x272,
+            'CORNER_OPEN_NW': 0x282, 'CORNER_OPEN_NE': 0x280,
             'SLIVER_VERT': 0x290, 'SLIVER_HORZ': 0x227,
-            'SLIVER_VERT_TOP': 0x288, 'SLIVER_VERT_BOT': 0x298,
+            # BOT is the flat brown block on the floor; the shoulder sits above
+            'SLIVER_VERT_TOP': 0x288, 'SLIVER_VERT_BOT': 0x2A0,
+            'SLIVER_VERT_BOT_UPPER': 0x298,
             'SLIVER_HORZ_L': 0x227, 'SLIVER_HORZ_R': 0x227,
             'SLIVER_ISOLATED': 0x290,
+            # This wall is two metatiles tall; nothing else here is.
+            'CAP_LEFT': 0x28C, 'CAP_MID': 0x21F, 'CAP_RIGHT': 0x28B,
         }),
     'fierypath': dict(
         primary='gTileset_General', secondary='gTileset_Lavaridge',
@@ -443,7 +463,10 @@ def carve(seed, theme=None):
     is mocked as it will actually look. Defaults are the cave's own constants.
     """
     theme = theme or {}
-    cap = theme.get('rooms', 8)             # DUNGEON_ROOMS_DEFAULT
+    # DUNGEON_ROOMS_DEFAULT, which was raised 8 -> 10 in the C and had never
+    # been followed here, so every mock of a theme that sets no roomCount had
+    # been two rooms short of the floor it was standing in for.
+    cap = theme.get('rooms', 10)
     rmin = theme.get('room_min', 5)         # DUNGEON_ROOM_MIN
     rmax = theme.get('room_max', 10)        # DUNGEON_ROOM_MAX
     cw = theme.get('corridor', 1)
@@ -515,6 +538,23 @@ def paint(solid, theme, seed=0):
     def is_wall(x, y):
         return True if not (0 <= x < W and 0 <= y < H) else solid[y][x]
 
+    def cap_for(x, y):
+        """WallCapFor(). A wall two metatiles tall needs a top surface on the
+        row above every face, and no neighbour mask can find it - a cap's eight
+        neighbours are all wall, exactly like deep interior."""
+        if not (wall.get('CAP_MID') or wall.get('CAP_LEFT')
+                or wall.get('CAP_RIGHT')):
+            return None
+        if not is_wall(x, y + 1) or is_wall(x, y + 2):
+            return None
+        if not is_wall(x - 1, y + 1) and not is_wall(x + 1, y + 1):
+            return None                     # below is a sliver, not a face
+        if not is_wall(x - 1, y + 1):
+            return 'CAP_LEFT'
+        if not is_wall(x + 1, y + 1):
+            return 'CAP_RIGHT'
+        return 'CAP_MID'
+
     for y in range(H):
         for x in range(W):
             if not is_wall(x, y):
@@ -526,12 +566,23 @@ def paint(solid, theme, seed=0):
             elif n and s:
                 slot = 'SLIVER_HORZ_L' if w else 'SLIVER_HORZ_R' if e else 'SLIVER_HORZ'
             elif w and e:
-                slot = ('SLIVER_VERT_TOP' if n else
-                        'SLIVER_VERT_BOT' if s else 'SLIVER_VERT')
+                if n:
+                    slot = 'SLIVER_VERT_TOP'
+                elif s:
+                    slot = 'SLIVER_VERT_BOT'
+                elif (wall.get('SLIVER_VERT_BOT_UPPER')
+                      and is_wall(x, y + 1) and not is_wall(x - 1, y + 1)
+                      and not is_wall(x + 1, y + 1) and not is_wall(x, y + 2)):
+                    slot = 'SLIVER_VERT_BOT_UPPER'   # the shoulder over the base
+                else:
+                    slot = 'SLIVER_VERT'
             elif s:
                 slot = 'FACE_LEFT' if w else 'FACE_RIGHT' if e else 'FACE_MID'
             elif n:
                 slot = 'NORTH_LEFT' if w else 'NORTH_RIGHT' if e else 'NORTH_MID'
+            elif (c := cap_for(x, y)):
+                slot = c                    # after n: vanilla never caps a
+                                            # wall that has floor above it
             elif w:
                 slot = 'INTERIOR_LEFT'
             elif e:
@@ -676,10 +727,73 @@ def paint(solid, theme, seed=0):
                     out[y][x] = v
                     if ve:
                         out[y][x + 1] = ve
+
+    # ApplyColumnEnds. A wall pass rather than a cosmetic one, but it runs from
+    # the same place in the C for the same reason: this is the point every
+    # generator path passes through after autotiling.
+    fill = wall['INTERIOR_MID']
+    for column, head, foot in theme.get('column_ends', ()):
+        for x in range(W):
+            y = 0
+            while y < H:
+                if out[y][x] != column:
+                    y += 1
+                    continue
+                top = y
+                while y + 1 < H and out[y + 1][x] == column:
+                    y += 1
+                if head and top > 0 and is_wall(x, top - 1) \
+                        and out[top - 1][x] == fill:
+                    out[top - 1][x] = head
+                if foot and y + 1 < H and is_wall(x, y + 1) \
+                        and out[y + 1][x] == fill:
+                    out[y + 1][x] = foot
+                y += 1
+
+    # ApplyWallStamps. Three-row furniture; mutually exclusive with decor.
+    if theme.get('stamps'):
+        face, cap = wall['FACE_MID'], wall.get('CAP_MID')
+        for y in range(H):
+            for x in range(W):
+                hsh = decor_hash(seed, x, y)
+                fits = []
+                for wd, needsFloor, chance, cp, fc, bl in theme['stamps']:
+                    ok = True
+                    for k in range(wd):
+                        cx = x + k
+                        if (cx >= W or out[y][cx] != face
+                                or is_wall(cx, y + 1)):
+                            ok = False
+                            break
+                        if (is_wall(cx, y - 1) if needsFloor
+                                else out[y - 1][cx] != cap):
+                            ok = False
+                            break
+                    if ok:
+                        fits.append((wd, chance, cp, fc, bl))
+                if not fits:
+                    continue
+                # choose first, then gate on that piece's own density - gating
+                # first hands every thin partition to the vent
+                wd, chance, cp, fc, bl = fits[(hsh >> 8) % len(fits)]
+                if (hsh >> 3) % 100 >= chance:
+                    continue
+                for k in range(wd):
+                    cx = x + k
+                    if cp[k] is not None:
+                        out[y - 1][cx] = cp[k]
+                    out[y][cx] = fc[k]
+                    if bl[k] is not None:
+                        out[y + 1][cx] = bl[k]
+                used['STAMP'] = used.get('STAMP', 0) + 1
     return out, used
 
 
 def main(name):
+    from PIL import Image
+    import tileset_atlas as ta
+    from tileset_resolve import TilesetResolver
+
     theme = THEMES[name]
     R = TilesetResolver(REPO)
     pair = ta.TilesetPair(ta.Tileset(R.resolve(theme['primary'])),
@@ -716,6 +830,8 @@ def main(name):
     print(f'wrote {path}')
     print('\nslot usage across both floors:')
     for s in SLOTS:
+        if s not in theme['wall']:
+            continue                       # an optional slot this theme omits
         n = totals.get(s, 0)
         mark = '' if n else '   <-- never hit, unvalidated'
         print(f'  {s:<18} {n:>5}  0x{theme["wall"][s]:03X}{mark}')

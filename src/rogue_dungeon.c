@@ -211,6 +211,10 @@ static const struct RogueSkirt sNewMauvilleSkirts[] =
                                          NEWMAUVILLE_METATILE_SKIRT_E },
     { NEWMAUVILLE_METATILE_WALL_EAST,    0, NEWMAUVILLE_METATILE_SKIRT_E },
     { NEWMAUVILLE_METATILE_WALL_NORTH_R, 0, NEWMAUVILLE_METATILE_SKIRT_E },
+    // Under a one-wide column vanilla puts 0x27F, 3/3 - the same tile it puts
+    // under face-left, not the plain band shadow.
+    { NEWMAUVILLE_METATILE_WALL_PILLAR_BASE,
+                                         NEWMAUVILLE_METATILE_SKIRT_FACE_L_S, 0 },
 };
 
 static const struct RogueSkirt sFieryPathSkirts[] =
@@ -218,12 +222,102 @@ static const struct RogueSkirt sFieryPathSkirts[] =
     { FIERYPATH_METATILE_WALL_NORTH_MID, FIERYPATH_METATILE_RIDGE_SKIRT_S, 0 },
 };
 
-static const struct RogueDecor sNewMauvilleDecor[] =
+// Three rows each, ported from tools/rogue/newmauville/nm_v4.py after that
+// prototype was validated on screen. The single-row table this replaced painted
+// every one of these headless and footless.
+//
+// The supercomputer is NOT here even though its lower two rows look like a
+// decoration with a cap: it is a 2x3 solid set piece, and registering the
+// bottom two thirds drew a headless machine flush into the wall.
+// Densities are censused, not chosen. Over both vanilla layouts: 182 visible
+// wall faces carry 42 decoration units, and the mix is near-uniform - crate
+// unit 8, bookcase 7, vent 7, counter 7, console 6, box shelf 4, crate shelf 3.
+// So one chance shared by the six wall pieces is right, and the vent needs its
+// own: vanilla puts one on 7 of its 53 one-thick partitions, 13%, where a
+// shared gate makes it 100% because nothing else fits there.
+#define NM_STAMP_CHANCE 27
+#define NM_VENT_CHANCE  13
+static const struct RogueWallStamp sNewMauvilleStamps[] =
 {
-    { NEWMAUVILLE_METATILE_WALL_BAND, NEWMAUVILLE_METATILE_WALL_VENT },
-    { NEWMAUVILLE_METATILE_WALL_BAND, NEWMAUVILLE_METATILE_WALL_COUNTER },
-    { NEWMAUVILLE_METATILE_WALL_BAND, NEWMAUVILLE_METATILE_WALL_BOOKCASE_L,
-                                      NEWMAUVILLE_METATILE_WALL_BOOKCASE_R },
+    { 2, FALSE, NM_STAMP_CHANCE,
+      { NEWMAUVILLE_METATILE_WALL_BOOKCASE_CL, NEWMAUVILLE_METATILE_WALL_BOOKCASE_CR },
+      { NEWMAUVILLE_METATILE_WALL_BOOKCASE_L,  NEWMAUVILLE_METATILE_WALL_BOOKCASE_R },
+      { NEWMAUVILLE_METATILE_WALL_BOOKCASE_FL, NEWMAUVILLE_METATILE_WALL_BOOKCASE_FR } },
+    // No cap of its own; the plain cap row above it is correct.
+    { 2, FALSE, NM_STAMP_CHANCE,
+      { 0, 0 },
+      { NEWMAUVILLE_METATILE_WALL_CONSOLE_L,  NEWMAUVILLE_METATILE_WALL_CONSOLE_R },
+      { NEWMAUVILLE_METATILE_WALL_CONSOLE_FL, NEWMAUVILLE_METATILE_WALL_CONSOLE_FR } },
+    // Its cap covers the left half only, which is how vanilla draws it.
+    { 2, FALSE, NM_STAMP_CHANCE,
+      { NEWMAUVILLE_METATILE_WALL_SHELF_CAP, 0 },
+      { NEWMAUVILLE_METATILE_WALL_SHELF_L,  NEWMAUVILLE_METATILE_WALL_SHELF_R },
+      { NEWMAUVILLE_METATILE_WALL_SHELF_FL, NEWMAUVILLE_METATILE_WALL_SHELF_FR } },
+    { 1, FALSE, NM_STAMP_CHANCE, { 0 },
+      { NEWMAUVILLE_METATILE_WALL_BOX },     { NEWMAUVILLE_METATILE_WALL_BOX_F } },
+    { 1, FALSE, NM_STAMP_CHANCE, { 0 },
+      { NEWMAUVILLE_METATILE_WALL_COUNTER }, { NEWMAUVILLE_METATILE_WALL_COUNTER_F } },
+    { 1, FALSE, NM_STAMP_CHANCE, { 0 },
+      { NEWMAUVILLE_METATILE_WALL_CRATE },   { NEWMAUVILLE_METATILE_WALL_CRATE_F } },
+    // The vent, and the only entry that wants floor above rather than a cap.
+    { 1, TRUE,  NM_VENT_CHANCE,  { 0 },
+      { NEWMAUVILLE_METATILE_WALL_VENT },    { 0 } },
+};
+
+// Two objects in this tileset are not decorations at all: their top row sits in
+// the wall and their body projects out over the floor, solid in every cell.
+// Registering the supercomputer's bottom two thirds as a wall decoration with a
+// cap - which is what the first pass at this did - drew a headless machine
+// flush into the wall, its top row never placed and its body never projecting.
+static const u16 sNewMauvilleGenerator[] =
+{
+    0x2D0, 0x2D1, 0x2D2, 0x2D3,
+    0x2D8, 0x2D9, 0x2DA, 0x2DB,
+    0x2E0, 0x2E1, 0x2E2, 0x2E3,
+    0x2E8, 0x2E9, 0x2EA, 0x2EB,
+};
+
+static const u16 sNewMauvilleSupercomputer[] =
+{
+    0x2D4, 0x2D5,
+    0x2DC, 0x2DD,
+    0x2E4, 0x2E5,
+};
+
+static const struct RogueSetPiece sNewMauvillePieces[] =
+{
+    { 4, 4, 1, TRUE, sNewMauvilleGenerator },
+    { 2, 3, 2, TRUE, sNewMauvilleSupercomputer },
+};
+
+// Free-standing crate stacks, shapes taken from vanilla's own clusters of
+// 0x2C0..0x2C3. Every other object we place is welded to a wall; vanilla
+// scatters these in open floor.
+static const u16 sNewMauvilleCrate1[] = { 0x2C0 };
+static const u16 sNewMauvilleCrate2[] = { 0x2C0, 0x2C0 };
+static const u16 sNewMauvilleCrate3[] = { 0x2C1, 0x2C0 };
+static const u16 sNewMauvilleCrate4[] = { 0x2C1, 0x2C0,
+                                          0x2C0, 0x2C0 };
+static const u16 sNewMauvilleCrate5[] = { 0x2C3,
+                                          0x2C2 };
+
+static const struct RogueSetPiece sNewMauvilleClutter[] =
+{
+    { 1, 1, 0, FALSE, sNewMauvilleCrate1 },
+    { 2, 1, 0, FALSE, sNewMauvilleCrate2 },
+    { 2, 1, 0, FALSE, sNewMauvilleCrate3 },
+    { 2, 2, 0, FALSE, sNewMauvilleCrate4 },
+    { 1, 2, 0, FALSE, sNewMauvilleCrate5 },
+};
+
+// 0x270 and 0x272 are the interior columns; the corner slots share their art,
+// so a corner joins the run it continues and is terminated with it.
+static const struct RogueColumnEnd sNewMauvilleColumnEnds[] =
+{
+    { NEWMAUVILLE_METATILE_WALL_EAST, NEWMAUVILLE_METATILE_COLUMN_HEAD_E,
+                                      NEWMAUVILLE_METATILE_COLUMN_FOOT_E },
+    { NEWMAUVILLE_METATILE_WALL_WEST, NEWMAUVILLE_METATILE_COLUMN_HEAD_W,
+                                      NEWMAUVILLE_METATILE_COLUMN_FOOT_W },
 };
 
 // Glacia's snow, take two. The first version was hers on a cave recolour and
@@ -1043,7 +1137,16 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .layoutId = LAYOUT_ROGUE_DUNGEON_NEWMAUVILLE,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
         .mapSecId = MAPSEC_ROGUE_NEWMAUVILLE,
-        .generator = DUNGEON_GEN_FACILITY,
+        // The room-and-corridor carve, not the facility floorplan.
+        //
+        // The facility's partitions are two blocks thick vertically and one
+        // horizontally, which leaves nothing for the furniture to hang off: a
+        // wall-mounted piece needs a run of capped wall face with clear floor
+        // under it, and measured over 60 facility floors the 4x4 generator had
+        // ZERO candidate spots per floor and the supercomputer 1.10. The cave
+        // carve builds thick irregular masses, which is what every one of these
+        // pieces was censused against in vanilla.
+        .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
         .elevationWall = DUNGEON_ELEVATION_WALL,
         .floor = NEWMAUVILLE_METATILE_FLOOR,
@@ -1068,30 +1171,44 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
             [WALL_NORTH_LEFT]     = NEWMAUVILLE_METATILE_WALL_NORTH_L,
             [WALL_NORTH_RIGHT]    = NEWMAUVILLE_METATILE_WALL_NORTH_R,
 
+            // The column stands on a base two metatiles tall, so BOT is the
+            // flat brown block on the floor and the shoulder goes above it.
             [WALL_SLIVER_VERT]    = NEWMAUVILLE_METATILE_WALL_PILLAR,
             [WALL_SLIVER_VERT_TOP]= NEWMAUVILLE_METATILE_WALL_PILLAR_TOP,
-            [WALL_SLIVER_VERT_BOT]= NEWMAUVILLE_METATILE_WALL_PILLAR_BOT,
+            [WALL_SLIVER_VERT_BOT]= NEWMAUVILLE_METATILE_WALL_PILLAR_BASE,
+            [WALL_SLIVER_VERT_BOT_UPPER] = NEWMAUVILLE_METATILE_WALL_PILLAR_BOT,
             [WALL_SLIVER_ISOLATED]= NEWMAUVILLE_METATILE_WALL_PILLAR,
 
-            // Every cardinal is wall in these cases, so nothing of the wall art
-            // is visible - only the void reads correctly. Filling them with a
-            // wall body puts a lit edge in the middle of a dark mass.
+            // The row above every face. This is the only theme whose wall is
+            // two metatiles tall, so it is the only one that sets these.
+            [WALL_CAP_LEFT]       = NEWMAUVILLE_METATILE_WALL_CAP_L,
+            [WALL_CAP_MID]        = NEWMAUVILLE_METATILE_WALL_CAP,
+            [WALL_CAP_RIGHT]      = NEWMAUVILLE_METATILE_WALL_CAP_R,
+
+            // Deep interior is genuinely void - censused at 79% over cells with
+            // all eight neighbours wall. The CORNERS are not: vanilla continues
+            // the column through them (47-73%), and void in those four slots is
+            // what notched every room outline.
             [WALL_INTERIOR_MID]   = NEWMAUVILLE_METATILE_VOID,
-            [WALL_CORNER_OPEN_SE] = NEWMAUVILLE_METATILE_VOID,
-            [WALL_CORNER_OPEN_SW] = NEWMAUVILLE_METATILE_VOID,
-            [WALL_CORNER_OPEN_NW] = NEWMAUVILLE_METATILE_VOID,
-            [WALL_CORNER_OPEN_NE] = NEWMAUVILLE_METATILE_VOID,
+            [WALL_CORNER_OPEN_SE] = NEWMAUVILLE_METATILE_WALL_EAST,
+            [WALL_CORNER_OPEN_SW] = NEWMAUVILLE_METATILE_WALL_WEST,
+            [WALL_CORNER_OPEN_NW] = NEWMAUVILLE_METATILE_CORNER_NW,
+            [WALL_CORNER_OPEN_NE] = NEWMAUVILLE_METATILE_CORNER_NE,
         },
         .skirts = sNewMauvilleSkirts,
         .skirtCount = ARRAY_COUNT(sNewMauvilleSkirts),
         .shadowCorner = NEWMAUVILLE_METATILE_SKIRT_CORNER,
+        .columnEnds = sNewMauvilleColumnEnds,
+        .columnEndCount = ARRAY_COUNT(sNewMauvilleColumnEnds),
 
-        // Sparse on purpose. Vanilla is dense because it is a designed
-        // facility; a generated floor read for stairs and trainers wants the
-        // wall mostly plain.
-        .decor = sNewMauvilleDecor,
-        .decorCount = ARRAY_COUNT(sNewMauvilleDecor),
-        .decorRarity = 12,
+        // Density is per stamp and censused; see sNewMauvilleStamps.
+        .stamps = sNewMauvilleStamps,
+        .stampCount = ARRAY_COUNT(sNewMauvilleStamps),
+        .pieces = sNewMauvillePieces,
+        .pieceCount = ARRAY_COUNT(sNewMauvillePieces),
+        .clutter = sNewMauvilleClutter,
+        .clutterCount = ARRAY_COUNT(sNewMauvilleClutter),
+        .clutterMax = 6,
 
         .species = sNewMauvilleSpecies,
         .speciesCount = ARRAY_COUNT(sNewMauvilleSpecies),
@@ -3426,6 +3543,401 @@ static void ApplyDecor(u16 *map, const struct RogueDungeonTheme *theme,
     }
 }
 
+// Is this cell the bottom-most block of a one-wide vertical wall run - the one
+// WALL_SLIVER_VERT_BOT is painted on? Used to identify the block ABOVE it,
+// which some tilesets draw differently because the column stands on a base two
+// metatiles tall.
+static bool8 IsSliverVertBottom(const u16 *map, s32 x, s32 y)
+{
+    return IsWallAt(map, x, y)
+        && !IsWallAt(map, x - 1, y) && !IsWallAt(map, x + 1, y)
+        && !IsWallAt(map, x, y + 1);
+}
+
+// A tileset whose wall is two metatiles tall needs a cap - the top surface -
+// on the row above every face. Returns 0 for a theme that declares none, and
+// for any cell that is not one.
+//
+// This cannot be answered from the cell's own eight neighbours: they are all
+// wall, exactly as they are for deep interior. What identifies a cap is
+// distance to floor going south - this cell and the one below are wall, the
+// cell two below is floor - so it is tested geometrically rather than through
+// the mask chain. Getting that wrong is why derive_wall_table.py reports void
+// at 62.8% for the mask and the cap row hides inside the other 37%.
+static u16 WallCapFor(const u16 *map, const struct RogueDungeonTheme *theme,
+                      s32 x, s32 y)
+{
+    if (theme->wall[WALL_CAP_MID] == 0 && theme->wall[WALL_CAP_LEFT] == 0
+     && theme->wall[WALL_CAP_RIGHT] == 0)
+        return 0;
+
+    if (!IsWallAt(map, x, y + 1) || IsWallAt(map, x, y + 2))
+        return 0;
+
+    // Open on both sides makes the cell below a sliver, which carries its own
+    // end art and is not a face. Capping one would put a lid on a column.
+    if (!IsWallAt(map, x - 1, y + 1) && !IsWallAt(map, x + 1, y + 1))
+        return 0;
+
+    // Match the cap to the face beneath it, chosen the same way the face was.
+    if (!IsWallAt(map, x - 1, y + 1))
+        return theme->wall[WALL_CAP_LEFT];
+    if (!IsWallAt(map, x + 1, y + 1))
+        return theme->wall[WALL_CAP_RIGHT];
+    return theme->wall[WALL_CAP_MID];
+}
+
+// Defined beside the cave plane helpers it borrows, far below. Forward
+// declared because the pass that needs it runs from up here.
+static bool8 DungeonOpenIsOnePiece(const u16 *map);
+
+static u16 GetBlockRaw(const u16 *map, s32 x, s32 y)
+{
+    if (x < 0 || y < 0 || x >= DUNGEON_WIDTH || y >= DUNGEON_HEIGHT)
+        return 0;
+    return map[(y + MAP_OFFSET) * gBackupMapLayout.width + (x + MAP_OFFSET)];
+}
+
+// Would this set piece sit somewhere the floor already needs?
+//
+// The prototype knew nothing about any of this, because it painted a grid and
+// the grid is all there is. In the game the same cells carry the exit, the
+// arrival point, and every object event the floor placed - all of which are
+// chosen by PrepareFloor BEFORE the blocks are written. A solid object over an
+// item ball leaves it inside a wall; over the stairs it ends the run.
+static bool8 PieceClearOfObjects(const struct RogueSetPiece *piece, s32 x, s32 y)
+{
+    s32 i, j;
+    u32 k;
+
+    for (j = 0; j < piece->height; j++)
+    {
+        for (i = 0; i < piece->width; i++)
+        {
+            s32 cx = x + i, cy = y + j;
+
+            if ((cx == sStairsX && cy == sStairsY)
+             || (cx == sSpawnX && cy == sSpawnY))
+                return FALSE;
+            for (k = 0; k < sTrainerCount; k++)
+                if (cx == sTrainerX[k] && cy == sTrainerY[k])
+                    return FALSE;
+            for (k = 0; k < sItemCount; k++)
+                if (cx == sItemX[k] && cy == sItemY[k])
+                    return FALSE;
+            for (k = 0; k < sRockCount; k++)
+                if (cx == sRockX[k] && cy == sRockY[k])
+                    return FALSE;
+            for (k = 0; k < sBerryCount; k++)
+                if (cx == sBerryX[k] && cy == sBerryY[k])
+                    return FALSE;
+            // Buried items are the one class with nothing visible on the map,
+            // so a set piece over one is silent twice: the player never learns
+            // it was there, and the Dowsing Machine points at solid wall.
+            for (k = 0; k < sHiddenCount; k++)
+                if (cx == sHiddenItems[k].x && cy == sHiddenItems[k].y)
+                    return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+static bool8 PieceFits(const u16 *map, const struct RogueDungeonTheme *theme,
+                       const struct RogueSetPiece *piece, s32 x, s32 y)
+{
+    s32 i, j;
+
+    if (x < 0 || y < 1 || x + piece->width > DUNGEON_WIDTH
+     || y + piece->height >= DUNGEON_HEIGHT)
+        return FALSE;
+    if (!PieceClearOfObjects(piece, x, y))
+        return FALSE;
+
+    if (piece->wallMounted)
+    {
+        // The top row replaces a run of capped wall face, so the piece grows
+        // out of the wall instead of being stuck onto it.
+        for (i = 0; i < piece->width; i++)
+        {
+            if (GetBlockMetatile(map, x + i, y) != theme->wall[WALL_FACE_MID]
+             || GetBlockMetatile(map, x + i, y - 1) != theme->wall[WALL_CAP_MID])
+                return FALSE;
+        }
+        for (j = 1; j < piece->height; j++)
+            for (i = 0; i < piece->width; i++)
+                if (IsWallAt(map, x + i, y + j))
+                    return FALSE;
+        // One clear row past the body, or it stands flush against the far wall
+        // of a shallow room and reads as a bulge in it.
+        for (i = 0; i < piece->width; i++)
+            if (IsWallAt(map, x + i, y + piece->height))
+                return FALSE;
+        return TRUE;
+    }
+
+    // Free-standing: the stack and a one-block ring must all be open floor, or
+    // the crates land against a wall and read as part of it.
+    for (j = -1; j <= piece->height; j++)
+        for (i = -1; i <= piece->width; i++)
+            if (IsWallAt(map, x + i, y + j))
+                return FALSE;
+    return TRUE;
+}
+
+// One pass, no candidate list, and every fitting spot equally likely however
+// many there turn out to be. The prototype collected candidates into a Python
+// list; 2304 cells of those would be real EWRAM here for no benefit.
+static bool8 FindPieceSpot(const u16 *map, const struct RogueDungeonTheme *theme,
+                           const struct RogueSetPiece *piece, u16 seed,
+                           u32 salt, s32 *outX, s32 *outY)
+{
+    s32 x, y;
+    u32 n = 0;
+
+    for (y = 0; y < DUNGEON_HEIGHT; y++)
+    {
+        for (x = 0; x < DUNGEON_WIDTH; x++)
+        {
+            if (!PieceFits(map, theme, piece, x, y))
+                continue;
+            n++;
+            if (DecorHash(seed, salt, n) % n == 0)
+            {
+                *outX = x;
+                *outY = y;
+            }
+        }
+    }
+    return n != 0;
+}
+
+static bool8 PlaceOneSetPiece(u16 *map, const struct RogueDungeonTheme *theme,
+                              const struct RogueSetPiece *piece, u16 seed,
+                              u32 salt)
+{
+    u16 saved[DUNGEON_SET_PIECE_MAX_CELLS];
+    s32 x = 0, y = 0, i, j;
+    u32 attempt;
+
+    if (piece->width * piece->height > DUNGEON_SET_PIECE_MAX_CELLS)
+        return FALSE;
+
+    for (attempt = 0; attempt < 8; attempt++)
+    {
+        if (!FindPieceSpot(map, theme, piece, seed, salt + attempt, &x, &y))
+            return FALSE;
+
+        for (j = 0; j < piece->height; j++)
+            for (i = 0; i < piece->width; i++)
+                saved[j * piece->width + i] = GetBlockRaw(map, x + i, y + j);
+
+        for (j = 0; j < piece->height; j++)
+        {
+            for (i = 0; i < piece->width; i++)
+            {
+                // The top row of a wall-mounted piece was wall and keeps the
+                // wall elevation; everything else was floor and stays at the
+                // floor's, so the player walks around it on the level it
+                // stands on.
+                u8 elev = (piece->wallMounted && j == 0) ? theme->elevationWall
+                                                         : theme->elevationFloor;
+
+                SetBlock(map, x + i, y + j,
+                         MakeBlock(piece->rows[j * piece->width + i], 1, elev));
+            }
+        }
+
+        // Turning floor into collision can cut the walkable area in two, with
+        // the stairs on the far side. It did on 3 of 200 seeds in the
+        // prototype, once splitting 526 cells into 263 + 251, and nothing
+        // downstream reports it - so the placement is rolled back and retried.
+        if (DungeonOpenIsOnePiece(map))
+            return TRUE;
+
+        for (j = 0; j < piece->height; j++)
+            for (i = 0; i < piece->width; i++)
+                SetBlock(map, x + i, y + j, saved[j * piece->width + i]);
+    }
+    return FALSE;
+}
+
+static void ApplySetPieces(u16 *map, const struct RogueDungeonTheme *theme,
+                           u16 seed)
+{
+    u32 i, k, placed = 0;
+
+    for (i = 0; i < theme->pieceCount; i++)
+    {
+        for (k = 0; k < theme->pieces[i].count; k++)
+        {
+            if (!PlaceOneSetPiece(map, theme, &theme->pieces[i], seed,
+                                  7 + i * 31 + k * 13))
+                break;
+        }
+    }
+
+    if (theme->clutterCount == 0)
+        return;
+
+    // Tries are capped rather than looped until satisfied: a floor with nowhere
+    // to stand a crate must not spin.
+    for (k = 0; k < (u32)theme->clutterMax * 6 && placed < theme->clutterMax; k++)
+    {
+        u16 hash = DecorHash(seed, 31 + k, 17 + k);
+
+        if (PlaceOneSetPiece(map, theme,
+                             &theme->clutter[hash % theme->clutterCount],
+                             seed, 4096 + k * 7))
+            placed++;
+    }
+}
+
+// Terminates every maximal vertical run of column art, top and bottom.
+//
+// Not part of the autotile chain, because the cells it paints are not columns:
+// they are the fill above and below one, and their own neighbour mask says
+// "deep interior" like every other buried block. Run after the autotiler.
+//
+// Only ever writes over WALL_INTERIOR_MID. A run that ends against a cap, a
+// face or a corner already terminates against something, and overwriting that
+// would put a wall end in the middle of joined art.
+static void ApplyColumnEnds(u16 *map, const struct RogueDungeonTheme *theme)
+{
+    u16 fill = theme->wall[WALL_INTERIOR_MID];
+    s32 x, y;
+    u32 i;
+
+    if (theme->columnEndCount == 0)
+        return;
+
+    for (x = 0; x < DUNGEON_WIDTH; x++)
+    {
+        y = 0;
+        while (y < DUNGEON_HEIGHT)
+        {
+            u16 column = GetBlockMetatile(map, x, y);
+            s32 top = y;
+
+            for (i = 0; i < theme->columnEndCount; i++)
+            {
+                if (theme->columnEnds[i].column == column)
+                    break;
+            }
+            if (i == theme->columnEndCount)
+            {
+                y++;
+                continue;
+            }
+
+            while (y + 1 < DUNGEON_HEIGHT
+                && GetBlockMetatile(map, x, y + 1) == column)
+                y++;
+
+            if (theme->columnEnds[i].head != 0
+             && GetBlockMetatile(map, x, top - 1) == fill
+             && IsWallAt(map, x, top - 1))
+                SetBlock(map, x, top - 1,
+                         MakeBlock(theme->columnEnds[i].head, 1,
+                                   theme->elevationWall));
+
+            if (theme->columnEnds[i].foot != 0
+             && GetBlockMetatile(map, x, y + 1) == fill
+             && IsWallAt(map, x, y + 1))
+                SetBlock(map, x, y + 1,
+                         MakeBlock(theme->columnEnds[i].foot, 1,
+                                   theme->elevationWall));
+            y++;
+        }
+    }
+}
+
+// Wall furniture stamped as the three-row assembly vanilla actually draws: a
+// cap row, the wall face, and the floor block below it.
+//
+// No `taken` set is needed to stop two stamps overlapping. The pass scans west
+// to east and a placed stamp replaces the face metatile it landed on, so the
+// "is this cell still a plain face" test that admits a stamp is the same test
+// that rejects one over its own left half. The cap test reads the live map for
+// the same reason - a stamp that already wrote its own cap will not take a
+// second one.
+static void ApplyWallStamps(u16 *map, const struct RogueDungeonTheme *theme,
+                            u16 seed)
+{
+    u16 face = theme->wall[WALL_FACE_MID];
+    u16 cap = theme->wall[WALL_CAP_MID];
+    s32 x, y;
+    u32 i, k;
+
+    if (theme->stampCount == 0)
+        return;
+
+    for (y = 0; y < DUNGEON_HEIGHT; y++)
+    {
+        for (x = 0; x < DUNGEON_WIDTH; x++)
+        {
+            u8 fits[DUNGEON_MAX_WALL_STAMPS];
+            u32 nfits = 0;
+            u16 hash = DecorHash(seed, x, y);
+            const struct RogueWallStamp *stamp;
+
+            for (i = 0; i < theme->stampCount && nfits < ARRAY_COUNT(fits); i++)
+            {
+                bool8 ok = TRUE;
+
+                stamp = &theme->stamps[i];
+                for (k = 0; k < stamp->width; k++)
+                {
+                    s32 cx = x + k;
+
+                    // A visible wall face with open floor under it, so the
+                    // piece is actually seen and has somewhere to stand.
+                    if (cx >= DUNGEON_WIDTH
+                     || GetBlockMetatile(map, cx, y) != face
+                     || IsWallAt(map, cx, y + 1))
+                    {
+                        ok = FALSE;
+                        break;
+                    }
+                    if (stamp->needsFloorAbove ? IsWallAt(map, cx, y - 1)
+                                               : GetBlockMetatile(map, cx, y - 1) != cap)
+                    {
+                        ok = FALSE;
+                        break;
+                    }
+                }
+                if (ok)
+                    fits[nfits++] = i;
+            }
+            if (nfits == 0)
+                continue;
+
+            // Choose first, THEN gate on that piece's own density. Gating
+            // first would hand every thin partition to the vent, since it is
+            // the only piece that fits one - which is exactly what a single
+            // shared gate did.
+            stamp = &theme->stamps[fits[(hash >> 8) % nfits]];
+            if ((hash >> 3) % 100 >= stamp->chance)
+                continue;
+
+            for (k = 0; k < stamp->width; k++)
+            {
+                s32 cx = x + k;
+
+                if (stamp->cap[k] != 0)
+                    SetBlock(map, cx, y - 1,
+                             MakeBlock(stamp->cap[k], 1, theme->elevationWall));
+                SetBlock(map, cx, y,
+                         MakeBlock(stamp->face[k], 1, theme->elevationWall));
+                // Passable, always: the floor row is the piece standing on the
+                // ground, not the ground becoming solid.
+                if (stamp->below[k] != 0)
+                    SetBlock(map, cx, y + 1,
+                             MakeBlock(stamp->below[k], 0, theme->elevationFloor));
+            }
+        }
+    }
+}
+
 // Second pass over the carved grid, choosing each wall's art from its
 // neighbours. Must run after all carving is done.
 static void ApplyWallAutotiling(u16 *map, const struct RogueDungeonTheme *theme)
@@ -3437,7 +3949,7 @@ static void ApplyWallAutotiling(u16 *map, const struct RogueDungeonTheme *theme)
         for (x = 0; x < DUNGEON_WIDTH; x++)
         {
             bool8 openNorth, openSouth, openWest, openEast;
-            u16 metatile;
+            u16 metatile, cap;
 
             if (!IsWallAt(map, x, y))
                 continue;
@@ -3470,6 +3982,9 @@ static void ApplyWallAutotiling(u16 *map, const struct RogueDungeonTheme *theme)
                     metatile = theme->wall[WALL_SLIVER_VERT_TOP];
                 else if (openSouth)
                     metatile = theme->wall[WALL_SLIVER_VERT_BOT];
+                else if (theme->wall[WALL_SLIVER_VERT_BOT_UPPER] != 0
+                      && IsSliverVertBottom(map, x, y + 1))
+                    metatile = theme->wall[WALL_SLIVER_VERT_BOT_UPPER];
                 else
                     metatile = theme->wall[WALL_SLIVER_VERT];
             }
@@ -3493,6 +4008,19 @@ static void ApplyWallAutotiling(u16 *map, const struct RogueDungeonTheme *theme)
                     metatile = theme->wall[WALL_NORTH_RIGHT];
                 else
                     metatile = theme->wall[WALL_NORTH_MID];
+            }
+            else if ((cap = WallCapFor(map, theme, x, y)) != 0)
+            {
+                // Above a face, so this is the wall's top surface rather than
+                // its side. Tested before the interior cases, which would
+                // otherwise run the column art straight down into the face and
+                // leave the wall one metatile tall where vanilla is two.
+                //
+                // Deliberately AFTER openNorth: vanilla never caps a wall with
+                // floor above it (0x21F sits under void or the map edge 89% of
+                // the time, and under floor never), so a room's south boundary
+                // keeps its own art.
+                metatile = cap;
             }
             else if (openWest)
             {
@@ -3554,9 +4082,21 @@ static void ApplyWallAutotiling(u16 *map, const struct RogueDungeonTheme *theme)
 // own thing and will not put a floor variant on a sand drift.
 static void ApplyCosmeticPasses(u16 *map, const struct RogueDungeonTheme *theme)
 {
+    // A wall pass, not a cosmetic one, but it is hosted here for the reason
+    // above: this is the function every generator path is required to call
+    // after autotiling and before the stairs, and ApplyWallAutotiling is not.
+    ApplyColumnEnds(map, theme);
     ApplyFloorPatches(map, theme, VarGet(VAR_ROGUE_DUNGEON_SEED));
     ApplySkirts(map, theme);
+    // Before the stamps, as the prototype has it: a set piece consumes the
+    // capped wall face it grows out of, and the stamp pass must not have put a
+    // bookcase there first.
+    ApplySetPieces(map, theme, VarGet(VAR_ROGUE_DUNGEON_SEED));
+    // One or the other, never both - a theme whose furniture is three rows tall
+    // would otherwise get a second, differently-aligned set of the same objects
+    // from the single-block pass.
     ApplyDecor(map, theme, VarGet(VAR_ROGUE_DUNGEON_SEED));
+    ApplyWallStamps(map, theme, VarGet(VAR_ROGUE_DUNGEON_SEED));
 }
 
 
@@ -4638,6 +5178,81 @@ static void CaveClear(u8 *plane)
 
     for (i = 0; i < CAVE_PLANE_BYTES; i++)
         plane[i] = 0;
+}
+
+// Is every open block still reachable from every other?
+//
+// Borrows sCaveWork as the label plane. The generators have finished by the
+// time this runs and the plane is idle, so a check that would otherwise need
+// 288 bytes of its own costs nothing - the same argument that made the facility
+// generator free.
+//
+// Reads walls from the MAP, not from sCaveBits: by this point the map is the
+// truth, because a set piece has turned floor into collision and the plane was
+// never told.
+static bool8 DungeonOpenIsOnePiece(const u16 *map)
+{
+    s32 x, y, sx = -1, sy = -1;
+    u32 open = 0, seen = 1, added;
+
+    for (y = 0; y < DUNGEON_HEIGHT; y++)
+    {
+        for (x = 0; x < DUNGEON_WIDTH; x++)
+        {
+            if (IsWallAt(map, x, y))
+                continue;
+            open++;
+            if (sx < 0)
+            {
+                sx = x;
+                sy = y;
+            }
+        }
+    }
+    if (open == 0)
+        return TRUE;
+
+    CaveClear(sCaveWork);
+    CaveSet(sCaveWork, sx, sy, TRUE);
+
+    // The same queueless alternating-direction fill as CaveFloodFrom, for the
+    // same reason: a BFS queue over 2304 cells would be up to 4608 bytes.
+    do
+    {
+        added = 0;
+
+        for (y = 0; y < DUNGEON_HEIGHT; y++)
+        {
+            for (x = 0; x < DUNGEON_WIDTH; x++)
+            {
+                if (IsWallAt(map, x, y) || CaveBitAt(sCaveWork, x, y))
+                    continue;
+                if (CaveBitAt(sCaveWork, x - 1, y) || CaveBitAt(sCaveWork, x, y - 1))
+                {
+                    CaveSet(sCaveWork, x, y, TRUE);
+                    added++;
+                }
+            }
+        }
+
+        for (y = DUNGEON_HEIGHT - 1; y >= 0; y--)
+        {
+            for (x = DUNGEON_WIDTH - 1; x >= 0; x--)
+            {
+                if (IsWallAt(map, x, y) || CaveBitAt(sCaveWork, x, y))
+                    continue;
+                if (CaveBitAt(sCaveWork, x + 1, y) || CaveBitAt(sCaveWork, x, y + 1))
+                {
+                    CaveSet(sCaveWork, x, y, TRUE);
+                    added++;
+                }
+            }
+        }
+
+        seen += added;
+    } while (added != 0);
+
+    return seen == open;
 }
 
 // Queueless flood fill into sCaveWork, returning how many cells IT added.
