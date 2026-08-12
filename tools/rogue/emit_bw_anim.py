@@ -425,19 +425,46 @@ def write_header(repo, built, ids):
         '// whole, which for a 29 frame sprite is 59 KB and two video frames of',
         '// work to reach 2 KB of it.',
         '',
+        '// ROGUE_BW_ANIM_BACK gates every back-side definition below. An',
+        '// undefined macro is 0 to #if, so a missing include would silently',
+        '// take the backs-off branch and look exactly like absent assets -',
+        '// the same silent-wrong-branch shape IS_FRLG once shipped. Demand it.',
+        '#if !defined(ROGUE_BW_ANIM_BACK)',
+        '#error "include rogue_bw_anim.h before data/rogue_bw_anim.h"',
+        '#endif',
+        '',
     ]
+    # Every back-side definition is wrapped in #if ROGUE_BW_ANIM_BACK, and the
+    # switch being FALSE has to remove the back DATA rather than merely stop
+    # looking it up. --gc-sections cannot do that job here: -fdata-sections is
+    # only set under LTO (Makefile has LTO ?= 0), so on a default build every
+    # const in this translation unit shares one .rodata section that sBwAnims
+    # keeps alive, and unreferencing the back table frees nothing at all.
+    #
+    # Caveat worth knowing before blaming the guard: tools/preproc expands
+    # INCGFX before the C preprocessor runs and does not evaluate #if, so the
+    # back pixels are still inlined into the intermediate .i and discarded
+    # there. The ROM cost goes; the build time does not.
     for b in built:
+        if b['back']:
+            L.append('#if ROGUE_BW_ANIM_BACK')
         L.append(f'const u32 gBwAnimGfx_{b["sym"]}[] = INCGFX_U32('
                  f'"graphics/pokemon/{b["dir"]}/{b["asset"]}", ".4bpp.fsmol");')
         L.append(f'const u16 gBwAnimPal_{b["sym"]}[] = INCGFX_U16('
                  f'"graphics/pokemon/{b["dir"]}/{b["asset"]}", ".gbapal");')
+        if b['back']:
+            L.append('#endif // ROGUE_BW_ANIM_BACK')
     L.append('')
     for b in built:
+        if b['back']:
+            L.append('#if ROGUE_BW_ANIM_BACK')
         L.append(f'static const struct BwAnimStep sBwSeq_{b["sym"]}[] =')
         L.append('{')
         for f, hold in b['steps']:
             L.append(f'    {{ {f}, {hold} }},')
         L.append('};')
+        if b['back']:
+            L.append('#endif // ROGUE_BW_ANIM_BACK')
         L.append('')
 
     # Front and back are SEPARATE tables, each sorted by species id, rather than
@@ -446,6 +473,8 @@ def write_header(repo, built, ids):
     # search cannot resolve.
     for back, name, label in ((False, 'sBwAnims', 'Front'), (True, 'sBwAnimsBack', 'Back')):
         rows = [b for b in built if b['back'] == back]
+        if back:
+            L.append('#if ROGUE_BW_ANIM_BACK')
         L.append(f'// {label} sprites, sorted by species id - GetBwAnim bisects this.')
         L.append(f'static const struct BwAnim {name}[] =')
         L.append('{')
@@ -465,6 +494,8 @@ def write_header(repo, built, ids):
             # meaningless anyway.
             L.append('    { .species = SPECIES_NONE },')
         L.append('};')
+        if back:
+            L.append('#endif // ROGUE_BW_ANIM_BACK')
         L.append('')
     L.append('#endif // GUARD_DATA_ROGUE_BW_ANIM_H')
 

@@ -21,9 +21,29 @@
 // their ids run the other way, and this search would then silently miss them.
 const struct BwAnim *GetBwAnim(u16 species, bool32 isBack)
 {
-    const struct BwAnim *table = isBack ? sBwAnimsBack : sBwAnims;
-    u32 lo = 0;
-    u32 hi = isBack ? ARRAY_COUNT(sBwAnimsBack) : ARRAY_COUNT(sBwAnims);
+    const struct BwAnim *table;
+    u32 lo, hi;
+
+    // #if, not a runtime test on the macro: with the backs off, the guards in
+    // data/rogue_bw_anim.h delete sBwAnimsBack outright, so naming it in a
+    // branch the compiler folds away would still fail to compile. That is the
+    // point - the switch has to remove the 386 back containers from the object
+    // file, and --gc-sections cannot do it for us (see the header).
+    //
+    // A miss is the whole disable path: every caller already treats NULL as
+    // "this species has no animation" and leaves the stock pic loaded.
+#if ROGUE_BW_ANIM_BACK
+    table = isBack ? sBwAnimsBack : sBwAnims;
+    lo = 0;
+    hi = isBack ? ARRAY_COUNT(sBwAnimsBack) : ARRAY_COUNT(sBwAnims);
+#else
+    if (isBack)
+        return NULL;
+
+    table = sBwAnims;
+    lo = 0;
+    hi = ARRAY_COUNT(sBwAnims);
+#endif
 
     while (lo < hi)
     {

@@ -16,6 +16,33 @@
 // instead - a decode is ~48,150 cycles, 17.1% of a video frame, against a
 // measured battle steady state of 8%.
 
+// Build-time kill switch for the BACK animations only, and FALSE is the
+// shipping setting: animated back sprites are off for now. The player side
+// keeps the stock two-frame back pic while the opponent still animates. It
+// also isolates a fault to the back assets or the runtime, since TRUE restores
+// the player side without touching the front roster.
+//
+// FALSE REMOVES THE BACK DATA FROM THE BUILD - it is not merely a lookup that
+// misses. Every back declaration, sequence and the sBwAnimsBack table itself
+// are inside #if ROGUE_BW_ANIM_BACK in data/rogue_bw_anim.h, so the 386 back
+// containers are never compiled.
+//
+// It has to work that way, because --gc-sections cannot reach them however
+// carefully they are left unreferenced: -ffunction-sections -fdata-sections
+// are only added under LTO (the Makefile has LTO ?= 0), and without them every
+// const in rogue_bw_anim.c shares one .rodata section that sBwAnims keeps
+// alive. An earlier note here claimed the linker collected 87,432 B on this
+// switch; it cannot, and it did not.
+//
+// What does NOT go away is build time. tools/preproc expands INCGFX before the
+// C preprocessor runs and does not evaluate #if, so the back pixels are still
+// inlined into the intermediate and only then discarded. Re-run
+// emit_bw_anim.py without the back sprites if the build, rather than the ROM,
+// is what you are trying to move.
+#ifndef ROGUE_BW_ANIM_BACK
+#define ROGUE_BW_ANIM_BACK FALSE
+#endif
+
 struct BwAnimStep
 {
     u8 frame;   // index into the species' frame pool

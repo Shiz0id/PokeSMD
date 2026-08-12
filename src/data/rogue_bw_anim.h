@@ -18,1550 +18,2330 @@
 // whole, which for a 29 frame sprite is 59 KB and two video frames of
 // work to reach 2 KB of it.
 
+// ROGUE_BW_ANIM_BACK gates every back-side definition below. An
+// undefined macro is 0 to #if, so a missing include would silently
+// take the backs-off branch and look exactly like absent assets -
+// the same silent-wrong-branch shape IS_FRLG once shipped. Demand it.
+#if !defined(ROGUE_BW_ANIM_BACK)
+#error "include rogue_bw_anim.h before data/rogue_bw_anim.h"
+#endif
+
 const u32 gBwAnimGfx_Bulbasaur[] = INCGFX_U32("graphics/pokemon/bulbasaur/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Bulbasaur[] = INCGFX_U16("graphics/pokemon/bulbasaur/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_BulbasaurBack[] = INCGFX_U32("graphics/pokemon/bulbasaur/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_BulbasaurBack[] = INCGFX_U16("graphics/pokemon/bulbasaur/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Ivysaur[] = INCGFX_U32("graphics/pokemon/ivysaur/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Ivysaur[] = INCGFX_U16("graphics/pokemon/ivysaur/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_IvysaurBack[] = INCGFX_U32("graphics/pokemon/ivysaur/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_IvysaurBack[] = INCGFX_U16("graphics/pokemon/ivysaur/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Venusaur[] = INCGFX_U32("graphics/pokemon/venusaur/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Venusaur[] = INCGFX_U16("graphics/pokemon/venusaur/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_VenusaurBack[] = INCGFX_U32("graphics/pokemon/venusaur/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_VenusaurBack[] = INCGFX_U16("graphics/pokemon/venusaur/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Charmander[] = INCGFX_U32("graphics/pokemon/charmander/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Charmander[] = INCGFX_U16("graphics/pokemon/charmander/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CharmanderBack[] = INCGFX_U32("graphics/pokemon/charmander/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CharmanderBack[] = INCGFX_U16("graphics/pokemon/charmander/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Charmeleon[] = INCGFX_U32("graphics/pokemon/charmeleon/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Charmeleon[] = INCGFX_U16("graphics/pokemon/charmeleon/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CharmeleonBack[] = INCGFX_U32("graphics/pokemon/charmeleon/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CharmeleonBack[] = INCGFX_U16("graphics/pokemon/charmeleon/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Charizard[] = INCGFX_U32("graphics/pokemon/charizard/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Charizard[] = INCGFX_U16("graphics/pokemon/charizard/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CharizardBack[] = INCGFX_U32("graphics/pokemon/charizard/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CharizardBack[] = INCGFX_U16("graphics/pokemon/charizard/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Squirtle[] = INCGFX_U32("graphics/pokemon/squirtle/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Squirtle[] = INCGFX_U16("graphics/pokemon/squirtle/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SquirtleBack[] = INCGFX_U32("graphics/pokemon/squirtle/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SquirtleBack[] = INCGFX_U16("graphics/pokemon/squirtle/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Wartortle[] = INCGFX_U32("graphics/pokemon/wartortle/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Wartortle[] = INCGFX_U16("graphics/pokemon/wartortle/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_WartortleBack[] = INCGFX_U32("graphics/pokemon/wartortle/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_WartortleBack[] = INCGFX_U16("graphics/pokemon/wartortle/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Blastoise[] = INCGFX_U32("graphics/pokemon/blastoise/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Blastoise[] = INCGFX_U16("graphics/pokemon/blastoise/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_BlastoiseBack[] = INCGFX_U32("graphics/pokemon/blastoise/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_BlastoiseBack[] = INCGFX_U16("graphics/pokemon/blastoise/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Caterpie[] = INCGFX_U32("graphics/pokemon/caterpie/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Caterpie[] = INCGFX_U16("graphics/pokemon/caterpie/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CaterpieBack[] = INCGFX_U32("graphics/pokemon/caterpie/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CaterpieBack[] = INCGFX_U16("graphics/pokemon/caterpie/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Metapod[] = INCGFX_U32("graphics/pokemon/metapod/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Metapod[] = INCGFX_U16("graphics/pokemon/metapod/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MetapodBack[] = INCGFX_U32("graphics/pokemon/metapod/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MetapodBack[] = INCGFX_U16("graphics/pokemon/metapod/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Butterfree[] = INCGFX_U32("graphics/pokemon/butterfree/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Butterfree[] = INCGFX_U16("graphics/pokemon/butterfree/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ButterfreeBack[] = INCGFX_U32("graphics/pokemon/butterfree/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ButterfreeBack[] = INCGFX_U16("graphics/pokemon/butterfree/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Weedle[] = INCGFX_U32("graphics/pokemon/weedle/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Weedle[] = INCGFX_U16("graphics/pokemon/weedle/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_WeedleBack[] = INCGFX_U32("graphics/pokemon/weedle/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_WeedleBack[] = INCGFX_U16("graphics/pokemon/weedle/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Kakuna[] = INCGFX_U32("graphics/pokemon/kakuna/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Kakuna[] = INCGFX_U16("graphics/pokemon/kakuna/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_KakunaBack[] = INCGFX_U32("graphics/pokemon/kakuna/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_KakunaBack[] = INCGFX_U16("graphics/pokemon/kakuna/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Beedrill[] = INCGFX_U32("graphics/pokemon/beedrill/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Beedrill[] = INCGFX_U16("graphics/pokemon/beedrill/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_BeedrillBack[] = INCGFX_U32("graphics/pokemon/beedrill/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_BeedrillBack[] = INCGFX_U16("graphics/pokemon/beedrill/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Pidgey[] = INCGFX_U32("graphics/pokemon/pidgey/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Pidgey[] = INCGFX_U16("graphics/pokemon/pidgey/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PidgeyBack[] = INCGFX_U32("graphics/pokemon/pidgey/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PidgeyBack[] = INCGFX_U16("graphics/pokemon/pidgey/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Pidgeotto[] = INCGFX_U32("graphics/pokemon/pidgeotto/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Pidgeotto[] = INCGFX_U16("graphics/pokemon/pidgeotto/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PidgeottoBack[] = INCGFX_U32("graphics/pokemon/pidgeotto/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PidgeottoBack[] = INCGFX_U16("graphics/pokemon/pidgeotto/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Pidgeot[] = INCGFX_U32("graphics/pokemon/pidgeot/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Pidgeot[] = INCGFX_U16("graphics/pokemon/pidgeot/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PidgeotBack[] = INCGFX_U32("graphics/pokemon/pidgeot/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PidgeotBack[] = INCGFX_U16("graphics/pokemon/pidgeot/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Rattata[] = INCGFX_U32("graphics/pokemon/rattata/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Rattata[] = INCGFX_U16("graphics/pokemon/rattata/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_RattataBack[] = INCGFX_U32("graphics/pokemon/rattata/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_RattataBack[] = INCGFX_U16("graphics/pokemon/rattata/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Raticate[] = INCGFX_U32("graphics/pokemon/raticate/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Raticate[] = INCGFX_U16("graphics/pokemon/raticate/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_RaticateBack[] = INCGFX_U32("graphics/pokemon/raticate/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_RaticateBack[] = INCGFX_U16("graphics/pokemon/raticate/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Spearow[] = INCGFX_U32("graphics/pokemon/spearow/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Spearow[] = INCGFX_U16("graphics/pokemon/spearow/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SpearowBack[] = INCGFX_U32("graphics/pokemon/spearow/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SpearowBack[] = INCGFX_U16("graphics/pokemon/spearow/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Fearow[] = INCGFX_U32("graphics/pokemon/fearow/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Fearow[] = INCGFX_U16("graphics/pokemon/fearow/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_FearowBack[] = INCGFX_U32("graphics/pokemon/fearow/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_FearowBack[] = INCGFX_U16("graphics/pokemon/fearow/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Ekans[] = INCGFX_U32("graphics/pokemon/ekans/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Ekans[] = INCGFX_U16("graphics/pokemon/ekans/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_EkansBack[] = INCGFX_U32("graphics/pokemon/ekans/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_EkansBack[] = INCGFX_U16("graphics/pokemon/ekans/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Arbok[] = INCGFX_U32("graphics/pokemon/arbok/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Arbok[] = INCGFX_U16("graphics/pokemon/arbok/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ArbokBack[] = INCGFX_U32("graphics/pokemon/arbok/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ArbokBack[] = INCGFX_U16("graphics/pokemon/arbok/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Pikachu[] = INCGFX_U32("graphics/pokemon/pikachu/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Pikachu[] = INCGFX_U16("graphics/pokemon/pikachu/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PikachuBack[] = INCGFX_U32("graphics/pokemon/pikachu/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PikachuBack[] = INCGFX_U16("graphics/pokemon/pikachu/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Raichu[] = INCGFX_U32("graphics/pokemon/raichu/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Raichu[] = INCGFX_U16("graphics/pokemon/raichu/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_RaichuBack[] = INCGFX_U32("graphics/pokemon/raichu/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_RaichuBack[] = INCGFX_U16("graphics/pokemon/raichu/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Sandshrew[] = INCGFX_U32("graphics/pokemon/sandshrew/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Sandshrew[] = INCGFX_U16("graphics/pokemon/sandshrew/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SandshrewBack[] = INCGFX_U32("graphics/pokemon/sandshrew/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SandshrewBack[] = INCGFX_U16("graphics/pokemon/sandshrew/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Sandslash[] = INCGFX_U32("graphics/pokemon/sandslash/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Sandslash[] = INCGFX_U16("graphics/pokemon/sandslash/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SandslashBack[] = INCGFX_U32("graphics/pokemon/sandslash/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SandslashBack[] = INCGFX_U16("graphics/pokemon/sandslash/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_NidoranF[] = INCGFX_U32("graphics/pokemon/nidoran_f/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_NidoranF[] = INCGFX_U16("graphics/pokemon/nidoran_f/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_NidoranFBack[] = INCGFX_U32("graphics/pokemon/nidoran_f/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_NidoranFBack[] = INCGFX_U16("graphics/pokemon/nidoran_f/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Nidorina[] = INCGFX_U32("graphics/pokemon/nidorina/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Nidorina[] = INCGFX_U16("graphics/pokemon/nidorina/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_NidorinaBack[] = INCGFX_U32("graphics/pokemon/nidorina/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_NidorinaBack[] = INCGFX_U16("graphics/pokemon/nidorina/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Nidoqueen[] = INCGFX_U32("graphics/pokemon/nidoqueen/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Nidoqueen[] = INCGFX_U16("graphics/pokemon/nidoqueen/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_NidoqueenBack[] = INCGFX_U32("graphics/pokemon/nidoqueen/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_NidoqueenBack[] = INCGFX_U16("graphics/pokemon/nidoqueen/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_NidoranM[] = INCGFX_U32("graphics/pokemon/nidoran_m/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_NidoranM[] = INCGFX_U16("graphics/pokemon/nidoran_m/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_NidoranMBack[] = INCGFX_U32("graphics/pokemon/nidoran_m/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_NidoranMBack[] = INCGFX_U16("graphics/pokemon/nidoran_m/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Nidorino[] = INCGFX_U32("graphics/pokemon/nidorino/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Nidorino[] = INCGFX_U16("graphics/pokemon/nidorino/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_NidorinoBack[] = INCGFX_U32("graphics/pokemon/nidorino/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_NidorinoBack[] = INCGFX_U16("graphics/pokemon/nidorino/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Nidoking[] = INCGFX_U32("graphics/pokemon/nidoking/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Nidoking[] = INCGFX_U16("graphics/pokemon/nidoking/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_NidokingBack[] = INCGFX_U32("graphics/pokemon/nidoking/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_NidokingBack[] = INCGFX_U16("graphics/pokemon/nidoking/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Clefairy[] = INCGFX_U32("graphics/pokemon/clefairy/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Clefairy[] = INCGFX_U16("graphics/pokemon/clefairy/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ClefairyBack[] = INCGFX_U32("graphics/pokemon/clefairy/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ClefairyBack[] = INCGFX_U16("graphics/pokemon/clefairy/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Clefable[] = INCGFX_U32("graphics/pokemon/clefable/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Clefable[] = INCGFX_U16("graphics/pokemon/clefable/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ClefableBack[] = INCGFX_U32("graphics/pokemon/clefable/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ClefableBack[] = INCGFX_U16("graphics/pokemon/clefable/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Vulpix[] = INCGFX_U32("graphics/pokemon/vulpix/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Vulpix[] = INCGFX_U16("graphics/pokemon/vulpix/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_VulpixBack[] = INCGFX_U32("graphics/pokemon/vulpix/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_VulpixBack[] = INCGFX_U16("graphics/pokemon/vulpix/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Ninetales[] = INCGFX_U32("graphics/pokemon/ninetales/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Ninetales[] = INCGFX_U16("graphics/pokemon/ninetales/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_NinetalesBack[] = INCGFX_U32("graphics/pokemon/ninetales/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_NinetalesBack[] = INCGFX_U16("graphics/pokemon/ninetales/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Jigglypuff[] = INCGFX_U32("graphics/pokemon/jigglypuff/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Jigglypuff[] = INCGFX_U16("graphics/pokemon/jigglypuff/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_JigglypuffBack[] = INCGFX_U32("graphics/pokemon/jigglypuff/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_JigglypuffBack[] = INCGFX_U16("graphics/pokemon/jigglypuff/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Wigglytuff[] = INCGFX_U32("graphics/pokemon/wigglytuff/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Wigglytuff[] = INCGFX_U16("graphics/pokemon/wigglytuff/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_WigglytuffBack[] = INCGFX_U32("graphics/pokemon/wigglytuff/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_WigglytuffBack[] = INCGFX_U16("graphics/pokemon/wigglytuff/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Zubat[] = INCGFX_U32("graphics/pokemon/zubat/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Zubat[] = INCGFX_U16("graphics/pokemon/zubat/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ZubatBack[] = INCGFX_U32("graphics/pokemon/zubat/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ZubatBack[] = INCGFX_U16("graphics/pokemon/zubat/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Golbat[] = INCGFX_U32("graphics/pokemon/golbat/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Golbat[] = INCGFX_U16("graphics/pokemon/golbat/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GolbatBack[] = INCGFX_U32("graphics/pokemon/golbat/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GolbatBack[] = INCGFX_U16("graphics/pokemon/golbat/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Oddish[] = INCGFX_U32("graphics/pokemon/oddish/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Oddish[] = INCGFX_U16("graphics/pokemon/oddish/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_OddishBack[] = INCGFX_U32("graphics/pokemon/oddish/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_OddishBack[] = INCGFX_U16("graphics/pokemon/oddish/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Gloom[] = INCGFX_U32("graphics/pokemon/gloom/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Gloom[] = INCGFX_U16("graphics/pokemon/gloom/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GloomBack[] = INCGFX_U32("graphics/pokemon/gloom/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GloomBack[] = INCGFX_U16("graphics/pokemon/gloom/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Vileplume[] = INCGFX_U32("graphics/pokemon/vileplume/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Vileplume[] = INCGFX_U16("graphics/pokemon/vileplume/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_VileplumeBack[] = INCGFX_U32("graphics/pokemon/vileplume/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_VileplumeBack[] = INCGFX_U16("graphics/pokemon/vileplume/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Paras[] = INCGFX_U32("graphics/pokemon/paras/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Paras[] = INCGFX_U16("graphics/pokemon/paras/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ParasBack[] = INCGFX_U32("graphics/pokemon/paras/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ParasBack[] = INCGFX_U16("graphics/pokemon/paras/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Parasect[] = INCGFX_U32("graphics/pokemon/parasect/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Parasect[] = INCGFX_U16("graphics/pokemon/parasect/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ParasectBack[] = INCGFX_U32("graphics/pokemon/parasect/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ParasectBack[] = INCGFX_U16("graphics/pokemon/parasect/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Venonat[] = INCGFX_U32("graphics/pokemon/venonat/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Venonat[] = INCGFX_U16("graphics/pokemon/venonat/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_VenonatBack[] = INCGFX_U32("graphics/pokemon/venonat/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_VenonatBack[] = INCGFX_U16("graphics/pokemon/venonat/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Venomoth[] = INCGFX_U32("graphics/pokemon/venomoth/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Venomoth[] = INCGFX_U16("graphics/pokemon/venomoth/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_VenomothBack[] = INCGFX_U32("graphics/pokemon/venomoth/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_VenomothBack[] = INCGFX_U16("graphics/pokemon/venomoth/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Diglett[] = INCGFX_U32("graphics/pokemon/diglett/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Diglett[] = INCGFX_U16("graphics/pokemon/diglett/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_DiglettBack[] = INCGFX_U32("graphics/pokemon/diglett/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_DiglettBack[] = INCGFX_U16("graphics/pokemon/diglett/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Dugtrio[] = INCGFX_U32("graphics/pokemon/dugtrio/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Dugtrio[] = INCGFX_U16("graphics/pokemon/dugtrio/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_DugtrioBack[] = INCGFX_U32("graphics/pokemon/dugtrio/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_DugtrioBack[] = INCGFX_U16("graphics/pokemon/dugtrio/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Meowth[] = INCGFX_U32("graphics/pokemon/meowth/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Meowth[] = INCGFX_U16("graphics/pokemon/meowth/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MeowthBack[] = INCGFX_U32("graphics/pokemon/meowth/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MeowthBack[] = INCGFX_U16("graphics/pokemon/meowth/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Persian[] = INCGFX_U32("graphics/pokemon/persian/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Persian[] = INCGFX_U16("graphics/pokemon/persian/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PersianBack[] = INCGFX_U32("graphics/pokemon/persian/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PersianBack[] = INCGFX_U16("graphics/pokemon/persian/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Psyduck[] = INCGFX_U32("graphics/pokemon/psyduck/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Psyduck[] = INCGFX_U16("graphics/pokemon/psyduck/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PsyduckBack[] = INCGFX_U32("graphics/pokemon/psyduck/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PsyduckBack[] = INCGFX_U16("graphics/pokemon/psyduck/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Golduck[] = INCGFX_U32("graphics/pokemon/golduck/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Golduck[] = INCGFX_U16("graphics/pokemon/golduck/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GolduckBack[] = INCGFX_U32("graphics/pokemon/golduck/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GolduckBack[] = INCGFX_U16("graphics/pokemon/golduck/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Mankey[] = INCGFX_U32("graphics/pokemon/mankey/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Mankey[] = INCGFX_U16("graphics/pokemon/mankey/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MankeyBack[] = INCGFX_U32("graphics/pokemon/mankey/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MankeyBack[] = INCGFX_U16("graphics/pokemon/mankey/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Primeape[] = INCGFX_U32("graphics/pokemon/primeape/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Primeape[] = INCGFX_U16("graphics/pokemon/primeape/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PrimeapeBack[] = INCGFX_U32("graphics/pokemon/primeape/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PrimeapeBack[] = INCGFX_U16("graphics/pokemon/primeape/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Growlithe[] = INCGFX_U32("graphics/pokemon/growlithe/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Growlithe[] = INCGFX_U16("graphics/pokemon/growlithe/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GrowlitheBack[] = INCGFX_U32("graphics/pokemon/growlithe/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GrowlitheBack[] = INCGFX_U16("graphics/pokemon/growlithe/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Arcanine[] = INCGFX_U32("graphics/pokemon/arcanine/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Arcanine[] = INCGFX_U16("graphics/pokemon/arcanine/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ArcanineBack[] = INCGFX_U32("graphics/pokemon/arcanine/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ArcanineBack[] = INCGFX_U16("graphics/pokemon/arcanine/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Poliwag[] = INCGFX_U32("graphics/pokemon/poliwag/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Poliwag[] = INCGFX_U16("graphics/pokemon/poliwag/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PoliwagBack[] = INCGFX_U32("graphics/pokemon/poliwag/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PoliwagBack[] = INCGFX_U16("graphics/pokemon/poliwag/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Poliwhirl[] = INCGFX_U32("graphics/pokemon/poliwhirl/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Poliwhirl[] = INCGFX_U16("graphics/pokemon/poliwhirl/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PoliwhirlBack[] = INCGFX_U32("graphics/pokemon/poliwhirl/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PoliwhirlBack[] = INCGFX_U16("graphics/pokemon/poliwhirl/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Poliwrath[] = INCGFX_U32("graphics/pokemon/poliwrath/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Poliwrath[] = INCGFX_U16("graphics/pokemon/poliwrath/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PoliwrathBack[] = INCGFX_U32("graphics/pokemon/poliwrath/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PoliwrathBack[] = INCGFX_U16("graphics/pokemon/poliwrath/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Abra[] = INCGFX_U32("graphics/pokemon/abra/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Abra[] = INCGFX_U16("graphics/pokemon/abra/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_AbraBack[] = INCGFX_U32("graphics/pokemon/abra/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_AbraBack[] = INCGFX_U16("graphics/pokemon/abra/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Kadabra[] = INCGFX_U32("graphics/pokemon/kadabra/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Kadabra[] = INCGFX_U16("graphics/pokemon/kadabra/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_KadabraBack[] = INCGFX_U32("graphics/pokemon/kadabra/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_KadabraBack[] = INCGFX_U16("graphics/pokemon/kadabra/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Alakazam[] = INCGFX_U32("graphics/pokemon/alakazam/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Alakazam[] = INCGFX_U16("graphics/pokemon/alakazam/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_AlakazamBack[] = INCGFX_U32("graphics/pokemon/alakazam/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_AlakazamBack[] = INCGFX_U16("graphics/pokemon/alakazam/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Machop[] = INCGFX_U32("graphics/pokemon/machop/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Machop[] = INCGFX_U16("graphics/pokemon/machop/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MachopBack[] = INCGFX_U32("graphics/pokemon/machop/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MachopBack[] = INCGFX_U16("graphics/pokemon/machop/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Machoke[] = INCGFX_U32("graphics/pokemon/machoke/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Machoke[] = INCGFX_U16("graphics/pokemon/machoke/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MachokeBack[] = INCGFX_U32("graphics/pokemon/machoke/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MachokeBack[] = INCGFX_U16("graphics/pokemon/machoke/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Machamp[] = INCGFX_U32("graphics/pokemon/machamp/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Machamp[] = INCGFX_U16("graphics/pokemon/machamp/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MachampBack[] = INCGFX_U32("graphics/pokemon/machamp/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MachampBack[] = INCGFX_U16("graphics/pokemon/machamp/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Bellsprout[] = INCGFX_U32("graphics/pokemon/bellsprout/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Bellsprout[] = INCGFX_U16("graphics/pokemon/bellsprout/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_BellsproutBack[] = INCGFX_U32("graphics/pokemon/bellsprout/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_BellsproutBack[] = INCGFX_U16("graphics/pokemon/bellsprout/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Weepinbell[] = INCGFX_U32("graphics/pokemon/weepinbell/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Weepinbell[] = INCGFX_U16("graphics/pokemon/weepinbell/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_WeepinbellBack[] = INCGFX_U32("graphics/pokemon/weepinbell/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_WeepinbellBack[] = INCGFX_U16("graphics/pokemon/weepinbell/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Victreebel[] = INCGFX_U32("graphics/pokemon/victreebel/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Victreebel[] = INCGFX_U16("graphics/pokemon/victreebel/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_VictreebelBack[] = INCGFX_U32("graphics/pokemon/victreebel/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_VictreebelBack[] = INCGFX_U16("graphics/pokemon/victreebel/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Tentacool[] = INCGFX_U32("graphics/pokemon/tentacool/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Tentacool[] = INCGFX_U16("graphics/pokemon/tentacool/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_TentacoolBack[] = INCGFX_U32("graphics/pokemon/tentacool/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_TentacoolBack[] = INCGFX_U16("graphics/pokemon/tentacool/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Tentacruel[] = INCGFX_U32("graphics/pokemon/tentacruel/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Tentacruel[] = INCGFX_U16("graphics/pokemon/tentacruel/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_TentacruelBack[] = INCGFX_U32("graphics/pokemon/tentacruel/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_TentacruelBack[] = INCGFX_U16("graphics/pokemon/tentacruel/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Geodude[] = INCGFX_U32("graphics/pokemon/geodude/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Geodude[] = INCGFX_U16("graphics/pokemon/geodude/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GeodudeBack[] = INCGFX_U32("graphics/pokemon/geodude/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GeodudeBack[] = INCGFX_U16("graphics/pokemon/geodude/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Graveler[] = INCGFX_U32("graphics/pokemon/graveler/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Graveler[] = INCGFX_U16("graphics/pokemon/graveler/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GravelerBack[] = INCGFX_U32("graphics/pokemon/graveler/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GravelerBack[] = INCGFX_U16("graphics/pokemon/graveler/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Golem[] = INCGFX_U32("graphics/pokemon/golem/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Golem[] = INCGFX_U16("graphics/pokemon/golem/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GolemBack[] = INCGFX_U32("graphics/pokemon/golem/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GolemBack[] = INCGFX_U16("graphics/pokemon/golem/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Ponyta[] = INCGFX_U32("graphics/pokemon/ponyta/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Ponyta[] = INCGFX_U16("graphics/pokemon/ponyta/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PonytaBack[] = INCGFX_U32("graphics/pokemon/ponyta/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PonytaBack[] = INCGFX_U16("graphics/pokemon/ponyta/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Rapidash[] = INCGFX_U32("graphics/pokemon/rapidash/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Rapidash[] = INCGFX_U16("graphics/pokemon/rapidash/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_RapidashBack[] = INCGFX_U32("graphics/pokemon/rapidash/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_RapidashBack[] = INCGFX_U16("graphics/pokemon/rapidash/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Slowpoke[] = INCGFX_U32("graphics/pokemon/slowpoke/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Slowpoke[] = INCGFX_U16("graphics/pokemon/slowpoke/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SlowpokeBack[] = INCGFX_U32("graphics/pokemon/slowpoke/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SlowpokeBack[] = INCGFX_U16("graphics/pokemon/slowpoke/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Slowbro[] = INCGFX_U32("graphics/pokemon/slowbro/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Slowbro[] = INCGFX_U16("graphics/pokemon/slowbro/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SlowbroBack[] = INCGFX_U32("graphics/pokemon/slowbro/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SlowbroBack[] = INCGFX_U16("graphics/pokemon/slowbro/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Magnemite[] = INCGFX_U32("graphics/pokemon/magnemite/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Magnemite[] = INCGFX_U16("graphics/pokemon/magnemite/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MagnemiteBack[] = INCGFX_U32("graphics/pokemon/magnemite/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MagnemiteBack[] = INCGFX_U16("graphics/pokemon/magnemite/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Magneton[] = INCGFX_U32("graphics/pokemon/magneton/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Magneton[] = INCGFX_U16("graphics/pokemon/magneton/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MagnetonBack[] = INCGFX_U32("graphics/pokemon/magneton/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MagnetonBack[] = INCGFX_U16("graphics/pokemon/magneton/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Farfetchd[] = INCGFX_U32("graphics/pokemon/farfetchd/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Farfetchd[] = INCGFX_U16("graphics/pokemon/farfetchd/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_FarfetchdBack[] = INCGFX_U32("graphics/pokemon/farfetchd/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_FarfetchdBack[] = INCGFX_U16("graphics/pokemon/farfetchd/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Doduo[] = INCGFX_U32("graphics/pokemon/doduo/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Doduo[] = INCGFX_U16("graphics/pokemon/doduo/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_DoduoBack[] = INCGFX_U32("graphics/pokemon/doduo/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_DoduoBack[] = INCGFX_U16("graphics/pokemon/doduo/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Dodrio[] = INCGFX_U32("graphics/pokemon/dodrio/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Dodrio[] = INCGFX_U16("graphics/pokemon/dodrio/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_DodrioBack[] = INCGFX_U32("graphics/pokemon/dodrio/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_DodrioBack[] = INCGFX_U16("graphics/pokemon/dodrio/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Seel[] = INCGFX_U32("graphics/pokemon/seel/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Seel[] = INCGFX_U16("graphics/pokemon/seel/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SeelBack[] = INCGFX_U32("graphics/pokemon/seel/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SeelBack[] = INCGFX_U16("graphics/pokemon/seel/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Dewgong[] = INCGFX_U32("graphics/pokemon/dewgong/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Dewgong[] = INCGFX_U16("graphics/pokemon/dewgong/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_DewgongBack[] = INCGFX_U32("graphics/pokemon/dewgong/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_DewgongBack[] = INCGFX_U16("graphics/pokemon/dewgong/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Grimer[] = INCGFX_U32("graphics/pokemon/grimer/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Grimer[] = INCGFX_U16("graphics/pokemon/grimer/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GrimerBack[] = INCGFX_U32("graphics/pokemon/grimer/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GrimerBack[] = INCGFX_U16("graphics/pokemon/grimer/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Muk[] = INCGFX_U32("graphics/pokemon/muk/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Muk[] = INCGFX_U16("graphics/pokemon/muk/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MukBack[] = INCGFX_U32("graphics/pokemon/muk/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MukBack[] = INCGFX_U16("graphics/pokemon/muk/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Shellder[] = INCGFX_U32("graphics/pokemon/shellder/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Shellder[] = INCGFX_U16("graphics/pokemon/shellder/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ShellderBack[] = INCGFX_U32("graphics/pokemon/shellder/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ShellderBack[] = INCGFX_U16("graphics/pokemon/shellder/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Cloyster[] = INCGFX_U32("graphics/pokemon/cloyster/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Cloyster[] = INCGFX_U16("graphics/pokemon/cloyster/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CloysterBack[] = INCGFX_U32("graphics/pokemon/cloyster/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CloysterBack[] = INCGFX_U16("graphics/pokemon/cloyster/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Gastly[] = INCGFX_U32("graphics/pokemon/gastly/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Gastly[] = INCGFX_U16("graphics/pokemon/gastly/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GastlyBack[] = INCGFX_U32("graphics/pokemon/gastly/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GastlyBack[] = INCGFX_U16("graphics/pokemon/gastly/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Haunter[] = INCGFX_U32("graphics/pokemon/haunter/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Haunter[] = INCGFX_U16("graphics/pokemon/haunter/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_HaunterBack[] = INCGFX_U32("graphics/pokemon/haunter/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_HaunterBack[] = INCGFX_U16("graphics/pokemon/haunter/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Gengar[] = INCGFX_U32("graphics/pokemon/gengar/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Gengar[] = INCGFX_U16("graphics/pokemon/gengar/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GengarBack[] = INCGFX_U32("graphics/pokemon/gengar/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GengarBack[] = INCGFX_U16("graphics/pokemon/gengar/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Onix[] = INCGFX_U32("graphics/pokemon/onix/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Onix[] = INCGFX_U16("graphics/pokemon/onix/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_OnixBack[] = INCGFX_U32("graphics/pokemon/onix/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_OnixBack[] = INCGFX_U16("graphics/pokemon/onix/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Drowzee[] = INCGFX_U32("graphics/pokemon/drowzee/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Drowzee[] = INCGFX_U16("graphics/pokemon/drowzee/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_DrowzeeBack[] = INCGFX_U32("graphics/pokemon/drowzee/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_DrowzeeBack[] = INCGFX_U16("graphics/pokemon/drowzee/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Hypno[] = INCGFX_U32("graphics/pokemon/hypno/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Hypno[] = INCGFX_U16("graphics/pokemon/hypno/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_HypnoBack[] = INCGFX_U32("graphics/pokemon/hypno/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_HypnoBack[] = INCGFX_U16("graphics/pokemon/hypno/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Krabby[] = INCGFX_U32("graphics/pokemon/krabby/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Krabby[] = INCGFX_U16("graphics/pokemon/krabby/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_KrabbyBack[] = INCGFX_U32("graphics/pokemon/krabby/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_KrabbyBack[] = INCGFX_U16("graphics/pokemon/krabby/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Kingler[] = INCGFX_U32("graphics/pokemon/kingler/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Kingler[] = INCGFX_U16("graphics/pokemon/kingler/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_KinglerBack[] = INCGFX_U32("graphics/pokemon/kingler/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_KinglerBack[] = INCGFX_U16("graphics/pokemon/kingler/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Voltorb[] = INCGFX_U32("graphics/pokemon/voltorb/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Voltorb[] = INCGFX_U16("graphics/pokemon/voltorb/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_VoltorbBack[] = INCGFX_U32("graphics/pokemon/voltorb/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_VoltorbBack[] = INCGFX_U16("graphics/pokemon/voltorb/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Electrode[] = INCGFX_U32("graphics/pokemon/electrode/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Electrode[] = INCGFX_U16("graphics/pokemon/electrode/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ElectrodeBack[] = INCGFX_U32("graphics/pokemon/electrode/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ElectrodeBack[] = INCGFX_U16("graphics/pokemon/electrode/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Exeggcute[] = INCGFX_U32("graphics/pokemon/exeggcute/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Exeggcute[] = INCGFX_U16("graphics/pokemon/exeggcute/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ExeggcuteBack[] = INCGFX_U32("graphics/pokemon/exeggcute/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ExeggcuteBack[] = INCGFX_U16("graphics/pokemon/exeggcute/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Exeggutor[] = INCGFX_U32("graphics/pokemon/exeggutor/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Exeggutor[] = INCGFX_U16("graphics/pokemon/exeggutor/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ExeggutorBack[] = INCGFX_U32("graphics/pokemon/exeggutor/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ExeggutorBack[] = INCGFX_U16("graphics/pokemon/exeggutor/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Cubone[] = INCGFX_U32("graphics/pokemon/cubone/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Cubone[] = INCGFX_U16("graphics/pokemon/cubone/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CuboneBack[] = INCGFX_U32("graphics/pokemon/cubone/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CuboneBack[] = INCGFX_U16("graphics/pokemon/cubone/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Marowak[] = INCGFX_U32("graphics/pokemon/marowak/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Marowak[] = INCGFX_U16("graphics/pokemon/marowak/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MarowakBack[] = INCGFX_U32("graphics/pokemon/marowak/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MarowakBack[] = INCGFX_U16("graphics/pokemon/marowak/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Hitmonlee[] = INCGFX_U32("graphics/pokemon/hitmonlee/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Hitmonlee[] = INCGFX_U16("graphics/pokemon/hitmonlee/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_HitmonleeBack[] = INCGFX_U32("graphics/pokemon/hitmonlee/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_HitmonleeBack[] = INCGFX_U16("graphics/pokemon/hitmonlee/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Hitmonchan[] = INCGFX_U32("graphics/pokemon/hitmonchan/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Hitmonchan[] = INCGFX_U16("graphics/pokemon/hitmonchan/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_HitmonchanBack[] = INCGFX_U32("graphics/pokemon/hitmonchan/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_HitmonchanBack[] = INCGFX_U16("graphics/pokemon/hitmonchan/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Lickitung[] = INCGFX_U32("graphics/pokemon/lickitung/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Lickitung[] = INCGFX_U16("graphics/pokemon/lickitung/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_LickitungBack[] = INCGFX_U32("graphics/pokemon/lickitung/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_LickitungBack[] = INCGFX_U16("graphics/pokemon/lickitung/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Koffing[] = INCGFX_U32("graphics/pokemon/koffing/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Koffing[] = INCGFX_U16("graphics/pokemon/koffing/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_KoffingBack[] = INCGFX_U32("graphics/pokemon/koffing/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_KoffingBack[] = INCGFX_U16("graphics/pokemon/koffing/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Weezing[] = INCGFX_U32("graphics/pokemon/weezing/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Weezing[] = INCGFX_U16("graphics/pokemon/weezing/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_WeezingBack[] = INCGFX_U32("graphics/pokemon/weezing/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_WeezingBack[] = INCGFX_U16("graphics/pokemon/weezing/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Rhyhorn[] = INCGFX_U32("graphics/pokemon/rhyhorn/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Rhyhorn[] = INCGFX_U16("graphics/pokemon/rhyhorn/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_RhyhornBack[] = INCGFX_U32("graphics/pokemon/rhyhorn/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_RhyhornBack[] = INCGFX_U16("graphics/pokemon/rhyhorn/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Rhydon[] = INCGFX_U32("graphics/pokemon/rhydon/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Rhydon[] = INCGFX_U16("graphics/pokemon/rhydon/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_RhydonBack[] = INCGFX_U32("graphics/pokemon/rhydon/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_RhydonBack[] = INCGFX_U16("graphics/pokemon/rhydon/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Chansey[] = INCGFX_U32("graphics/pokemon/chansey/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Chansey[] = INCGFX_U16("graphics/pokemon/chansey/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ChanseyBack[] = INCGFX_U32("graphics/pokemon/chansey/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ChanseyBack[] = INCGFX_U16("graphics/pokemon/chansey/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Tangela[] = INCGFX_U32("graphics/pokemon/tangela/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Tangela[] = INCGFX_U16("graphics/pokemon/tangela/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_TangelaBack[] = INCGFX_U32("graphics/pokemon/tangela/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_TangelaBack[] = INCGFX_U16("graphics/pokemon/tangela/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Kangaskhan[] = INCGFX_U32("graphics/pokemon/kangaskhan/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Kangaskhan[] = INCGFX_U16("graphics/pokemon/kangaskhan/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_KangaskhanBack[] = INCGFX_U32("graphics/pokemon/kangaskhan/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_KangaskhanBack[] = INCGFX_U16("graphics/pokemon/kangaskhan/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Horsea[] = INCGFX_U32("graphics/pokemon/horsea/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Horsea[] = INCGFX_U16("graphics/pokemon/horsea/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_HorseaBack[] = INCGFX_U32("graphics/pokemon/horsea/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_HorseaBack[] = INCGFX_U16("graphics/pokemon/horsea/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Seadra[] = INCGFX_U32("graphics/pokemon/seadra/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Seadra[] = INCGFX_U16("graphics/pokemon/seadra/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SeadraBack[] = INCGFX_U32("graphics/pokemon/seadra/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SeadraBack[] = INCGFX_U16("graphics/pokemon/seadra/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Goldeen[] = INCGFX_U32("graphics/pokemon/goldeen/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Goldeen[] = INCGFX_U16("graphics/pokemon/goldeen/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GoldeenBack[] = INCGFX_U32("graphics/pokemon/goldeen/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GoldeenBack[] = INCGFX_U16("graphics/pokemon/goldeen/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Seaking[] = INCGFX_U32("graphics/pokemon/seaking/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Seaking[] = INCGFX_U16("graphics/pokemon/seaking/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SeakingBack[] = INCGFX_U32("graphics/pokemon/seaking/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SeakingBack[] = INCGFX_U16("graphics/pokemon/seaking/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Staryu[] = INCGFX_U32("graphics/pokemon/staryu/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Staryu[] = INCGFX_U16("graphics/pokemon/staryu/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_StaryuBack[] = INCGFX_U32("graphics/pokemon/staryu/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_StaryuBack[] = INCGFX_U16("graphics/pokemon/staryu/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Starmie[] = INCGFX_U32("graphics/pokemon/starmie/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Starmie[] = INCGFX_U16("graphics/pokemon/starmie/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_StarmieBack[] = INCGFX_U32("graphics/pokemon/starmie/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_StarmieBack[] = INCGFX_U16("graphics/pokemon/starmie/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MrMime[] = INCGFX_U32("graphics/pokemon/mr_mime/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MrMime[] = INCGFX_U16("graphics/pokemon/mr_mime/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MrMimeBack[] = INCGFX_U32("graphics/pokemon/mr_mime/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MrMimeBack[] = INCGFX_U16("graphics/pokemon/mr_mime/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Scyther[] = INCGFX_U32("graphics/pokemon/scyther/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Scyther[] = INCGFX_U16("graphics/pokemon/scyther/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ScytherBack[] = INCGFX_U32("graphics/pokemon/scyther/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ScytherBack[] = INCGFX_U16("graphics/pokemon/scyther/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Jynx[] = INCGFX_U32("graphics/pokemon/jynx/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Jynx[] = INCGFX_U16("graphics/pokemon/jynx/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_JynxBack[] = INCGFX_U32("graphics/pokemon/jynx/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_JynxBack[] = INCGFX_U16("graphics/pokemon/jynx/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Electabuzz[] = INCGFX_U32("graphics/pokemon/electabuzz/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Electabuzz[] = INCGFX_U16("graphics/pokemon/electabuzz/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ElectabuzzBack[] = INCGFX_U32("graphics/pokemon/electabuzz/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ElectabuzzBack[] = INCGFX_U16("graphics/pokemon/electabuzz/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Magmar[] = INCGFX_U32("graphics/pokemon/magmar/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Magmar[] = INCGFX_U16("graphics/pokemon/magmar/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MagmarBack[] = INCGFX_U32("graphics/pokemon/magmar/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MagmarBack[] = INCGFX_U16("graphics/pokemon/magmar/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Pinsir[] = INCGFX_U32("graphics/pokemon/pinsir/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Pinsir[] = INCGFX_U16("graphics/pokemon/pinsir/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PinsirBack[] = INCGFX_U32("graphics/pokemon/pinsir/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PinsirBack[] = INCGFX_U16("graphics/pokemon/pinsir/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Tauros[] = INCGFX_U32("graphics/pokemon/tauros/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Tauros[] = INCGFX_U16("graphics/pokemon/tauros/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_TaurosBack[] = INCGFX_U32("graphics/pokemon/tauros/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_TaurosBack[] = INCGFX_U16("graphics/pokemon/tauros/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Magikarp[] = INCGFX_U32("graphics/pokemon/magikarp/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Magikarp[] = INCGFX_U16("graphics/pokemon/magikarp/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MagikarpBack[] = INCGFX_U32("graphics/pokemon/magikarp/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MagikarpBack[] = INCGFX_U16("graphics/pokemon/magikarp/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Gyarados[] = INCGFX_U32("graphics/pokemon/gyarados/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Gyarados[] = INCGFX_U16("graphics/pokemon/gyarados/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GyaradosBack[] = INCGFX_U32("graphics/pokemon/gyarados/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GyaradosBack[] = INCGFX_U16("graphics/pokemon/gyarados/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Lapras[] = INCGFX_U32("graphics/pokemon/lapras/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Lapras[] = INCGFX_U16("graphics/pokemon/lapras/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_LaprasBack[] = INCGFX_U32("graphics/pokemon/lapras/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_LaprasBack[] = INCGFX_U16("graphics/pokemon/lapras/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Ditto[] = INCGFX_U32("graphics/pokemon/ditto/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Ditto[] = INCGFX_U16("graphics/pokemon/ditto/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_DittoBack[] = INCGFX_U32("graphics/pokemon/ditto/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_DittoBack[] = INCGFX_U16("graphics/pokemon/ditto/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Eevee[] = INCGFX_U32("graphics/pokemon/eevee/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Eevee[] = INCGFX_U16("graphics/pokemon/eevee/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_EeveeBack[] = INCGFX_U32("graphics/pokemon/eevee/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_EeveeBack[] = INCGFX_U16("graphics/pokemon/eevee/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Vaporeon[] = INCGFX_U32("graphics/pokemon/vaporeon/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Vaporeon[] = INCGFX_U16("graphics/pokemon/vaporeon/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_VaporeonBack[] = INCGFX_U32("graphics/pokemon/vaporeon/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_VaporeonBack[] = INCGFX_U16("graphics/pokemon/vaporeon/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Jolteon[] = INCGFX_U32("graphics/pokemon/jolteon/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Jolteon[] = INCGFX_U16("graphics/pokemon/jolteon/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_JolteonBack[] = INCGFX_U32("graphics/pokemon/jolteon/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_JolteonBack[] = INCGFX_U16("graphics/pokemon/jolteon/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Flareon[] = INCGFX_U32("graphics/pokemon/flareon/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Flareon[] = INCGFX_U16("graphics/pokemon/flareon/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_FlareonBack[] = INCGFX_U32("graphics/pokemon/flareon/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_FlareonBack[] = INCGFX_U16("graphics/pokemon/flareon/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Porygon[] = INCGFX_U32("graphics/pokemon/porygon/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Porygon[] = INCGFX_U16("graphics/pokemon/porygon/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PorygonBack[] = INCGFX_U32("graphics/pokemon/porygon/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PorygonBack[] = INCGFX_U16("graphics/pokemon/porygon/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Omanyte[] = INCGFX_U32("graphics/pokemon/omanyte/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Omanyte[] = INCGFX_U16("graphics/pokemon/omanyte/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_OmanyteBack[] = INCGFX_U32("graphics/pokemon/omanyte/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_OmanyteBack[] = INCGFX_U16("graphics/pokemon/omanyte/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Omastar[] = INCGFX_U32("graphics/pokemon/omastar/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Omastar[] = INCGFX_U16("graphics/pokemon/omastar/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_OmastarBack[] = INCGFX_U32("graphics/pokemon/omastar/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_OmastarBack[] = INCGFX_U16("graphics/pokemon/omastar/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Kabuto[] = INCGFX_U32("graphics/pokemon/kabuto/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Kabuto[] = INCGFX_U16("graphics/pokemon/kabuto/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_KabutoBack[] = INCGFX_U32("graphics/pokemon/kabuto/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_KabutoBack[] = INCGFX_U16("graphics/pokemon/kabuto/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Kabutops[] = INCGFX_U32("graphics/pokemon/kabutops/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Kabutops[] = INCGFX_U16("graphics/pokemon/kabutops/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_KabutopsBack[] = INCGFX_U32("graphics/pokemon/kabutops/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_KabutopsBack[] = INCGFX_U16("graphics/pokemon/kabutops/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Aerodactyl[] = INCGFX_U32("graphics/pokemon/aerodactyl/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Aerodactyl[] = INCGFX_U16("graphics/pokemon/aerodactyl/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_AerodactylBack[] = INCGFX_U32("graphics/pokemon/aerodactyl/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_AerodactylBack[] = INCGFX_U16("graphics/pokemon/aerodactyl/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Snorlax[] = INCGFX_U32("graphics/pokemon/snorlax/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Snorlax[] = INCGFX_U16("graphics/pokemon/snorlax/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SnorlaxBack[] = INCGFX_U32("graphics/pokemon/snorlax/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SnorlaxBack[] = INCGFX_U16("graphics/pokemon/snorlax/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Articuno[] = INCGFX_U32("graphics/pokemon/articuno/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Articuno[] = INCGFX_U16("graphics/pokemon/articuno/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ArticunoBack[] = INCGFX_U32("graphics/pokemon/articuno/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ArticunoBack[] = INCGFX_U16("graphics/pokemon/articuno/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Zapdos[] = INCGFX_U32("graphics/pokemon/zapdos/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Zapdos[] = INCGFX_U16("graphics/pokemon/zapdos/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ZapdosBack[] = INCGFX_U32("graphics/pokemon/zapdos/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ZapdosBack[] = INCGFX_U16("graphics/pokemon/zapdos/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Moltres[] = INCGFX_U32("graphics/pokemon/moltres/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Moltres[] = INCGFX_U16("graphics/pokemon/moltres/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MoltresBack[] = INCGFX_U32("graphics/pokemon/moltres/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MoltresBack[] = INCGFX_U16("graphics/pokemon/moltres/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Dratini[] = INCGFX_U32("graphics/pokemon/dratini/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Dratini[] = INCGFX_U16("graphics/pokemon/dratini/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_DratiniBack[] = INCGFX_U32("graphics/pokemon/dratini/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_DratiniBack[] = INCGFX_U16("graphics/pokemon/dratini/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Dragonair[] = INCGFX_U32("graphics/pokemon/dragonair/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Dragonair[] = INCGFX_U16("graphics/pokemon/dragonair/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_DragonairBack[] = INCGFX_U32("graphics/pokemon/dragonair/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_DragonairBack[] = INCGFX_U16("graphics/pokemon/dragonair/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Dragonite[] = INCGFX_U32("graphics/pokemon/dragonite/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Dragonite[] = INCGFX_U16("graphics/pokemon/dragonite/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_DragoniteBack[] = INCGFX_U32("graphics/pokemon/dragonite/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_DragoniteBack[] = INCGFX_U16("graphics/pokemon/dragonite/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Mewtwo[] = INCGFX_U32("graphics/pokemon/mewtwo/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Mewtwo[] = INCGFX_U16("graphics/pokemon/mewtwo/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MewtwoBack[] = INCGFX_U32("graphics/pokemon/mewtwo/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MewtwoBack[] = INCGFX_U16("graphics/pokemon/mewtwo/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Mew[] = INCGFX_U32("graphics/pokemon/mew/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Mew[] = INCGFX_U16("graphics/pokemon/mew/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MewBack[] = INCGFX_U32("graphics/pokemon/mew/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MewBack[] = INCGFX_U16("graphics/pokemon/mew/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Chikorita[] = INCGFX_U32("graphics/pokemon/chikorita/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Chikorita[] = INCGFX_U16("graphics/pokemon/chikorita/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ChikoritaBack[] = INCGFX_U32("graphics/pokemon/chikorita/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ChikoritaBack[] = INCGFX_U16("graphics/pokemon/chikorita/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Bayleef[] = INCGFX_U32("graphics/pokemon/bayleef/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Bayleef[] = INCGFX_U16("graphics/pokemon/bayleef/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_BayleefBack[] = INCGFX_U32("graphics/pokemon/bayleef/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_BayleefBack[] = INCGFX_U16("graphics/pokemon/bayleef/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Meganium[] = INCGFX_U32("graphics/pokemon/meganium/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Meganium[] = INCGFX_U16("graphics/pokemon/meganium/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MeganiumBack[] = INCGFX_U32("graphics/pokemon/meganium/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MeganiumBack[] = INCGFX_U16("graphics/pokemon/meganium/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Cyndaquil[] = INCGFX_U32("graphics/pokemon/cyndaquil/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Cyndaquil[] = INCGFX_U16("graphics/pokemon/cyndaquil/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CyndaquilBack[] = INCGFX_U32("graphics/pokemon/cyndaquil/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CyndaquilBack[] = INCGFX_U16("graphics/pokemon/cyndaquil/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Quilava[] = INCGFX_U32("graphics/pokemon/quilava/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Quilava[] = INCGFX_U16("graphics/pokemon/quilava/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_QuilavaBack[] = INCGFX_U32("graphics/pokemon/quilava/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_QuilavaBack[] = INCGFX_U16("graphics/pokemon/quilava/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Typhlosion[] = INCGFX_U32("graphics/pokemon/typhlosion/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Typhlosion[] = INCGFX_U16("graphics/pokemon/typhlosion/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_TyphlosionBack[] = INCGFX_U32("graphics/pokemon/typhlosion/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_TyphlosionBack[] = INCGFX_U16("graphics/pokemon/typhlosion/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Totodile[] = INCGFX_U32("graphics/pokemon/totodile/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Totodile[] = INCGFX_U16("graphics/pokemon/totodile/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_TotodileBack[] = INCGFX_U32("graphics/pokemon/totodile/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_TotodileBack[] = INCGFX_U16("graphics/pokemon/totodile/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Croconaw[] = INCGFX_U32("graphics/pokemon/croconaw/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Croconaw[] = INCGFX_U16("graphics/pokemon/croconaw/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CroconawBack[] = INCGFX_U32("graphics/pokemon/croconaw/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CroconawBack[] = INCGFX_U16("graphics/pokemon/croconaw/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Feraligatr[] = INCGFX_U32("graphics/pokemon/feraligatr/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Feraligatr[] = INCGFX_U16("graphics/pokemon/feraligatr/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_FeraligatrBack[] = INCGFX_U32("graphics/pokemon/feraligatr/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_FeraligatrBack[] = INCGFX_U16("graphics/pokemon/feraligatr/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Sentret[] = INCGFX_U32("graphics/pokemon/sentret/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Sentret[] = INCGFX_U16("graphics/pokemon/sentret/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SentretBack[] = INCGFX_U32("graphics/pokemon/sentret/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SentretBack[] = INCGFX_U16("graphics/pokemon/sentret/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Furret[] = INCGFX_U32("graphics/pokemon/furret/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Furret[] = INCGFX_U16("graphics/pokemon/furret/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_FurretBack[] = INCGFX_U32("graphics/pokemon/furret/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_FurretBack[] = INCGFX_U16("graphics/pokemon/furret/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Hoothoot[] = INCGFX_U32("graphics/pokemon/hoothoot/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Hoothoot[] = INCGFX_U16("graphics/pokemon/hoothoot/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_HoothootBack[] = INCGFX_U32("graphics/pokemon/hoothoot/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_HoothootBack[] = INCGFX_U16("graphics/pokemon/hoothoot/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Noctowl[] = INCGFX_U32("graphics/pokemon/noctowl/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Noctowl[] = INCGFX_U16("graphics/pokemon/noctowl/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_NoctowlBack[] = INCGFX_U32("graphics/pokemon/noctowl/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_NoctowlBack[] = INCGFX_U16("graphics/pokemon/noctowl/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Ledyba[] = INCGFX_U32("graphics/pokemon/ledyba/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Ledyba[] = INCGFX_U16("graphics/pokemon/ledyba/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_LedybaBack[] = INCGFX_U32("graphics/pokemon/ledyba/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_LedybaBack[] = INCGFX_U16("graphics/pokemon/ledyba/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Ledian[] = INCGFX_U32("graphics/pokemon/ledian/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Ledian[] = INCGFX_U16("graphics/pokemon/ledian/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_LedianBack[] = INCGFX_U32("graphics/pokemon/ledian/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_LedianBack[] = INCGFX_U16("graphics/pokemon/ledian/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Spinarak[] = INCGFX_U32("graphics/pokemon/spinarak/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Spinarak[] = INCGFX_U16("graphics/pokemon/spinarak/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SpinarakBack[] = INCGFX_U32("graphics/pokemon/spinarak/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SpinarakBack[] = INCGFX_U16("graphics/pokemon/spinarak/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Ariados[] = INCGFX_U32("graphics/pokemon/ariados/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Ariados[] = INCGFX_U16("graphics/pokemon/ariados/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_AriadosBack[] = INCGFX_U32("graphics/pokemon/ariados/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_AriadosBack[] = INCGFX_U16("graphics/pokemon/ariados/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Crobat[] = INCGFX_U32("graphics/pokemon/crobat/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Crobat[] = INCGFX_U16("graphics/pokemon/crobat/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CrobatBack[] = INCGFX_U32("graphics/pokemon/crobat/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CrobatBack[] = INCGFX_U16("graphics/pokemon/crobat/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Chinchou[] = INCGFX_U32("graphics/pokemon/chinchou/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Chinchou[] = INCGFX_U16("graphics/pokemon/chinchou/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ChinchouBack[] = INCGFX_U32("graphics/pokemon/chinchou/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ChinchouBack[] = INCGFX_U16("graphics/pokemon/chinchou/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Lanturn[] = INCGFX_U32("graphics/pokemon/lanturn/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Lanturn[] = INCGFX_U16("graphics/pokemon/lanturn/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_LanturnBack[] = INCGFX_U32("graphics/pokemon/lanturn/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_LanturnBack[] = INCGFX_U16("graphics/pokemon/lanturn/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Pichu[] = INCGFX_U32("graphics/pokemon/pichu/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Pichu[] = INCGFX_U16("graphics/pokemon/pichu/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PichuBack[] = INCGFX_U32("graphics/pokemon/pichu/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PichuBack[] = INCGFX_U16("graphics/pokemon/pichu/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Cleffa[] = INCGFX_U32("graphics/pokemon/cleffa/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Cleffa[] = INCGFX_U16("graphics/pokemon/cleffa/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CleffaBack[] = INCGFX_U32("graphics/pokemon/cleffa/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CleffaBack[] = INCGFX_U16("graphics/pokemon/cleffa/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Igglybuff[] = INCGFX_U32("graphics/pokemon/igglybuff/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Igglybuff[] = INCGFX_U16("graphics/pokemon/igglybuff/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_IgglybuffBack[] = INCGFX_U32("graphics/pokemon/igglybuff/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_IgglybuffBack[] = INCGFX_U16("graphics/pokemon/igglybuff/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Togepi[] = INCGFX_U32("graphics/pokemon/togepi/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Togepi[] = INCGFX_U16("graphics/pokemon/togepi/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_TogepiBack[] = INCGFX_U32("graphics/pokemon/togepi/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_TogepiBack[] = INCGFX_U16("graphics/pokemon/togepi/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Togetic[] = INCGFX_U32("graphics/pokemon/togetic/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Togetic[] = INCGFX_U16("graphics/pokemon/togetic/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_TogeticBack[] = INCGFX_U32("graphics/pokemon/togetic/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_TogeticBack[] = INCGFX_U16("graphics/pokemon/togetic/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Natu[] = INCGFX_U32("graphics/pokemon/natu/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Natu[] = INCGFX_U16("graphics/pokemon/natu/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_NatuBack[] = INCGFX_U32("graphics/pokemon/natu/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_NatuBack[] = INCGFX_U16("graphics/pokemon/natu/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Xatu[] = INCGFX_U32("graphics/pokemon/xatu/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Xatu[] = INCGFX_U16("graphics/pokemon/xatu/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_XatuBack[] = INCGFX_U32("graphics/pokemon/xatu/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_XatuBack[] = INCGFX_U16("graphics/pokemon/xatu/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Mareep[] = INCGFX_U32("graphics/pokemon/mareep/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Mareep[] = INCGFX_U16("graphics/pokemon/mareep/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MareepBack[] = INCGFX_U32("graphics/pokemon/mareep/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MareepBack[] = INCGFX_U16("graphics/pokemon/mareep/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Flaaffy[] = INCGFX_U32("graphics/pokemon/flaaffy/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Flaaffy[] = INCGFX_U16("graphics/pokemon/flaaffy/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_FlaaffyBack[] = INCGFX_U32("graphics/pokemon/flaaffy/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_FlaaffyBack[] = INCGFX_U16("graphics/pokemon/flaaffy/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Ampharos[] = INCGFX_U32("graphics/pokemon/ampharos/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Ampharos[] = INCGFX_U16("graphics/pokemon/ampharos/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_AmpharosBack[] = INCGFX_U32("graphics/pokemon/ampharos/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_AmpharosBack[] = INCGFX_U16("graphics/pokemon/ampharos/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Bellossom[] = INCGFX_U32("graphics/pokemon/bellossom/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Bellossom[] = INCGFX_U16("graphics/pokemon/bellossom/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_BellossomBack[] = INCGFX_U32("graphics/pokemon/bellossom/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_BellossomBack[] = INCGFX_U16("graphics/pokemon/bellossom/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Marill[] = INCGFX_U32("graphics/pokemon/marill/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Marill[] = INCGFX_U16("graphics/pokemon/marill/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MarillBack[] = INCGFX_U32("graphics/pokemon/marill/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MarillBack[] = INCGFX_U16("graphics/pokemon/marill/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Azumarill[] = INCGFX_U32("graphics/pokemon/azumarill/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Azumarill[] = INCGFX_U16("graphics/pokemon/azumarill/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_AzumarillBack[] = INCGFX_U32("graphics/pokemon/azumarill/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_AzumarillBack[] = INCGFX_U16("graphics/pokemon/azumarill/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Sudowoodo[] = INCGFX_U32("graphics/pokemon/sudowoodo/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Sudowoodo[] = INCGFX_U16("graphics/pokemon/sudowoodo/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SudowoodoBack[] = INCGFX_U32("graphics/pokemon/sudowoodo/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SudowoodoBack[] = INCGFX_U16("graphics/pokemon/sudowoodo/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Politoed[] = INCGFX_U32("graphics/pokemon/politoed/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Politoed[] = INCGFX_U16("graphics/pokemon/politoed/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PolitoedBack[] = INCGFX_U32("graphics/pokemon/politoed/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PolitoedBack[] = INCGFX_U16("graphics/pokemon/politoed/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Hoppip[] = INCGFX_U32("graphics/pokemon/hoppip/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Hoppip[] = INCGFX_U16("graphics/pokemon/hoppip/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_HoppipBack[] = INCGFX_U32("graphics/pokemon/hoppip/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_HoppipBack[] = INCGFX_U16("graphics/pokemon/hoppip/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Skiploom[] = INCGFX_U32("graphics/pokemon/skiploom/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Skiploom[] = INCGFX_U16("graphics/pokemon/skiploom/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SkiploomBack[] = INCGFX_U32("graphics/pokemon/skiploom/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SkiploomBack[] = INCGFX_U16("graphics/pokemon/skiploom/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Jumpluff[] = INCGFX_U32("graphics/pokemon/jumpluff/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Jumpluff[] = INCGFX_U16("graphics/pokemon/jumpluff/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_JumpluffBack[] = INCGFX_U32("graphics/pokemon/jumpluff/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_JumpluffBack[] = INCGFX_U16("graphics/pokemon/jumpluff/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Aipom[] = INCGFX_U32("graphics/pokemon/aipom/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Aipom[] = INCGFX_U16("graphics/pokemon/aipom/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_AipomBack[] = INCGFX_U32("graphics/pokemon/aipom/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_AipomBack[] = INCGFX_U16("graphics/pokemon/aipom/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Sunkern[] = INCGFX_U32("graphics/pokemon/sunkern/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Sunkern[] = INCGFX_U16("graphics/pokemon/sunkern/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SunkernBack[] = INCGFX_U32("graphics/pokemon/sunkern/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SunkernBack[] = INCGFX_U16("graphics/pokemon/sunkern/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Sunflora[] = INCGFX_U32("graphics/pokemon/sunflora/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Sunflora[] = INCGFX_U16("graphics/pokemon/sunflora/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SunfloraBack[] = INCGFX_U32("graphics/pokemon/sunflora/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SunfloraBack[] = INCGFX_U16("graphics/pokemon/sunflora/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Yanma[] = INCGFX_U32("graphics/pokemon/yanma/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Yanma[] = INCGFX_U16("graphics/pokemon/yanma/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_YanmaBack[] = INCGFX_U32("graphics/pokemon/yanma/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_YanmaBack[] = INCGFX_U16("graphics/pokemon/yanma/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Wooper[] = INCGFX_U32("graphics/pokemon/wooper/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Wooper[] = INCGFX_U16("graphics/pokemon/wooper/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_WooperBack[] = INCGFX_U32("graphics/pokemon/wooper/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_WooperBack[] = INCGFX_U16("graphics/pokemon/wooper/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Quagsire[] = INCGFX_U32("graphics/pokemon/quagsire/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Quagsire[] = INCGFX_U16("graphics/pokemon/quagsire/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_QuagsireBack[] = INCGFX_U32("graphics/pokemon/quagsire/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_QuagsireBack[] = INCGFX_U16("graphics/pokemon/quagsire/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Espeon[] = INCGFX_U32("graphics/pokemon/espeon/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Espeon[] = INCGFX_U16("graphics/pokemon/espeon/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_EspeonBack[] = INCGFX_U32("graphics/pokemon/espeon/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_EspeonBack[] = INCGFX_U16("graphics/pokemon/espeon/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Umbreon[] = INCGFX_U32("graphics/pokemon/umbreon/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Umbreon[] = INCGFX_U16("graphics/pokemon/umbreon/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_UmbreonBack[] = INCGFX_U32("graphics/pokemon/umbreon/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_UmbreonBack[] = INCGFX_U16("graphics/pokemon/umbreon/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Murkrow[] = INCGFX_U32("graphics/pokemon/murkrow/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Murkrow[] = INCGFX_U16("graphics/pokemon/murkrow/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MurkrowBack[] = INCGFX_U32("graphics/pokemon/murkrow/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MurkrowBack[] = INCGFX_U16("graphics/pokemon/murkrow/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Slowking[] = INCGFX_U32("graphics/pokemon/slowking/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Slowking[] = INCGFX_U16("graphics/pokemon/slowking/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SlowkingBack[] = INCGFX_U32("graphics/pokemon/slowking/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SlowkingBack[] = INCGFX_U16("graphics/pokemon/slowking/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Misdreavus[] = INCGFX_U32("graphics/pokemon/misdreavus/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Misdreavus[] = INCGFX_U16("graphics/pokemon/misdreavus/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MisdreavusBack[] = INCGFX_U32("graphics/pokemon/misdreavus/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MisdreavusBack[] = INCGFX_U16("graphics/pokemon/misdreavus/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Unown[] = INCGFX_U32("graphics/pokemon/unown/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Unown[] = INCGFX_U16("graphics/pokemon/unown/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_UnownBack[] = INCGFX_U32("graphics/pokemon/unown/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_UnownBack[] = INCGFX_U16("graphics/pokemon/unown/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Wobbuffet[] = INCGFX_U32("graphics/pokemon/wobbuffet/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Wobbuffet[] = INCGFX_U16("graphics/pokemon/wobbuffet/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_WobbuffetBack[] = INCGFX_U32("graphics/pokemon/wobbuffet/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_WobbuffetBack[] = INCGFX_U16("graphics/pokemon/wobbuffet/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Girafarig[] = INCGFX_U32("graphics/pokemon/girafarig/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Girafarig[] = INCGFX_U16("graphics/pokemon/girafarig/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GirafarigBack[] = INCGFX_U32("graphics/pokemon/girafarig/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GirafarigBack[] = INCGFX_U16("graphics/pokemon/girafarig/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Pineco[] = INCGFX_U32("graphics/pokemon/pineco/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Pineco[] = INCGFX_U16("graphics/pokemon/pineco/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PinecoBack[] = INCGFX_U32("graphics/pokemon/pineco/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PinecoBack[] = INCGFX_U16("graphics/pokemon/pineco/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Forretress[] = INCGFX_U32("graphics/pokemon/forretress/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Forretress[] = INCGFX_U16("graphics/pokemon/forretress/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ForretressBack[] = INCGFX_U32("graphics/pokemon/forretress/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ForretressBack[] = INCGFX_U16("graphics/pokemon/forretress/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Dunsparce[] = INCGFX_U32("graphics/pokemon/dunsparce/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Dunsparce[] = INCGFX_U16("graphics/pokemon/dunsparce/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_DunsparceBack[] = INCGFX_U32("graphics/pokemon/dunsparce/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_DunsparceBack[] = INCGFX_U16("graphics/pokemon/dunsparce/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Gligar[] = INCGFX_U32("graphics/pokemon/gligar/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Gligar[] = INCGFX_U16("graphics/pokemon/gligar/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GligarBack[] = INCGFX_U32("graphics/pokemon/gligar/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GligarBack[] = INCGFX_U16("graphics/pokemon/gligar/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Steelix[] = INCGFX_U32("graphics/pokemon/steelix/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Steelix[] = INCGFX_U16("graphics/pokemon/steelix/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SteelixBack[] = INCGFX_U32("graphics/pokemon/steelix/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SteelixBack[] = INCGFX_U16("graphics/pokemon/steelix/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Snubbull[] = INCGFX_U32("graphics/pokemon/snubbull/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Snubbull[] = INCGFX_U16("graphics/pokemon/snubbull/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SnubbullBack[] = INCGFX_U32("graphics/pokemon/snubbull/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SnubbullBack[] = INCGFX_U16("graphics/pokemon/snubbull/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Granbull[] = INCGFX_U32("graphics/pokemon/granbull/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Granbull[] = INCGFX_U16("graphics/pokemon/granbull/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GranbullBack[] = INCGFX_U32("graphics/pokemon/granbull/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GranbullBack[] = INCGFX_U16("graphics/pokemon/granbull/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Qwilfish[] = INCGFX_U32("graphics/pokemon/qwilfish/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Qwilfish[] = INCGFX_U16("graphics/pokemon/qwilfish/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_QwilfishBack[] = INCGFX_U32("graphics/pokemon/qwilfish/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_QwilfishBack[] = INCGFX_U16("graphics/pokemon/qwilfish/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Scizor[] = INCGFX_U32("graphics/pokemon/scizor/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Scizor[] = INCGFX_U16("graphics/pokemon/scizor/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ScizorBack[] = INCGFX_U32("graphics/pokemon/scizor/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ScizorBack[] = INCGFX_U16("graphics/pokemon/scizor/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Shuckle[] = INCGFX_U32("graphics/pokemon/shuckle/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Shuckle[] = INCGFX_U16("graphics/pokemon/shuckle/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ShuckleBack[] = INCGFX_U32("graphics/pokemon/shuckle/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ShuckleBack[] = INCGFX_U16("graphics/pokemon/shuckle/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Heracross[] = INCGFX_U32("graphics/pokemon/heracross/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Heracross[] = INCGFX_U16("graphics/pokemon/heracross/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_HeracrossBack[] = INCGFX_U32("graphics/pokemon/heracross/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_HeracrossBack[] = INCGFX_U16("graphics/pokemon/heracross/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Sneasel[] = INCGFX_U32("graphics/pokemon/sneasel/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Sneasel[] = INCGFX_U16("graphics/pokemon/sneasel/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SneaselBack[] = INCGFX_U32("graphics/pokemon/sneasel/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SneaselBack[] = INCGFX_U16("graphics/pokemon/sneasel/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Teddiursa[] = INCGFX_U32("graphics/pokemon/teddiursa/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Teddiursa[] = INCGFX_U16("graphics/pokemon/teddiursa/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_TeddiursaBack[] = INCGFX_U32("graphics/pokemon/teddiursa/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_TeddiursaBack[] = INCGFX_U16("graphics/pokemon/teddiursa/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Ursaring[] = INCGFX_U32("graphics/pokemon/ursaring/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Ursaring[] = INCGFX_U16("graphics/pokemon/ursaring/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_UrsaringBack[] = INCGFX_U32("graphics/pokemon/ursaring/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_UrsaringBack[] = INCGFX_U16("graphics/pokemon/ursaring/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Slugma[] = INCGFX_U32("graphics/pokemon/slugma/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Slugma[] = INCGFX_U16("graphics/pokemon/slugma/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SlugmaBack[] = INCGFX_U32("graphics/pokemon/slugma/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SlugmaBack[] = INCGFX_U16("graphics/pokemon/slugma/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Magcargo[] = INCGFX_U32("graphics/pokemon/magcargo/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Magcargo[] = INCGFX_U16("graphics/pokemon/magcargo/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MagcargoBack[] = INCGFX_U32("graphics/pokemon/magcargo/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MagcargoBack[] = INCGFX_U16("graphics/pokemon/magcargo/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Swinub[] = INCGFX_U32("graphics/pokemon/swinub/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Swinub[] = INCGFX_U16("graphics/pokemon/swinub/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SwinubBack[] = INCGFX_U32("graphics/pokemon/swinub/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SwinubBack[] = INCGFX_U16("graphics/pokemon/swinub/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Piloswine[] = INCGFX_U32("graphics/pokemon/piloswine/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Piloswine[] = INCGFX_U16("graphics/pokemon/piloswine/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PiloswineBack[] = INCGFX_U32("graphics/pokemon/piloswine/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PiloswineBack[] = INCGFX_U16("graphics/pokemon/piloswine/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Corsola[] = INCGFX_U32("graphics/pokemon/corsola/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Corsola[] = INCGFX_U16("graphics/pokemon/corsola/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CorsolaBack[] = INCGFX_U32("graphics/pokemon/corsola/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CorsolaBack[] = INCGFX_U16("graphics/pokemon/corsola/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Remoraid[] = INCGFX_U32("graphics/pokemon/remoraid/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Remoraid[] = INCGFX_U16("graphics/pokemon/remoraid/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_RemoraidBack[] = INCGFX_U32("graphics/pokemon/remoraid/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_RemoraidBack[] = INCGFX_U16("graphics/pokemon/remoraid/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Octillery[] = INCGFX_U32("graphics/pokemon/octillery/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Octillery[] = INCGFX_U16("graphics/pokemon/octillery/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_OctilleryBack[] = INCGFX_U32("graphics/pokemon/octillery/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_OctilleryBack[] = INCGFX_U16("graphics/pokemon/octillery/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Delibird[] = INCGFX_U32("graphics/pokemon/delibird/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Delibird[] = INCGFX_U16("graphics/pokemon/delibird/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_DelibirdBack[] = INCGFX_U32("graphics/pokemon/delibird/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_DelibirdBack[] = INCGFX_U16("graphics/pokemon/delibird/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Mantine[] = INCGFX_U32("graphics/pokemon/mantine/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Mantine[] = INCGFX_U16("graphics/pokemon/mantine/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MantineBack[] = INCGFX_U32("graphics/pokemon/mantine/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MantineBack[] = INCGFX_U16("graphics/pokemon/mantine/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Skarmory[] = INCGFX_U32("graphics/pokemon/skarmory/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Skarmory[] = INCGFX_U16("graphics/pokemon/skarmory/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SkarmoryBack[] = INCGFX_U32("graphics/pokemon/skarmory/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SkarmoryBack[] = INCGFX_U16("graphics/pokemon/skarmory/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Houndour[] = INCGFX_U32("graphics/pokemon/houndour/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Houndour[] = INCGFX_U16("graphics/pokemon/houndour/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_HoundourBack[] = INCGFX_U32("graphics/pokemon/houndour/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_HoundourBack[] = INCGFX_U16("graphics/pokemon/houndour/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Houndoom[] = INCGFX_U32("graphics/pokemon/houndoom/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Houndoom[] = INCGFX_U16("graphics/pokemon/houndoom/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_HoundoomBack[] = INCGFX_U32("graphics/pokemon/houndoom/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_HoundoomBack[] = INCGFX_U16("graphics/pokemon/houndoom/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Kingdra[] = INCGFX_U32("graphics/pokemon/kingdra/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Kingdra[] = INCGFX_U16("graphics/pokemon/kingdra/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_KingdraBack[] = INCGFX_U32("graphics/pokemon/kingdra/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_KingdraBack[] = INCGFX_U16("graphics/pokemon/kingdra/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Phanpy[] = INCGFX_U32("graphics/pokemon/phanpy/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Phanpy[] = INCGFX_U16("graphics/pokemon/phanpy/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PhanpyBack[] = INCGFX_U32("graphics/pokemon/phanpy/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PhanpyBack[] = INCGFX_U16("graphics/pokemon/phanpy/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Donphan[] = INCGFX_U32("graphics/pokemon/donphan/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Donphan[] = INCGFX_U16("graphics/pokemon/donphan/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_DonphanBack[] = INCGFX_U32("graphics/pokemon/donphan/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_DonphanBack[] = INCGFX_U16("graphics/pokemon/donphan/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Porygon2[] = INCGFX_U32("graphics/pokemon/porygon2/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Porygon2[] = INCGFX_U16("graphics/pokemon/porygon2/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Porygon2Back[] = INCGFX_U32("graphics/pokemon/porygon2/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Porygon2Back[] = INCGFX_U16("graphics/pokemon/porygon2/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Stantler[] = INCGFX_U32("graphics/pokemon/stantler/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Stantler[] = INCGFX_U16("graphics/pokemon/stantler/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_StantlerBack[] = INCGFX_U32("graphics/pokemon/stantler/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_StantlerBack[] = INCGFX_U16("graphics/pokemon/stantler/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Smeargle[] = INCGFX_U32("graphics/pokemon/smeargle/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Smeargle[] = INCGFX_U16("graphics/pokemon/smeargle/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SmeargleBack[] = INCGFX_U32("graphics/pokemon/smeargle/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SmeargleBack[] = INCGFX_U16("graphics/pokemon/smeargle/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Tyrogue[] = INCGFX_U32("graphics/pokemon/tyrogue/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Tyrogue[] = INCGFX_U16("graphics/pokemon/tyrogue/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_TyrogueBack[] = INCGFX_U32("graphics/pokemon/tyrogue/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_TyrogueBack[] = INCGFX_U16("graphics/pokemon/tyrogue/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Hitmontop[] = INCGFX_U32("graphics/pokemon/hitmontop/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Hitmontop[] = INCGFX_U16("graphics/pokemon/hitmontop/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_HitmontopBack[] = INCGFX_U32("graphics/pokemon/hitmontop/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_HitmontopBack[] = INCGFX_U16("graphics/pokemon/hitmontop/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Smoochum[] = INCGFX_U32("graphics/pokemon/smoochum/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Smoochum[] = INCGFX_U16("graphics/pokemon/smoochum/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SmoochumBack[] = INCGFX_U32("graphics/pokemon/smoochum/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SmoochumBack[] = INCGFX_U16("graphics/pokemon/smoochum/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Elekid[] = INCGFX_U32("graphics/pokemon/elekid/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Elekid[] = INCGFX_U16("graphics/pokemon/elekid/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ElekidBack[] = INCGFX_U32("graphics/pokemon/elekid/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ElekidBack[] = INCGFX_U16("graphics/pokemon/elekid/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Magby[] = INCGFX_U32("graphics/pokemon/magby/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Magby[] = INCGFX_U16("graphics/pokemon/magby/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MagbyBack[] = INCGFX_U32("graphics/pokemon/magby/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MagbyBack[] = INCGFX_U16("graphics/pokemon/magby/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Miltank[] = INCGFX_U32("graphics/pokemon/miltank/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Miltank[] = INCGFX_U16("graphics/pokemon/miltank/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MiltankBack[] = INCGFX_U32("graphics/pokemon/miltank/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MiltankBack[] = INCGFX_U16("graphics/pokemon/miltank/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Blissey[] = INCGFX_U32("graphics/pokemon/blissey/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Blissey[] = INCGFX_U16("graphics/pokemon/blissey/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_BlisseyBack[] = INCGFX_U32("graphics/pokemon/blissey/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_BlisseyBack[] = INCGFX_U16("graphics/pokemon/blissey/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Raikou[] = INCGFX_U32("graphics/pokemon/raikou/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Raikou[] = INCGFX_U16("graphics/pokemon/raikou/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_RaikouBack[] = INCGFX_U32("graphics/pokemon/raikou/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_RaikouBack[] = INCGFX_U16("graphics/pokemon/raikou/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Entei[] = INCGFX_U32("graphics/pokemon/entei/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Entei[] = INCGFX_U16("graphics/pokemon/entei/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_EnteiBack[] = INCGFX_U32("graphics/pokemon/entei/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_EnteiBack[] = INCGFX_U16("graphics/pokemon/entei/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Suicune[] = INCGFX_U32("graphics/pokemon/suicune/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Suicune[] = INCGFX_U16("graphics/pokemon/suicune/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SuicuneBack[] = INCGFX_U32("graphics/pokemon/suicune/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SuicuneBack[] = INCGFX_U16("graphics/pokemon/suicune/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Larvitar[] = INCGFX_U32("graphics/pokemon/larvitar/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Larvitar[] = INCGFX_U16("graphics/pokemon/larvitar/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_LarvitarBack[] = INCGFX_U32("graphics/pokemon/larvitar/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_LarvitarBack[] = INCGFX_U16("graphics/pokemon/larvitar/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Pupitar[] = INCGFX_U32("graphics/pokemon/pupitar/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Pupitar[] = INCGFX_U16("graphics/pokemon/pupitar/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PupitarBack[] = INCGFX_U32("graphics/pokemon/pupitar/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PupitarBack[] = INCGFX_U16("graphics/pokemon/pupitar/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Tyranitar[] = INCGFX_U32("graphics/pokemon/tyranitar/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Tyranitar[] = INCGFX_U16("graphics/pokemon/tyranitar/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_TyranitarBack[] = INCGFX_U32("graphics/pokemon/tyranitar/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_TyranitarBack[] = INCGFX_U16("graphics/pokemon/tyranitar/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Lugia[] = INCGFX_U32("graphics/pokemon/lugia/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Lugia[] = INCGFX_U16("graphics/pokemon/lugia/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_LugiaBack[] = INCGFX_U32("graphics/pokemon/lugia/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_LugiaBack[] = INCGFX_U16("graphics/pokemon/lugia/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_HoOh[] = INCGFX_U32("graphics/pokemon/ho_oh/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_HoOh[] = INCGFX_U16("graphics/pokemon/ho_oh/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_HoOhBack[] = INCGFX_U32("graphics/pokemon/ho_oh/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_HoOhBack[] = INCGFX_U16("graphics/pokemon/ho_oh/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Celebi[] = INCGFX_U32("graphics/pokemon/celebi/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Celebi[] = INCGFX_U16("graphics/pokemon/celebi/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CelebiBack[] = INCGFX_U32("graphics/pokemon/celebi/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CelebiBack[] = INCGFX_U16("graphics/pokemon/celebi/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Treecko[] = INCGFX_U32("graphics/pokemon/treecko/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Treecko[] = INCGFX_U16("graphics/pokemon/treecko/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_TreeckoBack[] = INCGFX_U32("graphics/pokemon/treecko/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_TreeckoBack[] = INCGFX_U16("graphics/pokemon/treecko/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Grovyle[] = INCGFX_U32("graphics/pokemon/grovyle/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Grovyle[] = INCGFX_U16("graphics/pokemon/grovyle/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GrovyleBack[] = INCGFX_U32("graphics/pokemon/grovyle/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GrovyleBack[] = INCGFX_U16("graphics/pokemon/grovyle/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Sceptile[] = INCGFX_U32("graphics/pokemon/sceptile/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Sceptile[] = INCGFX_U16("graphics/pokemon/sceptile/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SceptileBack[] = INCGFX_U32("graphics/pokemon/sceptile/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SceptileBack[] = INCGFX_U16("graphics/pokemon/sceptile/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Torchic[] = INCGFX_U32("graphics/pokemon/torchic/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Torchic[] = INCGFX_U16("graphics/pokemon/torchic/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_TorchicBack[] = INCGFX_U32("graphics/pokemon/torchic/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_TorchicBack[] = INCGFX_U16("graphics/pokemon/torchic/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Combusken[] = INCGFX_U32("graphics/pokemon/combusken/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Combusken[] = INCGFX_U16("graphics/pokemon/combusken/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CombuskenBack[] = INCGFX_U32("graphics/pokemon/combusken/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CombuskenBack[] = INCGFX_U16("graphics/pokemon/combusken/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Blaziken[] = INCGFX_U32("graphics/pokemon/blaziken/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Blaziken[] = INCGFX_U16("graphics/pokemon/blaziken/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_BlazikenBack[] = INCGFX_U32("graphics/pokemon/blaziken/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_BlazikenBack[] = INCGFX_U16("graphics/pokemon/blaziken/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Mudkip[] = INCGFX_U32("graphics/pokemon/mudkip/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Mudkip[] = INCGFX_U16("graphics/pokemon/mudkip/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MudkipBack[] = INCGFX_U32("graphics/pokemon/mudkip/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MudkipBack[] = INCGFX_U16("graphics/pokemon/mudkip/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Marshtomp[] = INCGFX_U32("graphics/pokemon/marshtomp/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Marshtomp[] = INCGFX_U16("graphics/pokemon/marshtomp/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MarshtompBack[] = INCGFX_U32("graphics/pokemon/marshtomp/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MarshtompBack[] = INCGFX_U16("graphics/pokemon/marshtomp/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Swampert[] = INCGFX_U32("graphics/pokemon/swampert/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Swampert[] = INCGFX_U16("graphics/pokemon/swampert/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SwampertBack[] = INCGFX_U32("graphics/pokemon/swampert/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SwampertBack[] = INCGFX_U16("graphics/pokemon/swampert/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Poochyena[] = INCGFX_U32("graphics/pokemon/poochyena/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Poochyena[] = INCGFX_U16("graphics/pokemon/poochyena/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PoochyenaBack[] = INCGFX_U32("graphics/pokemon/poochyena/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PoochyenaBack[] = INCGFX_U16("graphics/pokemon/poochyena/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Mightyena[] = INCGFX_U32("graphics/pokemon/mightyena/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Mightyena[] = INCGFX_U16("graphics/pokemon/mightyena/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MightyenaBack[] = INCGFX_U32("graphics/pokemon/mightyena/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MightyenaBack[] = INCGFX_U16("graphics/pokemon/mightyena/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Zigzagoon[] = INCGFX_U32("graphics/pokemon/zigzagoon/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Zigzagoon[] = INCGFX_U16("graphics/pokemon/zigzagoon/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ZigzagoonBack[] = INCGFX_U32("graphics/pokemon/zigzagoon/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ZigzagoonBack[] = INCGFX_U16("graphics/pokemon/zigzagoon/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Linoone[] = INCGFX_U32("graphics/pokemon/linoone/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Linoone[] = INCGFX_U16("graphics/pokemon/linoone/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_LinooneBack[] = INCGFX_U32("graphics/pokemon/linoone/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_LinooneBack[] = INCGFX_U16("graphics/pokemon/linoone/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Wurmple[] = INCGFX_U32("graphics/pokemon/wurmple/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Wurmple[] = INCGFX_U16("graphics/pokemon/wurmple/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_WurmpleBack[] = INCGFX_U32("graphics/pokemon/wurmple/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_WurmpleBack[] = INCGFX_U16("graphics/pokemon/wurmple/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Silcoon[] = INCGFX_U32("graphics/pokemon/silcoon/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Silcoon[] = INCGFX_U16("graphics/pokemon/silcoon/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SilcoonBack[] = INCGFX_U32("graphics/pokemon/silcoon/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SilcoonBack[] = INCGFX_U16("graphics/pokemon/silcoon/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Beautifly[] = INCGFX_U32("graphics/pokemon/beautifly/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Beautifly[] = INCGFX_U16("graphics/pokemon/beautifly/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_BeautiflyBack[] = INCGFX_U32("graphics/pokemon/beautifly/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_BeautiflyBack[] = INCGFX_U16("graphics/pokemon/beautifly/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Cascoon[] = INCGFX_U32("graphics/pokemon/cascoon/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Cascoon[] = INCGFX_U16("graphics/pokemon/cascoon/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CascoonBack[] = INCGFX_U32("graphics/pokemon/cascoon/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CascoonBack[] = INCGFX_U16("graphics/pokemon/cascoon/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Dustox[] = INCGFX_U32("graphics/pokemon/dustox/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Dustox[] = INCGFX_U16("graphics/pokemon/dustox/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_DustoxBack[] = INCGFX_U32("graphics/pokemon/dustox/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_DustoxBack[] = INCGFX_U16("graphics/pokemon/dustox/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Lotad[] = INCGFX_U32("graphics/pokemon/lotad/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Lotad[] = INCGFX_U16("graphics/pokemon/lotad/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_LotadBack[] = INCGFX_U32("graphics/pokemon/lotad/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_LotadBack[] = INCGFX_U16("graphics/pokemon/lotad/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Lombre[] = INCGFX_U32("graphics/pokemon/lombre/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Lombre[] = INCGFX_U16("graphics/pokemon/lombre/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_LombreBack[] = INCGFX_U32("graphics/pokemon/lombre/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_LombreBack[] = INCGFX_U16("graphics/pokemon/lombre/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Ludicolo[] = INCGFX_U32("graphics/pokemon/ludicolo/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Ludicolo[] = INCGFX_U16("graphics/pokemon/ludicolo/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_LudicoloBack[] = INCGFX_U32("graphics/pokemon/ludicolo/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_LudicoloBack[] = INCGFX_U16("graphics/pokemon/ludicolo/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Seedot[] = INCGFX_U32("graphics/pokemon/seedot/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Seedot[] = INCGFX_U16("graphics/pokemon/seedot/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SeedotBack[] = INCGFX_U32("graphics/pokemon/seedot/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SeedotBack[] = INCGFX_U16("graphics/pokemon/seedot/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Nuzleaf[] = INCGFX_U32("graphics/pokemon/nuzleaf/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Nuzleaf[] = INCGFX_U16("graphics/pokemon/nuzleaf/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_NuzleafBack[] = INCGFX_U32("graphics/pokemon/nuzleaf/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_NuzleafBack[] = INCGFX_U16("graphics/pokemon/nuzleaf/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Shiftry[] = INCGFX_U32("graphics/pokemon/shiftry/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Shiftry[] = INCGFX_U16("graphics/pokemon/shiftry/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ShiftryBack[] = INCGFX_U32("graphics/pokemon/shiftry/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ShiftryBack[] = INCGFX_U16("graphics/pokemon/shiftry/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Taillow[] = INCGFX_U32("graphics/pokemon/taillow/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Taillow[] = INCGFX_U16("graphics/pokemon/taillow/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_TaillowBack[] = INCGFX_U32("graphics/pokemon/taillow/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_TaillowBack[] = INCGFX_U16("graphics/pokemon/taillow/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Swellow[] = INCGFX_U32("graphics/pokemon/swellow/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Swellow[] = INCGFX_U16("graphics/pokemon/swellow/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SwellowBack[] = INCGFX_U32("graphics/pokemon/swellow/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SwellowBack[] = INCGFX_U16("graphics/pokemon/swellow/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Wingull[] = INCGFX_U32("graphics/pokemon/wingull/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Wingull[] = INCGFX_U16("graphics/pokemon/wingull/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_WingullBack[] = INCGFX_U32("graphics/pokemon/wingull/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_WingullBack[] = INCGFX_U16("graphics/pokemon/wingull/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Pelipper[] = INCGFX_U32("graphics/pokemon/pelipper/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Pelipper[] = INCGFX_U16("graphics/pokemon/pelipper/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PelipperBack[] = INCGFX_U32("graphics/pokemon/pelipper/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PelipperBack[] = INCGFX_U16("graphics/pokemon/pelipper/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Ralts[] = INCGFX_U32("graphics/pokemon/ralts/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Ralts[] = INCGFX_U16("graphics/pokemon/ralts/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_RaltsBack[] = INCGFX_U32("graphics/pokemon/ralts/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_RaltsBack[] = INCGFX_U16("graphics/pokemon/ralts/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Kirlia[] = INCGFX_U32("graphics/pokemon/kirlia/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Kirlia[] = INCGFX_U16("graphics/pokemon/kirlia/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_KirliaBack[] = INCGFX_U32("graphics/pokemon/kirlia/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_KirliaBack[] = INCGFX_U16("graphics/pokemon/kirlia/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Gardevoir[] = INCGFX_U32("graphics/pokemon/gardevoir/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Gardevoir[] = INCGFX_U16("graphics/pokemon/gardevoir/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GardevoirBack[] = INCGFX_U32("graphics/pokemon/gardevoir/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GardevoirBack[] = INCGFX_U16("graphics/pokemon/gardevoir/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Surskit[] = INCGFX_U32("graphics/pokemon/surskit/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Surskit[] = INCGFX_U16("graphics/pokemon/surskit/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SurskitBack[] = INCGFX_U32("graphics/pokemon/surskit/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SurskitBack[] = INCGFX_U16("graphics/pokemon/surskit/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Masquerain[] = INCGFX_U32("graphics/pokemon/masquerain/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Masquerain[] = INCGFX_U16("graphics/pokemon/masquerain/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MasquerainBack[] = INCGFX_U32("graphics/pokemon/masquerain/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MasquerainBack[] = INCGFX_U16("graphics/pokemon/masquerain/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Shroomish[] = INCGFX_U32("graphics/pokemon/shroomish/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Shroomish[] = INCGFX_U16("graphics/pokemon/shroomish/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ShroomishBack[] = INCGFX_U32("graphics/pokemon/shroomish/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ShroomishBack[] = INCGFX_U16("graphics/pokemon/shroomish/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Breloom[] = INCGFX_U32("graphics/pokemon/breloom/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Breloom[] = INCGFX_U16("graphics/pokemon/breloom/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_BreloomBack[] = INCGFX_U32("graphics/pokemon/breloom/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_BreloomBack[] = INCGFX_U16("graphics/pokemon/breloom/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Slakoth[] = INCGFX_U32("graphics/pokemon/slakoth/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Slakoth[] = INCGFX_U16("graphics/pokemon/slakoth/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SlakothBack[] = INCGFX_U32("graphics/pokemon/slakoth/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SlakothBack[] = INCGFX_U16("graphics/pokemon/slakoth/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Vigoroth[] = INCGFX_U32("graphics/pokemon/vigoroth/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Vigoroth[] = INCGFX_U16("graphics/pokemon/vigoroth/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_VigorothBack[] = INCGFX_U32("graphics/pokemon/vigoroth/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_VigorothBack[] = INCGFX_U16("graphics/pokemon/vigoroth/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Slaking[] = INCGFX_U32("graphics/pokemon/slaking/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Slaking[] = INCGFX_U16("graphics/pokemon/slaking/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SlakingBack[] = INCGFX_U32("graphics/pokemon/slaking/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SlakingBack[] = INCGFX_U16("graphics/pokemon/slaking/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Nincada[] = INCGFX_U32("graphics/pokemon/nincada/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Nincada[] = INCGFX_U16("graphics/pokemon/nincada/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_NincadaBack[] = INCGFX_U32("graphics/pokemon/nincada/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_NincadaBack[] = INCGFX_U16("graphics/pokemon/nincada/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Ninjask[] = INCGFX_U32("graphics/pokemon/ninjask/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Ninjask[] = INCGFX_U16("graphics/pokemon/ninjask/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_NinjaskBack[] = INCGFX_U32("graphics/pokemon/ninjask/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_NinjaskBack[] = INCGFX_U16("graphics/pokemon/ninjask/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Shedinja[] = INCGFX_U32("graphics/pokemon/shedinja/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Shedinja[] = INCGFX_U16("graphics/pokemon/shedinja/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ShedinjaBack[] = INCGFX_U32("graphics/pokemon/shedinja/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ShedinjaBack[] = INCGFX_U16("graphics/pokemon/shedinja/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Whismur[] = INCGFX_U32("graphics/pokemon/whismur/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Whismur[] = INCGFX_U16("graphics/pokemon/whismur/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_WhismurBack[] = INCGFX_U32("graphics/pokemon/whismur/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_WhismurBack[] = INCGFX_U16("graphics/pokemon/whismur/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Loudred[] = INCGFX_U32("graphics/pokemon/loudred/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Loudred[] = INCGFX_U16("graphics/pokemon/loudred/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_LoudredBack[] = INCGFX_U32("graphics/pokemon/loudred/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_LoudredBack[] = INCGFX_U16("graphics/pokemon/loudred/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Exploud[] = INCGFX_U32("graphics/pokemon/exploud/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Exploud[] = INCGFX_U16("graphics/pokemon/exploud/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ExploudBack[] = INCGFX_U32("graphics/pokemon/exploud/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ExploudBack[] = INCGFX_U16("graphics/pokemon/exploud/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Makuhita[] = INCGFX_U32("graphics/pokemon/makuhita/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Makuhita[] = INCGFX_U16("graphics/pokemon/makuhita/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MakuhitaBack[] = INCGFX_U32("graphics/pokemon/makuhita/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MakuhitaBack[] = INCGFX_U16("graphics/pokemon/makuhita/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Hariyama[] = INCGFX_U32("graphics/pokemon/hariyama/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Hariyama[] = INCGFX_U16("graphics/pokemon/hariyama/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_HariyamaBack[] = INCGFX_U32("graphics/pokemon/hariyama/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_HariyamaBack[] = INCGFX_U16("graphics/pokemon/hariyama/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Azurill[] = INCGFX_U32("graphics/pokemon/azurill/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Azurill[] = INCGFX_U16("graphics/pokemon/azurill/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_AzurillBack[] = INCGFX_U32("graphics/pokemon/azurill/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_AzurillBack[] = INCGFX_U16("graphics/pokemon/azurill/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Nosepass[] = INCGFX_U32("graphics/pokemon/nosepass/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Nosepass[] = INCGFX_U16("graphics/pokemon/nosepass/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_NosepassBack[] = INCGFX_U32("graphics/pokemon/nosepass/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_NosepassBack[] = INCGFX_U16("graphics/pokemon/nosepass/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Skitty[] = INCGFX_U32("graphics/pokemon/skitty/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Skitty[] = INCGFX_U16("graphics/pokemon/skitty/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SkittyBack[] = INCGFX_U32("graphics/pokemon/skitty/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SkittyBack[] = INCGFX_U16("graphics/pokemon/skitty/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Delcatty[] = INCGFX_U32("graphics/pokemon/delcatty/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Delcatty[] = INCGFX_U16("graphics/pokemon/delcatty/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_DelcattyBack[] = INCGFX_U32("graphics/pokemon/delcatty/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_DelcattyBack[] = INCGFX_U16("graphics/pokemon/delcatty/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Sableye[] = INCGFX_U32("graphics/pokemon/sableye/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Sableye[] = INCGFX_U16("graphics/pokemon/sableye/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SableyeBack[] = INCGFX_U32("graphics/pokemon/sableye/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SableyeBack[] = INCGFX_U16("graphics/pokemon/sableye/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Mawile[] = INCGFX_U32("graphics/pokemon/mawile/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Mawile[] = INCGFX_U16("graphics/pokemon/mawile/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MawileBack[] = INCGFX_U32("graphics/pokemon/mawile/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MawileBack[] = INCGFX_U16("graphics/pokemon/mawile/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Aron[] = INCGFX_U32("graphics/pokemon/aron/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Aron[] = INCGFX_U16("graphics/pokemon/aron/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_AronBack[] = INCGFX_U32("graphics/pokemon/aron/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_AronBack[] = INCGFX_U16("graphics/pokemon/aron/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Lairon[] = INCGFX_U32("graphics/pokemon/lairon/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Lairon[] = INCGFX_U16("graphics/pokemon/lairon/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_LaironBack[] = INCGFX_U32("graphics/pokemon/lairon/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_LaironBack[] = INCGFX_U16("graphics/pokemon/lairon/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Aggron[] = INCGFX_U32("graphics/pokemon/aggron/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Aggron[] = INCGFX_U16("graphics/pokemon/aggron/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_AggronBack[] = INCGFX_U32("graphics/pokemon/aggron/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_AggronBack[] = INCGFX_U16("graphics/pokemon/aggron/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Meditite[] = INCGFX_U32("graphics/pokemon/meditite/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Meditite[] = INCGFX_U16("graphics/pokemon/meditite/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MedititeBack[] = INCGFX_U32("graphics/pokemon/meditite/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MedititeBack[] = INCGFX_U16("graphics/pokemon/meditite/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Medicham[] = INCGFX_U32("graphics/pokemon/medicham/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Medicham[] = INCGFX_U16("graphics/pokemon/medicham/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MedichamBack[] = INCGFX_U32("graphics/pokemon/medicham/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MedichamBack[] = INCGFX_U16("graphics/pokemon/medicham/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Electrike[] = INCGFX_U32("graphics/pokemon/electrike/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Electrike[] = INCGFX_U16("graphics/pokemon/electrike/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ElectrikeBack[] = INCGFX_U32("graphics/pokemon/electrike/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ElectrikeBack[] = INCGFX_U16("graphics/pokemon/electrike/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Manectric[] = INCGFX_U32("graphics/pokemon/manectric/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Manectric[] = INCGFX_U16("graphics/pokemon/manectric/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ManectricBack[] = INCGFX_U32("graphics/pokemon/manectric/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ManectricBack[] = INCGFX_U16("graphics/pokemon/manectric/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Plusle[] = INCGFX_U32("graphics/pokemon/plusle/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Plusle[] = INCGFX_U16("graphics/pokemon/plusle/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_PlusleBack[] = INCGFX_U32("graphics/pokemon/plusle/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_PlusleBack[] = INCGFX_U16("graphics/pokemon/plusle/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Minun[] = INCGFX_U32("graphics/pokemon/minun/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Minun[] = INCGFX_U16("graphics/pokemon/minun/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MinunBack[] = INCGFX_U32("graphics/pokemon/minun/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MinunBack[] = INCGFX_U16("graphics/pokemon/minun/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Volbeat[] = INCGFX_U32("graphics/pokemon/volbeat/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Volbeat[] = INCGFX_U16("graphics/pokemon/volbeat/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_VolbeatBack[] = INCGFX_U32("graphics/pokemon/volbeat/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_VolbeatBack[] = INCGFX_U16("graphics/pokemon/volbeat/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Illumise[] = INCGFX_U32("graphics/pokemon/illumise/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Illumise[] = INCGFX_U16("graphics/pokemon/illumise/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_IllumiseBack[] = INCGFX_U32("graphics/pokemon/illumise/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_IllumiseBack[] = INCGFX_U16("graphics/pokemon/illumise/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Roselia[] = INCGFX_U32("graphics/pokemon/roselia/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Roselia[] = INCGFX_U16("graphics/pokemon/roselia/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_RoseliaBack[] = INCGFX_U32("graphics/pokemon/roselia/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_RoseliaBack[] = INCGFX_U16("graphics/pokemon/roselia/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Gulpin[] = INCGFX_U32("graphics/pokemon/gulpin/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Gulpin[] = INCGFX_U16("graphics/pokemon/gulpin/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GulpinBack[] = INCGFX_U32("graphics/pokemon/gulpin/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GulpinBack[] = INCGFX_U16("graphics/pokemon/gulpin/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Swalot[] = INCGFX_U32("graphics/pokemon/swalot/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Swalot[] = INCGFX_U16("graphics/pokemon/swalot/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SwalotBack[] = INCGFX_U32("graphics/pokemon/swalot/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SwalotBack[] = INCGFX_U16("graphics/pokemon/swalot/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Carvanha[] = INCGFX_U32("graphics/pokemon/carvanha/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Carvanha[] = INCGFX_U16("graphics/pokemon/carvanha/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CarvanhaBack[] = INCGFX_U32("graphics/pokemon/carvanha/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CarvanhaBack[] = INCGFX_U16("graphics/pokemon/carvanha/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Sharpedo[] = INCGFX_U32("graphics/pokemon/sharpedo/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Sharpedo[] = INCGFX_U16("graphics/pokemon/sharpedo/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SharpedoBack[] = INCGFX_U32("graphics/pokemon/sharpedo/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SharpedoBack[] = INCGFX_U16("graphics/pokemon/sharpedo/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Wailmer[] = INCGFX_U32("graphics/pokemon/wailmer/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Wailmer[] = INCGFX_U16("graphics/pokemon/wailmer/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_WailmerBack[] = INCGFX_U32("graphics/pokemon/wailmer/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_WailmerBack[] = INCGFX_U16("graphics/pokemon/wailmer/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Wailord[] = INCGFX_U32("graphics/pokemon/wailord/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Wailord[] = INCGFX_U16("graphics/pokemon/wailord/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_WailordBack[] = INCGFX_U32("graphics/pokemon/wailord/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_WailordBack[] = INCGFX_U16("graphics/pokemon/wailord/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Numel[] = INCGFX_U32("graphics/pokemon/numel/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Numel[] = INCGFX_U16("graphics/pokemon/numel/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_NumelBack[] = INCGFX_U32("graphics/pokemon/numel/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_NumelBack[] = INCGFX_U16("graphics/pokemon/numel/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Camerupt[] = INCGFX_U32("graphics/pokemon/camerupt/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Camerupt[] = INCGFX_U16("graphics/pokemon/camerupt/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CameruptBack[] = INCGFX_U32("graphics/pokemon/camerupt/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CameruptBack[] = INCGFX_U16("graphics/pokemon/camerupt/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Torkoal[] = INCGFX_U32("graphics/pokemon/torkoal/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Torkoal[] = INCGFX_U16("graphics/pokemon/torkoal/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_TorkoalBack[] = INCGFX_U32("graphics/pokemon/torkoal/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_TorkoalBack[] = INCGFX_U16("graphics/pokemon/torkoal/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Spoink[] = INCGFX_U32("graphics/pokemon/spoink/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Spoink[] = INCGFX_U16("graphics/pokemon/spoink/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SpoinkBack[] = INCGFX_U32("graphics/pokemon/spoink/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SpoinkBack[] = INCGFX_U16("graphics/pokemon/spoink/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Grumpig[] = INCGFX_U32("graphics/pokemon/grumpig/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Grumpig[] = INCGFX_U16("graphics/pokemon/grumpig/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GrumpigBack[] = INCGFX_U32("graphics/pokemon/grumpig/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GrumpigBack[] = INCGFX_U16("graphics/pokemon/grumpig/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Spinda[] = INCGFX_U32("graphics/pokemon/spinda/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Spinda[] = INCGFX_U16("graphics/pokemon/spinda/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SpindaBack[] = INCGFX_U32("graphics/pokemon/spinda/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SpindaBack[] = INCGFX_U16("graphics/pokemon/spinda/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Trapinch[] = INCGFX_U32("graphics/pokemon/trapinch/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Trapinch[] = INCGFX_U16("graphics/pokemon/trapinch/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_TrapinchBack[] = INCGFX_U32("graphics/pokemon/trapinch/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_TrapinchBack[] = INCGFX_U16("graphics/pokemon/trapinch/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Vibrava[] = INCGFX_U32("graphics/pokemon/vibrava/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Vibrava[] = INCGFX_U16("graphics/pokemon/vibrava/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_VibravaBack[] = INCGFX_U32("graphics/pokemon/vibrava/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_VibravaBack[] = INCGFX_U16("graphics/pokemon/vibrava/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Flygon[] = INCGFX_U32("graphics/pokemon/flygon/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Flygon[] = INCGFX_U16("graphics/pokemon/flygon/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_FlygonBack[] = INCGFX_U32("graphics/pokemon/flygon/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_FlygonBack[] = INCGFX_U16("graphics/pokemon/flygon/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Cacnea[] = INCGFX_U32("graphics/pokemon/cacnea/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Cacnea[] = INCGFX_U16("graphics/pokemon/cacnea/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CacneaBack[] = INCGFX_U32("graphics/pokemon/cacnea/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CacneaBack[] = INCGFX_U16("graphics/pokemon/cacnea/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Cacturne[] = INCGFX_U32("graphics/pokemon/cacturne/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Cacturne[] = INCGFX_U16("graphics/pokemon/cacturne/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CacturneBack[] = INCGFX_U32("graphics/pokemon/cacturne/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CacturneBack[] = INCGFX_U16("graphics/pokemon/cacturne/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Swablu[] = INCGFX_U32("graphics/pokemon/swablu/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Swablu[] = INCGFX_U16("graphics/pokemon/swablu/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SwabluBack[] = INCGFX_U32("graphics/pokemon/swablu/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SwabluBack[] = INCGFX_U16("graphics/pokemon/swablu/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Altaria[] = INCGFX_U32("graphics/pokemon/altaria/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Altaria[] = INCGFX_U16("graphics/pokemon/altaria/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_AltariaBack[] = INCGFX_U32("graphics/pokemon/altaria/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_AltariaBack[] = INCGFX_U16("graphics/pokemon/altaria/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Zangoose[] = INCGFX_U32("graphics/pokemon/zangoose/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Zangoose[] = INCGFX_U16("graphics/pokemon/zangoose/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ZangooseBack[] = INCGFX_U32("graphics/pokemon/zangoose/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ZangooseBack[] = INCGFX_U16("graphics/pokemon/zangoose/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Seviper[] = INCGFX_U32("graphics/pokemon/seviper/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Seviper[] = INCGFX_U16("graphics/pokemon/seviper/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SeviperBack[] = INCGFX_U32("graphics/pokemon/seviper/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SeviperBack[] = INCGFX_U16("graphics/pokemon/seviper/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Lunatone[] = INCGFX_U32("graphics/pokemon/lunatone/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Lunatone[] = INCGFX_U16("graphics/pokemon/lunatone/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_LunatoneBack[] = INCGFX_U32("graphics/pokemon/lunatone/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_LunatoneBack[] = INCGFX_U16("graphics/pokemon/lunatone/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Solrock[] = INCGFX_U32("graphics/pokemon/solrock/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Solrock[] = INCGFX_U16("graphics/pokemon/solrock/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SolrockBack[] = INCGFX_U32("graphics/pokemon/solrock/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SolrockBack[] = INCGFX_U16("graphics/pokemon/solrock/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Barboach[] = INCGFX_U32("graphics/pokemon/barboach/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Barboach[] = INCGFX_U16("graphics/pokemon/barboach/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_BarboachBack[] = INCGFX_U32("graphics/pokemon/barboach/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_BarboachBack[] = INCGFX_U16("graphics/pokemon/barboach/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Whiscash[] = INCGFX_U32("graphics/pokemon/whiscash/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Whiscash[] = INCGFX_U16("graphics/pokemon/whiscash/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_WhiscashBack[] = INCGFX_U32("graphics/pokemon/whiscash/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_WhiscashBack[] = INCGFX_U16("graphics/pokemon/whiscash/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Corphish[] = INCGFX_U32("graphics/pokemon/corphish/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Corphish[] = INCGFX_U16("graphics/pokemon/corphish/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CorphishBack[] = INCGFX_U32("graphics/pokemon/corphish/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CorphishBack[] = INCGFX_U16("graphics/pokemon/corphish/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Crawdaunt[] = INCGFX_U32("graphics/pokemon/crawdaunt/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Crawdaunt[] = INCGFX_U16("graphics/pokemon/crawdaunt/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CrawdauntBack[] = INCGFX_U32("graphics/pokemon/crawdaunt/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CrawdauntBack[] = INCGFX_U16("graphics/pokemon/crawdaunt/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Baltoy[] = INCGFX_U32("graphics/pokemon/baltoy/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Baltoy[] = INCGFX_U16("graphics/pokemon/baltoy/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_BaltoyBack[] = INCGFX_U32("graphics/pokemon/baltoy/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_BaltoyBack[] = INCGFX_U16("graphics/pokemon/baltoy/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Claydol[] = INCGFX_U32("graphics/pokemon/claydol/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Claydol[] = INCGFX_U16("graphics/pokemon/claydol/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ClaydolBack[] = INCGFX_U32("graphics/pokemon/claydol/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ClaydolBack[] = INCGFX_U16("graphics/pokemon/claydol/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Lileep[] = INCGFX_U32("graphics/pokemon/lileep/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Lileep[] = INCGFX_U16("graphics/pokemon/lileep/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_LileepBack[] = INCGFX_U32("graphics/pokemon/lileep/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_LileepBack[] = INCGFX_U16("graphics/pokemon/lileep/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Cradily[] = INCGFX_U32("graphics/pokemon/cradily/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Cradily[] = INCGFX_U16("graphics/pokemon/cradily/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CradilyBack[] = INCGFX_U32("graphics/pokemon/cradily/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CradilyBack[] = INCGFX_U16("graphics/pokemon/cradily/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Anorith[] = INCGFX_U32("graphics/pokemon/anorith/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Anorith[] = INCGFX_U16("graphics/pokemon/anorith/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_AnorithBack[] = INCGFX_U32("graphics/pokemon/anorith/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_AnorithBack[] = INCGFX_U16("graphics/pokemon/anorith/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Armaldo[] = INCGFX_U32("graphics/pokemon/armaldo/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Armaldo[] = INCGFX_U16("graphics/pokemon/armaldo/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ArmaldoBack[] = INCGFX_U32("graphics/pokemon/armaldo/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ArmaldoBack[] = INCGFX_U16("graphics/pokemon/armaldo/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Feebas[] = INCGFX_U32("graphics/pokemon/feebas/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Feebas[] = INCGFX_U16("graphics/pokemon/feebas/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_FeebasBack[] = INCGFX_U32("graphics/pokemon/feebas/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_FeebasBack[] = INCGFX_U16("graphics/pokemon/feebas/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Milotic[] = INCGFX_U32("graphics/pokemon/milotic/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Milotic[] = INCGFX_U16("graphics/pokemon/milotic/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MiloticBack[] = INCGFX_U32("graphics/pokemon/milotic/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MiloticBack[] = INCGFX_U16("graphics/pokemon/milotic/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Castform[] = INCGFX_U32("graphics/pokemon/castform/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Castform[] = INCGFX_U16("graphics/pokemon/castform/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_CastformBack[] = INCGFX_U32("graphics/pokemon/castform/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_CastformBack[] = INCGFX_U16("graphics/pokemon/castform/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Kecleon[] = INCGFX_U32("graphics/pokemon/kecleon/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Kecleon[] = INCGFX_U16("graphics/pokemon/kecleon/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_KecleonBack[] = INCGFX_U32("graphics/pokemon/kecleon/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_KecleonBack[] = INCGFX_U16("graphics/pokemon/kecleon/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Shuppet[] = INCGFX_U32("graphics/pokemon/shuppet/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Shuppet[] = INCGFX_U16("graphics/pokemon/shuppet/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ShuppetBack[] = INCGFX_U32("graphics/pokemon/shuppet/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ShuppetBack[] = INCGFX_U16("graphics/pokemon/shuppet/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Banette[] = INCGFX_U32("graphics/pokemon/banette/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Banette[] = INCGFX_U16("graphics/pokemon/banette/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_BanetteBack[] = INCGFX_U32("graphics/pokemon/banette/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_BanetteBack[] = INCGFX_U16("graphics/pokemon/banette/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Duskull[] = INCGFX_U32("graphics/pokemon/duskull/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Duskull[] = INCGFX_U16("graphics/pokemon/duskull/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_DuskullBack[] = INCGFX_U32("graphics/pokemon/duskull/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_DuskullBack[] = INCGFX_U16("graphics/pokemon/duskull/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Dusclops[] = INCGFX_U32("graphics/pokemon/dusclops/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Dusclops[] = INCGFX_U16("graphics/pokemon/dusclops/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_DusclopsBack[] = INCGFX_U32("graphics/pokemon/dusclops/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_DusclopsBack[] = INCGFX_U16("graphics/pokemon/dusclops/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Tropius[] = INCGFX_U32("graphics/pokemon/tropius/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Tropius[] = INCGFX_U16("graphics/pokemon/tropius/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_TropiusBack[] = INCGFX_U32("graphics/pokemon/tropius/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_TropiusBack[] = INCGFX_U16("graphics/pokemon/tropius/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Chimecho[] = INCGFX_U32("graphics/pokemon/chimecho/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Chimecho[] = INCGFX_U16("graphics/pokemon/chimecho/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ChimechoBack[] = INCGFX_U32("graphics/pokemon/chimecho/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ChimechoBack[] = INCGFX_U16("graphics/pokemon/chimecho/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Absol[] = INCGFX_U32("graphics/pokemon/absol/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Absol[] = INCGFX_U16("graphics/pokemon/absol/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_AbsolBack[] = INCGFX_U32("graphics/pokemon/absol/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_AbsolBack[] = INCGFX_U16("graphics/pokemon/absol/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Wynaut[] = INCGFX_U32("graphics/pokemon/wynaut/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Wynaut[] = INCGFX_U16("graphics/pokemon/wynaut/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_WynautBack[] = INCGFX_U32("graphics/pokemon/wynaut/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_WynautBack[] = INCGFX_U16("graphics/pokemon/wynaut/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Snorunt[] = INCGFX_U32("graphics/pokemon/snorunt/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Snorunt[] = INCGFX_U16("graphics/pokemon/snorunt/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SnoruntBack[] = INCGFX_U32("graphics/pokemon/snorunt/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SnoruntBack[] = INCGFX_U16("graphics/pokemon/snorunt/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Glalie[] = INCGFX_U32("graphics/pokemon/glalie/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Glalie[] = INCGFX_U16("graphics/pokemon/glalie/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GlalieBack[] = INCGFX_U32("graphics/pokemon/glalie/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GlalieBack[] = INCGFX_U16("graphics/pokemon/glalie/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Spheal[] = INCGFX_U32("graphics/pokemon/spheal/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Spheal[] = INCGFX_U16("graphics/pokemon/spheal/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SphealBack[] = INCGFX_U32("graphics/pokemon/spheal/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SphealBack[] = INCGFX_U16("graphics/pokemon/spheal/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Sealeo[] = INCGFX_U32("graphics/pokemon/sealeo/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Sealeo[] = INCGFX_U16("graphics/pokemon/sealeo/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SealeoBack[] = INCGFX_U32("graphics/pokemon/sealeo/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SealeoBack[] = INCGFX_U16("graphics/pokemon/sealeo/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Walrein[] = INCGFX_U32("graphics/pokemon/walrein/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Walrein[] = INCGFX_U16("graphics/pokemon/walrein/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_WalreinBack[] = INCGFX_U32("graphics/pokemon/walrein/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_WalreinBack[] = INCGFX_U16("graphics/pokemon/walrein/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Clamperl[] = INCGFX_U32("graphics/pokemon/clamperl/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Clamperl[] = INCGFX_U16("graphics/pokemon/clamperl/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ClamperlBack[] = INCGFX_U32("graphics/pokemon/clamperl/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ClamperlBack[] = INCGFX_U16("graphics/pokemon/clamperl/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Huntail[] = INCGFX_U32("graphics/pokemon/huntail/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Huntail[] = INCGFX_U16("graphics/pokemon/huntail/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_HuntailBack[] = INCGFX_U32("graphics/pokemon/huntail/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_HuntailBack[] = INCGFX_U16("graphics/pokemon/huntail/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Gorebyss[] = INCGFX_U32("graphics/pokemon/gorebyss/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Gorebyss[] = INCGFX_U16("graphics/pokemon/gorebyss/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GorebyssBack[] = INCGFX_U32("graphics/pokemon/gorebyss/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GorebyssBack[] = INCGFX_U16("graphics/pokemon/gorebyss/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Relicanth[] = INCGFX_U32("graphics/pokemon/relicanth/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Relicanth[] = INCGFX_U16("graphics/pokemon/relicanth/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_RelicanthBack[] = INCGFX_U32("graphics/pokemon/relicanth/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_RelicanthBack[] = INCGFX_U16("graphics/pokemon/relicanth/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Luvdisc[] = INCGFX_U32("graphics/pokemon/luvdisc/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Luvdisc[] = INCGFX_U16("graphics/pokemon/luvdisc/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_LuvdiscBack[] = INCGFX_U32("graphics/pokemon/luvdisc/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_LuvdiscBack[] = INCGFX_U16("graphics/pokemon/luvdisc/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Bagon[] = INCGFX_U32("graphics/pokemon/bagon/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Bagon[] = INCGFX_U16("graphics/pokemon/bagon/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_BagonBack[] = INCGFX_U32("graphics/pokemon/bagon/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_BagonBack[] = INCGFX_U16("graphics/pokemon/bagon/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Shelgon[] = INCGFX_U32("graphics/pokemon/shelgon/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Shelgon[] = INCGFX_U16("graphics/pokemon/shelgon/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_ShelgonBack[] = INCGFX_U32("graphics/pokemon/shelgon/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_ShelgonBack[] = INCGFX_U16("graphics/pokemon/shelgon/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Salamence[] = INCGFX_U32("graphics/pokemon/salamence/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Salamence[] = INCGFX_U16("graphics/pokemon/salamence/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_SalamenceBack[] = INCGFX_U32("graphics/pokemon/salamence/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_SalamenceBack[] = INCGFX_U16("graphics/pokemon/salamence/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Beldum[] = INCGFX_U32("graphics/pokemon/beldum/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Beldum[] = INCGFX_U16("graphics/pokemon/beldum/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_BeldumBack[] = INCGFX_U32("graphics/pokemon/beldum/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_BeldumBack[] = INCGFX_U16("graphics/pokemon/beldum/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Metang[] = INCGFX_U32("graphics/pokemon/metang/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Metang[] = INCGFX_U16("graphics/pokemon/metang/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MetangBack[] = INCGFX_U32("graphics/pokemon/metang/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MetangBack[] = INCGFX_U16("graphics/pokemon/metang/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Metagross[] = INCGFX_U32("graphics/pokemon/metagross/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Metagross[] = INCGFX_U16("graphics/pokemon/metagross/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_MetagrossBack[] = INCGFX_U32("graphics/pokemon/metagross/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_MetagrossBack[] = INCGFX_U16("graphics/pokemon/metagross/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Regirock[] = INCGFX_U32("graphics/pokemon/regirock/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Regirock[] = INCGFX_U16("graphics/pokemon/regirock/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_RegirockBack[] = INCGFX_U32("graphics/pokemon/regirock/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_RegirockBack[] = INCGFX_U16("graphics/pokemon/regirock/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Regice[] = INCGFX_U32("graphics/pokemon/regice/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Regice[] = INCGFX_U16("graphics/pokemon/regice/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_RegiceBack[] = INCGFX_U32("graphics/pokemon/regice/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_RegiceBack[] = INCGFX_U16("graphics/pokemon/regice/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Registeel[] = INCGFX_U32("graphics/pokemon/registeel/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Registeel[] = INCGFX_U16("graphics/pokemon/registeel/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_RegisteelBack[] = INCGFX_U32("graphics/pokemon/registeel/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_RegisteelBack[] = INCGFX_U16("graphics/pokemon/registeel/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Latias[] = INCGFX_U32("graphics/pokemon/latias/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Latias[] = INCGFX_U16("graphics/pokemon/latias/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_LatiasBack[] = INCGFX_U32("graphics/pokemon/latias/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_LatiasBack[] = INCGFX_U16("graphics/pokemon/latias/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Latios[] = INCGFX_U32("graphics/pokemon/latios/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Latios[] = INCGFX_U16("graphics/pokemon/latios/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_LatiosBack[] = INCGFX_U32("graphics/pokemon/latios/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_LatiosBack[] = INCGFX_U16("graphics/pokemon/latios/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Kyogre[] = INCGFX_U32("graphics/pokemon/kyogre/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Kyogre[] = INCGFX_U16("graphics/pokemon/kyogre/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_KyogreBack[] = INCGFX_U32("graphics/pokemon/kyogre/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_KyogreBack[] = INCGFX_U16("graphics/pokemon/kyogre/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Groudon[] = INCGFX_U32("graphics/pokemon/groudon/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Groudon[] = INCGFX_U16("graphics/pokemon/groudon/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_GroudonBack[] = INCGFX_U32("graphics/pokemon/groudon/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_GroudonBack[] = INCGFX_U16("graphics/pokemon/groudon/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Rayquaza[] = INCGFX_U32("graphics/pokemon/rayquaza/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Rayquaza[] = INCGFX_U16("graphics/pokemon/rayquaza/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_RayquazaBack[] = INCGFX_U32("graphics/pokemon/rayquaza/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_RayquazaBack[] = INCGFX_U16("graphics/pokemon/rayquaza/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Jirachi[] = INCGFX_U32("graphics/pokemon/jirachi/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Jirachi[] = INCGFX_U16("graphics/pokemon/jirachi/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_JirachiBack[] = INCGFX_U32("graphics/pokemon/jirachi/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_JirachiBack[] = INCGFX_U16("graphics/pokemon/jirachi/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_Deoxys[] = INCGFX_U32("graphics/pokemon/deoxys/bw_anim.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_Deoxys[] = INCGFX_U16("graphics/pokemon/deoxys/bw_anim.png", ".gbapal");
+#if ROGUE_BW_ANIM_BACK
 const u32 gBwAnimGfx_DeoxysBack[] = INCGFX_U32("graphics/pokemon/deoxys/bw_anim_back.png", ".4bpp.fsmol");
 const u16 gBwAnimPal_DeoxysBack[] = INCGFX_U16("graphics/pokemon/deoxys/bw_anim_back.png", ".gbapal");
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Bulbasaur[] =
 {
@@ -1617,6 +2397,7 @@ static const struct BwAnimStep sBwSeq_Bulbasaur[] =
     { 22, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_BulbasaurBack[] =
 {
     { 0, 6 },
@@ -1670,6 +2451,7 @@ static const struct BwAnimStep sBwSeq_BulbasaurBack[] =
     { 18, 6 },
     { 19, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Ivysaur[] =
 {
@@ -1731,6 +2513,7 @@ static const struct BwAnimStep sBwSeq_Ivysaur[] =
     { 24, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_IvysaurBack[] =
 {
     { 0, 6 },
@@ -1790,6 +2573,7 @@ static const struct BwAnimStep sBwSeq_IvysaurBack[] =
     { 18, 6 },
     { 19, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Venusaur[] =
 {
@@ -1879,6 +2663,7 @@ static const struct BwAnimStep sBwSeq_Venusaur[] =
     { 53, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_VenusaurBack[] =
 {
     { 0, 7 },
@@ -1966,6 +2751,7 @@ static const struct BwAnimStep sBwSeq_VenusaurBack[] =
     { 50, 7 },
     { 51, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Charmander[] =
 {
@@ -2025,6 +2811,7 @@ static const struct BwAnimStep sBwSeq_Charmander[] =
     { 22, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CharmanderBack[] =
 {
     { 0, 6 },
@@ -2082,6 +2869,7 @@ static const struct BwAnimStep sBwSeq_CharmanderBack[] =
     { 23, 6 },
     { 24, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Charmeleon[] =
 {
@@ -2132,6 +2920,7 @@ static const struct BwAnimStep sBwSeq_Charmeleon[] =
     { 29, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CharmeleonBack[] =
 {
     { 0, 6 },
@@ -2180,6 +2969,7 @@ static const struct BwAnimStep sBwSeq_CharmeleonBack[] =
     { 24, 6 },
     { 25, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Charizard[] =
 {
@@ -2257,6 +3047,7 @@ static const struct BwAnimStep sBwSeq_Charizard[] =
     { 17, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CharizardBack[] =
 {
     { 0, 6 },
@@ -2332,6 +3123,7 @@ static const struct BwAnimStep sBwSeq_CharizardBack[] =
     { 50, 6 },
     { 17, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Squirtle[] =
 {
@@ -2369,6 +3161,7 @@ static const struct BwAnimStep sBwSeq_Squirtle[] =
     { 16, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SquirtleBack[] =
 {
     { 0, 54 },
@@ -2404,6 +3197,7 @@ static const struct BwAnimStep sBwSeq_SquirtleBack[] =
     { 15, 3 },
     { 16, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Wartortle[] =
 {
@@ -2452,6 +3246,7 @@ static const struct BwAnimStep sBwSeq_Wartortle[] =
     { 18, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_WartortleBack[] =
 {
     { 0, 12 },
@@ -2498,6 +3293,7 @@ static const struct BwAnimStep sBwSeq_WartortleBack[] =
     { 10, 6 },
     { 18, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Blastoise[] =
 {
@@ -2646,6 +3442,7 @@ static const struct BwAnimStep sBwSeq_Blastoise[] =
     { 41, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_BlastoiseBack[] =
 {
     { 0, 10 },
@@ -2792,6 +3589,7 @@ static const struct BwAnimStep sBwSeq_BlastoiseBack[] =
     { 40, 5 },
     { 41, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Caterpie[] =
 {
@@ -2837,6 +3635,7 @@ static const struct BwAnimStep sBwSeq_Caterpie[] =
     { 7, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CaterpieBack[] =
 {
     { 0, 12 },
@@ -2880,6 +3679,7 @@ static const struct BwAnimStep sBwSeq_CaterpieBack[] =
     { 6, 6 },
     { 7, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Metapod[] =
 {
@@ -2941,6 +3741,7 @@ static const struct BwAnimStep sBwSeq_Metapod[] =
     { 26, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MetapodBack[] =
 {
     { 0, 6 },
@@ -3000,6 +3801,7 @@ static const struct BwAnimStep sBwSeq_MetapodBack[] =
     { 25, 6 },
     { 26, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Butterfree[] =
 {
@@ -3050,6 +3852,7 @@ static const struct BwAnimStep sBwSeq_Butterfree[] =
     { 14, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ButterfreeBack[] =
 {
     { 0, 6 },
@@ -3068,6 +3871,7 @@ static const struct BwAnimStep sBwSeq_ButterfreeBack[] =
     { 13, 6 },
     { 14, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Weedle[] =
 {
@@ -3135,6 +3939,7 @@ static const struct BwAnimStep sBwSeq_Weedle[] =
     { 20, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_WeedleBack[] =
 {
     { 0, 6 },
@@ -3200,6 +4005,7 @@ static const struct BwAnimStep sBwSeq_WeedleBack[] =
     { 19, 6 },
     { 20, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Kakuna[] =
 {
@@ -3244,6 +4050,7 @@ static const struct BwAnimStep sBwSeq_Kakuna[] =
     { 17, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_KakunaBack[] =
 {
     { 0, 7 },
@@ -3287,6 +4094,7 @@ static const struct BwAnimStep sBwSeq_KakunaBack[] =
     { 33, 7 },
     { 18, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Beedrill[] =
 {
@@ -3382,6 +4190,7 @@ static const struct BwAnimStep sBwSeq_Beedrill[] =
     { 86, 2 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_BeedrillBack[] =
 {
     { 0, 2 },
@@ -3415,6 +4224,7 @@ static const struct BwAnimStep sBwSeq_BeedrillBack[] =
     { 28, 2 },
     { 29, 2 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Pidgey[] =
 {
@@ -3440,6 +4250,7 @@ static const struct BwAnimStep sBwSeq_Pidgey[] =
     { 18, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PidgeyBack[] =
 {
     { 0, 32 },
@@ -3463,6 +4274,7 @@ static const struct BwAnimStep sBwSeq_PidgeyBack[] =
     { 17, 6 },
     { 18, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Pidgeotto[] =
 {
@@ -3486,6 +4298,7 @@ static const struct BwAnimStep sBwSeq_Pidgeotto[] =
     { 17, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PidgeottoBack[] =
 {
     { 0, 6 },
@@ -3507,6 +4320,7 @@ static const struct BwAnimStep sBwSeq_PidgeottoBack[] =
     { 16, 6 },
     { 17, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Pidgeot[] =
 {
@@ -3548,6 +4362,7 @@ static const struct BwAnimStep sBwSeq_Pidgeot[] =
     { 8, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PidgeotBack[] =
 {
     { 0, 12 },
@@ -3583,6 +4398,7 @@ static const struct BwAnimStep sBwSeq_PidgeotBack[] =
     { 6, 6 },
     { 7, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Rattata[] =
 {
@@ -3638,6 +4454,7 @@ static const struct BwAnimStep sBwSeq_Rattata[] =
     { 11, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_RattataBack[] =
 {
     { 0, 12 },
@@ -3690,6 +4507,7 @@ static const struct BwAnimStep sBwSeq_RattataBack[] =
     { 9, 6 },
     { 10, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Raticate[] =
 {
@@ -3707,6 +4525,7 @@ static const struct BwAnimStep sBwSeq_Raticate[] =
     { 10, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_RaticateBack[] =
 {
     { 0, 6 },
@@ -3722,6 +4541,7 @@ static const struct BwAnimStep sBwSeq_RaticateBack[] =
     { 10, 6 },
     { 11, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Spearow[] =
 {
@@ -3757,6 +4577,7 @@ static const struct BwAnimStep sBwSeq_Spearow[] =
     { 5, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SpearowBack[] =
 {
     { 0, 12 },
@@ -3790,6 +4611,7 @@ static const struct BwAnimStep sBwSeq_SpearowBack[] =
     { 0, 6 },
     { 5, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Fearow[] =
 {
@@ -3806,6 +4628,7 @@ static const struct BwAnimStep sBwSeq_Fearow[] =
     { 10, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_FearowBack[] =
 {
     { 0, 6 },
@@ -3820,6 +4643,7 @@ static const struct BwAnimStep sBwSeq_FearowBack[] =
     { 9, 6 },
     { 10, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Ekans[] =
 {
@@ -3843,6 +4667,7 @@ static const struct BwAnimStep sBwSeq_Ekans[] =
     { 17, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_EkansBack[] =
 {
     { 0, 6 },
@@ -3864,6 +4689,7 @@ static const struct BwAnimStep sBwSeq_EkansBack[] =
     { 7, 6 },
     { 8, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Arbok[] =
 {
@@ -3888,6 +4714,7 @@ static const struct BwAnimStep sBwSeq_Arbok[] =
     { 18, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ArbokBack[] =
 {
     { 0, 12 },
@@ -3909,6 +4736,7 @@ static const struct BwAnimStep sBwSeq_ArbokBack[] =
     { 16, 6 },
     { 17, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Pikachu[] =
 {
@@ -3975,6 +4803,7 @@ static const struct BwAnimStep sBwSeq_Pikachu[] =
     { 46, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PikachuBack[] =
 {
     { 0, 6 },
@@ -4038,6 +4867,7 @@ static const struct BwAnimStep sBwSeq_PikachuBack[] =
     { 51, 3 },
     { 50, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Raichu[] =
 {
@@ -4127,6 +4957,7 @@ static const struct BwAnimStep sBwSeq_Raichu[] =
     { 13, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_RaichuBack[] =
 {
     { 0, 6 },
@@ -4214,6 +5045,7 @@ static const struct BwAnimStep sBwSeq_RaichuBack[] =
     { 12, 6 },
     { 13, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Sandshrew[] =
 {
@@ -4301,6 +5133,7 @@ static const struct BwAnimStep sBwSeq_Sandshrew[] =
     { 1, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SandshrewBack[] =
 {
     { 0, 8 },
@@ -4386,6 +5219,7 @@ static const struct BwAnimStep sBwSeq_SandshrewBack[] =
     { 2, 4 },
     { 1, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Sandslash[] =
 {
@@ -4446,6 +5280,7 @@ static const struct BwAnimStep sBwSeq_Sandslash[] =
     { 20, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SandslashBack[] =
 {
     { 0, 24 },
@@ -4504,6 +5339,7 @@ static const struct BwAnimStep sBwSeq_SandslashBack[] =
     { 19, 6 },
     { 20, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_NidoranF[] =
 {
@@ -4558,6 +5394,7 @@ static const struct BwAnimStep sBwSeq_NidoranF[] =
     { 3, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_NidoranFBack[] =
 {
     { 0, 20 },
@@ -4602,6 +5439,7 @@ static const struct BwAnimStep sBwSeq_NidoranFBack[] =
     { 9, 10 },
     { 3, 10 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Nidorina[] =
 {
@@ -4639,6 +5477,7 @@ static const struct BwAnimStep sBwSeq_Nidorina[] =
     { 17, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_NidorinaBack[] =
 {
     { 0, 12 },
@@ -4654,6 +5493,7 @@ static const struct BwAnimStep sBwSeq_NidorinaBack[] =
     { 2, 6 },
     { 1, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Nidoqueen[] =
 {
@@ -4721,6 +5561,7 @@ static const struct BwAnimStep sBwSeq_Nidoqueen[] =
     { 11, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_NidoqueenBack[] =
 {
     { 0, 12 },
@@ -4784,6 +5625,7 @@ static const struct BwAnimStep sBwSeq_NidoqueenBack[] =
     { 21, 6 },
     { 9, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_NidoranM[] =
 {
@@ -4809,6 +5651,7 @@ static const struct BwAnimStep sBwSeq_NidoranM[] =
     { 1, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_NidoranMBack[] =
 {
     { 0, 12 },
@@ -4832,6 +5675,7 @@ static const struct BwAnimStep sBwSeq_NidoranMBack[] =
     { 2, 6 },
     { 1, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Nidorino[] =
 {
@@ -4886,6 +5730,7 @@ static const struct BwAnimStep sBwSeq_Nidorino[] =
     { 5, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_NidorinoBack[] =
 {
     { 0, 12 },
@@ -4938,6 +5783,7 @@ static const struct BwAnimStep sBwSeq_NidorinoBack[] =
     { 8, 6 },
     { 7, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Nidoking[] =
 {
@@ -4992,6 +5838,7 @@ static const struct BwAnimStep sBwSeq_Nidoking[] =
     { 21, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_NidokingBack[] =
 {
     { 0, 8 },
@@ -5048,6 +5895,7 @@ static const struct BwAnimStep sBwSeq_NidokingBack[] =
     { 10, 6 },
     { 9, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Clefairy[] =
 {
@@ -5166,6 +6014,7 @@ static const struct BwAnimStep sBwSeq_Clefairy[] =
     { 56, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ClefairyBack[] =
 {
     { 0, 6 },
@@ -5283,6 +6132,7 @@ static const struct BwAnimStep sBwSeq_ClefairyBack[] =
     { 14, 3 },
     { 6, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Clefable[] =
 {
@@ -5342,6 +6192,7 @@ static const struct BwAnimStep sBwSeq_Clefable[] =
     { 21, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ClefableBack[] =
 {
     { 0, 6 },
@@ -5399,6 +6250,7 @@ static const struct BwAnimStep sBwSeq_ClefableBack[] =
     { 20, 6 },
     { 21, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Vulpix[] =
 {
@@ -5440,6 +6292,7 @@ static const struct BwAnimStep sBwSeq_Vulpix[] =
     { 8, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_VulpixBack[] =
 {
     { 0, 6 },
@@ -5479,6 +6332,7 @@ static const struct BwAnimStep sBwSeq_VulpixBack[] =
     { 15, 6 },
     { 8, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Ninetales[] =
 {
@@ -5493,6 +6347,7 @@ static const struct BwAnimStep sBwSeq_Ninetales[] =
     { 8, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_NinetalesBack[] =
 {
     { 0, 6 },
@@ -5505,6 +6360,7 @@ static const struct BwAnimStep sBwSeq_NinetalesBack[] =
     { 7, 6 },
     { 8, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Jigglypuff[] =
 {
@@ -5566,6 +6422,7 @@ static const struct BwAnimStep sBwSeq_Jigglypuff[] =
     { 8, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_JigglypuffBack[] =
 {
     { 0, 12 },
@@ -5623,6 +6480,7 @@ static const struct BwAnimStep sBwSeq_JigglypuffBack[] =
     { 7, 6 },
     { 8, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Wigglytuff[] =
 {
@@ -5689,6 +6547,7 @@ static const struct BwAnimStep sBwSeq_Wigglytuff[] =
     { 24, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_WigglytuffBack[] =
 {
     { 0, 17 },
@@ -5754,6 +6613,7 @@ static const struct BwAnimStep sBwSeq_WigglytuffBack[] =
     { 21, 5 },
     { 20, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Zubat[] =
 {
@@ -5786,6 +6646,7 @@ static const struct BwAnimStep sBwSeq_Zubat[] =
     { 8, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ZubatBack[] =
 {
     { 0, 3 },
@@ -5798,6 +6659,7 @@ static const struct BwAnimStep sBwSeq_ZubatBack[] =
     { 7, 3 },
     { 8, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Golbat[] =
 {
@@ -5819,6 +6681,7 @@ static const struct BwAnimStep sBwSeq_Golbat[] =
     { 15, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GolbatBack[] =
 {
     { 0, 3 },
@@ -5838,6 +6701,7 @@ static const struct BwAnimStep sBwSeq_GolbatBack[] =
     { 14, 3 },
     { 15, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Oddish[] =
 {
@@ -5898,6 +6762,7 @@ static const struct BwAnimStep sBwSeq_Oddish[] =
     { 17, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_OddishBack[] =
 {
     { 0, 6 },
@@ -5956,6 +6821,7 @@ static const struct BwAnimStep sBwSeq_OddishBack[] =
     { 15, 6 },
     { 16, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Gloom[] =
 {
@@ -6009,6 +6875,7 @@ static const struct BwAnimStep sBwSeq_Gloom[] =
     { 44, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GloomBack[] =
 {
     { 0, 7 },
@@ -6060,6 +6927,7 @@ static const struct BwAnimStep sBwSeq_GloomBack[] =
     { 13, 7 },
     { 14, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Vileplume[] =
 {
@@ -6074,6 +6942,7 @@ static const struct BwAnimStep sBwSeq_Vileplume[] =
     { 8, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_VileplumeBack[] =
 {
     { 0, 6 },
@@ -6086,6 +6955,7 @@ static const struct BwAnimStep sBwSeq_VileplumeBack[] =
     { 7, 6 },
     { 8, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Paras[] =
 {
@@ -6127,6 +6997,7 @@ static const struct BwAnimStep sBwSeq_Paras[] =
     { 14, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ParasBack[] =
 {
     { 0, 6 },
@@ -6168,6 +7039,7 @@ static const struct BwAnimStep sBwSeq_ParasBack[] =
     { 16, 6 },
     { 5, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Parasect[] =
 {
@@ -6191,6 +7063,7 @@ static const struct BwAnimStep sBwSeq_Parasect[] =
     { 8, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ParasectBack[] =
 {
     { 0, 12 },
@@ -6210,6 +7083,7 @@ static const struct BwAnimStep sBwSeq_ParasectBack[] =
     { 13, 6 },
     { 14, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Venonat[] =
 {
@@ -6239,6 +7113,7 @@ static const struct BwAnimStep sBwSeq_Venonat[] =
     { 9, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_VenonatBack[] =
 {
     { 0, 6 },
@@ -6266,6 +7141,7 @@ static const struct BwAnimStep sBwSeq_VenonatBack[] =
     { 10, 6 },
     { 9, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Venomoth[] =
 {
@@ -6302,6 +7178,7 @@ static const struct BwAnimStep sBwSeq_Venomoth[] =
     { 30, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_VenomothBack[] =
 {
     { 0, 2 },
@@ -6336,6 +7213,7 @@ static const struct BwAnimStep sBwSeq_VenomothBack[] =
     { 29, 2 },
     { 30, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Diglett[] =
 {
@@ -6407,6 +7285,7 @@ static const struct BwAnimStep sBwSeq_Diglett[] =
     { 6, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_DiglettBack[] =
 {
     { 0, 12 },
@@ -6476,6 +7355,7 @@ static const struct BwAnimStep sBwSeq_DiglettBack[] =
     { 7, 6 },
     { 5, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Dugtrio[] =
 {
@@ -6583,6 +7463,7 @@ static const struct BwAnimStep sBwSeq_Dugtrio[] =
     { 18, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_DugtrioBack[] =
 {
     { 0, 2 },
@@ -6688,6 +7569,7 @@ static const struct BwAnimStep sBwSeq_DugtrioBack[] =
     { 0, 6 },
     { 18, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Meowth[] =
 {
@@ -6763,6 +7645,7 @@ static const struct BwAnimStep sBwSeq_Meowth[] =
     { 9, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MeowthBack[] =
 {
     { 0, 12 },
@@ -6835,6 +7718,7 @@ static const struct BwAnimStep sBwSeq_MeowthBack[] =
     { 21, 6 },
     { 22, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Persian[] =
 {
@@ -6867,6 +7751,7 @@ static const struct BwAnimStep sBwSeq_Persian[] =
     { 6, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PersianBack[] =
 {
     { 0, 6 },
@@ -6897,6 +7782,7 @@ static const struct BwAnimStep sBwSeq_PersianBack[] =
     { 22, 6 },
     { 5, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Psyduck[] =
 {
@@ -6926,6 +7812,7 @@ static const struct BwAnimStep sBwSeq_Psyduck[] =
     { 11, 10 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PsyduckBack[] =
 {
     { 0, 5 },
@@ -6957,6 +7844,7 @@ static const struct BwAnimStep sBwSeq_PsyduckBack[] =
     { 0, 30 },
     { 17, 10 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Golduck[] =
 {
@@ -7001,6 +7889,7 @@ static const struct BwAnimStep sBwSeq_Golduck[] =
     { 7, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GolduckBack[] =
 {
     { 0, 6 },
@@ -7045,6 +7934,7 @@ static const struct BwAnimStep sBwSeq_GolduckBack[] =
     { 18, 6 },
     { 7, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Mankey[] =
 {
@@ -7140,6 +8030,7 @@ static const struct BwAnimStep sBwSeq_Mankey[] =
     { 8, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MankeyBack[] =
 {
     { 0, 4 },
@@ -7233,6 +8124,7 @@ static const struct BwAnimStep sBwSeq_MankeyBack[] =
     { 7, 4 },
     { 8, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Primeape[] =
 {
@@ -7259,6 +8151,7 @@ static const struct BwAnimStep sBwSeq_Primeape[] =
     { 20, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PrimeapeBack[] =
 {
     { 0, 4 },
@@ -7283,6 +8176,7 @@ static const struct BwAnimStep sBwSeq_PrimeapeBack[] =
     { 19, 4 },
     { 20, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Growlithe[] =
 {
@@ -7362,6 +8256,7 @@ static const struct BwAnimStep sBwSeq_Growlithe[] =
     { 26, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GrowlitheBack[] =
 {
     { 0, 6 },
@@ -7436,6 +8331,7 @@ static const struct BwAnimStep sBwSeq_GrowlitheBack[] =
     { 24, 5 },
     { 25, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Arcanine[] =
 {
@@ -7450,6 +8346,7 @@ static const struct BwAnimStep sBwSeq_Arcanine[] =
     { 8, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ArcanineBack[] =
 {
     { 0, 6 },
@@ -7462,6 +8359,7 @@ static const struct BwAnimStep sBwSeq_ArcanineBack[] =
     { 7, 6 },
     { 8, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Poliwag[] =
 {
@@ -7528,6 +8426,7 @@ static const struct BwAnimStep sBwSeq_Poliwag[] =
     { 21, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PoliwagBack[] =
 {
     { 0, 6 },
@@ -7592,6 +8491,7 @@ static const struct BwAnimStep sBwSeq_PoliwagBack[] =
     { 20, 3 },
     { 21, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Poliwhirl[] =
 {
@@ -7651,6 +8551,7 @@ static const struct BwAnimStep sBwSeq_Poliwhirl[] =
     { 19, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PoliwhirlBack[] =
 {
     { 0, 6 },
@@ -7708,6 +8609,7 @@ static const struct BwAnimStep sBwSeq_PoliwhirlBack[] =
     { 8, 6 },
     { 19, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Poliwrath[] =
 {
@@ -7722,6 +8624,7 @@ static const struct BwAnimStep sBwSeq_Poliwrath[] =
     { 8, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PoliwrathBack[] =
 {
     { 0, 12 },
@@ -7733,6 +8636,7 @@ static const struct BwAnimStep sBwSeq_PoliwrathBack[] =
     { 6, 6 },
     { 7, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Abra[] =
 {
@@ -7794,6 +8698,7 @@ static const struct BwAnimStep sBwSeq_Abra[] =
     { 50, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_AbraBack[] =
 {
     { 0, 12 },
@@ -7853,6 +8758,7 @@ static const struct BwAnimStep sBwSeq_AbraBack[] =
     { 49, 6 },
     { 50, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Kadabra[] =
 {
@@ -7917,6 +8823,7 @@ static const struct BwAnimStep sBwSeq_Kadabra[] =
     { 19, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_KadabraBack[] =
 {
     { 0, 6 },
@@ -7981,6 +8888,7 @@ static const struct BwAnimStep sBwSeq_KadabraBack[] =
     { 20, 6 },
     { 10, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Alakazam[] =
 {
@@ -8055,6 +8963,7 @@ static const struct BwAnimStep sBwSeq_Alakazam[] =
     { 25, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_AlakazamBack[] =
 {
     { 0, 6 },
@@ -8127,6 +9036,7 @@ static const struct BwAnimStep sBwSeq_AlakazamBack[] =
     { 23, 6 },
     { 24, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Machop[] =
 {
@@ -8232,6 +9142,7 @@ static const struct BwAnimStep sBwSeq_Machop[] =
     { 14, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MachopBack[] =
 {
     { 0, 4 },
@@ -8335,6 +9246,7 @@ static const struct BwAnimStep sBwSeq_MachopBack[] =
     { 27, 4 },
     { 20, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Machoke[] =
 {
@@ -8357,6 +9269,7 @@ static const struct BwAnimStep sBwSeq_Machoke[] =
     { 12, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MachokeBack[] =
 {
     { 0, 6 },
@@ -8376,6 +9289,7 @@ static const struct BwAnimStep sBwSeq_MachokeBack[] =
     { 10, 6 },
     { 11, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Machamp[] =
 {
@@ -8410,6 +9324,7 @@ static const struct BwAnimStep sBwSeq_Machamp[] =
     { 26, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MachampBack[] =
 {
     { 0, 12 },
@@ -8442,6 +9357,7 @@ static const struct BwAnimStep sBwSeq_MachampBack[] =
     { 24, 6 },
     { 1, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Bellsprout[] =
 {
@@ -8503,6 +9419,7 @@ static const struct BwAnimStep sBwSeq_Bellsprout[] =
     { 1, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_BellsproutBack[] =
 {
     { 0, 5 },
@@ -8562,6 +9479,7 @@ static const struct BwAnimStep sBwSeq_BellsproutBack[] =
     { 8, 5 },
     { 9, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Weepinbell[] =
 {
@@ -8615,6 +9533,7 @@ static const struct BwAnimStep sBwSeq_Weepinbell[] =
     { 11, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_WeepinbellBack[] =
 {
     { 0, 12 },
@@ -8666,6 +9585,7 @@ static const struct BwAnimStep sBwSeq_WeepinbellBack[] =
     { 14, 6 },
     { 10, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Victreebel[] =
 {
@@ -8689,6 +9609,7 @@ static const struct BwAnimStep sBwSeq_Victreebel[] =
     { 17, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_VictreebelBack[] =
 {
     { 0, 6 },
@@ -8710,6 +9631,7 @@ static const struct BwAnimStep sBwSeq_VictreebelBack[] =
     { 16, 6 },
     { 17, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Tentacool[] =
 {
@@ -8763,6 +9685,7 @@ static const struct BwAnimStep sBwSeq_Tentacool[] =
     { 30, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_TentacoolBack[] =
 {
     { 0, 6 },
@@ -8814,6 +9737,7 @@ static const struct BwAnimStep sBwSeq_TentacoolBack[] =
     { 30, 6 },
     { 31, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Tentacruel[] =
 {
@@ -8929,6 +9853,7 @@ static const struct BwAnimStep sBwSeq_Tentacruel[] =
     { 109, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_TentacruelBack[] =
 {
     { 0, 3 },
@@ -9044,6 +9969,7 @@ static const struct BwAnimStep sBwSeq_TentacruelBack[] =
     { 110, 2 },
     { 111, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Geodude[] =
 {
@@ -9092,6 +10018,7 @@ static const struct BwAnimStep sBwSeq_Geodude[] =
     { 20, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GeodudeBack[] =
 {
     { 0, 5 },
@@ -9127,6 +10054,7 @@ static const struct BwAnimStep sBwSeq_GeodudeBack[] =
     { 23, 5 },
     { 15, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Graveler[] =
 {
@@ -9140,6 +10068,7 @@ static const struct BwAnimStep sBwSeq_Graveler[] =
     { 7, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GravelerBack[] =
 {
     { 0, 6 },
@@ -9151,6 +10080,7 @@ static const struct BwAnimStep sBwSeq_GravelerBack[] =
     { 2, 6 },
     { 5, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Golem[] =
 {
@@ -9202,6 +10132,7 @@ static const struct BwAnimStep sBwSeq_Golem[] =
     { 15, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GolemBack[] =
 {
     { 0, 6 },
@@ -9251,6 +10182,7 @@ static const struct BwAnimStep sBwSeq_GolemBack[] =
     { 11, 6 },
     { 10, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Ponyta[] =
 {
@@ -9271,6 +10203,7 @@ static const struct BwAnimStep sBwSeq_Ponyta[] =
     { 14, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PonytaBack[] =
 {
     { 0, 8 },
@@ -9289,6 +10222,7 @@ static const struct BwAnimStep sBwSeq_PonytaBack[] =
     { 13, 6 },
     { 14, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Rapidash[] =
 {
@@ -9332,6 +10266,7 @@ static const struct BwAnimStep sBwSeq_Rapidash[] =
     { 37, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_RapidashBack[] =
 {
     { 0, 3 },
@@ -9383,6 +10318,7 @@ static const struct BwAnimStep sBwSeq_RapidashBack[] =
     { 44, 3 },
     { 45, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Slowpoke[] =
 {
@@ -9403,6 +10339,7 @@ static const struct BwAnimStep sBwSeq_Slowpoke[] =
     { 14, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SlowpokeBack[] =
 {
     { 0, 6 },
@@ -9421,6 +10358,7 @@ static const struct BwAnimStep sBwSeq_SlowpokeBack[] =
     { 13, 6 },
     { 14, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Slowbro[] =
 {
@@ -9487,6 +10425,7 @@ static const struct BwAnimStep sBwSeq_Slowbro[] =
     { 41, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SlowbroBack[] =
 {
     { 0, 16 },
@@ -9551,6 +10490,7 @@ static const struct BwAnimStep sBwSeq_SlowbroBack[] =
     { 40, 8 },
     { 41, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Magnemite[] =
 {
@@ -9608,6 +10548,7 @@ static const struct BwAnimStep sBwSeq_Magnemite[] =
     { 36, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MagnemiteBack[] =
 {
     { 0, 12 },
@@ -9663,6 +10604,7 @@ static const struct BwAnimStep sBwSeq_MagnemiteBack[] =
     { 36, 6 },
     { 38, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Magneton[] =
 {
@@ -9740,6 +10682,7 @@ static const struct BwAnimStep sBwSeq_Magneton[] =
     { 69, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MagnetonBack[] =
 {
     { 0, 6 },
@@ -9815,6 +10758,7 @@ static const struct BwAnimStep sBwSeq_MagnetonBack[] =
     { 40, 6 },
     { 54, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Farfetchd[] =
 {
@@ -9836,6 +10780,7 @@ static const struct BwAnimStep sBwSeq_Farfetchd[] =
     { 1, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_FarfetchdBack[] =
 {
     { 0, 26 },
@@ -9855,6 +10800,7 @@ static const struct BwAnimStep sBwSeq_FarfetchdBack[] =
     { 2, 6 },
     { 1, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Doduo[] =
 {
@@ -9980,6 +10926,7 @@ static const struct BwAnimStep sBwSeq_Doduo[] =
     { 28, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_DoduoBack[] =
 {
     { 0, 9 },
@@ -10103,6 +11050,7 @@ static const struct BwAnimStep sBwSeq_DoduoBack[] =
     { 27, 3 },
     { 28, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Dodrio[] =
 {
@@ -10204,6 +11152,7 @@ static const struct BwAnimStep sBwSeq_Dodrio[] =
     { 95, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_DodrioBack[] =
 {
     { 0, 6 },
@@ -10285,6 +11234,7 @@ static const struct BwAnimStep sBwSeq_DodrioBack[] =
     { 75, 6 },
     { 76, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Seel[] =
 {
@@ -10298,6 +11248,7 @@ static const struct BwAnimStep sBwSeq_Seel[] =
     { 7, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SeelBack[] =
 {
     { 0, 12 },
@@ -10309,6 +11260,7 @@ static const struct BwAnimStep sBwSeq_SeelBack[] =
     { 6, 6 },
     { 7, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Dewgong[] =
 {
@@ -10374,6 +11326,7 @@ static const struct BwAnimStep sBwSeq_Dewgong[] =
     { 10, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_DewgongBack[] =
 {
     { 0, 21 },
@@ -10437,6 +11390,7 @@ static const struct BwAnimStep sBwSeq_DewgongBack[] =
     { 11, 7 },
     { 10, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Grimer[] =
 {
@@ -10502,6 +11456,7 @@ static const struct BwAnimStep sBwSeq_Grimer[] =
     { 14, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GrimerBack[] =
 {
     { 0, 12 },
@@ -10561,6 +11516,7 @@ static const struct BwAnimStep sBwSeq_GrimerBack[] =
     { 19, 6 },
     { 20, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Muk[] =
 {
@@ -10618,6 +11574,7 @@ static const struct BwAnimStep sBwSeq_Muk[] =
     { 33, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MukBack[] =
 {
     { 0, 12 },
@@ -10672,6 +11629,7 @@ static const struct BwAnimStep sBwSeq_MukBack[] =
     { 31, 6 },
     { 32, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Shellder[] =
 {
@@ -10721,6 +11679,7 @@ static const struct BwAnimStep sBwSeq_Shellder[] =
     { 32, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ShellderBack[] =
 {
     { 0, 6 },
@@ -10768,6 +11727,7 @@ static const struct BwAnimStep sBwSeq_ShellderBack[] =
     { 13, 6 },
     { 12, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Cloyster[] =
 {
@@ -10790,6 +11750,7 @@ static const struct BwAnimStep sBwSeq_Cloyster[] =
     { 16, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CloysterBack[] =
 {
     { 0, 6 },
@@ -10810,6 +11771,7 @@ static const struct BwAnimStep sBwSeq_CloysterBack[] =
     { 15, 6 },
     { 16, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Gastly[] =
 {
@@ -10911,6 +11873,7 @@ static const struct BwAnimStep sBwSeq_Gastly[] =
     { 95, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GastlyBack[] =
 {
     { 0, 3 },
@@ -11010,6 +11973,7 @@ static const struct BwAnimStep sBwSeq_GastlyBack[] =
     { 94, 3 },
     { 95, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Haunter[] =
 {
@@ -11040,6 +12004,7 @@ static const struct BwAnimStep sBwSeq_Haunter[] =
     { 24, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_HaunterBack[] =
 {
     { 0, 3 },
@@ -11068,6 +12033,7 @@ static const struct BwAnimStep sBwSeq_HaunterBack[] =
     { 23, 3 },
     { 24, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Gengar[] =
 {
@@ -11133,6 +12099,7 @@ static const struct BwAnimStep sBwSeq_Gengar[] =
     { 1, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GengarBack[] =
 {
     { 0, 10 },
@@ -11196,6 +12163,7 @@ static const struct BwAnimStep sBwSeq_GengarBack[] =
     { 4, 5 },
     { 1, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Onix[] =
 {
@@ -11251,6 +12219,7 @@ static const struct BwAnimStep sBwSeq_Onix[] =
     { 16, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_OnixBack[] =
 {
     { 0, 6 },
@@ -11326,6 +12295,7 @@ static const struct BwAnimStep sBwSeq_OnixBack[] =
     { 2, 6 },
     { 1, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Drowzee[] =
 {
@@ -11407,6 +12377,7 @@ static const struct BwAnimStep sBwSeq_Drowzee[] =
     { 13, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_DrowzeeBack[] =
 {
     { 0, 12 },
@@ -11486,6 +12457,7 @@ static const struct BwAnimStep sBwSeq_DrowzeeBack[] =
     { 21, 6 },
     { 22, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Hypno[] =
 {
@@ -11553,6 +12525,7 @@ static const struct BwAnimStep sBwSeq_Hypno[] =
     { 27, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_HypnoBack[] =
 {
     { 0, 12 },
@@ -11618,6 +12591,7 @@ static const struct BwAnimStep sBwSeq_HypnoBack[] =
     { 26, 6 },
     { 27, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Krabby[] =
 {
@@ -11641,6 +12615,7 @@ static const struct BwAnimStep sBwSeq_Krabby[] =
     { 8, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_KrabbyBack[] =
 {
     { 0, 12 },
@@ -11662,6 +12637,7 @@ static const struct BwAnimStep sBwSeq_KrabbyBack[] =
     { 5, 6 },
     { 4, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Kingler[] =
 {
@@ -11679,6 +12655,7 @@ static const struct BwAnimStep sBwSeq_Kingler[] =
     { 4, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_KinglerBack[] =
 {
     { 0, 12 },
@@ -11694,6 +12671,7 @@ static const struct BwAnimStep sBwSeq_KinglerBack[] =
     { 5, 6 },
     { 4, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Voltorb[] =
 {
@@ -11744,6 +12722,7 @@ static const struct BwAnimStep sBwSeq_Voltorb[] =
     { 34, 30 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_VoltorbBack[] =
 {
     { 0, 5 },
@@ -11792,6 +12771,7 @@ static const struct BwAnimStep sBwSeq_VoltorbBack[] =
     { 37, 10 },
     { 38, 30 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Electrode[] =
 {
@@ -11826,6 +12806,7 @@ static const struct BwAnimStep sBwSeq_Electrode[] =
     { 22, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ElectrodeBack[] =
 {
     { 0, 47 },
@@ -11854,6 +12835,7 @@ static const struct BwAnimStep sBwSeq_ElectrodeBack[] =
     { 9, 6 },
     { 8, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Exeggcute[] =
 {
@@ -11868,6 +12850,7 @@ static const struct BwAnimStep sBwSeq_Exeggcute[] =
     { 8, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ExeggcuteBack[] =
 {
     { 0, 30 },
@@ -11880,6 +12863,7 @@ static const struct BwAnimStep sBwSeq_ExeggcuteBack[] =
     { 7, 6 },
     { 8, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Exeggutor[] =
 {
@@ -11894,6 +12878,7 @@ static const struct BwAnimStep sBwSeq_Exeggutor[] =
     { 8, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ExeggutorBack[] =
 {
     { 0, 12 },
@@ -11905,6 +12890,7 @@ static const struct BwAnimStep sBwSeq_ExeggutorBack[] =
     { 6, 6 },
     { 7, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Cubone[] =
 {
@@ -11988,6 +12974,7 @@ static const struct BwAnimStep sBwSeq_Cubone[] =
     { 40, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CuboneBack[] =
 {
     { 0, 12 },
@@ -12069,6 +13056,7 @@ static const struct BwAnimStep sBwSeq_CuboneBack[] =
     { 38, 6 },
     { 39, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Marowak[] =
 {
@@ -12140,6 +13128,7 @@ static const struct BwAnimStep sBwSeq_Marowak[] =
     { 6, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MarowakBack[] =
 {
     { 0, 12 },
@@ -12209,6 +13198,7 @@ static const struct BwAnimStep sBwSeq_MarowakBack[] =
     { 5, 6 },
     { 6, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Hitmonlee[] =
 {
@@ -12237,6 +13227,7 @@ static const struct BwAnimStep sBwSeq_Hitmonlee[] =
     { 18, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_HitmonleeBack[] =
 {
     { 0, 10 },
@@ -12262,6 +13253,7 @@ static const struct BwAnimStep sBwSeq_HitmonleeBack[] =
     { 17, 5 },
     { 18, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Hitmonchan[] =
 {
@@ -12307,6 +13299,7 @@ static const struct BwAnimStep sBwSeq_Hitmonchan[] =
     { 1, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_HitmonchanBack[] =
 {
     { 0, 12 },
@@ -12350,6 +13343,7 @@ static const struct BwAnimStep sBwSeq_HitmonchanBack[] =
     { 4, 6 },
     { 3, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Lickitung[] =
 {
@@ -12372,6 +13366,7 @@ static const struct BwAnimStep sBwSeq_Lickitung[] =
     { 16, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_LickitungBack[] =
 {
     { 0, 4 },
@@ -12393,6 +13388,7 @@ static const struct BwAnimStep sBwSeq_LickitungBack[] =
     { 16, 4 },
     { 17, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Koffing[] =
 {
@@ -12409,6 +13405,7 @@ static const struct BwAnimStep sBwSeq_Koffing[] =
     { 10, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_KoffingBack[] =
 {
     { 0, 6 },
@@ -12423,6 +13420,7 @@ static const struct BwAnimStep sBwSeq_KoffingBack[] =
     { 9, 6 },
     { 10, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Weezing[] =
 {
@@ -12438,6 +13436,7 @@ static const struct BwAnimStep sBwSeq_Weezing[] =
     { 9, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_WeezingBack[] =
 {
     { 0, 6 },
@@ -12451,6 +13450,7 @@ static const struct BwAnimStep sBwSeq_WeezingBack[] =
     { 8, 6 },
     { 9, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Rhyhorn[] =
 {
@@ -12534,6 +13534,7 @@ static const struct BwAnimStep sBwSeq_Rhyhorn[] =
     { 18, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_RhyhornBack[] =
 {
     { 0, 12 },
@@ -12620,6 +13621,7 @@ static const struct BwAnimStep sBwSeq_RhyhornBack[] =
     { 21, 6 },
     { 22, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Rhydon[] =
 {
@@ -12721,6 +13723,7 @@ static const struct BwAnimStep sBwSeq_Rhydon[] =
     { 22, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_RhydonBack[] =
 {
     { 0, 12 },
@@ -12820,6 +13823,7 @@ static const struct BwAnimStep sBwSeq_RhydonBack[] =
     { 14, 6 },
     { 13, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Chansey[] =
 {
@@ -12897,6 +13901,7 @@ static const struct BwAnimStep sBwSeq_Chansey[] =
     { 31, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ChanseyBack[] =
 {
     { 0, 5 },
@@ -12968,6 +13973,7 @@ static const struct BwAnimStep sBwSeq_ChanseyBack[] =
     { 22, 5 },
     { 23, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Tangela[] =
 {
@@ -12989,6 +13995,7 @@ static const struct BwAnimStep sBwSeq_Tangela[] =
     { 11, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_TangelaBack[] =
 {
     { 0, 6 },
@@ -13008,6 +14015,7 @@ static const struct BwAnimStep sBwSeq_TangelaBack[] =
     { 6, 6 },
     { 5, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Kangaskhan[] =
 {
@@ -13055,6 +14063,7 @@ static const struct BwAnimStep sBwSeq_Kangaskhan[] =
     { 19, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_KangaskhanBack[] =
 {
     { 0, 12 },
@@ -13100,6 +14109,7 @@ static const struct BwAnimStep sBwSeq_KangaskhanBack[] =
     { 9, 6 },
     { 8, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Horsea[] =
 {
@@ -13133,6 +14143,7 @@ static const struct BwAnimStep sBwSeq_Horsea[] =
     { 26, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_HorseaBack[] =
 {
     { 0, 2 },
@@ -13164,6 +14175,7 @@ static const struct BwAnimStep sBwSeq_HorseaBack[] =
     { 25, 3 },
     { 26, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Seadra[] =
 {
@@ -13207,6 +14219,7 @@ static const struct BwAnimStep sBwSeq_Seadra[] =
     { 37, 2 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SeadraBack[] =
 {
     { 0, 3 },
@@ -13248,6 +14261,7 @@ static const struct BwAnimStep sBwSeq_SeadraBack[] =
     { 36, 3 },
     { 37, 2 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Goldeen[] =
 {
@@ -13294,6 +14308,7 @@ static const struct BwAnimStep sBwSeq_Goldeen[] =
     { 40, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GoldeenBack[] =
 {
     { 0, 2 },
@@ -13335,6 +14350,7 @@ static const struct BwAnimStep sBwSeq_GoldeenBack[] =
     { 36, 3 },
     { 37, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Seaking[] =
 {
@@ -13412,6 +14428,7 @@ static const struct BwAnimStep sBwSeq_Seaking[] =
     { 71, 2 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SeakingBack[] =
 {
     { 0, 2 },
@@ -13487,6 +14504,7 @@ static const struct BwAnimStep sBwSeq_SeakingBack[] =
     { 70, 2 },
     { 71, 2 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Staryu[] =
 {
@@ -13512,6 +14530,7 @@ static const struct BwAnimStep sBwSeq_Staryu[] =
     { 17, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_StaryuBack[] =
 {
     { 0, 6 },
@@ -13535,6 +14554,7 @@ static const struct BwAnimStep sBwSeq_StaryuBack[] =
     { 7, 6 },
     { 6, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Starmie[] =
 {
@@ -13588,6 +14608,7 @@ static const struct BwAnimStep sBwSeq_Starmie[] =
     { 32, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_StarmieBack[] =
 {
     { 0, 3 },
@@ -13647,6 +14668,7 @@ static const struct BwAnimStep sBwSeq_StarmieBack[] =
     { 16, 6 },
     { 17, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_MrMime[] =
 {
@@ -13668,6 +14690,7 @@ static const struct BwAnimStep sBwSeq_MrMime[] =
     { 15, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MrMimeBack[] =
 {
     { 0, 6 },
@@ -13687,6 +14710,7 @@ static const struct BwAnimStep sBwSeq_MrMimeBack[] =
     { 6, 6 },
     { 5, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Scyther[] =
 {
@@ -13760,6 +14784,7 @@ static const struct BwAnimStep sBwSeq_Scyther[] =
     { 17, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ScytherBack[] =
 {
     { 0, 12 },
@@ -13831,6 +14856,7 @@ static const struct BwAnimStep sBwSeq_ScytherBack[] =
     { 16, 6 },
     { 17, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Jynx[] =
 {
@@ -13890,6 +14916,7 @@ static const struct BwAnimStep sBwSeq_Jynx[] =
     { 25, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_JynxBack[] =
 {
     { 0, 6 },
@@ -13947,6 +14974,7 @@ static const struct BwAnimStep sBwSeq_JynxBack[] =
     { 24, 6 },
     { 25, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Electabuzz[] =
 {
@@ -14000,6 +15028,7 @@ static const struct BwAnimStep sBwSeq_Electabuzz[] =
     { 19, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ElectabuzzBack[] =
 {
     { 0, 6 },
@@ -14051,6 +15080,7 @@ static const struct BwAnimStep sBwSeq_ElectabuzzBack[] =
     { 18, 6 },
     { 19, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Magmar[] =
 {
@@ -14089,6 +15119,7 @@ static const struct BwAnimStep sBwSeq_Magmar[] =
     { 16, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MagmarBack[] =
 {
     { 0, 6 },
@@ -14125,6 +15156,7 @@ static const struct BwAnimStep sBwSeq_MagmarBack[] =
     { 14, 6 },
     { 15, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Pinsir[] =
 {
@@ -14154,6 +15186,7 @@ static const struct BwAnimStep sBwSeq_Pinsir[] =
     { 14, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PinsirBack[] =
 {
     { 0, 6 },
@@ -14181,6 +15214,7 @@ static const struct BwAnimStep sBwSeq_PinsirBack[] =
     { 6, 6 },
     { 5, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Tauros[] =
 {
@@ -14212,6 +15246,7 @@ static const struct BwAnimStep sBwSeq_Tauros[] =
     { 25, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_TaurosBack[] =
 {
     { 0, 8 },
@@ -14240,6 +15275,7 @@ static const struct BwAnimStep sBwSeq_TaurosBack[] =
     { 23, 9 },
     { 24, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Magikarp[] =
 {
@@ -14337,6 +15373,7 @@ static const struct BwAnimStep sBwSeq_Magikarp[] =
     { 17, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MagikarpBack[] =
 {
     { 0, 3 },
@@ -14430,6 +15467,7 @@ static const struct BwAnimStep sBwSeq_MagikarpBack[] =
     { 16, 3 },
     { 17, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Gyarados[] =
 {
@@ -14446,6 +15484,7 @@ static const struct BwAnimStep sBwSeq_Gyarados[] =
     { 6, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GyaradosBack[] =
 {
     { 0, 6 },
@@ -14460,6 +15499,7 @@ static const struct BwAnimStep sBwSeq_GyaradosBack[] =
     { 8, 6 },
     { 9, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Lapras[] =
 {
@@ -14497,6 +15537,7 @@ static const struct BwAnimStep sBwSeq_Lapras[] =
     { 14, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_LaprasBack[] =
 {
     { 0, 14 },
@@ -14532,6 +15573,7 @@ static const struct BwAnimStep sBwSeq_LaprasBack[] =
     { 13, 7 },
     { 14, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Ditto[] =
 {
@@ -14561,6 +15603,7 @@ static const struct BwAnimStep sBwSeq_Ditto[] =
     { 23, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_DittoBack[] =
 {
     { 0, 5 },
@@ -14588,6 +15631,7 @@ static const struct BwAnimStep sBwSeq_DittoBack[] =
     { 21, 5 },
     { 22, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Eevee[] =
 {
@@ -14667,6 +15711,7 @@ static const struct BwAnimStep sBwSeq_Eevee[] =
     { 28, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_EeveeBack[] =
 {
     { 0, 5 },
@@ -14750,6 +15795,7 @@ static const struct BwAnimStep sBwSeq_EeveeBack[] =
     { 28, 5 },
     { 29, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Vaporeon[] =
 {
@@ -14805,6 +15851,7 @@ static const struct BwAnimStep sBwSeq_Vaporeon[] =
     { 1, 9 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_VaporeonBack[] =
 {
     { 0, 9 },
@@ -14862,6 +15909,7 @@ static const struct BwAnimStep sBwSeq_VaporeonBack[] =
     { 7, 9 },
     { 8, 9 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Jolteon[] =
 {
@@ -14916,6 +15964,7 @@ static const struct BwAnimStep sBwSeq_Jolteon[] =
     { 15, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_JolteonBack[] =
 {
     { 0, 6 },
@@ -14969,6 +16018,7 @@ static const struct BwAnimStep sBwSeq_JolteonBack[] =
     { 9, 6 },
     { 8, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Flareon[] =
 {
@@ -15082,6 +16132,7 @@ static const struct BwAnimStep sBwSeq_Flareon[] =
     { 16, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_FlareonBack[] =
 {
     { 0, 3 },
@@ -15193,6 +16244,7 @@ static const struct BwAnimStep sBwSeq_FlareonBack[] =
     { 17, 6 },
     { 16, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Porygon[] =
 {
@@ -15261,6 +16313,7 @@ static const struct BwAnimStep sBwSeq_Porygon[] =
     { 62, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PorygonBack[] =
 {
     { 0, 5 },
@@ -15308,6 +16361,7 @@ static const struct BwAnimStep sBwSeq_PorygonBack[] =
     { 42, 2 },
     { 43, 2 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Omanyte[] =
 {
@@ -15339,6 +16393,7 @@ static const struct BwAnimStep sBwSeq_Omanyte[] =
     { 25, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_OmanyteBack[] =
 {
     { 0, 6 },
@@ -15368,6 +16423,7 @@ static const struct BwAnimStep sBwSeq_OmanyteBack[] =
     { 24, 3 },
     { 25, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Omastar[] =
 {
@@ -15399,6 +16455,7 @@ static const struct BwAnimStep sBwSeq_Omastar[] =
     { 25, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_OmastarBack[] =
 {
     { 0, 6 },
@@ -15428,6 +16485,7 @@ static const struct BwAnimStep sBwSeq_OmastarBack[] =
     { 24, 6 },
     { 25, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Kabuto[] =
 {
@@ -15496,6 +16554,7 @@ static const struct BwAnimStep sBwSeq_Kabuto[] =
     { 62, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_KabutoBack[] =
 {
     { 0, 6 },
@@ -15561,6 +16620,7 @@ static const struct BwAnimStep sBwSeq_KabutoBack[] =
     { 60, 6 },
     { 61, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Kabutops[] =
 {
@@ -15583,6 +16643,7 @@ static const struct BwAnimStep sBwSeq_Kabutops[] =
     { 16, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_KabutopsBack[] =
 {
     { 0, 8 },
@@ -15603,6 +16664,7 @@ static const struct BwAnimStep sBwSeq_KabutopsBack[] =
     { 15, 4 },
     { 16, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Aerodactyl[] =
 {
@@ -15622,6 +16684,7 @@ static const struct BwAnimStep sBwSeq_Aerodactyl[] =
     { 13, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_AerodactylBack[] =
 {
     { 0, 4 },
@@ -15639,6 +16702,7 @@ static const struct BwAnimStep sBwSeq_AerodactylBack[] =
     { 12, 3 },
     { 13, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Snorlax[] =
 {
@@ -15730,6 +16794,7 @@ static const struct BwAnimStep sBwSeq_Snorlax[] =
     { 50, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SnorlaxBack[] =
 {
     { 0, 12 },
@@ -15819,6 +16884,7 @@ static const struct BwAnimStep sBwSeq_SnorlaxBack[] =
     { 49, 6 },
     { 50, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Articuno[] =
 {
@@ -15852,6 +16918,7 @@ static const struct BwAnimStep sBwSeq_Articuno[] =
     { 24, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ArticunoBack[] =
 {
     { 0, 10 },
@@ -15883,6 +16950,7 @@ static const struct BwAnimStep sBwSeq_ArticunoBack[] =
     { 23, 5 },
     { 24, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Zapdos[] =
 {
@@ -15897,6 +16965,7 @@ static const struct BwAnimStep sBwSeq_Zapdos[] =
     { 8, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ZapdosBack[] =
 {
     { 0, 6 },
@@ -15909,6 +16978,7 @@ static const struct BwAnimStep sBwSeq_ZapdosBack[] =
     { 7, 6 },
     { 8, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Moltres[] =
 {
@@ -15941,6 +17011,7 @@ static const struct BwAnimStep sBwSeq_Moltres[] =
     { 26, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MoltresBack[] =
 {
     { 0, 6 },
@@ -15971,6 +17042,7 @@ static const struct BwAnimStep sBwSeq_MoltresBack[] =
     { 25, 6 },
     { 26, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Dratini[] =
 {
@@ -16000,6 +17072,7 @@ static const struct BwAnimStep sBwSeq_Dratini[] =
     { 12, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_DratiniBack[] =
 {
     { 0, 18 },
@@ -16027,6 +17100,7 @@ static const struct BwAnimStep sBwSeq_DratiniBack[] =
     { 13, 6 },
     { 12, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Dragonair[] =
 {
@@ -16096,6 +17170,7 @@ static const struct BwAnimStep sBwSeq_Dragonair[] =
     { 28, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_DragonairBack[] =
 {
     { 0, 6 },
@@ -16163,6 +17238,7 @@ static const struct BwAnimStep sBwSeq_DragonairBack[] =
     { 25, 6 },
     { 26, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Dragonite[] =
 {
@@ -16236,6 +17312,7 @@ static const struct BwAnimStep sBwSeq_Dragonite[] =
     { 7, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_DragoniteBack[] =
 {
     { 0, 30 },
@@ -16307,6 +17384,7 @@ static const struct BwAnimStep sBwSeq_DragoniteBack[] =
     { 37, 3 },
     { 8, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Mewtwo[] =
 {
@@ -16375,6 +17453,7 @@ static const struct BwAnimStep sBwSeq_Mewtwo[] =
     { 35, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MewtwoBack[] =
 {
     { 0, 12 },
@@ -16440,6 +17519,7 @@ static const struct BwAnimStep sBwSeq_MewtwoBack[] =
     { 34, 6 },
     { 35, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Mew[] =
 {
@@ -16465,6 +17545,7 @@ static const struct BwAnimStep sBwSeq_Mew[] =
     { 15, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MewBack[] =
 {
     { 0, 6 },
@@ -16488,6 +17569,7 @@ static const struct BwAnimStep sBwSeq_MewBack[] =
     { 14, 6 },
     { 15, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Chikorita[] =
 {
@@ -16519,6 +17601,7 @@ static const struct BwAnimStep sBwSeq_Chikorita[] =
     { 18, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ChikoritaBack[] =
 {
     { 0, 8 },
@@ -16548,6 +17631,7 @@ static const struct BwAnimStep sBwSeq_ChikoritaBack[] =
     { 16, 8 },
     { 17, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Bayleef[] =
 {
@@ -16623,6 +17707,7 @@ static const struct BwAnimStep sBwSeq_Bayleef[] =
     { 24, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_BayleefBack[] =
 {
     { 0, 6 },
@@ -16696,6 +17781,7 @@ static const struct BwAnimStep sBwSeq_BayleefBack[] =
     { 30, 6 },
     { 29, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Meganium[] =
 {
@@ -16747,6 +17833,7 @@ static const struct BwAnimStep sBwSeq_Meganium[] =
     { 18, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MeganiumBack[] =
 {
     { 0, 8 },
@@ -16795,6 +17882,7 @@ static const struct BwAnimStep sBwSeq_MeganiumBack[] =
     { 18, 8 },
     { 17, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Cyndaquil[] =
 {
@@ -16928,6 +18016,7 @@ static const struct BwAnimStep sBwSeq_Cyndaquil[] =
     { 13, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CyndaquilBack[] =
 {
     { 0, 3 },
@@ -17059,6 +18148,7 @@ static const struct BwAnimStep sBwSeq_CyndaquilBack[] =
     { 12, 3 },
     { 13, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Quilava[] =
 {
@@ -17146,6 +18236,7 @@ static const struct BwAnimStep sBwSeq_Quilava[] =
     { 17, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_QuilavaBack[] =
 {
     { 0, 3 },
@@ -17231,6 +18322,7 @@ static const struct BwAnimStep sBwSeq_QuilavaBack[] =
     { 16, 3 },
     { 17, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Typhlosion[] =
 {
@@ -17348,6 +18440,7 @@ static const struct BwAnimStep sBwSeq_Typhlosion[] =
     { 15, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_TyphlosionBack[] =
 {
     { 0, 3 },
@@ -17463,6 +18556,7 @@ static const struct BwAnimStep sBwSeq_TyphlosionBack[] =
     { 2, 3 },
     { 3, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Totodile[] =
 {
@@ -17511,6 +18605,7 @@ static const struct BwAnimStep sBwSeq_Totodile[] =
     { 22, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_TotodileBack[] =
 {
     { 0, 14 },
@@ -17557,6 +18652,7 @@ static const struct BwAnimStep sBwSeq_TotodileBack[] =
     { 21, 6 },
     { 22, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Croconaw[] =
 {
@@ -17652,6 +18748,7 @@ static const struct BwAnimStep sBwSeq_Croconaw[] =
     { 14, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CroconawBack[] =
 {
     { 0, 6 },
@@ -17751,6 +18848,7 @@ static const struct BwAnimStep sBwSeq_CroconawBack[] =
     { 15, 6 },
     { 8, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Feraligatr[] =
 {
@@ -17797,6 +18895,7 @@ static const struct BwAnimStep sBwSeq_Feraligatr[] =
     { 19, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_FeraligatrBack[] =
 {
     { 0, 16 },
@@ -17841,6 +18940,7 @@ static const struct BwAnimStep sBwSeq_FeraligatrBack[] =
     { 18, 8 },
     { 19, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Sentret[] =
 {
@@ -17881,6 +18981,7 @@ static const struct BwAnimStep sBwSeq_Sentret[] =
     { 33, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SentretBack[] =
 {
     { 0, 18 },
@@ -17919,6 +19020,7 @@ static const struct BwAnimStep sBwSeq_SentretBack[] =
     { 32, 6 },
     { 33, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Furret[] =
 {
@@ -17979,6 +19081,7 @@ static const struct BwAnimStep sBwSeq_Furret[] =
     { 25, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_FurretBack[] =
 {
     { 0, 12 },
@@ -18037,6 +19140,7 @@ static const struct BwAnimStep sBwSeq_FurretBack[] =
     { 22, 6 },
     { 23, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Hoothoot[] =
 {
@@ -18124,6 +19228,7 @@ static const struct BwAnimStep sBwSeq_Hoothoot[] =
     { 33, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_HoothootBack[] =
 {
     { 0, 24 },
@@ -18211,6 +19316,7 @@ static const struct BwAnimStep sBwSeq_HoothootBack[] =
     { 37, 3 },
     { 38, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Noctowl[] =
 {
@@ -18252,6 +19358,7 @@ static const struct BwAnimStep sBwSeq_Noctowl[] =
     { 19, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_NoctowlBack[] =
 {
     { 0, 66 },
@@ -18291,6 +19398,7 @@ static const struct BwAnimStep sBwSeq_NoctowlBack[] =
     { 14, 6 },
     { 16, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Ledyba[] =
 {
@@ -18344,6 +19452,7 @@ static const struct BwAnimStep sBwSeq_Ledyba[] =
     { 28, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_LedybaBack[] =
 {
     { 0, 12 },
@@ -18395,6 +19504,7 @@ static const struct BwAnimStep sBwSeq_LedybaBack[] =
     { 27, 6 },
     { 28, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Ledian[] =
 {
@@ -18430,6 +19540,7 @@ static const struct BwAnimStep sBwSeq_Ledian[] =
     { 29, 2 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_LedianBack[] =
 {
     { 0, 2 },
@@ -18453,6 +19564,7 @@ static const struct BwAnimStep sBwSeq_LedianBack[] =
     { 18, 2 },
     { 19, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Spinarak[] =
 {
@@ -18490,6 +19602,7 @@ static const struct BwAnimStep sBwSeq_Spinarak[] =
     { 8, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SpinarakBack[] =
 {
     { 0, 15 },
@@ -18525,6 +19638,7 @@ static const struct BwAnimStep sBwSeq_SpinarakBack[] =
     { 9, 6 },
     { 8, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Ariados[] =
 {
@@ -18548,6 +19662,7 @@ static const struct BwAnimStep sBwSeq_Ariados[] =
     { 1, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_AriadosBack[] =
 {
     { 0, 16 },
@@ -18567,6 +19682,7 @@ static const struct BwAnimStep sBwSeq_AriadosBack[] =
     { 10, 8 },
     { 11, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Crobat[] =
 {
@@ -18588,6 +19704,7 @@ static const struct BwAnimStep sBwSeq_Crobat[] =
     { 14, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CrobatBack[] =
 {
     { 0, 6 },
@@ -18607,6 +19724,7 @@ static const struct BwAnimStep sBwSeq_CrobatBack[] =
     { 13, 6 },
     { 14, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Chinchou[] =
 {
@@ -18644,6 +19762,7 @@ static const struct BwAnimStep sBwSeq_Chinchou[] =
     { 30, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ChinchouBack[] =
 {
     { 0, 8 },
@@ -18679,6 +19798,7 @@ static const struct BwAnimStep sBwSeq_ChinchouBack[] =
     { 29, 8 },
     { 30, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Lanturn[] =
 {
@@ -18810,6 +19930,7 @@ static const struct BwAnimStep sBwSeq_Lanturn[] =
     { 27, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_LanturnBack[] =
 {
     { 0, 3 },
@@ -18939,6 +20060,7 @@ static const struct BwAnimStep sBwSeq_LanturnBack[] =
     { 26, 3 },
     { 27, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Pichu[] =
 {
@@ -19001,6 +20123,7 @@ static const struct BwAnimStep sBwSeq_Pichu[] =
     { 29, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PichuBack[] =
 {
     { 0, 6 },
@@ -19061,6 +20184,7 @@ static const struct BwAnimStep sBwSeq_PichuBack[] =
     { 27, 6 },
     { 29, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Cleffa[] =
 {
@@ -19113,6 +20237,7 @@ static const struct BwAnimStep sBwSeq_Cleffa[] =
     { 16, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CleffaBack[] =
 {
     { 0, 12 },
@@ -19167,6 +20292,7 @@ static const struct BwAnimStep sBwSeq_CleffaBack[] =
     { 36, 3 },
     { 25, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Igglybuff[] =
 {
@@ -19253,6 +20379,7 @@ static const struct BwAnimStep sBwSeq_Igglybuff[] =
     { 49, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_IgglybuffBack[] =
 {
     { 0, 6 },
@@ -19337,6 +20464,7 @@ static const struct BwAnimStep sBwSeq_IgglybuffBack[] =
     { 53, 6 },
     { 54, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Togepi[] =
 {
@@ -19412,6 +20540,7 @@ static const struct BwAnimStep sBwSeq_Togepi[] =
     { 61, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_TogepiBack[] =
 {
     { 0, 12 },
@@ -19485,6 +20614,7 @@ static const struct BwAnimStep sBwSeq_TogepiBack[] =
     { 60, 6 },
     { 61, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Togetic[] =
 {
@@ -19544,6 +20674,7 @@ static const struct BwAnimStep sBwSeq_Togetic[] =
     { 28, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_TogeticBack[] =
 {
     { 0, 6 },
@@ -19598,6 +20729,7 @@ static const struct BwAnimStep sBwSeq_TogeticBack[] =
     { 26, 6 },
     { 27, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Natu[] =
 {
@@ -19695,6 +20827,7 @@ static const struct BwAnimStep sBwSeq_Natu[] =
     { 22, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_NatuBack[] =
 {
     { 0, 12 },
@@ -19790,6 +20923,7 @@ static const struct BwAnimStep sBwSeq_NatuBack[] =
     { 41, 6 },
     { 22, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Xatu[] =
 {
@@ -19844,6 +20978,7 @@ static const struct BwAnimStep sBwSeq_Xatu[] =
     { 18, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_XatuBack[] =
 {
     { 0, 6 },
@@ -19896,6 +21031,7 @@ static const struct BwAnimStep sBwSeq_XatuBack[] =
     { 18, 6 },
     { 19, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Mareep[] =
 {
@@ -19950,6 +21086,7 @@ static const struct BwAnimStep sBwSeq_Mareep[] =
     { 19, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MareepBack[] =
 {
     { 0, 12 },
@@ -20003,6 +21140,7 @@ static const struct BwAnimStep sBwSeq_MareepBack[] =
     { 28, 6 },
     { 20, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Flaaffy[] =
 {
@@ -20063,6 +21201,7 @@ static const struct BwAnimStep sBwSeq_Flaaffy[] =
     { 20, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_FlaaffyBack[] =
 {
     { 0, 12 },
@@ -20117,6 +21256,7 @@ static const struct BwAnimStep sBwSeq_FlaaffyBack[] =
     { 18, 6 },
     { 19, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Ampharos[] =
 {
@@ -20158,6 +21298,7 @@ static const struct BwAnimStep sBwSeq_Ampharos[] =
     { 8, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_AmpharosBack[] =
 {
     { 0, 24 },
@@ -20197,6 +21338,7 @@ static const struct BwAnimStep sBwSeq_AmpharosBack[] =
     { 7, 6 },
     { 6, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Bellossom[] =
 {
@@ -20255,6 +21397,7 @@ static const struct BwAnimStep sBwSeq_Bellossom[] =
     { 27, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_BellossomBack[] =
 {
     { 0, 16 },
@@ -20311,6 +21454,7 @@ static const struct BwAnimStep sBwSeq_BellossomBack[] =
     { 26, 8 },
     { 27, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Marill[] =
 {
@@ -20384,6 +21528,7 @@ static const struct BwAnimStep sBwSeq_Marill[] =
     { 21, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MarillBack[] =
 {
     { 0, 30 },
@@ -20455,6 +21600,7 @@ static const struct BwAnimStep sBwSeq_MarillBack[] =
     { 27, 6 },
     { 28, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Azumarill[] =
 {
@@ -20535,6 +21681,7 @@ static const struct BwAnimStep sBwSeq_Azumarill[] =
     { 26, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_AzumarillBack[] =
 {
     { 0, 11 },
@@ -20613,6 +21760,7 @@ static const struct BwAnimStep sBwSeq_AzumarillBack[] =
     { 25, 5 },
     { 26, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Sudowoodo[] =
 {
@@ -20652,6 +21800,7 @@ static const struct BwAnimStep sBwSeq_Sudowoodo[] =
     { 12, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SudowoodoBack[] =
 {
     { 0, 17 },
@@ -20689,6 +21838,7 @@ static const struct BwAnimStep sBwSeq_SudowoodoBack[] =
     { 12, 6 },
     { 13, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Politoed[] =
 {
@@ -20742,6 +21892,7 @@ static const struct BwAnimStep sBwSeq_Politoed[] =
     { 22, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PolitoedBack[] =
 {
     { 0, 6 },
@@ -20793,6 +21944,7 @@ static const struct BwAnimStep sBwSeq_PolitoedBack[] =
     { 14, 6 },
     { 19, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Hoppip[] =
 {
@@ -20876,6 +22028,7 @@ static const struct BwAnimStep sBwSeq_Hoppip[] =
     { 77, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_HoppipBack[] =
 {
     { 0, 3 },
@@ -20957,6 +22110,7 @@ static const struct BwAnimStep sBwSeq_HoppipBack[] =
     { 76, 3 },
     { 77, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Skiploom[] =
 {
@@ -21010,6 +22164,7 @@ static const struct BwAnimStep sBwSeq_Skiploom[] =
     { 22, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SkiploomBack[] =
 {
     { 0, 6 },
@@ -21061,6 +22216,7 @@ static const struct BwAnimStep sBwSeq_SkiploomBack[] =
     { 21, 6 },
     { 22, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Jumpluff[] =
 {
@@ -21114,6 +22270,7 @@ static const struct BwAnimStep sBwSeq_Jumpluff[] =
     { 19, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_JumpluffBack[] =
 {
     { 0, 6 },
@@ -21165,6 +22322,7 @@ static const struct BwAnimStep sBwSeq_JumpluffBack[] =
     { 20, 6 },
     { 19, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Aipom[] =
 {
@@ -21195,6 +22353,7 @@ static const struct BwAnimStep sBwSeq_Aipom[] =
     { 24, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_AipomBack[] =
 {
     { 0, 6 },
@@ -21223,6 +22382,7 @@ static const struct BwAnimStep sBwSeq_AipomBack[] =
     { 23, 3 },
     { 24, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Sunkern[] =
 {
@@ -21260,6 +22420,7 @@ static const struct BwAnimStep sBwSeq_Sunkern[] =
     { 12, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SunkernBack[] =
 {
     { 0, 12 },
@@ -21295,6 +22456,7 @@ static const struct BwAnimStep sBwSeq_SunkernBack[] =
     { 11, 6 },
     { 9, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Sunflora[] =
 {
@@ -21318,6 +22480,7 @@ static const struct BwAnimStep sBwSeq_Sunflora[] =
     { 17, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SunfloraBack[] =
 {
     { 0, 3 },
@@ -21339,6 +22502,7 @@ static const struct BwAnimStep sBwSeq_SunfloraBack[] =
     { 16, 3 },
     { 17, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Yanma[] =
 {
@@ -21407,6 +22571,7 @@ static const struct BwAnimStep sBwSeq_Yanma[] =
     { 62, 2 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_YanmaBack[] =
 {
     { 0, 2 },
@@ -21473,6 +22638,7 @@ static const struct BwAnimStep sBwSeq_YanmaBack[] =
     { 61, 2 },
     { 62, 2 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Wooper[] =
 {
@@ -21490,6 +22656,7 @@ static const struct BwAnimStep sBwSeq_Wooper[] =
     { 11, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_WooperBack[] =
 {
     { 0, 9 },
@@ -21505,6 +22672,7 @@ static const struct BwAnimStep sBwSeq_WooperBack[] =
     { 5, 6 },
     { 4, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Quagsire[] =
 {
@@ -21569,6 +22737,7 @@ static const struct BwAnimStep sBwSeq_Quagsire[] =
     { 12, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_QuagsireBack[] =
 {
     { 0, 15 },
@@ -21615,6 +22784,7 @@ static const struct BwAnimStep sBwSeq_QuagsireBack[] =
     { 15, 6 },
     { 16, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Espeon[] =
 {
@@ -21710,6 +22880,7 @@ static const struct BwAnimStep sBwSeq_Espeon[] =
     { 12, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_EspeonBack[] =
 {
     { 0, 10 },
@@ -21797,6 +22968,7 @@ static const struct BwAnimStep sBwSeq_EspeonBack[] =
     { 10, 5 },
     { 11, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Umbreon[] =
 {
@@ -21834,6 +23006,7 @@ static const struct BwAnimStep sBwSeq_Umbreon[] =
     { 5, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_UmbreonBack[] =
 {
     { 0, 12 },
@@ -21869,6 +23042,7 @@ static const struct BwAnimStep sBwSeq_UmbreonBack[] =
     { 13, 6 },
     { 14, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Murkrow[] =
 {
@@ -21884,6 +23058,7 @@ static const struct BwAnimStep sBwSeq_Murkrow[] =
     { 9, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MurkrowBack[] =
 {
     { 0, 12 },
@@ -21897,6 +23072,7 @@ static const struct BwAnimStep sBwSeq_MurkrowBack[] =
     { 8, 6 },
     { 9, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Slowking[] =
 {
@@ -21919,6 +23095,7 @@ static const struct BwAnimStep sBwSeq_Slowking[] =
     { 16, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SlowkingBack[] =
 {
     { 0, 8 },
@@ -21939,6 +23116,7 @@ static const struct BwAnimStep sBwSeq_SlowkingBack[] =
     { 15, 8 },
     { 16, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Misdreavus[] =
 {
@@ -21968,6 +23146,7 @@ static const struct BwAnimStep sBwSeq_Misdreavus[] =
     { 23, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MisdreavusBack[] =
 {
     { 0, 6 },
@@ -21995,6 +23174,7 @@ static const struct BwAnimStep sBwSeq_MisdreavusBack[] =
     { 22, 3 },
     { 23, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Unown[] =
 {
@@ -22016,6 +23196,7 @@ static const struct BwAnimStep sBwSeq_Unown[] =
     { 15, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_UnownBack[] =
 {
     { 0, 6 },
@@ -22035,6 +23216,7 @@ static const struct BwAnimStep sBwSeq_UnownBack[] =
     { 14, 6 },
     { 15, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Wobbuffet[] =
 {
@@ -22102,6 +23284,7 @@ static const struct BwAnimStep sBwSeq_Wobbuffet[] =
     { 24, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_WobbuffetBack[] =
 {
     { 0, 6 },
@@ -22166,6 +23349,7 @@ static const struct BwAnimStep sBwSeq_WobbuffetBack[] =
     { 22, 6 },
     { 23, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Girafarig[] =
 {
@@ -22233,6 +23417,7 @@ static const struct BwAnimStep sBwSeq_Girafarig[] =
     { 24, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GirafarigBack[] =
 {
     { 0, 5 },
@@ -22274,6 +23459,7 @@ static const struct BwAnimStep sBwSeq_GirafarigBack[] =
     { 21, 5 },
     { 22, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Pineco[] =
 {
@@ -22326,6 +23512,7 @@ static const struct BwAnimStep sBwSeq_Pineco[] =
     { 6, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PinecoBack[] =
 {
     { 0, 16 },
@@ -22376,6 +23563,7 @@ static const struct BwAnimStep sBwSeq_PinecoBack[] =
     { 14, 8 },
     { 6, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Forretress[] =
 {
@@ -22425,6 +23613,7 @@ static const struct BwAnimStep sBwSeq_Forretress[] =
     { 41, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ForretressBack[] =
 {
     { 0, 3 },
@@ -22473,6 +23662,7 @@ static const struct BwAnimStep sBwSeq_ForretressBack[] =
     { 42, 3 },
     { 28, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Dunsparce[] =
 {
@@ -22514,6 +23704,7 @@ static const struct BwAnimStep sBwSeq_Dunsparce[] =
     { 35, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_DunsparceBack[] =
 {
     { 0, 6 },
@@ -22553,6 +23744,7 @@ static const struct BwAnimStep sBwSeq_DunsparceBack[] =
     { 34, 2 },
     { 35, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Gligar[] =
 {
@@ -22596,6 +23788,7 @@ static const struct BwAnimStep sBwSeq_Gligar[] =
     { 26, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GligarBack[] =
 {
     { 0, 12 },
@@ -22635,6 +23828,7 @@ static const struct BwAnimStep sBwSeq_GligarBack[] =
     { 17, 4 },
     { 10, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Steelix[] =
 {
@@ -22656,6 +23850,7 @@ static const struct BwAnimStep sBwSeq_Steelix[] =
     { 15, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SteelixBack[] =
 {
     { 0, 7 },
@@ -22675,6 +23870,7 @@ static const struct BwAnimStep sBwSeq_SteelixBack[] =
     { 14, 7 },
     { 15, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Snubbull[] =
 {
@@ -22742,6 +23938,7 @@ static const struct BwAnimStep sBwSeq_Snubbull[] =
     { 30, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SnubbullBack[] =
 {
     { 0, 5 },
@@ -22807,6 +24004,7 @@ static const struct BwAnimStep sBwSeq_SnubbullBack[] =
     { 29, 5 },
     { 30, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Granbull[] =
 {
@@ -22847,6 +24045,7 @@ static const struct BwAnimStep sBwSeq_Granbull[] =
     { 34, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GranbullBack[] =
 {
     { 0, 5 },
@@ -22886,6 +24085,7 @@ static const struct BwAnimStep sBwSeq_GranbullBack[] =
     { 34, 2 },
     { 35, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Qwilfish[] =
 {
@@ -22935,6 +24135,7 @@ static const struct BwAnimStep sBwSeq_Qwilfish[] =
     { 30, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_QwilfishBack[] =
 {
     { 0, 12 },
@@ -22981,6 +24182,7 @@ static const struct BwAnimStep sBwSeq_QwilfishBack[] =
     { 31, 6 },
     { 30, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Scizor[] =
 {
@@ -23126,6 +24328,7 @@ static const struct BwAnimStep sBwSeq_Scizor[] =
     { 27, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ScizorBack[] =
 {
     { 0, 3 },
@@ -23269,6 +24472,7 @@ static const struct BwAnimStep sBwSeq_ScizorBack[] =
     { 99, 2 },
     { 27, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Shuckle[] =
 {
@@ -23326,6 +24530,7 @@ static const struct BwAnimStep sBwSeq_Shuckle[] =
     { 12, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ShuckleBack[] =
 {
     { 0, 7 },
@@ -23381,6 +24586,7 @@ static const struct BwAnimStep sBwSeq_ShuckleBack[] =
     { 23, 7 },
     { 12, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Heracross[] =
 {
@@ -23463,6 +24669,7 @@ static const struct BwAnimStep sBwSeq_Heracross[] =
     { 37, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_HeracrossBack[] =
 {
     { 0, 15 },
@@ -23543,6 +24750,7 @@ static const struct BwAnimStep sBwSeq_HeracrossBack[] =
     { 34, 3 },
     { 35, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Sneasel[] =
 {
@@ -23633,6 +24841,7 @@ static const struct BwAnimStep sBwSeq_Sneasel[] =
     { 16, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SneaselBack[] =
 {
     { 0, 4 },
@@ -23721,6 +24930,7 @@ static const struct BwAnimStep sBwSeq_SneaselBack[] =
     { 15, 4 },
     { 16, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Teddiursa[] =
 {
@@ -23786,6 +24996,7 @@ static const struct BwAnimStep sBwSeq_Teddiursa[] =
     { 21, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_TeddiursaBack[] =
 {
     { 0, 12 },
@@ -23849,6 +25060,7 @@ static const struct BwAnimStep sBwSeq_TeddiursaBack[] =
     { 21, 4 },
     { 22, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Ursaring[] =
 {
@@ -23967,6 +25179,7 @@ static const struct BwAnimStep sBwSeq_Ursaring[] =
     { 26, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_UrsaringBack[] =
 {
     { 0, 12 },
@@ -24084,6 +25297,7 @@ static const struct BwAnimStep sBwSeq_UrsaringBack[] =
     { 40, 3 },
     { 41, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Slugma[] =
 {
@@ -24113,6 +25327,7 @@ static const struct BwAnimStep sBwSeq_Slugma[] =
     { 22, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SlugmaBack[] =
 {
     { 0, 4 },
@@ -24140,6 +25355,7 @@ static const struct BwAnimStep sBwSeq_SlugmaBack[] =
     { 20, 4 },
     { 21, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Magcargo[] =
 {
@@ -24160,6 +25376,7 @@ static const struct BwAnimStep sBwSeq_Magcargo[] =
     { 14, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MagcargoBack[] =
 {
     { 0, 3 },
@@ -24178,6 +25395,7 @@ static const struct BwAnimStep sBwSeq_MagcargoBack[] =
     { 13, 3 },
     { 14, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Swinub[] =
 {
@@ -24191,6 +25409,7 @@ static const struct BwAnimStep sBwSeq_Swinub[] =
     { 7, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SwinubBack[] =
 {
     { 0, 6 },
@@ -24202,6 +25421,7 @@ static const struct BwAnimStep sBwSeq_SwinubBack[] =
     { 6, 6 },
     { 7, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Piloswine[] =
 {
@@ -24262,6 +25482,7 @@ static const struct BwAnimStep sBwSeq_Piloswine[] =
     { 26, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PiloswineBack[] =
 {
     { 0, 8 },
@@ -24314,6 +25535,7 @@ static const struct BwAnimStep sBwSeq_PiloswineBack[] =
     { 22, 4 },
     { 23, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Corsola[] =
 {
@@ -24348,6 +25570,7 @@ static const struct BwAnimStep sBwSeq_Corsola[] =
     { 23, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CorsolaBack[] =
 {
     { 0, 12 },
@@ -24379,6 +25602,7 @@ static const struct BwAnimStep sBwSeq_CorsolaBack[] =
     { 16, 6 },
     { 21, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Remoraid[] =
 {
@@ -24418,6 +25642,7 @@ static const struct BwAnimStep sBwSeq_Remoraid[] =
     { 33, 2 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_RemoraidBack[] =
 {
     { 0, 2 },
@@ -24455,6 +25680,7 @@ static const struct BwAnimStep sBwSeq_RemoraidBack[] =
     { 32, 2 },
     { 33, 2 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Octillery[] =
 {
@@ -24477,6 +25703,7 @@ static const struct BwAnimStep sBwSeq_Octillery[] =
     { 16, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_OctilleryBack[] =
 {
     { 0, 6 },
@@ -24497,6 +25724,7 @@ static const struct BwAnimStep sBwSeq_OctilleryBack[] =
     { 15, 6 },
     { 16, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Delibird[] =
 {
@@ -24588,6 +25816,7 @@ static const struct BwAnimStep sBwSeq_Delibird[] =
     { 11, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_DelibirdBack[] =
 {
     { 0, 8 },
@@ -24677,6 +25906,7 @@ static const struct BwAnimStep sBwSeq_DelibirdBack[] =
     { 10, 4 },
     { 11, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Mantine[] =
 {
@@ -24703,6 +25933,7 @@ static const struct BwAnimStep sBwSeq_Mantine[] =
     { 17, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MantineBack[] =
 {
     { 0, 6 },
@@ -24727,6 +25958,7 @@ static const struct BwAnimStep sBwSeq_MantineBack[] =
     { 13, 6 },
     { 16, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Skarmory[] =
 {
@@ -24868,6 +26100,7 @@ static const struct BwAnimStep sBwSeq_Skarmory[] =
     { 42, 2 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SkarmoryBack[] =
 {
     { 0, 3 },
@@ -25009,6 +26242,7 @@ static const struct BwAnimStep sBwSeq_SkarmoryBack[] =
     { 42, 2 },
     { 43, 2 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Houndour[] =
 {
@@ -25102,6 +26336,7 @@ static const struct BwAnimStep sBwSeq_Houndour[] =
     { 38, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_HoundourBack[] =
 {
     { 0, 8 },
@@ -25159,6 +26394,7 @@ static const struct BwAnimStep sBwSeq_HoundourBack[] =
     { 23, 8 },
     { 24, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Houndoom[] =
 {
@@ -25226,6 +26462,7 @@ static const struct BwAnimStep sBwSeq_Houndoom[] =
     { 23, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_HoundoomBack[] =
 {
     { 0, 15 },
@@ -25285,6 +26522,7 @@ static const struct BwAnimStep sBwSeq_HoundoomBack[] =
     { 20, 5 },
     { 21, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Kingdra[] =
 {
@@ -25344,6 +26582,7 @@ static const struct BwAnimStep sBwSeq_Kingdra[] =
     { 53, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_KingdraBack[] =
 {
     { 0, 3 },
@@ -25401,6 +26640,7 @@ static const struct BwAnimStep sBwSeq_KingdraBack[] =
     { 52, 3 },
     { 53, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Phanpy[] =
 {
@@ -25461,6 +26701,7 @@ static const struct BwAnimStep sBwSeq_Phanpy[] =
     { 24, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PhanpyBack[] =
 {
     { 0, 6 },
@@ -25518,6 +26759,7 @@ static const struct BwAnimStep sBwSeq_PhanpyBack[] =
     { 23, 8 },
     { 24, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Donphan[] =
 {
@@ -25587,6 +26829,7 @@ static const struct BwAnimStep sBwSeq_Donphan[] =
     { 16, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_DonphanBack[] =
 {
     { 0, 6 },
@@ -25654,6 +26897,7 @@ static const struct BwAnimStep sBwSeq_DonphanBack[] =
     { 14, 6 },
     { 13, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Porygon2[] =
 {
@@ -25671,6 +26915,7 @@ static const struct BwAnimStep sBwSeq_Porygon2[] =
     { 11, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_Porygon2Back[] =
 {
     { 0, 8 },
@@ -25686,6 +26931,7 @@ static const struct BwAnimStep sBwSeq_Porygon2Back[] =
     { 10, 8 },
     { 11, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Stantler[] =
 {
@@ -25733,6 +26979,7 @@ static const struct BwAnimStep sBwSeq_Stantler[] =
     { 21, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_StantlerBack[] =
 {
     { 0, 12 },
@@ -25778,6 +27025,7 @@ static const struct BwAnimStep sBwSeq_StantlerBack[] =
     { 20, 6 },
     { 21, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Smeargle[] =
 {
@@ -25831,6 +27079,7 @@ static const struct BwAnimStep sBwSeq_Smeargle[] =
     { 17, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SmeargleBack[] =
 {
     { 0, 8 },
@@ -25882,6 +27131,7 @@ static const struct BwAnimStep sBwSeq_SmeargleBack[] =
     { 18, 8 },
     { 19, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Tyrogue[] =
 {
@@ -25930,6 +27180,7 @@ static const struct BwAnimStep sBwSeq_Tyrogue[] =
     { 5, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_TyrogueBack[] =
 {
     { 0, 10 },
@@ -25971,6 +27222,7 @@ static const struct BwAnimStep sBwSeq_TyrogueBack[] =
     { 15, 5 },
     { 16, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Hitmontop[] =
 {
@@ -26040,6 +27292,7 @@ static const struct BwAnimStep sBwSeq_Hitmontop[] =
     { 5, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_HitmontopBack[] =
 {
     { 0, 12 },
@@ -26107,6 +27360,7 @@ static const struct BwAnimStep sBwSeq_HitmontopBack[] =
     { 6, 6 },
     { 5, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Smoochum[] =
 {
@@ -26160,6 +27414,7 @@ static const struct BwAnimStep sBwSeq_Smoochum[] =
     { 21, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SmoochumBack[] =
 {
     { 0, 6 },
@@ -26211,6 +27466,7 @@ static const struct BwAnimStep sBwSeq_SmoochumBack[] =
     { 20, 6 },
     { 21, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Elekid[] =
 {
@@ -26271,6 +27527,7 @@ static const struct BwAnimStep sBwSeq_Elekid[] =
     { 15, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ElekidBack[] =
 {
     { 0, 12 },
@@ -26329,6 +27586,7 @@ static const struct BwAnimStep sBwSeq_ElekidBack[] =
     { 16, 6 },
     { 15, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Magby[] =
 {
@@ -26367,6 +27625,7 @@ static const struct BwAnimStep sBwSeq_Magby[] =
     { 20, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MagbyBack[] =
 {
     { 0, 16 },
@@ -26403,6 +27662,7 @@ static const struct BwAnimStep sBwSeq_MagbyBack[] =
     { 18, 8 },
     { 19, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Miltank[] =
 {
@@ -26463,6 +27723,7 @@ static const struct BwAnimStep sBwSeq_Miltank[] =
     { 9, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MiltankBack[] =
 {
     { 0, 12 },
@@ -26521,6 +27782,7 @@ static const struct BwAnimStep sBwSeq_MiltankBack[] =
     { 10, 6 },
     { 9, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Blissey[] =
 {
@@ -26590,6 +27852,7 @@ static const struct BwAnimStep sBwSeq_Blissey[] =
     { 21, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_BlisseyBack[] =
 {
     { 0, 6 },
@@ -26657,6 +27920,7 @@ static const struct BwAnimStep sBwSeq_BlisseyBack[] =
     { 20, 3 },
     { 21, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Raikou[] =
 {
@@ -26756,6 +28020,7 @@ static const struct BwAnimStep sBwSeq_Raikou[] =
     { 8, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_RaikouBack[] =
 {
     { 0, 6 },
@@ -26853,6 +28118,7 @@ static const struct BwAnimStep sBwSeq_RaikouBack[] =
     { 7, 6 },
     { 8, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Entei[] =
 {
@@ -26914,6 +28180,7 @@ static const struct BwAnimStep sBwSeq_Entei[] =
     { 20, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_EnteiBack[] =
 {
     { 0, 16 },
@@ -26972,6 +28239,7 @@ static const struct BwAnimStep sBwSeq_EnteiBack[] =
     { 17, 8 },
     { 18, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Suicune[] =
 {
@@ -27025,6 +28293,7 @@ static const struct BwAnimStep sBwSeq_Suicune[] =
     { 15, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SuicuneBack[] =
 {
     { 0, 6 },
@@ -27076,6 +28345,7 @@ static const struct BwAnimStep sBwSeq_SuicuneBack[] =
     { 14, 6 },
     { 15, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Larvitar[] =
 {
@@ -27130,6 +28400,7 @@ static const struct BwAnimStep sBwSeq_Larvitar[] =
     { 25, 2 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_LarvitarBack[] =
 {
     { 0, 14 },
@@ -27182,6 +28453,7 @@ static const struct BwAnimStep sBwSeq_LarvitarBack[] =
     { 23, 6 },
     { 24, 2 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Pupitar[] =
 {
@@ -27230,6 +28502,7 @@ static const struct BwAnimStep sBwSeq_Pupitar[] =
     { 24, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PupitarBack[] =
 {
     { 0, 15 },
@@ -27276,6 +28549,7 @@ static const struct BwAnimStep sBwSeq_PupitarBack[] =
     { 23, 6 },
     { 24, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Tyranitar[] =
 {
@@ -27323,6 +28597,7 @@ static const struct BwAnimStep sBwSeq_Tyranitar[] =
     { 11, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_TyranitarBack[] =
 {
     { 0, 16 },
@@ -27368,6 +28643,7 @@ static const struct BwAnimStep sBwSeq_TyranitarBack[] =
     { 19, 8 },
     { 20, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Lugia[] =
 {
@@ -27442,6 +28718,7 @@ static const struct BwAnimStep sBwSeq_Lugia[] =
     { 37, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_LugiaBack[] =
 {
     { 0, 6 },
@@ -27514,6 +28791,7 @@ static const struct BwAnimStep sBwSeq_LugiaBack[] =
     { 36, 4 },
     { 37, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_HoOh[] =
 {
@@ -27561,6 +28839,7 @@ static const struct BwAnimStep sBwSeq_HoOh[] =
     { 9, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_HoOhBack[] =
 {
     { 0, 8 },
@@ -27606,6 +28885,7 @@ static const struct BwAnimStep sBwSeq_HoOhBack[] =
     { 18, 8 },
     { 19, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Celebi[] =
 {
@@ -27705,6 +28985,7 @@ static const struct BwAnimStep sBwSeq_Celebi[] =
     { 67, 2 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CelebiBack[] =
 {
     { 0, 2 },
@@ -27804,6 +29085,7 @@ static const struct BwAnimStep sBwSeq_CelebiBack[] =
     { 68, 2 },
     { 69, 2 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Treecko[] =
 {
@@ -27886,6 +29168,7 @@ static const struct BwAnimStep sBwSeq_Treecko[] =
     { 25, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_TreeckoBack[] =
 {
     { 0, 16 },
@@ -27966,6 +29249,7 @@ static const struct BwAnimStep sBwSeq_TreeckoBack[] =
     { 24, 4 },
     { 25, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Grovyle[] =
 {
@@ -28087,6 +29371,7 @@ static const struct BwAnimStep sBwSeq_Grovyle[] =
     { 15, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GrovyleBack[] =
 {
     { 0, 44 },
@@ -28204,6 +29489,7 @@ static const struct BwAnimStep sBwSeq_GrovyleBack[] =
     { 14, 4 },
     { 15, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Sceptile[] =
 {
@@ -28271,6 +29557,7 @@ static const struct BwAnimStep sBwSeq_Sceptile[] =
     { 20, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SceptileBack[] =
 {
     { 0, 66 },
@@ -28336,6 +29623,7 @@ static const struct BwAnimStep sBwSeq_SceptileBack[] =
     { 21, 6 },
     { 22, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Torchic[] =
 {
@@ -28429,6 +29717,7 @@ static const struct BwAnimStep sBwSeq_Torchic[] =
     { 11, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_TorchicBack[] =
 {
     { 0, 20 },
@@ -28520,6 +29809,7 @@ static const struct BwAnimStep sBwSeq_TorchicBack[] =
     { 12, 5 },
     { 11, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Combusken[] =
 {
@@ -28589,6 +29879,7 @@ static const struct BwAnimStep sBwSeq_Combusken[] =
     { 1, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CombuskenBack[] =
 {
     { 0, 12 },
@@ -28656,6 +29947,7 @@ static const struct BwAnimStep sBwSeq_CombuskenBack[] =
     { 2, 6 },
     { 1, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Blaziken[] =
 {
@@ -28725,6 +30017,7 @@ static const struct BwAnimStep sBwSeq_Blaziken[] =
     { 15, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_BlazikenBack[] =
 {
     { 0, 10 },
@@ -28792,6 +30085,7 @@ static const struct BwAnimStep sBwSeq_BlazikenBack[] =
     { 14, 5 },
     { 15, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Mudkip[] =
 {
@@ -28873,6 +30167,7 @@ static const struct BwAnimStep sBwSeq_Mudkip[] =
     { 11, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MudkipBack[] =
 {
     { 0, 20 },
@@ -28952,6 +30247,7 @@ static const struct BwAnimStep sBwSeq_MudkipBack[] =
     { 14, 5 },
     { 13, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Marshtomp[] =
 {
@@ -29021,6 +30317,7 @@ static const struct BwAnimStep sBwSeq_Marshtomp[] =
     { 22, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MarshtompBack[] =
 {
     { 0, 17 },
@@ -29084,6 +30381,7 @@ static const struct BwAnimStep sBwSeq_MarshtompBack[] =
     { 29, 5 },
     { 32, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Swampert[] =
 {
@@ -29135,6 +30433,7 @@ static const struct BwAnimStep sBwSeq_Swampert[] =
     { 24, 35 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SwampertBack[] =
 {
     { 0, 48 },
@@ -29184,6 +30483,7 @@ static const struct BwAnimStep sBwSeq_SwampertBack[] =
     { 0, 7 },
     { 29, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Poochyena[] =
 {
@@ -29248,6 +30548,7 @@ static const struct BwAnimStep sBwSeq_Poochyena[] =
     { 16, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PoochyenaBack[] =
 {
     { 0, 10 },
@@ -29303,6 +30604,7 @@ static const struct BwAnimStep sBwSeq_PoochyenaBack[] =
     { 26, 4 },
     { 27, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Mightyena[] =
 {
@@ -29372,6 +30674,7 @@ static const struct BwAnimStep sBwSeq_Mightyena[] =
     { 9, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MightyenaBack[] =
 {
     { 0, 9 },
@@ -29439,6 +30742,7 @@ static const struct BwAnimStep sBwSeq_MightyenaBack[] =
     { 10, 5 },
     { 9, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Zigzagoon[] =
 {
@@ -29534,6 +30838,7 @@ static const struct BwAnimStep sBwSeq_Zigzagoon[] =
     { 1, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ZigzagoonBack[] =
 {
     { 0, 16 },
@@ -29615,6 +30920,7 @@ static const struct BwAnimStep sBwSeq_ZigzagoonBack[] =
     { 2, 4 },
     { 1, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Linoone[] =
 {
@@ -29685,6 +30991,7 @@ static const struct BwAnimStep sBwSeq_Linoone[] =
     { 1, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_LinooneBack[] =
 {
     { 0, 10 },
@@ -29752,6 +31059,7 @@ static const struct BwAnimStep sBwSeq_LinooneBack[] =
     { 2, 5 },
     { 1, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Wurmple[] =
 {
@@ -29801,6 +31109,7 @@ static const struct BwAnimStep sBwSeq_Wurmple[] =
     { 8, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_WurmpleBack[] =
 {
     { 0, 24 },
@@ -29836,6 +31145,7 @@ static const struct BwAnimStep sBwSeq_WurmpleBack[] =
     { 6, 5 },
     { 5, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Silcoon[] =
 {
@@ -29893,6 +31203,7 @@ static const struct BwAnimStep sBwSeq_Silcoon[] =
     { 3, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SilcoonBack[] =
 {
     { 0, 25 },
@@ -29948,6 +31259,7 @@ static const struct BwAnimStep sBwSeq_SilcoonBack[] =
     { 4, 5 },
     { 3, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Beautifly[] =
 {
@@ -30050,6 +31362,7 @@ static const struct BwAnimStep sBwSeq_Beautifly[] =
     { 43, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_BeautiflyBack[] =
 {
     { 0, 8 },
@@ -30149,6 +31462,7 @@ static const struct BwAnimStep sBwSeq_BeautiflyBack[] =
     { 36, 4 },
     { 37, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Cascoon[] =
 {
@@ -30208,6 +31522,7 @@ static const struct BwAnimStep sBwSeq_Cascoon[] =
     { 8, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CascoonBack[] =
 {
     { 0, 24 },
@@ -30259,6 +31574,7 @@ static const struct BwAnimStep sBwSeq_CascoonBack[] =
     { 8, 5 },
     { 7, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Dustox[] =
 {
@@ -30363,6 +31679,7 @@ static const struct BwAnimStep sBwSeq_Dustox[] =
     { 26, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_DustoxBack[] =
 {
     { 0, 10 },
@@ -30462,6 +31779,7 @@ static const struct BwAnimStep sBwSeq_DustoxBack[] =
     { 16, 5 },
     { 15, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Lotad[] =
 {
@@ -30523,6 +31841,7 @@ static const struct BwAnimStep sBwSeq_Lotad[] =
     { 41, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_LotadBack[] =
 {
     { 0, 8 },
@@ -30584,6 +31903,7 @@ static const struct BwAnimStep sBwSeq_LotadBack[] =
     { 43, 8 },
     { 44, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Lombre[] =
 {
@@ -30635,6 +31955,7 @@ static const struct BwAnimStep sBwSeq_Lombre[] =
     { 15, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_LombreBack[] =
 {
     { 0, 40 },
@@ -30684,6 +32005,7 @@ static const struct BwAnimStep sBwSeq_LombreBack[] =
     { 14, 6 },
     { 15, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Ludicolo[] =
 {
@@ -30732,6 +32054,7 @@ static const struct BwAnimStep sBwSeq_Ludicolo[] =
     { 19, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_LudicoloBack[] =
 {
     { 0, 8 },
@@ -30777,6 +32100,7 @@ static const struct BwAnimStep sBwSeq_LudicoloBack[] =
     { 13, 8 },
     { 14, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Seedot[] =
 {
@@ -30975,6 +32299,7 @@ static const struct BwAnimStep sBwSeq_Seedot[] =
     { 24, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SeedotBack[] =
 {
     { 0, 8 },
@@ -31171,6 +32496,7 @@ static const struct BwAnimStep sBwSeq_SeedotBack[] =
     { 23, 4 },
     { 24, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Nuzleaf[] =
 {
@@ -31191,6 +32517,7 @@ static const struct BwAnimStep sBwSeq_Nuzleaf[] =
     { 14, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_NuzleafBack[] =
 {
     { 0, 12 },
@@ -31207,6 +32534,7 @@ static const struct BwAnimStep sBwSeq_NuzleafBack[] =
     { 10, 3 },
     { 1, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Shiftry[] =
 {
@@ -31251,6 +32579,7 @@ static const struct BwAnimStep sBwSeq_Shiftry[] =
     { 19, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ShiftryBack[] =
 {
     { 0, 8 },
@@ -31293,6 +32622,7 @@ static const struct BwAnimStep sBwSeq_ShiftryBack[] =
     { 22, 4 },
     { 23, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Taillow[] =
 {
@@ -31343,6 +32673,7 @@ static const struct BwAnimStep sBwSeq_Taillow[] =
     { 13, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_TaillowBack[] =
 {
     { 0, 24 },
@@ -31391,6 +32722,7 @@ static const struct BwAnimStep sBwSeq_TaillowBack[] =
     { 9, 3 },
     { 12, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Swellow[] =
 {
@@ -31460,6 +32792,7 @@ static const struct BwAnimStep sBwSeq_Swellow[] =
     { 22, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SwellowBack[] =
 {
     { 0, 66 },
@@ -31528,6 +32861,7 @@ static const struct BwAnimStep sBwSeq_SwellowBack[] =
     { 23, 6 },
     { 24, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Wingull[] =
 {
@@ -31609,6 +32943,7 @@ static const struct BwAnimStep sBwSeq_Wingull[] =
     { 17, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_WingullBack[] =
 {
     { 0, 6 },
@@ -31688,6 +33023,7 @@ static const struct BwAnimStep sBwSeq_WingullBack[] =
     { 16, 6 },
     { 17, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Pelipper[] =
 {
@@ -31727,6 +33063,7 @@ static const struct BwAnimStep sBwSeq_Pelipper[] =
     { 32, 2 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PelipperBack[] =
 {
     { 0, 2 },
@@ -31764,6 +33101,7 @@ static const struct BwAnimStep sBwSeq_PelipperBack[] =
     { 32, 2 },
     { 33, 2 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Ralts[] =
 {
@@ -31782,6 +33120,7 @@ static const struct BwAnimStep sBwSeq_Ralts[] =
     { 12, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_RaltsBack[] =
 {
     { 0, 18 },
@@ -31798,6 +33137,7 @@ static const struct BwAnimStep sBwSeq_RaltsBack[] =
     { 11, 6 },
     { 12, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Kirlia[] =
 {
@@ -31853,6 +33193,7 @@ static const struct BwAnimStep sBwSeq_Kirlia[] =
     { 7, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_KirliaBack[] =
 {
     { 0, 12 },
@@ -31906,6 +33247,7 @@ static const struct BwAnimStep sBwSeq_KirliaBack[] =
     { 6, 6 },
     { 7, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Gardevoir[] =
 {
@@ -32094,6 +33436,7 @@ static const struct BwAnimStep sBwSeq_Gardevoir[] =
     { 30, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GardevoirBack[] =
 {
     { 0, 4 },
@@ -32280,6 +33623,7 @@ static const struct BwAnimStep sBwSeq_GardevoirBack[] =
     { 29, 4 },
     { 30, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Surskit[] =
 {
@@ -32349,6 +33693,7 @@ static const struct BwAnimStep sBwSeq_Surskit[] =
     { 56, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SurskitBack[] =
 {
     { 0, 7 },
@@ -32412,6 +33757,7 @@ static const struct BwAnimStep sBwSeq_SurskitBack[] =
     { 50, 5 },
     { 51, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Masquerain[] =
 {
@@ -32545,6 +33891,7 @@ static const struct BwAnimStep sBwSeq_Masquerain[] =
     { 61, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MasquerainBack[] =
 {
     { 0, 4 },
@@ -32676,6 +34023,7 @@ static const struct BwAnimStep sBwSeq_MasquerainBack[] =
     { 60, 4 },
     { 61, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Shroomish[] =
 {
@@ -32713,6 +34061,7 @@ static const struct BwAnimStep sBwSeq_Shroomish[] =
     { 31, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ShroomishBack[] =
 {
     { 0, 5 },
@@ -32749,6 +34098,7 @@ static const struct BwAnimStep sBwSeq_ShroomishBack[] =
     { 31, 5 },
     { 32, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Breloom[] =
 {
@@ -32784,6 +34134,7 @@ static const struct BwAnimStep sBwSeq_Breloom[] =
     { 28, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_BreloomBack[] =
 {
     { 0, 5 },
@@ -32818,6 +34169,7 @@ static const struct BwAnimStep sBwSeq_BreloomBack[] =
     { 28, 5 },
     { 29, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Slakoth[] =
 {
@@ -32836,6 +34188,7 @@ static const struct BwAnimStep sBwSeq_Slakoth[] =
     { 5, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SlakothBack[] =
 {
     { 0, 16 },
@@ -32850,6 +34203,7 @@ static const struct BwAnimStep sBwSeq_SlakothBack[] =
     { 6, 8 },
     { 7, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Vigoroth[] =
 {
@@ -32881,6 +34235,7 @@ static const struct BwAnimStep sBwSeq_Vigoroth[] =
     { 25, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_VigorothBack[] =
 {
     { 0, 5 },
@@ -32911,6 +34266,7 @@ static const struct BwAnimStep sBwSeq_VigorothBack[] =
     { 25, 5 },
     { 26, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Slaking[] =
 {
@@ -32985,6 +34341,7 @@ static const struct BwAnimStep sBwSeq_Slaking[] =
     { 32, 9 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SlakingBack[] =
 {
     { 0, 34 },
@@ -33027,6 +34384,7 @@ static const struct BwAnimStep sBwSeq_SlakingBack[] =
     { 0, 9 },
     { 22, 9 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Nincada[] =
 {
@@ -33086,6 +34444,7 @@ static const struct BwAnimStep sBwSeq_Nincada[] =
     { 13, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_NincadaBack[] =
 {
     { 0, 16 },
@@ -33143,6 +34502,7 @@ static const struct BwAnimStep sBwSeq_NincadaBack[] =
     { 12, 6 },
     { 13, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Ninjask[] =
 {
@@ -33260,6 +34620,7 @@ static const struct BwAnimStep sBwSeq_Ninjask[] =
     { 3, 2 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_NinjaskBack[] =
 {
     { 0, 2 },
@@ -33375,6 +34736,7 @@ static const struct BwAnimStep sBwSeq_NinjaskBack[] =
     { 2, 2 },
     { 3, 2 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Shedinja[] =
 {
@@ -33388,6 +34750,7 @@ static const struct BwAnimStep sBwSeq_Shedinja[] =
     { 7, 9 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ShedinjaBack[] =
 {
     { 0, 18 },
@@ -33399,6 +34762,7 @@ static const struct BwAnimStep sBwSeq_ShedinjaBack[] =
     { 6, 9 },
     { 7, 9 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Whismur[] =
 {
@@ -33437,6 +34801,7 @@ static const struct BwAnimStep sBwSeq_Whismur[] =
     { 17, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_WhismurBack[] =
 {
     { 0, 26 },
@@ -33472,6 +34837,7 @@ static const struct BwAnimStep sBwSeq_WhismurBack[] =
     { 18, 12 },
     { 17, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Loudred[] =
 {
@@ -33543,6 +34909,7 @@ static const struct BwAnimStep sBwSeq_Loudred[] =
     { 7, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_LoudredBack[] =
 {
     { 0, 16 },
@@ -33612,6 +34979,7 @@ static const struct BwAnimStep sBwSeq_LoudredBack[] =
     { 6, 8 },
     { 7, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Exploud[] =
 {
@@ -33678,6 +35046,7 @@ static const struct BwAnimStep sBwSeq_Exploud[] =
     { 46, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ExploudBack[] =
 {
     { 0, 36 },
@@ -33738,6 +35107,7 @@ static const struct BwAnimStep sBwSeq_ExploudBack[] =
     { 38, 6 },
     { 25, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Makuhita[] =
 {
@@ -33809,6 +35179,7 @@ static const struct BwAnimStep sBwSeq_Makuhita[] =
     { 29, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MakuhitaBack[] =
 {
     { 0, 10 },
@@ -33878,6 +35249,7 @@ static const struct BwAnimStep sBwSeq_MakuhitaBack[] =
     { 28, 5 },
     { 27, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Hariyama[] =
 {
@@ -33967,6 +35339,7 @@ static const struct BwAnimStep sBwSeq_Hariyama[] =
     { 7, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_HariyamaBack[] =
 {
     { 0, 10 },
@@ -34051,6 +35424,7 @@ static const struct BwAnimStep sBwSeq_HariyamaBack[] =
     { 17, 5 },
     { 10, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Azurill[] =
 {
@@ -34139,6 +35513,7 @@ static const struct BwAnimStep sBwSeq_Azurill[] =
     { 7, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_AzurillBack[] =
 {
     { 0, 10 },
@@ -34225,6 +35600,7 @@ static const struct BwAnimStep sBwSeq_AzurillBack[] =
     { 8, 5 },
     { 7, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Nosepass[] =
 {
@@ -34240,6 +35616,7 @@ static const struct BwAnimStep sBwSeq_Nosepass[] =
     { 2, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_NosepassBack[] =
 {
     { 0, 110 },
@@ -34253,6 +35630,7 @@ static const struct BwAnimStep sBwSeq_NosepassBack[] =
     { 3, 5 },
     { 2, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Skitty[] =
 {
@@ -34303,6 +35681,7 @@ static const struct BwAnimStep sBwSeq_Skitty[] =
     { 14, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SkittyBack[] =
 {
     { 0, 25 },
@@ -34348,6 +35727,7 @@ static const struct BwAnimStep sBwSeq_SkittyBack[] =
     { 23, 2 },
     { 21, 2 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Delcatty[] =
 {
@@ -34477,6 +35857,7 @@ static const struct BwAnimStep sBwSeq_Delcatty[] =
     { 13, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_DelcattyBack[] =
 {
     { 0, 36 },
@@ -34604,6 +35985,7 @@ static const struct BwAnimStep sBwSeq_DelcattyBack[] =
     { 0, 4 },
     { 13, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Sableye[] =
 {
@@ -34693,6 +36075,7 @@ static const struct BwAnimStep sBwSeq_Sableye[] =
     { 3, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SableyeBack[] =
 {
     { 0, 30 },
@@ -34780,6 +36163,7 @@ static const struct BwAnimStep sBwSeq_SableyeBack[] =
     { 0, 3 },
     { 3, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Mawile[] =
 {
@@ -34866,6 +36250,7 @@ static const struct BwAnimStep sBwSeq_Mawile[] =
     { 1, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MawileBack[] =
 {
     { 0, 8 },
@@ -34950,6 +36335,7 @@ static const struct BwAnimStep sBwSeq_MawileBack[] =
     { 14, 8 },
     { 15, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Aron[] =
 {
@@ -34972,6 +36358,7 @@ static const struct BwAnimStep sBwSeq_Aron[] =
     { 6, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_AronBack[] =
 {
     { 0, 50 },
@@ -34992,6 +36379,7 @@ static const struct BwAnimStep sBwSeq_AronBack[] =
     { 6, 54 },
     { 7, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Lairon[] =
 {
@@ -35072,6 +36460,7 @@ static const struct BwAnimStep sBwSeq_Lairon[] =
     { 12, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_LaironBack[] =
 {
     { 0, 44 },
@@ -35150,6 +36539,7 @@ static const struct BwAnimStep sBwSeq_LaironBack[] =
     { 11, 4 },
     { 12, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Aggron[] =
 {
@@ -35237,6 +36627,7 @@ static const struct BwAnimStep sBwSeq_Aggron[] =
     { 31, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_AggronBack[] =
 {
     { 0, 28 },
@@ -35325,6 +36716,7 @@ static const struct BwAnimStep sBwSeq_AggronBack[] =
     { 31, 4 },
     { 32, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Meditite[] =
 {
@@ -35378,6 +36770,7 @@ static const struct BwAnimStep sBwSeq_Meditite[] =
     { 35, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MedititeBack[] =
 {
     { 0, 7 },
@@ -35429,6 +36822,7 @@ static const struct BwAnimStep sBwSeq_MedititeBack[] =
     { 36, 7 },
     { 35, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Medicham[] =
 {
@@ -35483,6 +36877,7 @@ static const struct BwAnimStep sBwSeq_Medicham[] =
     { 29, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MedichamBack[] =
 {
     { 0, 48 },
@@ -35535,6 +36930,7 @@ static const struct BwAnimStep sBwSeq_MedichamBack[] =
     { 27, 4 },
     { 28, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Electrike[] =
 {
@@ -35547,6 +36943,7 @@ static const struct BwAnimStep sBwSeq_Electrike[] =
     { 6, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ElectrikeBack[] =
 {
     { 0, 6 },
@@ -35557,6 +36954,7 @@ static const struct BwAnimStep sBwSeq_ElectrikeBack[] =
     { 4, 12 },
     { 5, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Manectric[] =
 {
@@ -35576,6 +36974,7 @@ static const struct BwAnimStep sBwSeq_Manectric[] =
     { 13, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ManectricBack[] =
 {
     { 0, 44 },
@@ -35593,6 +36992,7 @@ static const struct BwAnimStep sBwSeq_ManectricBack[] =
     { 12, 4 },
     { 13, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Plusle[] =
 {
@@ -35697,6 +37097,7 @@ static const struct BwAnimStep sBwSeq_Plusle[] =
     { 7, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_PlusleBack[] =
 {
     { 0, 8 },
@@ -35799,6 +37200,7 @@ static const struct BwAnimStep sBwSeq_PlusleBack[] =
     { 0, 4 },
     { 7, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Minun[] =
 {
@@ -35903,6 +37305,7 @@ static const struct BwAnimStep sBwSeq_Minun[] =
     { 8, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MinunBack[] =
 {
     { 0, 8 },
@@ -36005,6 +37408,7 @@ static const struct BwAnimStep sBwSeq_MinunBack[] =
     { 7, 4 },
     { 8, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Volbeat[] =
 {
@@ -36038,6 +37442,7 @@ static const struct BwAnimStep sBwSeq_Volbeat[] =
     { 25, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_VolbeatBack[] =
 {
     { 0, 6 },
@@ -36069,6 +37474,7 @@ static const struct BwAnimStep sBwSeq_VolbeatBack[] =
     { 24, 6 },
     { 25, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Illumise[] =
 {
@@ -36097,6 +37503,7 @@ static const struct BwAnimStep sBwSeq_Illumise[] =
     { 10, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_IllumiseBack[] =
 {
     { 0, 8 },
@@ -36123,6 +37530,7 @@ static const struct BwAnimStep sBwSeq_IllumiseBack[] =
     { 18, 8 },
     { 11, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Roselia[] =
 {
@@ -36204,6 +37612,7 @@ static const struct BwAnimStep sBwSeq_Roselia[] =
     { 1, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_RoseliaBack[] =
 {
     { 0, 12 },
@@ -36269,6 +37678,7 @@ static const struct BwAnimStep sBwSeq_RoseliaBack[] =
     { 2, 6 },
     { 1, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Gulpin[] =
 {
@@ -36326,6 +37736,7 @@ static const struct BwAnimStep sBwSeq_Gulpin[] =
     { 12, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GulpinBack[] =
 {
     { 0, 12 },
@@ -36376,6 +37787,7 @@ static const struct BwAnimStep sBwSeq_GulpinBack[] =
     { 10, 6 },
     { 11, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Swalot[] =
 {
@@ -36431,6 +37843,7 @@ static const struct BwAnimStep sBwSeq_Swalot[] =
     { 10, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SwalotBack[] =
 {
     { 0, 6 },
@@ -36484,6 +37897,7 @@ static const struct BwAnimStep sBwSeq_SwalotBack[] =
     { 9, 6 },
     { 10, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Carvanha[] =
 {
@@ -36554,6 +37968,7 @@ static const struct BwAnimStep sBwSeq_Carvanha[] =
     { 19, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CarvanhaBack[] =
 {
     { 0, 12 },
@@ -36578,6 +37993,7 @@ static const struct BwAnimStep sBwSeq_CarvanhaBack[] =
     { 19, 6 },
     { 20, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Sharpedo[] =
 {
@@ -36646,6 +38062,7 @@ static const struct BwAnimStep sBwSeq_Sharpedo[] =
     { 11, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SharpedoBack[] =
 {
     { 0, 24 },
@@ -36711,6 +38128,7 @@ static const struct BwAnimStep sBwSeq_SharpedoBack[] =
     { 0, 6 },
     { 9, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Wailmer[] =
 {
@@ -36770,6 +38188,7 @@ static const struct BwAnimStep sBwSeq_Wailmer[] =
     { 52, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_WailmerBack[] =
 {
     { 0, 6 },
@@ -36827,6 +38246,7 @@ static const struct BwAnimStep sBwSeq_WailmerBack[] =
     { 51, 6 },
     { 52, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Wailord[] =
 {
@@ -36860,6 +38280,7 @@ static const struct BwAnimStep sBwSeq_Wailord[] =
     { 27, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_WailordBack[] =
 {
     { 0, 6 },
@@ -36891,6 +38312,7 @@ static const struct BwAnimStep sBwSeq_WailordBack[] =
     { 26, 6 },
     { 27, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Numel[] =
 {
@@ -36921,6 +38343,7 @@ static const struct BwAnimStep sBwSeq_Numel[] =
     { 12, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_NumelBack[] =
 {
     { 0, 16 },
@@ -36949,6 +38372,7 @@ static const struct BwAnimStep sBwSeq_NumelBack[] =
     { 13, 8 },
     { 14, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Camerupt[] =
 {
@@ -37007,6 +38431,7 @@ static const struct BwAnimStep sBwSeq_Camerupt[] =
     { 26, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CameruptBack[] =
 {
     { 0, 20 },
@@ -37065,6 +38490,7 @@ static const struct BwAnimStep sBwSeq_CameruptBack[] =
     { 30, 12 },
     { 31, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Torkoal[] =
 {
@@ -37135,6 +38561,7 @@ static const struct BwAnimStep sBwSeq_Torkoal[] =
     { 9, 14 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_TorkoalBack[] =
 {
     { 0, 14 },
@@ -37207,6 +38634,7 @@ static const struct BwAnimStep sBwSeq_TorkoalBack[] =
     { 10, 7 },
     { 11, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Spoink[] =
 {
@@ -37287,6 +38715,7 @@ static const struct BwAnimStep sBwSeq_Spoink[] =
     { 61, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SpoinkBack[] =
 {
     { 0, 10 },
@@ -37368,6 +38797,7 @@ static const struct BwAnimStep sBwSeq_SpoinkBack[] =
     { 70, 5 },
     { 71, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Grumpig[] =
 {
@@ -37388,6 +38818,7 @@ static const struct BwAnimStep sBwSeq_Grumpig[] =
     { 14, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GrumpigBack[] =
 {
     { 0, 6 },
@@ -37406,6 +38837,7 @@ static const struct BwAnimStep sBwSeq_GrumpigBack[] =
     { 13, 6 },
     { 14, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Spinda[] =
 {
@@ -37469,6 +38901,7 @@ static const struct BwAnimStep sBwSeq_Spinda[] =
     { 5, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SpindaBack[] =
 {
     { 0, 10 },
@@ -37536,6 +38969,7 @@ static const struct BwAnimStep sBwSeq_SpindaBack[] =
     { 8, 5 },
     { 9, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Trapinch[] =
 {
@@ -37549,6 +38983,7 @@ static const struct BwAnimStep sBwSeq_Trapinch[] =
     { 1, 10 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_TrapinchBack[] =
 {
     { 0, 30 },
@@ -37562,6 +38997,7 @@ static const struct BwAnimStep sBwSeq_TrapinchBack[] =
     { 3, 5 },
     { 1, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Vibrava[] =
 {
@@ -37613,6 +39049,7 @@ static const struct BwAnimStep sBwSeq_Vibrava[] =
     { 6, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_VibravaBack[] =
 {
     { 0, 15 },
@@ -37662,6 +39099,7 @@ static const struct BwAnimStep sBwSeq_VibravaBack[] =
     { 7, 5 },
     { 6, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Flygon[] =
 {
@@ -37747,6 +39185,7 @@ static const struct BwAnimStep sBwSeq_Flygon[] =
     { 9, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_FlygonBack[] =
 {
     { 0, 9 },
@@ -37830,6 +39269,7 @@ static const struct BwAnimStep sBwSeq_FlygonBack[] =
     { 24, 4 },
     { 16, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Cacnea[] =
 {
@@ -37867,6 +39307,7 @@ static const struct BwAnimStep sBwSeq_Cacnea[] =
     { 12, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CacneaBack[] =
 {
     { 0, 64 },
@@ -37906,6 +39347,7 @@ static const struct BwAnimStep sBwSeq_CacneaBack[] =
     { 10, 4 },
     { 11, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Cacturne[] =
 {
@@ -37971,6 +39413,7 @@ static const struct BwAnimStep sBwSeq_Cacturne[] =
     { 19, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CacturneBack[] =
 {
     { 0, 8 },
@@ -38034,6 +39477,7 @@ static const struct BwAnimStep sBwSeq_CacturneBack[] =
     { 17, 8 },
     { 19, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Swablu[] =
 {
@@ -38051,6 +39495,7 @@ static const struct BwAnimStep sBwSeq_Swablu[] =
     { 11, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SwabluBack[] =
 {
     { 0, 8 },
@@ -38066,6 +39511,7 @@ static const struct BwAnimStep sBwSeq_SwabluBack[] =
     { 10, 8 },
     { 11, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Altaria[] =
 {
@@ -38131,6 +39577,7 @@ static const struct BwAnimStep sBwSeq_Altaria[] =
     { 14, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_AltariaBack[] =
 {
     { 0, 45 },
@@ -38194,6 +39641,7 @@ static const struct BwAnimStep sBwSeq_AltariaBack[] =
     { 13, 5 },
     { 14, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Zangoose[] =
 {
@@ -38250,6 +39698,7 @@ static const struct BwAnimStep sBwSeq_Zangoose[] =
     { 26, 4 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ZangooseBack[] =
 {
     { 0, 24 },
@@ -38304,6 +39753,7 @@ static const struct BwAnimStep sBwSeq_ZangooseBack[] =
     { 26, 4 },
     { 27, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Seviper[] =
 {
@@ -38367,6 +39817,7 @@ static const struct BwAnimStep sBwSeq_Seviper[] =
     { 31, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SeviperBack[] =
 {
     { 0, 16 },
@@ -38432,6 +39883,7 @@ static const struct BwAnimStep sBwSeq_SeviperBack[] =
     { 32, 4 },
     { 1, 4 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Lunatone[] =
 {
@@ -38521,6 +39973,7 @@ static const struct BwAnimStep sBwSeq_Lunatone[] =
     { 5, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_LunatoneBack[] =
 {
     { 0, 8 },
@@ -38608,6 +40061,7 @@ static const struct BwAnimStep sBwSeq_LunatoneBack[] =
     { 6, 8 },
     { 5, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Solrock[] =
 {
@@ -38725,6 +40179,7 @@ static const struct BwAnimStep sBwSeq_Solrock[] =
     { 5, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SolrockBack[] =
 {
     { 0, 8 },
@@ -38840,6 +40295,7 @@ static const struct BwAnimStep sBwSeq_SolrockBack[] =
     { 6, 8 },
     { 5, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Barboach[] =
 {
@@ -38917,6 +40373,7 @@ static const struct BwAnimStep sBwSeq_Barboach[] =
     { 9, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_BarboachBack[] =
 {
     { 0, 6 },
@@ -38992,6 +40449,7 @@ static const struct BwAnimStep sBwSeq_BarboachBack[] =
     { 11, 6 },
     { 10, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Whiscash[] =
 {
@@ -39092,6 +40550,7 @@ static const struct BwAnimStep sBwSeq_Whiscash[] =
     { 18, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_WhiscashBack[] =
 {
     { 0, 18 },
@@ -39190,6 +40649,7 @@ static const struct BwAnimStep sBwSeq_WhiscashBack[] =
     { 17, 6 },
     { 18, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Corphish[] =
 {
@@ -39233,6 +40693,7 @@ static const struct BwAnimStep sBwSeq_Corphish[] =
     { 18, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CorphishBack[] =
 {
     { 0, 14 },
@@ -39274,6 +40735,7 @@ static const struct BwAnimStep sBwSeq_CorphishBack[] =
     { 19, 12 },
     { 18, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Crawdaunt[] =
 {
@@ -39329,6 +40791,7 @@ static const struct BwAnimStep sBwSeq_Crawdaunt[] =
     { 34, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CrawdauntBack[] =
 {
     { 0, 6 },
@@ -39382,6 +40845,7 @@ static const struct BwAnimStep sBwSeq_CrawdauntBack[] =
     { 32, 6 },
     { 33, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Baltoy[] =
 {
@@ -39427,6 +40891,7 @@ static const struct BwAnimStep sBwSeq_Baltoy[] =
     { 6, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_BaltoyBack[] =
 {
     { 0, 103 },
@@ -39470,6 +40935,7 @@ static const struct BwAnimStep sBwSeq_BaltoyBack[] =
     { 12, 8 },
     { 13, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Claydol[] =
 {
@@ -39526,6 +40992,7 @@ static const struct BwAnimStep sBwSeq_Claydol[] =
     { 28, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ClaydolBack[] =
 {
     { 0, 8 },
@@ -39580,6 +41047,7 @@ static const struct BwAnimStep sBwSeq_ClaydolBack[] =
     { 27, 7 },
     { 28, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Lileep[] =
 {
@@ -39620,6 +41088,7 @@ static const struct BwAnimStep sBwSeq_Lileep[] =
     { 26, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_LileepBack[] =
 {
     { 0, 36 },
@@ -39658,6 +41127,7 @@ static const struct BwAnimStep sBwSeq_LileepBack[] =
     { 27, 6 },
     { 28, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Cradily[] =
 {
@@ -39730,6 +41200,7 @@ static const struct BwAnimStep sBwSeq_Cradily[] =
     { 25, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CradilyBack[] =
 {
     { 0, 6 },
@@ -39800,6 +41271,7 @@ static const struct BwAnimStep sBwSeq_CradilyBack[] =
     { 57, 6 },
     { 26, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Anorith[] =
 {
@@ -39857,6 +41329,7 @@ static const struct BwAnimStep sBwSeq_Anorith[] =
     { 14, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_AnorithBack[] =
 {
     { 0, 6 },
@@ -39912,6 +41385,7 @@ static const struct BwAnimStep sBwSeq_AnorithBack[] =
     { 15, 12 },
     { 14, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Armaldo[] =
 {
@@ -39997,6 +41471,7 @@ static const struct BwAnimStep sBwSeq_Armaldo[] =
     { 19, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ArmaldoBack[] =
 {
     { 0, 6 },
@@ -40080,6 +41555,7 @@ static const struct BwAnimStep sBwSeq_ArmaldoBack[] =
     { 17, 6 },
     { 18, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Feebas[] =
 {
@@ -40108,6 +41584,7 @@ static const struct BwAnimStep sBwSeq_Feebas[] =
     { 21, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_FeebasBack[] =
 {
     { 0, 6 },
@@ -40134,6 +41611,7 @@ static const struct BwAnimStep sBwSeq_FeebasBack[] =
     { 21, 6 },
     { 11, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Milotic[] =
 {
@@ -40235,6 +41713,7 @@ static const struct BwAnimStep sBwSeq_Milotic[] =
     { 24, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MiloticBack[] =
 {
     { 0, 6 },
@@ -40338,6 +41817,7 @@ static const struct BwAnimStep sBwSeq_MiloticBack[] =
     { 23, 6 },
     { 24, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Castform[] =
 {
@@ -40393,6 +41873,7 @@ static const struct BwAnimStep sBwSeq_Castform[] =
     { 43, 12 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_CastformBack[] =
 {
     { 0, 6 },
@@ -40446,6 +41927,7 @@ static const struct BwAnimStep sBwSeq_CastformBack[] =
     { 41, 6 },
     { 44, 12 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Kecleon[] =
 {
@@ -40499,6 +41981,7 @@ static const struct BwAnimStep sBwSeq_Kecleon[] =
     { 9, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_KecleonBack[] =
 {
     { 0, 20 },
@@ -40552,6 +42035,7 @@ static const struct BwAnimStep sBwSeq_KecleonBack[] =
     { 10, 5 },
     { 9, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Shuppet[] =
 {
@@ -40607,6 +42091,7 @@ static const struct BwAnimStep sBwSeq_Shuppet[] =
     { 17, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ShuppetBack[] =
 {
     { 0, 10 },
@@ -40660,6 +42145,7 @@ static const struct BwAnimStep sBwSeq_ShuppetBack[] =
     { 27, 5 },
     { 28, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Banette[] =
 {
@@ -40733,6 +42219,7 @@ static const struct BwAnimStep sBwSeq_Banette[] =
     { 32, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_BanetteBack[] =
 {
     { 0, 10 },
@@ -40826,6 +42313,7 @@ static const struct BwAnimStep sBwSeq_BanetteBack[] =
     { 42, 5 },
     { 43, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Duskull[] =
 {
@@ -40881,6 +42369,7 @@ static const struct BwAnimStep sBwSeq_Duskull[] =
     { 16, 10 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_DuskullBack[] =
 {
     { 0, 15 },
@@ -40933,6 +42422,7 @@ static const struct BwAnimStep sBwSeq_DuskullBack[] =
     { 29, 5 },
     { 30, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Dusclops[] =
 {
@@ -41005,6 +42495,7 @@ static const struct BwAnimStep sBwSeq_Dusclops[] =
     { 21, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_DusclopsBack[] =
 {
     { 0, 10 },
@@ -41075,6 +42566,7 @@ static const struct BwAnimStep sBwSeq_DusclopsBack[] =
     { 25, 5 },
     { 29, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Tropius[] =
 {
@@ -41132,6 +42624,7 @@ static const struct BwAnimStep sBwSeq_Tropius[] =
     { 17, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_TropiusBack[] =
 {
     { 0, 10 },
@@ -41183,6 +42676,7 @@ static const struct BwAnimStep sBwSeq_TropiusBack[] =
     { 10, 5 },
     { 9, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Chimecho[] =
 {
@@ -41272,6 +42766,7 @@ static const struct BwAnimStep sBwSeq_Chimecho[] =
     { 40, 3 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ChimechoBack[] =
 {
     { 0, 5 },
@@ -41359,6 +42854,7 @@ static const struct BwAnimStep sBwSeq_ChimechoBack[] =
     { 39, 3 },
     { 40, 3 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Absol[] =
 {
@@ -41447,6 +42943,7 @@ static const struct BwAnimStep sBwSeq_Absol[] =
     { 1, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_AbsolBack[] =
 {
     { 0, 10 },
@@ -41533,6 +43030,7 @@ static const struct BwAnimStep sBwSeq_AbsolBack[] =
     { 2, 5 },
     { 1, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Wynaut[] =
 {
@@ -41611,6 +43109,7 @@ static const struct BwAnimStep sBwSeq_Wynaut[] =
     { 1, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_WynautBack[] =
 {
     { 0, 10 },
@@ -41687,6 +43186,7 @@ static const struct BwAnimStep sBwSeq_WynautBack[] =
     { 2, 5 },
     { 1, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Snorunt[] =
 {
@@ -41723,6 +43223,7 @@ static const struct BwAnimStep sBwSeq_Snorunt[] =
     { 3, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SnoruntBack[] =
 {
     { 0, 17 },
@@ -41757,6 +43258,7 @@ static const struct BwAnimStep sBwSeq_SnoruntBack[] =
     { 8, 5 },
     { 5, 10 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Glalie[] =
 {
@@ -41821,6 +43323,7 @@ static const struct BwAnimStep sBwSeq_Glalie[] =
     { 1, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GlalieBack[] =
 {
     { 0, 20 },
@@ -41883,6 +43386,7 @@ static const struct BwAnimStep sBwSeq_GlalieBack[] =
     { 2, 5 },
     { 1, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Spheal[] =
 {
@@ -41937,6 +43441,7 @@ static const struct BwAnimStep sBwSeq_Spheal[] =
     { 9, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SphealBack[] =
 {
     { 0, 10 },
@@ -41989,6 +43494,7 @@ static const struct BwAnimStep sBwSeq_SphealBack[] =
     { 10, 5 },
     { 9, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Sealeo[] =
 {
@@ -42059,6 +43565,7 @@ static const struct BwAnimStep sBwSeq_Sealeo[] =
     { 16, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SealeoBack[] =
 {
     { 0, 10 },
@@ -42129,6 +43636,7 @@ static const struct BwAnimStep sBwSeq_SealeoBack[] =
     { 15, 5 },
     { 16, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Walrein[] =
 {
@@ -42196,6 +43704,7 @@ static const struct BwAnimStep sBwSeq_Walrein[] =
     { 9, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_WalreinBack[] =
 {
     { 0, 10 },
@@ -42258,6 +43767,7 @@ static const struct BwAnimStep sBwSeq_WalreinBack[] =
     { 9, 5 },
     { 8, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Clamperl[] =
 {
@@ -42311,6 +43821,7 @@ static const struct BwAnimStep sBwSeq_Clamperl[] =
     { 16, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ClamperlBack[] =
 {
     { 0, 20 },
@@ -42362,6 +43873,7 @@ static const struct BwAnimStep sBwSeq_ClamperlBack[] =
     { 10, 5 },
     { 9, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Huntail[] =
 {
@@ -42431,6 +43943,7 @@ static const struct BwAnimStep sBwSeq_Huntail[] =
     { 21, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_HuntailBack[] =
 {
     { 0, 10 },
@@ -42498,6 +44011,7 @@ static const struct BwAnimStep sBwSeq_HuntailBack[] =
     { 21, 5 },
     { 22, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Gorebyss[] =
 {
@@ -42565,6 +44079,7 @@ static const struct BwAnimStep sBwSeq_Gorebyss[] =
     { 19, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GorebyssBack[] =
 {
     { 0, 5 },
@@ -42632,6 +44147,7 @@ static const struct BwAnimStep sBwSeq_GorebyssBack[] =
     { 16, 5 },
     { 15, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Relicanth[] =
 {
@@ -42701,6 +44217,7 @@ static const struct BwAnimStep sBwSeq_Relicanth[] =
     { 15, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_RelicanthBack[] =
 {
     { 0, 10 },
@@ -42768,6 +44285,7 @@ static const struct BwAnimStep sBwSeq_RelicanthBack[] =
     { 10, 5 },
     { 9, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Luvdisc[] =
 {
@@ -42815,6 +44333,7 @@ static const struct BwAnimStep sBwSeq_Luvdisc[] =
     { 6, 10 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_LuvdiscBack[] =
 {
     { 0, 15 },
@@ -42872,6 +44391,7 @@ static const struct BwAnimStep sBwSeq_LuvdiscBack[] =
     { 2, 5 },
     { 7, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Bagon[] =
 {
@@ -42907,6 +44427,7 @@ static const struct BwAnimStep sBwSeq_Bagon[] =
     { 14, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_BagonBack[] =
 {
     { 0, 11 },
@@ -42939,6 +44460,7 @@ static const struct BwAnimStep sBwSeq_BagonBack[] =
     { 12, 6 },
     { 13, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Shelgon[] =
 {
@@ -42995,6 +44517,7 @@ static const struct BwAnimStep sBwSeq_Shelgon[] =
     { 18, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_ShelgonBack[] =
 {
     { 0, 10 },
@@ -43037,6 +44560,7 @@ static const struct BwAnimStep sBwSeq_ShelgonBack[] =
     { 4, 7 },
     { 14, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Salamence[] =
 {
@@ -43104,6 +44628,7 @@ static const struct BwAnimStep sBwSeq_Salamence[] =
     { 11, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_SalamenceBack[] =
 {
     { 0, 14 },
@@ -43173,6 +44698,7 @@ static const struct BwAnimStep sBwSeq_SalamenceBack[] =
     { 11, 7 },
     { 12, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Beldum[] =
 {
@@ -43213,6 +44739,7 @@ static const struct BwAnimStep sBwSeq_Beldum[] =
     { 1, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_BeldumBack[] =
 {
     { 0, 16 },
@@ -43251,6 +44778,7 @@ static const struct BwAnimStep sBwSeq_BeldumBack[] =
     { 5, 8 },
     { 1, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Metang[] =
 {
@@ -43343,6 +44871,7 @@ static const struct BwAnimStep sBwSeq_Metang[] =
     { 9, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MetangBack[] =
 {
     { 0, 7 },
@@ -43434,6 +44963,7 @@ static const struct BwAnimStep sBwSeq_MetangBack[] =
     { 8, 7 },
     { 9, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Metagross[] =
 {
@@ -43491,6 +45021,7 @@ static const struct BwAnimStep sBwSeq_Metagross[] =
     { 40, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_MetagrossBack[] =
 {
     { 0, 14 },
@@ -43546,6 +45077,7 @@ static const struct BwAnimStep sBwSeq_MetagrossBack[] =
     { 7, 7 },
     { 39, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Regirock[] =
 {
@@ -43601,6 +45133,7 @@ static const struct BwAnimStep sBwSeq_Regirock[] =
     { 9, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_RegirockBack[] =
 {
     { 0, 28 },
@@ -43655,6 +45188,7 @@ static const struct BwAnimStep sBwSeq_RegirockBack[] =
     { 8, 7 },
     { 9, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Regice[] =
 {
@@ -43701,6 +45235,7 @@ static const struct BwAnimStep sBwSeq_Regice[] =
     { 5, 14 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_RegiceBack[] =
 {
     { 0, 21 },
@@ -43745,6 +45280,7 @@ static const struct BwAnimStep sBwSeq_RegiceBack[] =
     { 4, 7 },
     { 5, 14 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Registeel[] =
 {
@@ -43791,6 +45327,7 @@ static const struct BwAnimStep sBwSeq_Registeel[] =
     { 27, 8 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_RegisteelBack[] =
 {
     { 0, 8 },
@@ -43836,6 +45373,7 @@ static const struct BwAnimStep sBwSeq_RegisteelBack[] =
     { 26, 8 },
     { 27, 8 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Latias[] =
 {
@@ -43897,6 +45435,7 @@ static const struct BwAnimStep sBwSeq_Latias[] =
     { 8, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_LatiasBack[] =
 {
     { 0, 7 },
@@ -43956,6 +45495,7 @@ static const struct BwAnimStep sBwSeq_LatiasBack[] =
     { 7, 7 },
     { 8, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Latios[] =
 {
@@ -44002,6 +45542,7 @@ static const struct BwAnimStep sBwSeq_Latios[] =
     { 37, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_LatiosBack[] =
 {
     { 0, 14 },
@@ -44046,6 +45587,7 @@ static const struct BwAnimStep sBwSeq_LatiosBack[] =
     { 36, 7 },
     { 37, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Kyogre[] =
 {
@@ -44176,6 +45718,7 @@ static const struct BwAnimStep sBwSeq_Kyogre[] =
     { 47, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_KyogreBack[] =
 {
     { 0, 7 },
@@ -44301,6 +45844,7 @@ static const struct BwAnimStep sBwSeq_KyogreBack[] =
     { 45, 7 },
     { 46, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Groudon[] =
 {
@@ -44356,6 +45900,7 @@ static const struct BwAnimStep sBwSeq_Groudon[] =
     { 48, 7 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_GroudonBack[] =
 {
     { 0, 21 },
@@ -44410,6 +45955,7 @@ static const struct BwAnimStep sBwSeq_GroudonBack[] =
     { 49, 7 },
     { 50, 7 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Rayquaza[] =
 {
@@ -44472,6 +46018,7 @@ static const struct BwAnimStep sBwSeq_Rayquaza[] =
     { 1, 6 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_RayquazaBack[] =
 {
     { 0, 12 },
@@ -44533,6 +46080,7 @@ static const struct BwAnimStep sBwSeq_RayquazaBack[] =
     { 2, 6 },
     { 1, 6 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Jirachi[] =
 {
@@ -44624,6 +46172,7 @@ static const struct BwAnimStep sBwSeq_Jirachi[] =
     { 17, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_JirachiBack[] =
 {
     { 0, 20 },
@@ -44704,6 +46253,7 @@ static const struct BwAnimStep sBwSeq_JirachiBack[] =
     { 2, 5 },
     { 1, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 static const struct BwAnimStep sBwSeq_Deoxys[] =
 {
@@ -44781,6 +46331,7 @@ static const struct BwAnimStep sBwSeq_Deoxys[] =
     { 1, 5 },
 };
 
+#if ROGUE_BW_ANIM_BACK
 static const struct BwAnimStep sBwSeq_DeoxysBack[] =
 {
     { 0, 10 },
@@ -44856,6 +46407,7 @@ static const struct BwAnimStep sBwSeq_DeoxysBack[] =
     { 2, 5 },
     { 9, 5 },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 // Front sprites, sorted by species id - GetBwAnim bisects this.
 static const struct BwAnim sBwAnims[] =
@@ -48722,6 +50274,7 @@ static const struct BwAnim sBwAnims[] =
     },
 };
 
+#if ROGUE_BW_ANIM_BACK
 // Back sprites, sorted by species id - GetBwAnim bisects this.
 static const struct BwAnim sBwAnimsBack[] =
 {
@@ -52586,5 +54139,6 @@ static const struct BwAnim sBwAnimsBack[] =
         .height = 64,
     },
 };
+#endif // ROGUE_BW_ANIM_BACK
 
 #endif // GUARD_DATA_ROGUE_BW_ANIM_H

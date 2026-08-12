@@ -104,6 +104,10 @@ SINGLE_BATTLE_TEST("BW anim: a species with no entry is left alone")
     }
 }
 
+// Both of the following need back animations, so they are skipped when the
+// build has them off.
+#if ROGUE_BW_ANIM_BACK
+
 // Back sprites, which are the exception: the gif set has none, so these are
 // sourced one at a time. Mewtwo and Celebi are the test pair.
 TEST("BW anim: back sprites resolve on the back table only")
@@ -162,6 +166,7 @@ DOUBLE_BATTLE_TEST("BW anim: four sprites animate at once")
         TURN { }
     }
 }
+#endif // ROGUE_BW_ANIM_BACK
 
 // A KO animation trashes the winner's sprite scratch data and never restores
 // it: Task_HandleMonAnimation saves data[2] from a sprite another animation may
