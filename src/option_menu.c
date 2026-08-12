@@ -18,6 +18,7 @@
 #include "gba/m4a_internal.h"
 #include "constants/rgb.h"
 #include "constants/battle_mode.h"
+#include "constants/rogue_dungeon.h"   // FLAG_ROGUE_VANILLA_ORDER, the shuffle toggle
 
 #define tMenuSelection data[0]
 #define tTextSpeed data[1]
@@ -39,6 +40,9 @@
 #if OPT_AUTORUN == TRUE
 #define tAutorun data[10]
 #endif
+// The roguelike's dungeon order shuffle. Stored in a FLAG rather than an
+// optionsX field, so the save layout is untouched - see FLAG_ROGUE_VANILLA_ORDER.
+#define tDungeonOrder data[11]
 #endif // OPT_EXTENDED_OPTIONS_MENU
 
 // Page 1 menu items (standard options)
@@ -70,6 +74,7 @@ enum
 #if OPT_AUTORUN == TRUE
     MENUITEM_AUTORUN,
 #endif
+    MENUITEM_DUNGEONORDER,
     MENUITEM_CANCEL_PG2,
     MENUITEM_COUNT_PG2,
 };
@@ -103,6 +108,7 @@ enum
 #if OPT_AUTORUN == TRUE
 #define YPOS_AUTORUN         (MENUITEM_AUTORUN * 16)
 #endif
+#define YPOS_DUNGEONORDER    (MENUITEM_DUNGEONORDER * 16)
 #endif // OPT_EXTENDED_OPTIONS_MENU
 
 // Total number of pages in the options menu (use L/R to navigate)
@@ -150,6 +156,10 @@ static void BattleSpeed_DrawChoices(u8 selection);
 static u8 Autorun_ProcessInput(u8 selection);
 static void Autorun_DrawChoices(u8 selection);
 #endif
+#if OPT_EXTENDED_OPTIONS_MENU == TRUE
+static u8 DungeonOrder_ProcessInput(u8 selection);
+static void DungeonOrder_DrawChoices(u8 selection);
+#endif
 static void DrawTextOption(void);
 static void DrawOptionMenuTexts(void);
 static void DrawBgWindowFrames(void);
@@ -188,6 +198,7 @@ static const u8 *const sOptionMenuItemsNames_Pg2[MENUITEM_COUNT_PG2] =
 #if OPT_AUTORUN == TRUE
     [MENUITEM_AUTORUN]         = gText_Autorun,
 #endif
+    [MENUITEM_DUNGEONORDER]    = gText_DungeonShuffle,
     [MENUITEM_CANCEL_PG2]      = gText_OptionMenuCancel,
 };
 #endif // OPT_EXTENDED_OPTIONS_MENU
@@ -276,6 +287,11 @@ static void ReadAllCurrentSettings(u8 taskId)
 #if OPT_AUTORUN == TRUE
     gTasks[taskId].tAutorun = !(gSaveBlock2Ptr->optionsAutoRun);  // Inverted for UI display
 #endif
+    // The flag IS the selection: it is stored inverted (set means the player
+    // turned the shuffle off), and selection 1 is the OFF choice, so no negation
+    // is wanted here. That is the whole reason it is stored that way - clear is
+    // the value every existing save holds, and the toggle defaults to on.
+    gTasks[taskId].tDungeonOrder = FlagGet(FLAG_ROGUE_VANILLA_ORDER);
 #endif // OPT_EXTENDED_OPTIONS_MENU
 }
 
@@ -308,6 +324,7 @@ static void DrawOptionsPg2(u8 taskId)
 #if OPT_AUTORUN == TRUE
     Autorun_DrawChoices(gTasks[taskId].tAutorun);
 #endif
+    DungeonOrder_DrawChoices(gTasks[taskId].tDungeonOrder);
     HighlightOptionMenuItem(gTasks[taskId].tMenuSelection);
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
 }
@@ -641,6 +658,13 @@ static void Task_OptionMenuProcessInput_Pg2(u8 taskId)
                 Autorun_DrawChoices(gTasks[taskId].tAutorun);
             break;
 #endif
+        case MENUITEM_DUNGEONORDER:
+            previousOption = gTasks[taskId].tDungeonOrder;
+            gTasks[taskId].tDungeonOrder = DungeonOrder_ProcessInput(gTasks[taskId].tDungeonOrder);
+
+            if (previousOption != gTasks[taskId].tDungeonOrder)
+                DungeonOrder_DrawChoices(gTasks[taskId].tDungeonOrder);
+            break;
 
         default:
             return;
@@ -673,6 +697,13 @@ static void SaveCurrentSettings(u8 taskId)
 #if OPT_AUTORUN == TRUE
     gSaveBlock2Ptr->optionsAutoRun = !(gTasks[taskId].tAutorun);  // Inverted for storage
 #endif
+    // No negation: the flag records the OFF state, so it equals the selection.
+    // A flag rather than an optionsX field for the same reason FLAG_POKEMON_FOLLOWERS
+    // is one below - it leaves the save layout alone.
+    if (gTasks[taskId].tDungeonOrder)
+        FlagSet(FLAG_ROGUE_VANILLA_ORDER);
+    else
+        FlagClear(FLAG_ROGUE_VANILLA_ORDER);
 #if OPT_FOLLOWERS == TRUE
     // Update follower visibility flag
     if (gTasks[taskId].tFollower == 0)
@@ -1076,6 +1107,37 @@ static void Autorun_DrawChoices(u8 selection)
         YPOS_AUTORUN, styles[1]);
 }
 #endif // OPT_AUTORUN
+
+#if OPT_EXTENDED_OPTIONS_MENU == TRUE
+// The roguelike's dungeon order shuffle, unlocked by clearing a run. Reuses the
+// ON/OFF strings the way Autorun above does rather than inventing a pair.
+//
+// The control is VISIBLE BEFORE IT IS UNLOCKED and does nothing until then -
+// RollDungeonOrder checks FLAG_ROGUE_RUN_COMPLETED first and ignores this. The
+// menu's y-positions are compile-time from the enum index, so an item that
+// appears and disappears would move every row below it; a mild spoiler was the
+// better trade against that.
+static u8 DungeonOrder_ProcessInput(u8 selection)
+{
+    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
+    {
+        selection ^= 1;  // Toggle between 0 and 1
+        sArrowPressed = TRUE;
+    }
+    return selection;
+}
+
+static void DungeonOrder_DrawChoices(u8 selection)
+{
+    u8 styles[2] = {0, 0};
+    styles[selection] = 1;
+
+    DrawOptionMenuChoice(gText_BattleSceneOn, 104, YPOS_DUNGEONORDER, styles[0]);
+    DrawOptionMenuChoice(gText_BattleSceneOff,
+        GetStringRightAlignXOffset(FONT_NORMAL, gText_BattleSceneOff, 198),
+        YPOS_DUNGEONORDER, styles[1]);
+}
+#endif // OPT_EXTENDED_OPTIONS_MENU
 
 static void DrawTextOption(void)
 {

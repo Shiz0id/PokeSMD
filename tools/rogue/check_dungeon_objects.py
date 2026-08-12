@@ -78,6 +78,30 @@ MINING_ROCK = {
     'flag': '0',
 }
 
+# NOTE ON --write: it only repairs the COUNT. A map already holding the right
+# number of object events is reported ok and left alone, so editing a placeholder
+# below does NOT propagate - the maps keep whatever they were written with. That
+# cost a link failure once: a corrected graphics_id here was silently not applied
+# to the seven map.json files, and `undefined reference to OBJ_EVENT_GFX_...`
+# from map_events.o is what it looks like. Fix the JSON directly, or delete the
+# object_events arrays and re-run.
+#
+# The floor event slot. Its graphics_id and script are BOTH overwritten at
+# runtime from sFloorEvents - a floor event is whichever entry the floor rolled
+# - so what map.json declares here only has to be a valid placeholder that
+# reserves the slot. The spring is used as the stand-in because it is the entry
+# that never retires.
+FLOOR_EVENT = {
+    'graphics_id': 'OBJ_EVENT_GFX_OLD_WOMAN',
+    'x': 1, 'y': 1, 'elevation': 3,
+    'movement_type': 'MOVEMENT_TYPE_FACE_DOWN',
+    'movement_range_x': 0, 'movement_range_y': 0,
+    'trainer_type': 'TRAINER_TYPE_NONE',
+    'trainer_sight_or_berry_tree_id': '0',
+    'script': 'RogueDungeonFloor_EventScript_EventSpring',
+    'flag': '0',
+}
+
 BERRY_TREE = {
     'graphics_id': 'OBJ_EVENT_GFX_BERRY_TREE',
     'x': 1, 'y': 1, 'elevation': 3,
@@ -120,10 +144,11 @@ def main(argv):
     items = constant('DUNGEON_MAX_ITEMS')
     berries = constant('DUNGEON_MAX_BERRIES')
     rocks = constant('DUNGEON_MAX_ROCKS')
-    want = trainers + items + berries + rocks
+    events = constant('DUNGEON_MAX_EVENTS')
+    want = trainers + items + berries + rocks + events
     print(f'DUNGEON_MAX_TRAINERS {trainers} + DUNGEON_MAX_ITEMS {items} '
           f'+ DUNGEON_MAX_BERRIES {berries} + DUNGEON_MAX_ROCKS {rocks} '
-          f'= {want} object events')
+          f'+ DUNGEON_MAX_EVENTS {events} = {want} object events')
 
     failed = False
     for name, path in dungeon_maps():
@@ -140,11 +165,15 @@ def main(argv):
             continue
 
         # Order matters as well as count: the C writes slot by slot, so
-        # trainers, then item balls, then berry trees, then mining rocks.
+        # trainers, then item balls, then berry trees, then mining rocks, then
+        # the floor event. RogueDungeon_LoadObjectEventTemplates derives every
+        # slot index from these same constants in this same order, so a
+        # reordering here silently hands each class somebody else's script.
         doc['object_events'] = ([dict(TRAINER) for _ in range(trainers)]
                                 + [dict(ITEM_BALL) for _ in range(items)]
                                 + [dict(BERRY_TREE) for _ in range(berries)]
-                                + [dict(MINING_ROCK) for _ in range(rocks)])
+                                + [dict(MINING_ROCK) for _ in range(rocks)]
+                                + [dict(FLOOR_EVENT) for _ in range(events)])
         # newline='\n' because writing repo files from Windows otherwise emits
         # CRLF and git flags every touched file.
         with open(path, 'w', encoding='utf-8', newline='\n') as f:

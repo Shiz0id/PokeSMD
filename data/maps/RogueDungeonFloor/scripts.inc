@@ -17,6 +17,7 @@ RogueDungeonFloor_OnFrame::
 @ which is true on a new game and again after a whiteout.
 RogueDungeonFloor_EventScript_ChooseStarters::
 	lockall
+	call RogueDungeonFloor_EventScript_RunSummary
 	msgbox RogueDungeonFloor_Text_PickFirst, MSGBOX_DEFAULT
 	call RogueDungeonFloor_EventScript_PickStarter
 	msgbox RogueDungeonFloor_Text_PickSecond, MSGBOX_DEFAULT
@@ -97,6 +98,33 @@ RogueDungeonFloor_EventScript_ChooseStarters::
 	releaseall
 	end
 
+@ The death summary, shown once, immediately before the run that follows it is
+@ set up. A loss is otherwise silent - the party is wiped, the player is stood
+@ back on floor one and nothing tells them how far they got - and a run this
+@ long ending with no account of itself is what makes a loss read as wasted
+@ time rather than as a score to beat.
+@
+@ HERE RATHER THAN AT THE WHITEOUT, because the whiteout runs from C with no
+@ message window open and warps out of the map on the same frame. What it
+@ leaves behind is VAR_ROGUE_LAST_RUN_FLOOR, and non-zero is what "a summary is
+@ waiting" means - see RogueDungeon_TryHandleWhiteOut.
+@
+@ Clearing the var is what makes it show once. Without that it would reappear
+@ on every entry to the starter prompt, including a plain new game.
+RogueDungeonFloor_EventScript_RunSummary::
+	compare VAR_ROGUE_LAST_RUN_FLOOR, 0
+	goto_if_eq RogueDungeonFloor_EventScript_NoRunSummary
+	special RogueDungeon_BufferRunSummary
+	msgbox RogueDungeonFloor_Text_RunSummary, MSGBOX_DEFAULT
+	setvar VAR_ROGUE_LAST_RUN_FLOOR, 0
+RogueDungeonFloor_EventScript_NoRunSummary:
+	return
+
+RogueDungeonFloor_Text_RunSummary:
+	.string "That run ended on floor {STR_VAR_1},\n"
+	.string "in {STR_VAR_2}.\p"
+	.string "Deepest floor reached: {STR_VAR_3}.$"
+
 @ Started from C by RogueDungeon_TryStartStairsScript when the player steps
 @ onto the generated exit. Warping to this same map re-enters LoadMapFromWarp,
 @ which rolls a fresh seed and so generates the next floor.
@@ -122,6 +150,314 @@ RogueDungeonFloor_EventScript_NextFloor::
 
 RogueDungeonFloor_Text_Stairs:
 	.string "Continue to the next floor?$"
+
+@ ------------------------------------------------------------- floor events
+@
+@ One per floor at most, one floor in four, placed and rolled in C by
+@ PlaceEvents. The template's script pointer comes straight out of
+@ sDungeonEvents, so each event has its OWN entry point and there is no
+@ dispatch here - nothing below asks which event it is.
+@
+@ Every one is a question with a cost on both branches. An event that is only a
+@ reward is an item ball with more text, and the floor already has eight of
+@ those.
+@
+@ The spring. A free full heal, deliberately with no catch: the cost is the
+@ opportunity, since walking on hurt is the alternative and the bag is finite.
+@ HealPlayerParty rather than the Pokemon Center field effect, for the reason
+@ the rest stop's nurse documents - that effect places its sprites at screen
+@ coordinates that assume a Center's layout.
+RogueDungeonFloor_EventScript_EventSpring::
+	lock
+	faceplayer
+	msgbox RogueDungeonFloor_Text_SpringOffer, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	special HealPlayerParty
+	playfanfare MUS_HEAL
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_SpringDone, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+@ The gambler. Double or nothing on a third of what the player is carrying.
+@
+@ A THIRD RATHER THAN A FIXED SUM, so the offer scales with the run instead of
+@ being unrefusable on floor 5 and pocket change on floor 90. checkmoney's
+@ result is the gate: an offer the player cannot cover would otherwise take
+@ money they do not have, and removemoney on an insufficient balance is exactly
+@ the kind of thing that reads as a broken event rather than a declined one.
+RogueDungeonFloor_EventScript_EventGambler::
+	lock
+	faceplayer
+	special RogueDungeon_BufferEventStake
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventGamblerBroke
+	msgbox RogueDungeonFloor_Text_GamblerOffer, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	special RogueDungeon_ResolveEventStake
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventGamblerLost
+	msgbox RogueDungeonFloor_Text_GamblerWon, MSGBOX_DEFAULT
+	playfanfare MUS_OBTAIN_ITEM
+	waitfanfare
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventGamblerLost::
+	msgbox RogueDungeonFloor_Text_GamblerLost, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventGamblerBroke::
+	msgbox RogueDungeonFloor_Text_GamblerBroke, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+@ The pedlar. One item, sight unseen, at a price set by depth.
+@
+@ The item is rolled in C from the same banded loot table the floor's item balls
+@ draw from, so it is always depth-appropriate and never needs a literal here.
+@ The price is deliberately above what the item is usually worth - the thing
+@ being sold is the gamble, and a pedlar who was reliably good value would just
+@ be the mart with extra steps.
+RogueDungeonFloor_EventScript_EventPedlar::
+	lock
+	faceplayer
+	special RogueDungeon_BufferEventWares
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventPedlarBroke
+	msgbox RogueDungeonFloor_Text_PedlarOffer, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventPedlarDeclined
+	special RogueDungeon_BuyEventWares
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventPedlarNoRoom
+	playfanfare MUS_OBTAIN_ITEM
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_PedlarBought, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventPedlarDeclined::
+	msgbox RogueDungeonFloor_Text_PedlarDeclined, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventPedlarNoRoom::
+	msgbox RogueDungeonFloor_Text_PedlarNoRoom, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventPedlarBroke::
+	msgbox RogueDungeonFloor_Text_PedlarBroke, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+@ The trader. A Pokemon for a Pokemon, five levels up, species unseen.
+@
+@ REFUSED ON A PARTY OF ONE, and that guard is not politeness - trading the last
+@ Pokemon away leaves an empty party in the middle of a floor, which is a
+@ whiteout the engine was never asked for.
+@
+@ ChoosePartyMon puts the chosen slot in VAR_0x8004 and a value at or above
+@ PARTY_SIZE means the player backed out, which is the same idiom the debug menu's
+@ EV and IV readouts use.
+RogueDungeonFloor_EventScript_EventTrader::
+	lock
+	faceplayer
+	special RogueDungeon_EventTraderCanTrade
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventTraderAlone
+	msgbox RogueDungeonFloor_Text_TraderOffer, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventTraderDeclined
+	special ChoosePartyMon
+	waitstate
+	goto_if_ge VAR_0x8004, PARTY_SIZE, RogueDungeonFloor_EventScript_EventTraderDeclined
+	special RogueDungeon_EventTraderOffer
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventTraderDeclined
+	msgbox RogueDungeonFloor_Text_TraderConfirm, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventTraderDeclined
+	special RogueDungeon_EventTraderDo
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventTraderDeclined
+	playfanfare MUS_OBTAIN_ITEM
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_TraderDone, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventTraderDeclined::
+	msgbox RogueDungeonFloor_Text_TraderDeclined, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventTraderAlone::
+	msgbox RogueDungeonFloor_Text_TraderAlone, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+@ The egg. Free, and the price is the party slot.
+RogueDungeonFloor_EventScript_EventEgg::
+	lock
+	faceplayer
+	msgbox RogueDungeonFloor_Text_EggOffer, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	special RogueDungeon_EventEggTake
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventEggNoRoom
+	playfanfare MUS_EVOLVED
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_EggHatched, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventEggNoRoom::
+	msgbox RogueDungeonFloor_Text_EggNoRoom, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+@ The injured Pokemon, wearing its own overworld sprite.
+@
+@ Whether it joins or was feigning is decided at PREPARE time from the floor's
+@ seed, so saving and reloading regenerates the same floor and the same answer.
+@ Rolling it here would let a player reload until it joined.
+@
+@ The ambush goes through a special rather than setwildbattle because that command
+@ takes its level as a byte literal, and this one is the floor's level plus five.
+RogueDungeonFloor_EventScript_EventInjured::
+	lock
+	faceplayer
+	special RogueDungeon_EventInjuredApproach
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventInjuredAmbush
+	msgbox RogueDungeonFloor_Text_InjuredOffer, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	special RogueDungeon_EventInjuredJoin
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventInjuredNoRoom
+	playfanfare MUS_OBTAIN_ITEM
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_InjuredJoined, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventInjuredNoRoom::
+	msgbox RogueDungeonFloor_Text_InjuredNoRoom, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+@ No yes/no here on purpose. Approaching WAS the choice, and a prompt after the
+@ trap has sprung would be the game asking permission to spring it.
+RogueDungeonFloor_EventScript_EventInjuredAmbush::
+@ And the bag is NOT locked. An ambusher is an ordinary wild Pokemon and should
+@ be catchable - FLAG_SYS_NO_BAG_USE is for battles the player must not win with
+@ a ball, which this is not. Catching the thing that jumped you is the best
+@ outcome this event has.
+RogueDungeonFloor_EventScript_EventInjuredAmbush::
+	msgbox RogueDungeonFloor_Text_InjuredAmbush, MSGBOX_DEFAULT
+	special RogueDungeon_EventInjuredAmbush
+	dowildbattle
+	release
+	end
+
+@ Shared tail. The NPC is NOT removed after being used: a floor is never
+@ revisited - the stairs warp into a freshly generated one - so there is nothing
+@ to persist and no flag to spend on it.
+RogueDungeonFloor_EventScript_EventDone::
+	release
+	end
+
+RogueDungeonFloor_Text_SpringOffer:
+	.string "An old woman is resting beside a\n"
+	.string "spring here.\p"
+	.string "“You look like you have come a long\n"
+	.string "way. Shall I tend to your team?”$"
+
+RogueDungeonFloor_Text_SpringDone:
+	.string "“There. Go carefully down there.”$"
+
+RogueDungeonFloor_Text_GamblerOffer:
+	.string "“Care for a wager, friend?\p"
+	.string "¥{STR_VAR_1} on a coin toss. Call it\n"
+	.string "right and you leave with double.”$"
+
+RogueDungeonFloor_Text_GamblerWon:
+	.string "“Ha! The floor favours you today.”\p"
+	.string "{PLAYER} won ¥{STR_VAR_1}!$"
+
+RogueDungeonFloor_Text_GamblerLost:
+	.string "“Ah. Better luck the next floor down.”\p"
+	.string "{PLAYER} lost ¥{STR_VAR_1}…$"
+
+RogueDungeonFloor_Text_GamblerBroke:
+	.string "“No money, no wager. Come back when\n"
+	.string "your pockets have something in them.”$"
+
+RogueDungeonFloor_Text_PedlarOffer:
+	.string "A pedlar has set out a blanket here.\p"
+	.string "“One item. I will not tell you which.\n"
+	.string "¥{STR_VAR_1}. Yes or no?”$"
+
+RogueDungeonFloor_Text_PedlarBought:
+	.string "{PLAYER} obtained the {STR_VAR_2}!$"
+
+RogueDungeonFloor_Text_PedlarDeclined:
+	.string "“Suit yourself. It was a good one,\n"
+	.string "too.”$"
+
+RogueDungeonFloor_Text_PedlarNoRoom:
+	.string "“You have nowhere to put it. Come\n"
+	.string "back when your bag is not bursting.”$"
+
+RogueDungeonFloor_Text_PedlarBroke:
+	.string "“¥{STR_VAR_1}. No? Then we have nothing\n"
+	.string "to discuss.”$"
+
+RogueDungeonFloor_Text_TraderOffer:
+	.string "A hiker is sat against the wall with\n"
+	.string "a ball in his lap.\p"
+	.string "“Straight swap. One of yours for mine,\n"
+	.string "and mine comes out five levels above\l"
+	.string "whatever you hand me.\p"
+	.string "I will not tell you what it is.”$"
+
+RogueDungeonFloor_Text_TraderConfirm:
+	.string "“{STR_VAR_1}, then. Mine will be at\n"
+	.string "level {STR_VAR_2}.\p"
+	.string "Last chance to change your mind.”$"
+
+RogueDungeonFloor_Text_TraderDone:
+	.string "{PLAYER} handed over {STR_VAR_1}…\p"
+	.string "and received {STR_VAR_2}!$"
+
+RogueDungeonFloor_Text_TraderDeclined:
+	.string "“Wise, probably.”$"
+
+RogueDungeonFloor_Text_TraderAlone:
+	.string "“You have got the one and that is all.\n"
+	.string "I am not taking it off you.”$"
+
+RogueDungeonFloor_Text_EggOffer:
+	.string "A woman is crouched over something\n"
+	.string "warm.\p"
+	.string "“It is nearly out. I cannot carry it\n"
+	.string "any further. Will you take it?”$"
+
+RogueDungeonFloor_Text_EggHatched:
+	.string "The egg cracked open…\p"
+	.string "{PLAYER}'s {STR_VAR_1} hatched!$"
+
+RogueDungeonFloor_Text_EggNoRoom:
+	.string "“You have no room for it. Come back\n"
+	.string "lighter and it is yours.”$"
+
+RogueDungeonFloor_Text_InjuredOffer:
+	.string "A {STR_VAR_1} is curled up here.\n"
+	.string "It is hurt, and it is watching you.\p"
+	.string "Help it?$"
+
+RogueDungeonFloor_Text_InjuredJoined:
+	.string "The {STR_VAR_1} got to its feet.\p"
+	.string "{STR_VAR_1} joined {PLAYER}!$"
+
+RogueDungeonFloor_Text_InjuredNoRoom:
+	.string "The {STR_VAR_1} looked at {PLAYER}'s\n"
+	.string "full party, and settled back down.$"
+
+RogueDungeonFloor_Text_InjuredAmbush:
+	.string "The {STR_VAR_1} was not hurt at all!$"
 
 @ Shared by every generated trainer. The opponent is picked per floor, so the
 @ ordinary trainerbattle command cannot be used - it bakes the trainer id in at

@@ -1650,6 +1650,26 @@ struct RogueFloorMapOverride
     u16 mapId;
 };
 
+// One floor event: an NPC, a script, and the band of floors it can appear on.
+//
+// The SCRIPT IS IN THE TABLE, which is what lets a floor event need no dispatch
+// at all. The template's script pointer is chosen in C, so the rolled event
+// points straight at its own script rather than at a shared one that has to ask
+// a var which event it is. The item balls do the same thing for the opposite
+// reason - see the note on item_ball.c reading ROM instead of the save block.
+//
+// BANDED like sLootConsumables, with a floor it arrives on and one it leaves on,
+// and for the same reason: one floor in four rolls an event across 115 floors, so
+// a uniform table would show every event about five times a run. Bands mean the
+// run's first stretch and its last draw from different subsets.
+struct RogueFloorEvent
+{
+    u16 gfxId;
+    const u8 *script;
+    u8 minFloor;    // inclusive, 0-based run floor
+    u8 maxFloor;    // inclusive; DUNGEON_TOTAL_FLOORS means "never retires"
+};
+
 // Half-resolution grid for DUNGEON_GEN_WOODS, so a cell is one 2x2 stamp.
 #define DUNGEON_CELLS_W (DUNGEON_WIDTH / 2)
 #define DUNGEON_CELLS_H (DUNGEON_HEIGHT / 2)
@@ -1741,6 +1761,13 @@ struct RogueFloorMapOverride
 #define DUNGEON_GYM_DUNGEONS 8
 #define DUNGEON_E4_DUNGEONS  5
 #define DUNGEON_COUNT       (DUNGEON_GYM_DUNGEONS + DUNGEON_E4_DUNGEONS + 1)
+
+// How many bands the eight gyms shuffle in, and how many of the Elite Four's
+// five slots actually permute. Wallace is pinned to the fifth: he is the champion
+// and the top of that ladder, and at +10.3 over the curve at the first Elite Four
+// slot he is the one member who cannot move. See DUNGEON_SHUFFLE_BAND.
+#define DUNGEON_GYM_BANDS      (DUNGEON_GYM_DUNGEONS / DUNGEON_SHUFFLE_BAND)
+#define DUNGEON_E4_SHUFFLED    (DUNGEON_E4_DUNGEONS - 1)
 
 #define DUNGEON_GYM_FLOORS   (DUNGEON_GYM_DUNGEONS * DUNGEON_LONG_FLOORS)
 #define DUNGEON_E4_FLOORS    (DUNGEON_E4_DUNGEONS * DUNGEON_SHORT_FLOORS)
@@ -1870,6 +1897,33 @@ void RogueDungeon_HideTakenFloorItem(void);
 // Credits a finished run. From the boss script's run-complete branch only -
 // ResetRun is shared with the whiteout and must not count a loss as a win.
 void RogueDungeon_OnRunCompleted(void);
+
+// The anti-grind clock. Takes one wild knockout off the current floor's
+// allowance and returns the percentage that knockout pays - see
+// ROGUE_GRIND_FREE_KOS. One call site, in Cmd_getexp; it steps the counter, so
+// calling it to peek would consume an allowance nobody spent.
+u16 RogueDungeon_TakeWildExpPercent(void);
+
+// Fills gStringVar1/2/3 for the death summary: the floor the last run ended on,
+// the dungeon it ended in, and the deepest floor ever reached.
+void RogueDungeon_BufferRunSummary(void);
+
+// Floor event arithmetic. Each pair is a BUFFER call that only reads and
+// describes, then a commit - so the number the player is shown before the yes/no
+// is the number they are charged. See sFloorEvents.
+void RogueDungeon_BufferEventStake(void);    // Result: the stake, 0 if too poor
+void RogueDungeon_ResolveEventStake(void);   // Result: 1 won, 0 lost
+void RogueDungeon_BufferEventWares(void);    // Result: 1 affordable, 0 not
+void RogueDungeon_BuyEventWares(void);       // Result: 1 bought, 0 no room
+
+// The three Pokemon events. Same buffer-then-commit split as the money ones.
+void RogueDungeon_EventTraderCanTrade(void);  // Result: 0 on a party of one
+void RogueDungeon_EventTraderOffer(void);     // reads VAR_0x8004 from ChoosePartyMon
+void RogueDungeon_EventTraderDo(void);        // Result: 1 traded, 0 refused
+void RogueDungeon_EventEggTake(void);         // Result: 1 taken, 0 party full
+void RogueDungeon_EventInjuredApproach(void); // Result: 1 joins, 0 it was feigning
+void RogueDungeon_EventInjuredJoin(void);     // Result: 1 joined, 0 party full
+void RogueDungeon_EventInjuredAmbush(void);   // sets up the script's dowildbattle
 
 // Debug menu support. Describes a floor in one short line; see the debug warp
 // tool in src/debug.c.

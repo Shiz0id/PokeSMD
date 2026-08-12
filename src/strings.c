@@ -938,6 +938,12 @@ const u8 gText_BattleMode[] = _("BATTLE MODE");
 const u8 gText_Follower[] = _("FOLLOWERS");
 const u8 gText_BattleSpeed[] = _("BATTLE SPEED");
 const u8 gText_Autorun[] = _("AUTORUN");
+// 79px in FONT_NORMAL against the 104px where the left choice starts, and 10px
+// wider than BATTLE STYLE, the widest label the menu already ships. Measured
+// against gFontNormalLatinGlyphWidths rather than counted - the caps here are
+// narrower than character count suggests, and an over-long label does not fail
+// to build, it draws underneath the ON/OFF it collides with.
+const u8 gText_DungeonShuffle[] = _("DUNGEON SHUFFLE");
 const u8 gText_TextSpeedSlow[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}SLOW");
 const u8 gText_TextSpeedMid[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}MID");
 const u8 gText_TextSpeedFast[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}FAST");

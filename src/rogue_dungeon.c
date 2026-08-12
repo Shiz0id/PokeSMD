@@ -1,5 +1,7 @@
 #include "global.h"
 #include "coins.h"
+#include "money.h"                  // SetMoney, so a wipe reaches it too
+#include "script_pokemon_util.h"     // CreateScriptedWildMon, for the ambush event
 #include "event_data.h"
 #include "fieldmap.h"
 #include "random.h"
@@ -16,6 +18,7 @@
 #include "item.h"
 #include "data.h"
 #include "trainer_see.h"
+#include "region_map.h"           // gRegionMapEntries, for the death summary's dungeon name
 #include "constants/field_effects.h"
 #include "constants/items.h"
 #include "constants/layouts.h"
@@ -42,6 +45,13 @@ extern const u8 RogueDungeonFloor_EventScript_TrainerDone[];
 extern const u8 RogueDungeonFloor_EventScript_ItemBall[];
 extern const u8 RogueDungeonFloor_EventScript_MiningRock[];
 extern const u8 RogueDungeonFloor_EventScript_BossDone[];
+// Floor events, one per entry in sFloorEvents.
+extern const u8 RogueDungeonFloor_EventScript_EventSpring[];
+extern const u8 RogueDungeonFloor_EventScript_EventGambler[];
+extern const u8 RogueDungeonFloor_EventScript_EventPedlar[];
+extern const u8 RogueDungeonFloor_EventScript_EventTrader[];
+extern const u8 RogueDungeonFloor_EventScript_EventEgg[];
+extern const u8 RogueDungeonFloor_EventScript_EventInjured[];
 extern const u8 RogueDungeonFloor_Text_TrainerIntro[];
 extern const u8 RogueDungeonFloor_Text_TrainerDefeat[];
 
@@ -80,6 +90,64 @@ static u32 DungeonFloorWithin(u16 floor)
     if (floor < DUNGEON_E4_END_FLOOR)
         return (floor - DUNGEON_GYM_FLOORS) % DUNGEON_SHORT_FLOORS;
     return floor - DUNGEON_E4_END_FLOOR;
+}
+
+// The twenty-four permutations of the four shuffled Elite Four slots, row 0
+// identity. A table rather than a shuffle because it is four elements: a
+// Fisher-Yates here would need a random stream, and the only one live at the
+// moment a theme is looked up belongs to floor generation. 96 bytes of ROM buys
+// a pure function of the order word.
+static const u8 sE4Orders[][DUNGEON_E4_SHUFFLED] =
+{
+    {0,1,2,3}, {0,1,3,2}, {0,2,1,3}, {0,2,3,1}, {0,3,1,2}, {0,3,2,1},
+    {1,0,2,3}, {1,0,3,2}, {1,2,0,3}, {1,2,3,0}, {1,3,0,2}, {1,3,2,0},
+    {2,0,1,3}, {2,0,3,1}, {2,1,0,3}, {2,1,3,0}, {2,3,0,1}, {2,3,1,0},
+    {3,0,1,2}, {3,0,2,1}, {3,1,0,2}, {3,1,2,0}, {3,2,0,1}, {3,2,1,0},
+};
+
+// SLOT IN, IDENTITY OUT. A slot is a position in the run - which decides the
+// floors it spans, whether it has a mini boss, and how far down the curve it
+// sits. An identity is which dungeon is standing there - its theme, its boss,
+// that boss's sprite and TM. Before the shuffle the two were the same number and
+// every caller used one variable for both; they are now different questions and
+// the call sites have to pick deliberately.
+//
+// Things that stay on the SLOT: all the floor arithmetic above, the finale test
+// in PrepareArenaFloor, the rod unlocks in ApplyRunConfig, and the dungeon number
+// the debug readout prints. Things that take the IDENTITY: ThemeForFloor,
+// sDungeonBosses, sDungeonBossGfx and sDungeonBossTMs.
+//
+// The gym half is one bit per band because the band is two: swapping within a
+// pair is the low bit of the slot. The assert is what stops a wider band reading
+// as a working shuffle - DUNGEON_SHUFFLE_BAND at 3 or 4 would still compile here
+// and would still permute, just not within the bands it claims to.
+STATIC_ASSERT(DUNGEON_SHUFFLE_BAND == 2, GymBandIsAPairOrThisCodeIsWrong);
+STATIC_ASSERT(DUNGEON_GYM_DUNGEONS % DUNGEON_SHUFFLE_BAND == 0, GymBandsDivideEvenly);
+STATIC_ASSERT(DUNGEON_GYM_BANDS <= 8, GymBandBitsFitTheOrderWord);
+
+static u32 DungeonForSlot(u32 slot)
+{
+    u32 order = VarGet(VAR_ROGUE_RUN_ORDER);
+
+    // Vanilla order: the gate is closed, the toggle is off, or the roll came up
+    // identity. All three are the same run, so they are the same branch.
+    if (order == 0)
+        return slot;
+
+    if (slot < DUNGEON_GYM_DUNGEONS)
+        return ((order >> (slot / DUNGEON_SHUFFLE_BAND)) & 1) ? (slot ^ 1) : slot;
+
+    // Wallace is the fifth Elite Four slot and does not move, so the range test
+    // is against DUNGEON_E4_SHUFFLED rather than DUNGEON_E4_DUNGEONS. The finale
+    // falls through the same way.
+    if (slot < DUNGEON_GYM_DUNGEONS + DUNGEON_E4_SHUFFLED)
+    {
+        u32 pick = (order >> DUNGEON_GYM_BANDS) % ARRAY_COUNT(sE4Orders);
+
+        return DUNGEON_GYM_DUNGEONS + sE4Orders[pick][slot - DUNGEON_GYM_DUNGEONS];
+    }
+
+    return slot;
 }
 
 // The boss stands on the last floor of its dungeon, whichever length that is.
@@ -2034,7 +2102,10 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
 // is true, and the reason the "wraps to another theme's art" gap is closed.
 static const struct RogueDungeonTheme *ThemeForFloor(u16 floor)
 {
-    u32 dungeon = DungeonIndexOf(floor);
+    // IDENTITY, not slot - which dungeon is standing at this depth. Everything a
+    // theme owns travels with it: its art, its encounter surface, its species
+    // ladder and its weather. See DungeonForSlot.
+    u32 dungeon = DungeonForSlot(DungeonIndexOf(floor));
 
     return &sDungeonThemes[dungeon % DUNGEON_THEME_COUNT];
 }
@@ -2223,6 +2294,20 @@ EWRAM_DATA static u8 sBerryX[DUNGEON_MAX_BERRIES] = {0};
 EWRAM_DATA static u8 sRockX[DUNGEON_MAX_ROCKS] = {0};
 EWRAM_DATA static u8 sRockY[DUNGEON_MAX_ROCKS] = {0};
 EWRAM_DATA static u8 sRockCount = 0;
+// The floor's event, if it rolled one. sEventIndex is an index into
+// sFloorEvents rather than a copy of the entry, so the table stays the only
+// place that knows what an event IS. 4 bytes total.
+EWRAM_DATA static u8 sEventX = 0;
+EWRAM_DATA static u8 sEventY = 0;
+EWRAM_DATA static u8 sEventCount = 0;
+EWRAM_DATA static u8 sEventIndex = 0;
+// Rolled at prepare time for every event, whether or not the one picked reads
+// them - so the number of draws taken from the seeded stream does not depend on
+// WHICH event came up. sEventSpecies is also what the injured Pokemon's overworld
+// sprite is built from, so it has to be decided before the templates are written,
+// not when the player talks to it.
+EWRAM_DATA static u16 sEventSpecies = SPECIES_NONE;
+EWRAM_DATA static u8 sEventAmbush = 0;
 EWRAM_DATA static u8 sBerryY[DUNGEON_MAX_BERRIES] = {0};
 EWRAM_DATA static u8 sBerryCount = 0;
 
@@ -2531,11 +2616,59 @@ void RogueDungeon_OnRunCompleted(void)
     // not be told they have none.
     if (completed < 0xFFFF)
         VarSet(VAR_ROGUE_RUNS_COMPLETED, completed + 1);
+
+    // The other writer of the best floor, and the only one that is not a loss.
+    // Winning never passes through the whiteout path, so without this a player
+    // who clears the run and never dies that deep again is shown a record short
+    // of the game they actually finished.
+    if (DUNGEON_TOTAL_FLOORS > VarGet(VAR_ROGUE_BEST_FLOOR))
+        VarSet(VAR_ROGUE_BEST_FLOOR, DUNGEON_TOTAL_FLOORS);
+}
+
+// Rolls the dungeon order for the run that is about to start.
+//
+// CALLED FROM ResetRun, and that placement is the whole design. ResetRun runs
+// before the warp on the whiteout path and before the warp on the run-complete
+// path, so floor one is always GENERATED with the order it will be played under.
+// Rolling it from the starter script instead would be too late: the player warps
+// in, the template loader calls PrepareFloor, PrepareFloor calls ThemeForFloor -
+// and only then does the frame table get a turn. The floor would be painted as
+// one theme and described as another, and every wild encounter on it would read
+// the wrong ladder.
+//
+// It also means an in-progress save keeps vanilla order for the rest of its run
+// and shuffles from the next one, which is the graceful way for this to arrive.
+static void RollDungeonOrder(void)
+{
+    u32 order;
+
+    // Vanilla until the run has been cleared once, and after that only while the
+    // player leaves the toggle on. Note ResetRun is called AFTER
+    // RogueDungeon_OnRunCompleted on the winning path, so the run that clears the
+    // game is also the one that unlocks the shuffle for its successor.
+    if (!FlagGet(FLAG_ROGUE_RUN_COMPLETED) || FlagGet(FLAG_ROGUE_VANILLA_ORDER))
+    {
+        VarSet(VAR_ROGUE_RUN_ORDER, 0);
+        return;
+    }
+
+    // THE GLOBAL RNG, deliberately, and this is the one place in the file that
+    // wants it. Floor generation uses a local LCG so that a layout cannot depend
+    // on the player's step count; a run's dungeon order is rolled exactly once
+    // and being unpredictable is the entire point of it.
+    order = Random() & ((1 << DUNGEON_GYM_BANDS) - 1);
+    order |= (Random() % ARRAY_COUNT(sE4Orders)) << DUNGEON_GYM_BANDS;
+
+    // Zero is a legitimate roll - every band unswapped and Elite Four order 0 -
+    // and it lands on the same branch as "not shuffling" in DungeonForSlot,
+    // because it describes the same run. 1 in 384.
+    VarSet(VAR_ROGUE_RUN_ORDER, order);
 }
 
 void RogueDungeon_ResetRun(void)
 {
     VarSet(VAR_ROGUE_DUNGEON_FLOOR, 0);
+    RollDungeonOrder();
     VarSet(VAR_ROGUE_RUN_STATE, ROGUE_RUN_NEEDS_STARTERS);
     ZeroPlayerPartyMons();
     CalculatePlayerPartyCount();
@@ -2550,6 +2683,17 @@ void RogueDungeon_ResetRun(void)
     // the bag; the clerk hands out another one.
     SetCoins(0);
 
+    // AND MONEY, WHICH LIVES IN THE SAME PLACE THE COINS DO and was missed when
+    // they were fixed. Nothing else in this file touches money at all, so before
+    // this it survived every wipe and accumulated across runs forever - by the
+    // third run the rest stop's mart is a formality and the only real currency
+    // in the game has no scarcity left in it.
+    //
+    // That is the same bug the comment above describes, in the same save block,
+    // one field over. Worth noticing that the reasoning was written down
+    // correctly and still only applied to one of the two.
+    SetMoney(&gSaveBlock1Ptr->money, 0);
+
     // Same reasoning as the bag, and a flag needs saying out loud because
     // resetting the floor counter does not touch one: ApplyRunConfig sets these
     // by depth, so leaving them set hands the next run a Super technique on
@@ -2562,6 +2706,77 @@ void RogueDungeon_ResetRun(void)
     // leave a fresh Old-Rod-only run fishing at whatever it last chose. OLD_ROD
     // is 0, so this is also the value a save that never opened the menu holds.
     VarSet(VAR_ROGUE_ROD_TECHNIQUE, OLD_ROD);
+}
+
+// The floor's remaining wild-experience allowance, and one knockout taken off
+// it. See ROGUE_GRIND_FREE_KOS for why this exists at all.
+//
+// READS AND WRITES IN ONE CALL, deliberately. Splitting it into a getter and a
+// stepper gives the single caller two things it has to do in the right order,
+// and the failure mode of getting that wrong is silent - a taper that never
+// advances looks exactly like a taper that is working, right up until someone
+// measures it. One accessor, one call site, nothing to sequence.
+//
+// The count is packed with the floor it belongs to, so a floor change resets it
+// implicitly and a save-and-reload does not. See VAR_ROGUE_FLOOR_WILD_KOS.
+STATIC_ASSERT(DUNGEON_TOTAL_FLOORS <= 255, DungeonFloorFitsPackedByte);
+
+u16 RogueDungeon_TakeWildExpPercent(void)
+{
+    u32 floor, packed, kos, spent;
+
+    // Every dungeon map declares LAYOUT_ROGUE_DUNGEON_FLOOR, including
+    // underwater and the four that exist only to carry a weather setting, so
+    // this one test means "the player is on a generated floor". Anywhere else -
+    // the rest stop, the Safari, a debug map - pays the flat rate.
+    if (gMapHeader.mapLayoutId != LAYOUT_ROGUE_DUNGEON_FLOOR)
+        return ROGUE_WILD_EXP_PERCENT;
+
+    floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR) & 0xFF;
+    packed = VarGet(VAR_ROGUE_FLOOR_WILD_KOS);
+    kos = ((packed >> 8) == floor) ? (packed & 0xFF) : 0;
+
+    // Saturates rather than wrapping. Wrapping would hand a player who ground
+    // 256 knockouts on one floor a fresh full-rate allowance, which is the one
+    // outcome this whole function exists to prevent.
+    if (kos < 0xFF)
+        VarSet(VAR_ROGUE_FLOOR_WILD_KOS, (floor << 8) | (kos + 1));
+
+    // kos is the count BEFORE this knockout, so the first ROGUE_GRIND_FREE_KOS
+    // of them - indices 0 through FREE-1 - are the ones that pay in full.
+    if (kos < ROGUE_GRIND_FREE_KOS)
+        return ROGUE_WILD_EXP_PERCENT;
+
+    spent = (kos - ROGUE_GRIND_FREE_KOS + 1) * ROGUE_GRIND_STEP;
+    if (spent >= ROGUE_WILD_EXP_PERCENT - ROGUE_GRIND_MIN_PERCENT)
+        return ROGUE_GRIND_MIN_PERCENT;
+
+    return ROGUE_WILD_EXP_PERCENT - spent;
+}
+
+// Fills the three string vars the death summary message reads. Called from the
+// starter script on the other side of a whiteout, not from the whiteout itself
+// - see RogueDungeon_TryHandleWhiteOut for why the summary is stored rather
+// than shown.
+//
+// The dungeon is DERIVED from the floor rather than stored beside it. Routing a
+// floor to its theme is what ThemeForFloor is for, and a second copy of that
+// answer in a var is a second thing to keep true.
+void RogueDungeon_BufferRunSummary(void)
+{
+    u16 shown = VarGet(VAR_ROGUE_LAST_RUN_FLOOR);
+    const struct RogueDungeonTheme *theme;
+
+    // Both vars hold the DISPLAYED floor, so the internal counter is one less.
+    // Guarded because a script could reach this with nothing pending, and
+    // ThemeForFloor on an underflowed floor would index the theme table out of
+    // bounds - which does not crash, it just names the wrong dungeon.
+    theme = ThemeForFloor(shown ? shown - 1 : 0);
+
+    ConvertIntToDecimalStringN(gStringVar1, shown, STR_CONV_MODE_LEFT_ALIGN, 3);
+    StringCopy(gStringVar2, gRegionMapEntries[theme->mapSecId].name);
+    ConvertIntToDecimalStringN(gStringVar3, VarGet(VAR_ROGUE_BEST_FLOOR),
+                               STR_CONV_MODE_LEFT_ALIGN, 3);
 }
 
 // Maps that replace a theme's own for the last few floors of its dungeon. See
@@ -2737,6 +2952,23 @@ bool8 RogueDungeon_TryHandleWhiteOut(void)
 {
     if (gMapHeader.mapLayoutId != LAYOUT_ROGUE_DUNGEON_FLOOR)
         return FALSE;
+
+    // STASHED, NOT SHOWN, and read BEFORE ResetRun puts the floor counter back
+    // to zero. This runs from CB2_WhiteOut with no message window open and warps
+    // out of the map immediately afterwards, so there is nowhere here to say
+    // anything; the frame script that asks for starters on the other side shows
+    // it instead. A non-zero value is what marks a summary as waiting, which is
+    // why this stores the displayed floor rather than the counter - dying on the
+    // first floor is the commonest way a run ends and it must not read as "no
+    // summary".
+    //
+    // A loss is the ONLY writer of the best floor. Putting it here rather than
+    // in ApplyRunConfig keeps the debug floor warp out of it - that warp sets
+    // the counter without a run behind it, so a single warp to 115 would retire
+    // the record for good.
+    VarSet(VAR_ROGUE_LAST_RUN_FLOOR, VarGet(VAR_ROGUE_DUNGEON_FLOOR) + 1);
+    if (VarGet(VAR_ROGUE_LAST_RUN_FLOOR) > VarGet(VAR_ROGUE_BEST_FLOOR))
+        VarSet(VAR_ROGUE_BEST_FLOOR, VarGet(VAR_ROGUE_LAST_RUN_FLOOR));
 
     RogueDungeon_ResetRun();
 
@@ -3631,6 +3863,8 @@ static bool8 PieceClearOfObjects(const struct RogueSetPiece *piece, s32 x, s32 y
             for (k = 0; k < sBerryCount; k++)
                 if (cx == sBerryX[k] && cy == sBerryY[k])
                     return FALSE;
+            if (sEventCount && cx == sEventX && cy == sEventY)
+                return FALSE;
             // Buried items are the one class with nothing visible on the map,
             // so a set piece over one is silent twice: the player never learns
             // it was there, and the Dowsing Machine points at solid wall.
@@ -4300,8 +4534,14 @@ static void PrepareArenaFloor(u16 floor)
 
     if (IsDungeonBossFloor(floor))
     {
-        sTrainerIds[0] = sDungeonBosses[dungeon % ARRAY_COUNT(sDungeonBosses)];
-        sTrainerGfx[0] = sDungeonBossGfx[dungeon % ARRAY_COUNT(sDungeonBossGfx)];
+        // IDENTITY here, and SLOT in the branch below. The boss and its sprite
+        // belong to whichever dungeon is standing at this depth; "is this the
+        // last dungeon in the run" is a question about the position, and the
+        // finale never permutes anyway.
+        u32 identity = DungeonForSlot(dungeon);
+
+        sTrainerIds[0] = sDungeonBosses[identity % ARRAY_COUNT(sDungeonBosses)];
+        sTrainerGfx[0] = sDungeonBossGfx[identity % ARRAY_COUNT(sDungeonBossGfx)];
     }
     else if (dungeon == DUNGEON_COUNT - 1)
     {
@@ -4352,7 +4592,10 @@ u16 RogueDungeon_IsRunCompleteFloor(void)
 // got.
 u16 RogueDungeon_GiveBossTM(void)
 {
-    u32 dungeon = DungeonIndexOf(VarGet(VAR_ROGUE_DUNGEON_FLOOR));
+    // IDENTITY: the TM is the boss's, so it travels with the boss. Under the
+    // shuffle that means a band-of-two swap can hand over Bulk Up before Rock
+    // Tomb, which is one dungeon of drift and deliberately not corrected.
+    u32 dungeon = DungeonForSlot(DungeonIndexOf(VarGet(VAR_ROGUE_DUNGEON_FLOOR)));
     u16 item;
 
     if (!IsDungeonBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
@@ -4775,6 +5018,21 @@ static void PlaceHiddenItems(u16 floor)
         if (j != sBerryCount)
             continue;
 
+        // THE ROCKS WERE MISSING FROM THIS LIST, and they are placed before this
+        // runs, so a buried item could land under one - unreachable, and the
+        // Dowsing Machine pointing at it forever. The same bug the comment at the
+        // head of this function describes for balls and trees, one class short.
+        for (j = 0; j < sRockCount; j++)
+        {
+            if (sRockX[j] == x && sRockY[j] == y)
+                break;
+        }
+        if (j != sRockCount)
+            continue;
+
+        if (sEventCount && sEventX == x && sEventY == y)
+            continue;
+
         for (j = 0; j < sHiddenCount; j++)
         {
             if (sHiddenItems[j].x == x && sHiddenItems[j].y == y)
@@ -4890,6 +5148,418 @@ static void PlaceBerryTrees(u16 floor)
 // are exactly the two themes that bury NOTHING, because dowsing cannot be
 // started while surfing or diving. Without rocks those two would have no
 // material source at all.
+// The floor events, banded by depth. See struct RogueFloorEvent.
+//
+// Every one of these is a QUESTION with a cost on both branches, which is the
+// whole reason the table exists - a floor already hands out items and fights, and
+// what it had none of was a decision. An event that is simply a free reward would
+// be an item ball with more text.
+//
+// All three need only small ARITHMETIC specials - a fraction of the player's
+// money, a loot roll, a coin flip - and no new UI, no new item ids and no new
+// engine paths, which is what decided this first slate. Events that hand over or
+// fight a floor-appropriate POKEMON are the obvious next ones and are a step up
+// in cost: givemon and setwildbattle both take their level as a byte LITERAL, so
+// a scaling one needs the party or the battle built in C, and the give path also
+// needs the full-party case handled the way Text_AceNoRoom does it.
+// NOT sDungeonEvents - that name is already taken, by the struct MapEvents copy
+// the hidden items repoint gMapHeader.events at.
+static const struct RogueFloorEvent sFloorEvents[] =
+{
+    // A free full heal, and it never retires because the thing it competes with
+    // is walking on with a hurt party - which is a real choice at every depth
+    // once there is a reason not to burn the bag on it.
+    { OBJ_EVENT_GFX_OLD_WOMAN,   RogueDungeonFloor_EventScript_EventSpring,
+      0,  DUNGEON_TOTAL_FLOORS },
+
+    // Double or nothing on a third of the player's money. Live from the start,
+    // and only meaningful at all because money is now wiped with the run - see
+    // the note in RogueDungeon_ResetRun.
+    { OBJ_EVENT_GFX_GENTLEMAN,   RogueDungeonFloor_EventScript_EventGambler,
+      0,  DUNGEON_TOTAL_FLOORS },
+
+    // Sells one item sight unseen. Arrives at floor 21 rather than floor 1
+    // because before the first rest stop the player has no money to gamble with
+    // and the offer would read as broken rather than as a bad deal.
+    { OBJ_EVENT_GFX_MART_EMPLOYEE, RogueDungeonFloor_EventScript_EventPedlar,
+      20, DUNGEON_TOTAL_FLOORS },
+
+    // A Pokemon for a Pokemon, five levels up, species unseen. Self-balancing -
+    // see DUNGEON_TRADE_LEVEL_BONUS - and refused outright on a party of one,
+    // because trading the last Pokemon away is a whiteout with extra steps.
+    { OBJ_EVENT_GFX_HIKER,       RogueDungeonFloor_EventScript_EventTrader,
+      0,  DUNGEON_TOTAL_FLOORS },
+
+    // An egg. Free, and the price is the party slot - which this build already
+    // treats as a real wager, since the boss ace offer is refused on a full
+    // party and the archivist is the only way to make room.
+    { OBJ_EVENT_GFX_WOMAN_2,     RogueDungeonFloor_EventScript_EventEgg,
+      0,  DUNGEON_TOTAL_FLOORS },
+
+    // An injured Pokemon, wearing its OWN overworld sprite - the reason the gfx
+    // sentinel exists. OW_POKEMON_OBJECT_EVENTS is already TRUE and the 1.12 MB
+    // of per-species overworld sprites is already in the build, reachable by
+    // almost nothing; this is the second thing to use it after the follower.
+    { DUNGEON_EVENT_GFX_ROLLED,  RogueDungeonFloor_EventScript_EventInjured,
+      0,  DUNGEON_TOTAL_FLOORS },
+};
+
+// THE ROLL AND THE DEVOLVE HAPPEN AT DIFFERENT TIMES, and they have to.
+//
+// The species is drawn from the seeded stream, so it can only be drawn at prepare
+// time - DungeonRandom is not live once the player is standing on the floor. But
+// DevolveForLevel needs a LEVEL, and the trader's level is the traded Pokemon's
+// plus five, which nothing knows until the player picks one.
+//
+// So sEventSpecies holds the RAW roll, and each event devolves it when it can:
+// the trader at interaction time against the level it just learned, the injured
+// Pokemon at prepare time against the floor's level - because that one WEARS the
+// species as its overworld sprite, and a Dragonite sprite that hands over a
+// Dratini is the bug this split exists to avoid.
+
+// Rolls the floor's event, and places it the way everything else on a floor is
+// placed - pick a room, pick a point, refuse anything already standing there.
+//
+// LAST IN THE PREPARE SEQUENCE, and that is not a preference. Every placer draws
+// from the same seeded stream, so inserting a draw anywhere but the end shifts
+// the position of every object placed after it - identical layout, everything
+// moved, and nothing checks for that. See the note on the rotation draw in
+// BuildWildEncounterTable.
+static void PlaceEvents(u16 floor)
+{
+    u32 i, j, x, y, room, choices = 0;
+    u8 eligible[ARRAY_COUNT(sFloorEvents)];
+
+    sEventCount = 0;
+
+    if (sRoomCount == 0)
+        return;
+
+    // The odds roll happens FIRST and unconditionally, so it costs the same
+    // number of draws whether or not a floor gets an event. A roll skipped on
+    // the cheap path would desynchronise nothing today - this is the last placer
+    // - but it would the moment anything is added after it.
+    if (DungeonRandom() % DUNGEON_EVENT_ODDS != 0)
+        return;
+
+    // An arena is the boss and the player facing off across an empty room. There
+    // is no room in that for a merchant.
+    if (IsDungeonBossFloor(floor) || IsMiniBossFloor(floor))
+        return;
+
+    for (i = 0; i < ARRAY_COUNT(sFloorEvents); i++)
+    {
+        if (floor >= sFloorEvents[i].minFloor
+            && floor <= sFloorEvents[i].maxFloor)
+            eligible[choices++] = i;
+    }
+
+    if (choices == 0)
+        return;
+
+    sEventIndex = eligible[DungeonRandom() % choices];
+
+    // Rolled for EVERY event, not only the ones that read them, so the number of
+    // draws taken here does not depend on which event came up. PlaceHiddenItems
+    // runs after this and shares the stream.
+    sEventSpecies = sSafariLandSpecies[DungeonRandom()
+                                      % ARRAY_COUNT(sSafariLandSpecies)];
+    sEventAmbush = (DungeonRandom() % DUNGEON_INJURED_AMBUSH_ODDS) == 0;
+
+    // See the roll/devolve note under sFloorEvents: the event that WEARS the
+    // species has to hold the final one, and the floor's level is known here.
+    if (sFloorEvents[sEventIndex].gfxId == DUNGEON_EVENT_GFX_ROLLED)
+        sEventSpecies = RogueDungeon_DevolveForLevel(sEventSpecies,
+                                                     FloorTargetLevel(floor));
+
+    room = DungeonRandom() % sRoomCount;
+    x = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
+    y = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
+
+    // One attempt, not a retry loop. A floor that happens to roll an occupied
+    // tile simply has no event, which is indistinguishable from the three floors
+    // in four that rolled none - and a retry loop would draw a variable number of
+    // times from the shared stream, which is the one thing a placer must not do.
+    if (x == sStairsX && y == sStairsY)
+        return;
+    if (x == sSpawnX && y == sSpawnY)
+        return;
+
+    for (j = 0; j < sTrainerCount; j++)
+        if (sTrainerX[j] == x && sTrainerY[j] == y)
+            return;
+    for (j = 0; j < sItemCount; j++)
+        if (sItemX[j] == x && sItemY[j] == y)
+            return;
+    for (j = 0; j < sBerryCount; j++)
+        if (sBerryX[j] == x && sBerryY[j] == y)
+            return;
+    for (j = 0; j < sRockCount; j++)
+        if (sRockX[j] == x && sRockY[j] == y)
+            return;
+
+    sEventX = x;
+    sEventY = y;
+    sEventCount = 1;
+}
+
+// ---------------------------------------------------------------- event specials
+//
+// The four below are the arithmetic the scripts cannot do. Each pair is
+// deliberately split into a BUFFER call that only reads and describes, and a
+// RESOLVE/BUY call that commits - so the player is shown the real number before
+// the yes/no and the commit cannot disagree with what was offered. The figure is
+// carried between them in a static rather than recomputed, which is the whole
+// point: recomputing after a yes would let the offer and the charge differ.
+//
+// They use the GLOBAL Random(), not DungeonRandom(). That stream belongs to floor
+// generation and is not live once the player is standing on the floor - the same
+// rule the water re-deal follows.
+
+// A third, so the wager scales with the run rather than being unrefusable early
+// and pocket change late. Floored to a round hundred so the message reads like a
+// price and not like a calculation.
+#define DUNGEON_EVENT_STAKE_DIVISOR 3
+#define DUNGEON_EVENT_STAKE_MIN     100
+
+EWRAM_DATA static u32 sEventStake = 0;
+EWRAM_DATA static u16 sEventWareItem = ITEM_NONE;
+EWRAM_DATA static u32 sEventWarePrice = 0;
+
+// Result is the stake, or 0 when the player cannot cover the minimum.
+void RogueDungeon_BufferEventStake(void)
+{
+    u32 money = GetMoney(&gSaveBlock1Ptr->money);
+
+    sEventStake = (money / DUNGEON_EVENT_STAKE_DIVISOR / 100) * 100;
+
+    if (sEventStake < DUNGEON_EVENT_STAKE_MIN)
+    {
+        sEventStake = 0;
+        gSpecialVar_Result = 0;
+        return;
+    }
+
+    ConvertIntToDecimalStringN(gStringVar1, sEventStake,
+                               STR_CONV_MODE_LEFT_ALIGN, MAX_MONEY_DIGITS);
+    gSpecialVar_Result = 1;
+}
+
+// Result is 1 on a win, 0 on a loss. Buffers the amount either way, because a
+// wager the player is not told the outcome of in figures is just a message.
+void RogueDungeon_ResolveEventStake(void)
+{
+    bool32 won = (Random() & 1);
+
+    // Re-checked rather than assumed. Nothing between the offer and here can
+    // spend money today, but a stake larger than the balance would silently
+    // clamp inside RemoveMoney and the player would be told they lost more than
+    // they had.
+    if (!IsEnoughMoney(&gSaveBlock1Ptr->money, sEventStake))
+    {
+        gSpecialVar_Result = 0;
+        return;
+    }
+
+    if (won)
+        AddMoney(&gSaveBlock1Ptr->money, sEventStake);
+    else
+        RemoveMoney(&gSaveBlock1Ptr->money, sEventStake);
+
+    ConvertIntToDecimalStringN(gStringVar1, sEventStake,
+                               STR_CONV_MODE_LEFT_ALIGN, MAX_MONEY_DIGITS);
+    gSpecialVar_Result = won ? 1 : 0;
+}
+
+// What the pedlar is selling, and for how much. Result is 0 when the player
+// cannot afford it - the price is still buffered so the refusal can name it.
+void RogueDungeon_BufferEventWares(void)
+{
+    u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+    u8 quantity;   // RollFromTable's out-param is a u8; a u16 here is a type error
+
+    // The floor's own consumable table, so the wares are always depth
+    // appropriate and this holds no second copy of the loot ladder. Random()
+    // rather than the seeded stream: what is on the blanket is not part of the
+    // floor's layout and re-rolling it on a reload is harmless.
+    RollFromTable(sLootConsumables, ARRAY_COUNT(sLootConsumables), floor,
+                  &sEventWareItem, &quantity);
+
+    // Above what the item is worth, because the thing being sold is the gamble.
+    // A pedlar who was reliably good value would be the mart with extra steps.
+    sEventWarePrice = ((u32)FloorTargetLevel(floor)) * 60;
+
+    ConvertIntToDecimalStringN(gStringVar1, sEventWarePrice,
+                               STR_CONV_MODE_LEFT_ALIGN, MAX_MONEY_DIGITS);
+
+    gSpecialVar_Result = IsEnoughMoney(&gSaveBlock1Ptr->money, sEventWarePrice);
+}
+
+// Result is 0 if the bag had no room, in which case NOTHING is charged. Ordered
+// that way on purpose: AddBagItem first, and only take the money once the item
+// is definitely in.
+void RogueDungeon_BuyEventWares(void)
+{
+    if (sEventWareItem == ITEM_NONE
+        || !IsEnoughMoney(&gSaveBlock1Ptr->money, sEventWarePrice))
+    {
+        gSpecialVar_Result = 0;
+        return;
+    }
+
+    if (!AddBagItem(sEventWareItem, 1))
+    {
+        gSpecialVar_Result = 0;
+        return;
+    }
+
+    RemoveMoney(&gSaveBlock1Ptr->money, sEventWarePrice);
+    CopyItemName(sEventWareItem, gStringVar2);
+    gSpecialVar_Result = 1;
+}
+
+// Adds a Pokemon to the first free party slot. Result is 0 if there was none.
+//
+// CreateRandomMonWithIVs is the idiom this file already uses for the boss ace,
+// and MAX_PER_STAT_IVS with it: a gift the player fought for should not arrive
+// with worse stats than something they caught.
+static bool32 GiveEventMon(u16 species, u8 level)
+{
+    u32 slot = CalculatePlayerPartyCount();
+
+    if (species == SPECIES_NONE || slot >= PARTY_SIZE)
+        return FALSE;
+
+    CreateRandomMonWithIVs(&gParties[B_TRAINER_PLAYER][slot], species, level,
+                           MAX_PER_STAT_IVS);
+    CalculateMonStats(&gParties[B_TRAINER_PLAYER][slot]);
+    CalculatePlayerPartyCount();
+    return TRUE;
+}
+
+// The trader. Result 0 refuses the whole event, because a party of one has
+// nothing it can afford to give - trading the last Pokemon away is a whiteout
+// with extra steps, and the engine would be left with an empty party mid-floor.
+void RogueDungeon_EventTraderCanTrade(void)
+{
+    gSpecialVar_Result = (CalculatePlayerPartyCount() > 1);
+}
+
+// Describes the deal for the yes/no, having been handed a party slot in
+// VAR_0x8004 by ChoosePartyMon. Buffers what is being given up and at what level
+// the replacement arrives - NOT what it is, which is the entire point.
+//
+// The level is the traded Pokemon's plus five, which is the whole balance of this
+// event. See DUNGEON_TRADE_LEVEL_BONUS.
+void RogueDungeon_EventTraderOffer(void)
+{
+    u32 slot = gSpecialVar_0x8004;
+    struct Pokemon *mon;
+    u32 level;
+
+    if (slot >= CalculatePlayerPartyCount())
+    {
+        gSpecialVar_Result = 0;
+        return;
+    }
+
+    mon = &gParties[B_TRAINER_PLAYER][slot];
+    level = GetMonData(mon, MON_DATA_LEVEL) + DUNGEON_TRADE_LEVEL_BONUS;
+    if (level > MAX_LEVEL)
+        level = MAX_LEVEL;
+
+    StringCopy(gStringVar1, GetSpeciesName(GetMonData(mon, MON_DATA_SPECIES)));
+    ConvertIntToDecimalStringN(gStringVar2, level, STR_CONV_MODE_LEFT_ALIGN, 3);
+    gSpecialVar_Result = 1;
+}
+
+// Commits it. OVERWRITES THE SLOT IN PLACE rather than removing and appending,
+// which is what a trade is anyway - and it sidesteps party compaction entirely.
+// Removing slot 2 of 4 means shuffling 3 and 4 down, and every path that holds a
+// party index across that is a bug waiting to be written.
+void RogueDungeon_EventTraderDo(void)
+{
+    u32 slot = gSpecialVar_0x8004;
+    struct Pokemon *mon;
+    u32 level;
+    u16 species;
+
+    if (slot >= CalculatePlayerPartyCount() || CalculatePlayerPartyCount() <= 1)
+    {
+        gSpecialVar_Result = 0;
+        return;
+    }
+
+    mon = &gParties[B_TRAINER_PLAYER][slot];
+    level = GetMonData(mon, MON_DATA_LEVEL) + DUNGEON_TRADE_LEVEL_BONUS;
+    if (level > MAX_LEVEL)
+        level = MAX_LEVEL;
+
+    // Devolved HERE, against the level only now known. See the roll/devolve note
+    // under sFloorEvents.
+    species = RogueDungeon_DevolveForLevel(sEventSpecies, level);
+
+    CreateRandomMonWithIVs(mon, species, level, MAX_PER_STAT_IVS);
+    CalculateMonStats(mon);
+
+    StringCopy(gStringVar2, GetSpeciesName(species));
+    gSpecialVar_Result = 1;
+}
+
+// The egg. Free, and the cost is the party slot - which this build already treats
+// as a wager, since the boss ace is refused on a full party and the archivist at
+// the rest stop is the only way to make room. Result 0 means no room.
+void RogueDungeon_EventEggTake(void)
+{
+    u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+    u8 level = FloorTargetLevel(floor);
+    u16 species = RogueDungeon_DevolveForLevel(sEventSpecies, level);
+
+    if (!GiveEventMon(species, level))
+    {
+        gSpecialVar_Result = 0;
+        return;
+    }
+
+    StringCopy(gStringVar1, GetSpeciesName(species));
+    gSpecialVar_Result = 1;
+}
+
+// The injured Pokemon. Result 1 if it joins, 0 if it was feigning - both decided
+// at prepare time from the floor's seed, so reloading cannot reroll it. See
+// DUNGEON_INJURED_AMBUSH_ODDS.
+//
+// Buffers the species either way, because the player can see its sprite and being
+// told the wrong name would be worse than being told none.
+void RogueDungeon_EventInjuredApproach(void)
+{
+    StringCopy(gStringVar1, GetSpeciesName(sEventSpecies));
+    gSpecialVar_Result = !sEventAmbush;
+}
+
+// Result 0 means the party was full, in which case it is still standing there -
+// the script says so rather than silently doing nothing.
+void RogueDungeon_EventInjuredJoin(void)
+{
+    u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+
+    gSpecialVar_Result = GiveEventMon(sEventSpecies, FloorTargetLevel(floor));
+}
+
+// Sets up the ambush for the script's dowildbattle. CreateScriptedWildMon is what
+// the setwildbattle command itself uses; going through it rather than the command
+// is what lets the level be computed instead of assembled as a byte literal.
+void RogueDungeon_EventInjuredAmbush(void)
+{
+    u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+    u32 level = FloorTargetLevel(floor) + DUNGEON_INJURED_AMBUSH_BONUS;
+
+    if (level > MAX_LEVEL)
+        level = MAX_LEVEL;
+
+    CreateScriptedWildMon(sEventSpecies, level, ITEM_NONE);
+}
+
 static void PlaceRocks(u16 floor)
 {
     u32 i, j;
@@ -4972,7 +5642,22 @@ static void PlantFloorBerryTrees(void)
 
         PlantBerryTree(id, ItemIdToBerryType(sBerryItems[i]),
                        BERRY_STAGE_BERRIES, FALSE);
-        GetBerryTreeInfo(id)->berryYield = DUNGEON_BERRY_YIELD;
+
+        // ROTTEN TREES YIELD LESS, and the roll is a HASH rather than a draw
+        // from the generation stream. This function runs from the template loader,
+        // not from PrepareFloor, so DungeonRandom is the wrong thing to reach for
+        // here twice over: the stream has already been spent on the layout, and
+        // the loader does not run on every path onto a floor. DecorHash keyed on
+        // the floor seed and the tree index reproduces on reload and moves nothing
+        // else. Same reason the cosmetic passes use it.
+        //
+        // Keyed on the tree INDEX rather than its position, so two trees on one
+        // floor can disagree while the same tree always agrees with itself.
+        GetBerryTreeInfo(id)->berryYield =
+            (DecorHash(VarGet(VAR_ROGUE_DUNGEON_SEED), i, 0)
+             % DUNGEON_BERRY_ROTTEN_ODDS == 0)
+                ? DUNGEON_BERRY_ROTTEN_YIELD
+                : DUNGEON_BERRY_YIELD;
     }
 }
 
@@ -6119,6 +6804,7 @@ static void PrepareFloor(u16 seed)
     PlaceItems(floor);
     PlaceBerryTrees(floor);
     PlaceRocks(floor);
+    PlaceEvents(floor);
     // Last, so it can avoid every solid thing already placed - a hidden item
     // under a ball or a tree is one the player can never be told about.
     PlaceHiddenItems(floor);
@@ -6568,6 +7254,48 @@ void RogueDungeon_LoadObjectEventTemplates(void)
             templates[slot].movementType = MOVEMENT_TYPE_NONE;
             templates[slot].trainerRange_berryTreeId = 0;
             templates[slot].script = RogueDungeonFloor_EventScript_MiningRock;
+            templates[slot].flagId = 0;
+        }
+        else
+        {
+            templates[slot].flagId = FLAG_ROGUE_OBJECT_UNUSED;
+        }
+    }
+
+    // The floor's event. Both the sprite and the script come out of
+    // sFloorEvents, so this loop knows nothing about what any event does - and
+    // the script pointer being read from the SAVE BLOCK is what makes that work.
+    // See the item ball note above for the one engine path that does not.
+    for (i = 0; i < DUNGEON_MAX_EVENTS; i++)
+    {
+        u32 slot = DUNGEON_MAX_TRAINERS + DUNGEON_MAX_ITEMS
+                 + DUNGEON_MAX_BERRIES + DUNGEON_MAX_ROCKS + i;
+
+        templates[slot].localId = slot + 1;
+        templates[slot].kind = OBJ_KIND_NORMAL;
+        templates[slot].elevation = elevation;
+
+        if (i < sEventCount)
+        {
+            const struct RogueFloorEvent *event = &sFloorEvents[sEventIndex];
+
+            // OBJ_EVENT_MON is a BIT (1 << 14) added to a species id, not a
+            // table index - the same construction the rest stop's Unown use.
+            // OW_POKEMON_OBJECT_EVENTS is already TRUE so the sprites are
+            // already in the build.
+            templates[slot].graphicsId =
+                (event->gfxId == DUNGEON_EVENT_GFX_ROLLED)
+                    ? OBJ_EVENT_MON + sEventSpecies
+                    : event->gfxId;
+            templates[slot].x = sEventX;
+            templates[slot].y = sEventY;
+            // FACE_DOWN rather than LOOK_AROUND: an event NPC is a fixture the
+            // player walks up to and talks to, and TRAINER_TYPE_NONE keeps it
+            // from ever initiating anything itself.
+            templates[slot].movementType = MOVEMENT_TYPE_FACE_DOWN;
+            templates[slot].trainerType = TRAINER_TYPE_NONE;
+            templates[slot].trainerRange_berryTreeId = 0;
+            templates[slot].script = event->script;
             templates[slot].flagId = 0;
         }
         else

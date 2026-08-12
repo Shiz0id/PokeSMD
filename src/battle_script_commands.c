@@ -53,6 +53,7 @@
 #include "data.h"
 #include "config_changes.h"
 #include "move.h"
+#include "rogue_dungeon.h"   // RogueDungeon_TakeWildExpPercent, the anti-grind clock
 #include "constants/abilities.h"
 #include "constants/battle_anim.h"
 #include "constants/battle_move_effects.h"
@@ -3950,8 +3951,15 @@ static void Cmd_getexp(void)
             // ROGUE_WILD_EXP_PERCENT. Applied after the trainer multiplier
             // rather than folded into it because the two are mutually exclusive
             // by construction and stacking them would be a silent double boost.
+            //
+            // The rate is no longer flat: it tapers as a floor is farmed, and
+            // the accessor is what steps the count. See ROGUE_GRIND_FREE_KOS.
+            // This is the one place a wild knockout is counted, and it is here
+            // rather than at the encounter because experience is the thing being
+            // rationed - a mon that is caught or fled from costs the player
+            // nothing and should cost them no allowance either.
             if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
-                calculatedExp = (calculatedExp * ROGUE_WILD_EXP_PERCENT) / 100;
+                calculatedExp = (calculatedExp * RogueDungeon_TakeWildExpPercent()) / 100;
 
             if (GetConfig(B_SPLIT_EXP) < GEN_6)
             {

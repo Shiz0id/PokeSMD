@@ -656,6 +656,18 @@ gSpecials::
 	def_special RogueDungeon_PrepareFloorItem
 	def_special RogueDungeon_HideTakenFloorItem
 	def_special RogueDungeon_OnRunCompleted
+	def_special RogueDungeon_BufferRunSummary
+	def_special RogueDungeon_BufferEventStake
+	def_special RogueDungeon_ResolveEventStake
+	def_special RogueDungeon_BufferEventWares
+	def_special RogueDungeon_BuyEventWares
+	def_special RogueDungeon_EventTraderCanTrade
+	def_special RogueDungeon_EventTraderOffer
+	def_special RogueDungeon_EventTraderDo
+	def_special RogueDungeon_EventEggTake
+	def_special RogueDungeon_EventInjuredApproach
+	def_special RogueDungeon_EventInjuredJoin
+	def_special RogueDungeon_EventInjuredAmbush
 	def_special Special_ViewVoltorbFlip
 	def_special StartFlappyBird
 	def_special StartSnake

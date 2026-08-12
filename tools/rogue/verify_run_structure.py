@@ -15,9 +15,23 @@ src/rogue_dungeon.c and checks:
   5. the curve lands near each boss's actual stock party average
   6. every sFloorMapOverride covers a contiguous run of exactly lastFloors
      floors, ending ON its dungeon's boss floor
+  7. EVERY PERMITTED DUNGEON ORDER keeps every boss inside SHUFFLE_TOLERANCE of
+     the curve at the slot it lands on
 
 The party levels are read out of src/data/trainers.party rather than typed in,
 so this notices if a boss is swapped for one at a different level.
+
+Check 7 is what makes the shuffle's band width a fact rather than an opinion.
+The order is gated behind FLAG_ROGUE_RUN_COMPLETED and permutes the eight gyms
+in bands of two plus four of the five Elite Four slots - 16 x 24 = 384 orders,
+small enough to enumerate exhaustively, so there is no sampling and no argument.
+Widening DUNGEON_SHUFFLE_BAND then fails the build rather than the run: bands of
+four reach -16.5, and a free permutation of all eight is ruinous both ways - Juan
+on floor 10 at +33.8 and a level-13 two-mon Roxanne on floor 80 at -32.0.
+
+Broken two ways to confirm it fires: tolerance tightened to 6, which trips on
+Sidney at -6.6; and the free-permutation sweep above, which the tolerance
+rejects by a factor of nearly four.
 
 Check 6 is here rather than in check_encounter_flags.py because this is the file
 that already mirrors the floor arithmetic. That tool asks whether an override's
@@ -26,6 +40,7 @@ was meant to. `within + lastFloors >= length_of(dungeon)` is the kind of
 comparison that is off by one in silence - it would simply weather the wrong
 floor, on the far side of ninety floors of run.
 """
+import itertools
 import re
 import sys
 from pathlib import Path
@@ -61,6 +76,19 @@ RIVAL = "TRAINER_ROGUE_RIVAL"
 # deliberately further over than anyone - both are checked separately.
 TOLERANCE = 5
 
+# Mirrors DUNGEON_SHUFFLE_BAND in include/constants/rogue_dungeon.h and
+# DUNGEON_GYM_BANDS / DUNGEON_E4_SHUFFLED in include/rogue_dungeon.h.
+SHUFFLE_BAND = 2
+GYM_BANDS = GYM_DUNGEONS // SHUFFLE_BAND
+E4_SHUFFLED = E4_DUNGEONS - 1          # Wallace is pinned to the fifth slot
+
+# How far off the curve a SHUFFLED boss may sit. Wider than TOLERANCE on purpose:
+# the shuffle is gated behind a first clear, so it is allowed to be lumpier than
+# the ordering a first playthrough walks. 9 is the measured worst case at bands of
+# two (-6.5 Norman at slot 5, +8.0 Brawly at slot 0) plus a level of slack, and it
+# is deliberately tight enough that widening a band trips it.
+SHUFFLE_TOLERANCE = 9
+
 
 def length_of(dungeon):
     if dungeon < GYM_DUNGEONS:
@@ -84,6 +112,29 @@ def within(floor):
     if floor < E4_END_FLOOR:
         return (floor - GYM_FLOORS) % SHORT_FLOORS
     return floor - E4_END_FLOOR
+
+
+# sE4Orders in src/rogue_dungeon.c, in the same lexicographic order.
+E4_ORDERS = sorted(itertools.permutations(range(E4_SHUFFLED)))
+
+
+def dungeon_for_slot(slot, order):
+    """An exact port of DungeonForSlot. Slot in, dungeon identity out."""
+    if order == 0:
+        return slot
+    if slot < GYM_DUNGEONS:
+        return (slot ^ 1) if (order >> (slot // SHUFFLE_BAND)) & 1 else slot
+    if slot < GYM_DUNGEONS + E4_SHUFFLED:
+        pick = (order >> GYM_BANDS) % len(E4_ORDERS)
+        return GYM_DUNGEONS + E4_ORDERS[pick][slot - GYM_DUNGEONS]
+    return slot
+
+
+def every_order():
+    """All 384 order words the C can roll, identity included."""
+    for bands in range(1 << GYM_BANDS):
+        for pick in range(len(E4_ORDERS)):
+            yield bands | (pick << GYM_BANDS)
 
 
 def is_boss_floor(floor):
@@ -250,6 +301,51 @@ def main():
                   f"is not a boss floor")
             check(not any(is_boss_floor(f) for f in covered[:-1]),
                   f"{mapped} covers a boss floor that is not its last")
+
+    # 7. every permitted dungeon order keeps every boss near its slot's curve.
+    #
+    # Exhaustive, not sampled: 384 orders x 12 shuffled slots is 4,608 pairings
+    # and there are only 12 x 12 distinct ones, so this is cheap and complete.
+    # The finale is excluded - Steven never permutes and is checked above with a
+    # band of his own.
+    print()
+    boss_slots = [s for s in range(DUNGEON_COUNT - 1)]
+    worst_low = (0.0, None)
+    worst_high = (0.0, None)
+    seen = {}
+
+    for order in every_order():
+        for slot in boss_slots:
+            identity = dungeon_for_slot(slot, order)
+            floor = sum(length_of(d) for d in range(slot + 1)) - 1
+            levels = parties[BOSSES[identity]]
+            gap = sum(levels) / len(levels) - target_level(floor)
+            seen[(slot, identity)] = gap
+
+            if gap < worst_low[0]:
+                worst_low = (gap, (slot, identity, floor))
+            if gap > worst_high[0]:
+                worst_high = (gap, (slot, identity, floor))
+
+            check(abs(gap) <= SHUFFLE_TOLERANCE,
+                  f"order {order:#05x}: {BOSSES[identity]} at slot {slot} "
+                  f"(floor {floor + 1}) is {gap:+.1f} off the curve, "
+                  f"past the {SHUFFLE_TOLERANCE} the shuffle allows")
+
+    def describe(entry):
+        gap, place = entry
+        if place is None:
+            return "none"
+        slot, identity, floor = place
+        return (f"{gap:+.1f}  {BOSSES[identity]} at slot {slot}, "
+                f"floor {floor + 1}")
+
+    print(f"shuffle: {len(list(every_order()))} orders "
+          f"({1 << GYM_BANDS} gym x {len(E4_ORDERS)} E4), "
+          f"{len(seen)} distinct slot/boss pairings")
+    print(f"  worst under curve  {describe(worst_low)}")
+    print(f"  worst over curve   {describe(worst_high)}")
+    print(f"  tolerance          {SHUFFLE_TOLERANCE}")
 
     print(f"\nrun: {TOTAL_FLOORS} floors, {DUNGEON_COUNT} dungeons, "
           f"levels {target_level(0)} to {target_level(TOTAL_FLOORS - 1)}")

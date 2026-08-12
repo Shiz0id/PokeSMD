@@ -155,6 +155,73 @@
 #define DUNGEON_ROCK_FIRST_LOCAL_ID \
     (DUNGEON_MAX_TRAINERS + DUNGEON_MAX_ITEMS + DUNGEON_MAX_BERRIES + 1)
 
+// Floor events: the one thing on a floor that asks the player a question.
+//
+// ONE SLOT, AND THE NUMBER IS THE DESIGN. Everything else on a floor is a
+// quantity - more trainers deeper, more item balls deeper - and an event is not
+// that. It is a thing that happens, so a floor has at most one and most floors
+// have none. It also keeps the template cost to exactly one: the floor already
+// declares 19 against an OBJECT_EVENTS_COUNT of 16 that includes the player and
+// a follower, so this takes it to 20 and spawning degrades the documented way,
+// by proximity, with something furthest away silently not appearing. The per-map
+// ceiling is 64.
+//
+// ONE FLOOR IN FOUR, which is ~29 events across a 115-floor run. That is a lot
+// of draws for a small table, which is why the table is BANDED by depth rather
+// than uniform - the events a run meets in its first forty floors are not the
+// ones it meets after eighty, so the repetition is spread across subsets instead
+// of being felt against the whole pool.
+#define DUNGEON_MAX_EVENTS 1
+#define DUNGEON_EVENT_ODDS 4
+
+// A gfxId of this in sFloorEvents means "the sprite is the species the floor
+// rolled", which is how the injured Pokemon wears its own overworld sprite.
+// 0xFFFF rather than 0, because 0 is a real graphics id.
+#define DUNGEON_EVENT_GFX_ROLLED 0xFFFF
+
+// THE TRADE IS SELF-BALANCING, and that is why it needs no other rule. The
+// stranger's Pokemon arrives at the level of the one handed over plus this, so
+// trading the weakest thing on the bench at floor 80 returns a level-15 random
+// against a curve of 45 - useless. Getting something that can fight means giving
+// up something that could. The cost scales itself.
+//
+// The species comes from sSafariLandSpecies: 161 entries, sorted weakest to
+// strongest, every one checked present in the ROM, and every one deliberately a
+// species the run cannot obtain any other way. A uniform roll over that is the
+// payoff-or-bust the trade is for - and it is also why the Safari ladder is the
+// pool for all three of these events rather than the floor's own. A cave mon
+// would be more thematic and strictly less valuable.
+#define DUNGEON_TRADE_LEVEL_BONUS 5
+
+// The injured Pokemon. One in three is feigning, and it ambushes that many
+// levels above the floor - so approaching is the gamble and the odds are good
+// enough that approaching is usually right.
+//
+// BOTH ARE ROLLED AT PREPARE TIME, from the floor's seed, which is what makes
+// them un-scummable: saving and reloading regenerates the same floor and so the
+// same outcome. Rolling on interaction would let a player reload until it joins.
+#define DUNGEON_INJURED_AMBUSH_ODDS  3
+#define DUNGEON_INJURED_AMBUSH_BONUS 5
+
+// Rotten berries. One tree in four yields this instead of DUNGEON_BERRY_YIELD.
+//
+// DERIVED FROM A HASH, NOT FROM DungeonRandom. PlantFloorBerryTrees runs from
+// the template loader rather than from PrepareFloor, so the generation stream is
+// not the right thing to draw from there - it has already been spent, and the
+// loader does not run on every path. DecorHash keyed on the floor seed and the
+// tree index is deterministic, reproduces on reload, and moves nothing else on
+// the floor. Same reason the cosmetic passes use it.
+//
+// One rather than zero. A tree that gives NOTHING is a dud, not a gamble - there
+// is no decision in walking up to it - and reducing the yield keeps the tree
+// worth picking while making the good ones feel like the good ones.
+#define DUNGEON_BERRY_ROTTEN_ODDS  4
+#define DUNGEON_BERRY_ROTTEN_YIELD 1
+
+#define DUNGEON_EVENT_FIRST_LOCAL_ID                                   \
+    (DUNGEON_MAX_TRAINERS + DUNGEON_MAX_ITEMS + DUNGEON_MAX_BERRIES    \
+     + DUNGEON_MAX_ROCKS + 1)
+
 // Runs finished, and whether any ever has. The counter is what the run-complete
 // message reads back; the flag is the door for post-first-run content, which is
 // why it is a flag rather than a comparison on the counter - what unlocks
@@ -165,6 +232,70 @@
 // the bag and the coins, and deliberately not these.
 #define VAR_ROGUE_RUNS_COMPLETED VAR_UNUSED_0x40F8
 #define FLAG_ROGUE_RUN_COMPLETED FLAG_UNUSED_0x91C
+
+// The death summary, and the two vars behind it.
+//
+// VAR_ROGUE_BEST_FLOOR is the deepest floor any run has reached and
+// VAR_ROGUE_LAST_RUN_FLOOR is the floor the run that just ended died on. Both
+// hold the DISPLAYED floor - VAR_ROGUE_DUNGEON_FLOOR + 1, the number
+// RogueDungeon_GetFloorName prints - rather than the internal counter, because
+// zero has to mean "no summary is waiting" and dying on the very first floor
+// is not only possible, it is the commonest way a run ends.
+//
+// Like the two above they survive RogueDungeon_ResetRun, which is the whole
+// point: a loss is the only time either is written and a wipe is what follows
+// it. Claimed from the tail of the unused pool - checked against this file
+// rather than vars.h, since every id the project holds is an alias and the pool
+// still calls it unused.
+#define VAR_ROGUE_BEST_FLOOR     VAR_UNUSED_0x40FB
+#define VAR_ROGUE_LAST_RUN_FLOOR VAR_UNUSED_0x40FC
+
+// THE DUNGEON ORDER SHUFFLE, gated behind FLAG_ROGUE_RUN_COMPLETED so a first
+// playthrough walks vanilla's own progression - Petalburg Woods to Roxanne,
+// through to Steven - and the shuffle is what a clear unlocks.
+//
+// The gate is not only flavour. A shuffle is allowed to be lumpy precisely
+// because the player has already won once, which is what lets this ship with no
+// boss scaling and no re-authored species pools.
+//
+// TWO GROUPS, PERMUTED SEPARATELY AND NEVER ACROSS. DungeonIndexOf,
+// DungeonLengthOf and DungeonFloorWithin are pure functions of the dungeon SLOT,
+// so a permutation confined to the eight gyms or to the Elite Four leaves every
+// floor boundary in the run byte-identical. Moving a five-floor Elite Four
+// dungeon into a ten-floor gym slot is not a tuning problem, it shifts every
+// boundary after it.
+//
+// The gyms move in BANDS OF TWO, which is what keeps this free. Measured against
+// the real curve and the real stock parties, band-of-two permutations hold every
+// boss within -6.5 to +8.0 levels of its floor, against a shipped tolerance of
+// -4.6 (Winona) to +5.3 (Steven). Bands of four reach -16.5 to +16.8, and a free
+// permutation of all eight is ruinous in BOTH directions - Juan on floor 10 at
+// +33.8, a level-13 two-mon Roxanne on floor 80 at -32.0 - which is why band
+// width is the difficulty knob and not a preference.
+//
+// verify_run_structure.py enumerates every permitted permutation and asserts
+// that tolerance, so widening a band fails the build rather than the run.
+#define DUNGEON_SHUFFLE_BAND 2
+
+// The run's order, rolled once when the starters are picked and constant for the
+// rest of the run. Low DUNGEON_GYM_BANDS bits are one swap-or-not per gym band;
+// the bits above them index the Elite Four permutation table.
+//
+// IT NEEDS A VAR OF ITS OWN. VAR_ROGUE_DUNGEON_SEED cannot carry this: the
+// stairs script warps, which re-enters LoadMapFromWarp and rolls a fresh seed
+// every single floor. An order derived from it would reshuffle the dungeons
+// under the player as they descended.
+//
+// Zero means vanilla order, which covers all three ways that happens - the gate
+// is closed, the player turned the toggle off, or the roll genuinely came up
+// identity. The three are indistinguishable because they produce the same run.
+#define VAR_ROGUE_RUN_ORDER VAR_UNUSED_0x40FD
+
+// SET means the player turned the shuffle OFF, so clear - the value every save
+// already holds - is on. Stored inverted for that reason alone: the toggle
+// defaults to enabled once unlocked, and a flag cannot default to set. Same
+// trick optionsAutoRun already plays in option_menu.c.
+#define FLAG_ROGUE_VANILLA_ORDER FLAG_UNUSED_0x91F
 
 // Run lifecycle. A run needs starters on a new game and again after a whiteout,
 // which is what makes a loss send the player back to the beginning.
@@ -238,6 +369,42 @@
 // PARTY experience, and the two compound. This is the knob to turn once play
 // says which way it is wrong.
 #define ROGUE_WILD_EXP_PERCENT 150
+
+// THE ANTI-GRIND CLOCK. Nothing else in a run depletes - the rest stop heals
+// for free, revives never retire from the loot table, and a floor's grass can
+// be walked forever - so without this the level curve is a suggestion and the
+// only real cost of any fight is the player's patience. A roguelike needs the
+// run to push back; this is the cheapest thing that makes it.
+//
+// The shape is a taper, not a cliff. The first ROGUE_GRIND_FREE_KOS wild
+// knockouts on a floor pay ROGUE_WILD_EXP_PERCENT in full, and every one after
+// that pays ROGUE_GRIND_STEP less than the last until it bottoms out at
+// ROGUE_GRIND_MIN_PERCENT. A player crossing a floor normally never sees it; a
+// player standing in one grass patch feels it within a couple of minutes and
+// can still catch, still earn, and still leave whenever they like.
+//
+// TWELVE is measured against a traverse, not chosen. Grass is ~41% of walkable
+// floor and a floor is crossed once, so a full clear lands well inside it - the
+// allowance has to cover the floor the player is actually playing or it is a
+// punishment rather than a clock.
+//
+// Wild knockouts only. Trainers are finite by construction and are the side the
+// level curve is DEFINED against, which is the same reason ROGUE_WILD_EXP_PERCENT
+// does not touch them.
+#define ROGUE_GRIND_FREE_KOS    12
+#define ROGUE_GRIND_STEP        15
+#define ROGUE_GRIND_MIN_PERCENT 25
+
+// The clock itself, packed as (floor << 8) | knockouts.
+//
+// PACKED WITH ITS FLOOR ON PURPOSE, so it needs no reset hook anywhere and
+// cannot be save-scummed. A count that lived on its own would have to be
+// cleared when the floor changes, and the only hook that catches every entry
+// path - ApplyRunConfig - also runs on load-from-save, so saving and reloading
+// on the spot would hand back a fresh allowance. Storing the floor the count
+// belongs to makes the reset implicit: a mismatch reads as zero, and a reload
+// restores a count that still matches its floor.
+#define VAR_ROGUE_FLOOR_WILD_KOS VAR_UNUSED_0x40FA
 
 // The Unown watching the way-station. map.json declares this many slots after
 // the three staff, and the seeder decides how many actually spawn and where -
