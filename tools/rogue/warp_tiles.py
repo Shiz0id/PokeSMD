@@ -86,20 +86,105 @@ TILESET = 'gTileset_RogueMurkyCave'
 # would eat real metatiles.
 BASE_COUNT = 150
 
-# (name, metatile to clone). The clone is that metatile's art exactly; only the
-# behaviour differs, so the descent still looks like the cut stairwell and the
-# alcove still looks like the floor it is cut into.
+# Tiles written by import_tile_sheet.py, asserted for the same reason
+# BASE_COUNT is: the chevron tiles are appended past this, and a stale figure
+# would truncate imported art instead of a previous append.
+BASE_TILE_COUNT = 288
+
+NUM_TILES_IN_PRIMARY = 512
+MAX_TILES_IN_SECONDARY = 512
+
+# (name, metatile to clone, behaviour, chevron).
+#
+# The clone is the source metatile's art; what varies is how much of it
+# survives.
+#
+#   chevron None -> the art exactly, only the ATTRIBUTE changed. No new tiles.
+#   chevron 'W'  -> the art with a west-pointing chevron drawn into its four
+#                   bottom tiles, appended as four NEW tiles.
+#   chevron 'E'  -> those same four tiles, mirrored with the HFLIP BIT and the
+#                   left/right slots swapped. Costs no tiles at all.
+#
+# THE DIRECTION IS NOT DECORATION - IT IS THE FACING FIX. GetAdjustedInitialDirection
+# in src/overworld.c picks which way the player faces on arrival straight from
+# this behaviour: a door faces them SOUTH, a west arrow faces them EAST, an east
+# arrow WEST. Both alcoves are one-tile notches walled on three sides, so the
+# door behaviour they used to carry faced the player into solid rock every time
+# they came back from the game room or the Safari.
+#
+# It also changes the trigger. TryArrowWarp fires while the player is STANDING
+# ON the tile and still holding the direction they face, where a door fires on
+# stepping onto it. For a dead-end notch with exactly one open side that is the
+# same gesture - walk west into it and keep holding west - and it is vanilla's
+# own cave-exit feel.
 DOORS = (
-    ('REST_STOP_DESCENT', 0x295),   # MURKY_METATILE_STAIRS, the cut stairwell
-    ('REST_STOP_ALCOVE', 0x239),    # the murky floor, so the notch reads as rock
+    # MURKY_METATILE_STAIRS, the cut stairwell. Stays a door: it is a DEPARTURE
+    # tile only - the boss script warps to (8,6) by coordinate and never onto
+    # this one - so its arrival facing is never seen, and a door can be stepped
+    # onto from the north, east or west where an arrow warp would need the
+    # player to approach it from exactly one side.
+    ('REST_STOP_DESCENT', 0x295, 'MB_NON_ANIMATED_DOOR', None),
+    # The murky floor, cut west into the rock, through to the game room.
+    ('REST_STOP_ALCOVE_WEST', 0x239, 'MB_WEST_ARROW_WARP', 'W'),
+    # The same notch mirrored, east, through to the Safari Zone.
+    ('REST_STOP_ALCOVE_EAST', 0x239, 'MB_EAST_ARROW_WARP', 'E'),
 )
-DOOR_BEHAVIOUR = MB['MB_NON_ANIMATED_DOOR']
+
+# Palette 7 indices. THE FLOOR ART USES 1-10 AND NOTHING ELSE - measured, not
+# assumed - so drawing in 13 and 11 disturbs no existing pixel and needs no
+# palette change, no new palette slot and no colour matching.
+CHEVRON_BRIGHT = 13    # 239 222 115, the palette's brightest
+CHEVRON_OUTLINE = 11   # 74 41 0, its darkest, so the shape reads at 2x
+
+# THERE IS NO ARROW ANYWHERE IN VANILLA TO REUSE, which is why this is drawn
+# rather than lifted. Every MB_*_ARROW_WARP metatile in the tree was rendered
+# and checked: gTileset_General 0x024, the only arrow warp in any Hoenn
+# tileset, is plain gravel, and the FRLG cave arrows are wall and ground
+# texture. In vanilla an arrow warp is only a TRIGGER - the visual cue is always
+# contextual, a gap in a wall or a cave mouth. Do not go looking for the art
+# again; it is not there.
+
+
+def chevron_mask():
+    """-> {(x, y): palette index} over the 16x16 metatile, pointing WEST.
+
+    Kept free of Pillow so the checker runs where the image libraries are not.
+    """
+    body = set()
+    apex_x, centre_y, half, thick = 5, 8, 5, 3
+
+    for dy in range(-half, half + 1):
+        x = apex_x + abs(dy)
+        for t in range(thick):
+            body.add((x + t, centre_y + dy))
+
+    edge = set()
+    for (x, y) in body:
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                if (x + dx, y + dy) not in body:
+                    edge.add((x + dx, y + dy))
+
+    out = {p: CHEVRON_OUTLINE for p in edge}
+    out.update({p: CHEVRON_BRIGHT for p in body})
+    return {p: v for p, v in out.items() if 0 <= p[0] < 16 and 0 <= p[1] < 16}
+
+
+def chevron_tile_ids():
+    """-> the four tile ids the west chevron occupies, in slot order."""
+    first = NUM_TILES_IN_PRIMARY + BASE_TILE_COUNT
+    return [first + i for i in range(4)]
 
 
 def door_ids():
     """-> {name: metatile id}. Import this rather than hard-coding the ids."""
-    return {name: NUM_METATILES_IN_PRIMARY + BASE_COUNT + i
-            for i, (name, _) in enumerate(DOORS)}
+    return {entry[0]: NUM_METATILES_IN_PRIMARY + BASE_COUNT + i
+            for i, entry in enumerate(DOORS)}
+
+
+def door_sources():
+    """-> {name: metatile it clones}. For callers asserting the theme matches."""
+    return {entry[0]: entry[1] for entry in DOORS}
 
 
 def _paths(symbol):
@@ -109,15 +194,105 @@ def _paths(symbol):
     return ts['metatiles'], ts['attributes']
 
 
+def _tiles_path(symbol):
+    ts = _RESOLVER.resolve(symbol)
+    if not ts:
+        raise SystemExit(f'cannot resolve {symbol}')
+    return ts['tiles']
+
+
+def _write_chevron_tiles(src_entries, write):
+    """Draw the west chevron into the source metatile's four bottom tiles.
+
+    Returns True when tiles.png already holds exactly these tiles. Pillow is
+    imported HERE rather than at module scope so the checker - which every
+    check run and make_rest_stop.py call goes through - still works on a machine
+    with no image library. The repo lives in WSL and Pillow is on the Windows
+    side, which is precisely the split this guards.
+    """
+    from PIL import Image
+
+    path = _tiles_path(TILESET)
+    im = Image.open(path).convert('P')
+    palette = im.getpalette()
+    width, height = im.size
+    per_row = width // 8
+    have = per_row * (height // 8)
+
+    # A tiles.png is a GRID, so its capacity rounds up to a whole row: four
+    # appended tiles turn 288 (18 exact rows) into 19 rows and therefore 304
+    # slots, not 292. Comparing against the unrounded figure reads a correctly
+    # appended sheet as a stale one.
+    def grid_slots(tiles):
+        return -(-tiles // per_row) * per_row
+
+    expected = (grid_slots(BASE_TILE_COUNT), grid_slots(BASE_TILE_COUNT + 4))
+    if have not in expected:
+        raise SystemExit(f'{TILESET} tiles.png holds {have} tiles, expected '
+                         f'{expected[0]} or {expected[1]} - '
+                         f'BASE_TILE_COUNT is stale, fix it before appending')
+    if grid_slots(BASE_TILE_COUNT + 4) > MAX_TILES_IN_SECONDARY:
+        raise SystemExit('exceeds secondary tileset tile capacity')
+
+    # Lift the four source tiles into one 16x16 index grid, draw into it, and
+    # cut it back into four. Drawing on the assembled metatile rather than
+    # per-tile is what lets the chevron cross the tile seams without having to
+    # reason about which pixel lands in which quadrant.
+    grid = [[0] * 16 for _ in range(16)]
+    src = im.load()
+    for slot in range(4):
+        tid = src_entries[slot] & 0x3FF
+        idx = tid - NUM_TILES_IN_PRIMARY
+        tx, ty = (idx % per_row) * 8, (idx // per_row) * 8
+        ox, oy = (slot % 2) * 8, (slot // 2) * 8
+        for y in range(8):
+            for x in range(8):
+                grid[oy + y][ox + x] = src[tx + x, ty + y] & 0xF
+
+    for (x, y), value in chevron_mask().items():
+        grid[y][x] = value
+
+    rows_needed = -(-(BASE_TILE_COUNT + 4) // per_row)
+    out = Image.new('P', (width, rows_needed * 8), 0)
+    out.putpalette(palette)
+    out.paste(im.crop((0, 0, width, (BASE_TILE_COUNT // per_row) * 8)), (0, 0))
+
+    dst = out.load()
+    for slot in range(4):
+        tile = BASE_TILE_COUNT + slot
+        tx, ty = (tile % per_row) * 8, (tile // per_row) * 8
+        ox, oy = (slot % 2) * 8, (slot // 2) * 8
+        for y in range(8):
+            for x in range(8):
+                dst[tx + x, ty + y] = grid[oy + y][ox + x]
+
+    # grid_slots again, not the raw count, or this never matches and the sheet
+    # is rewritten on every run - which looks like churn in git for no change.
+    if have == grid_slots(BASE_TILE_COUNT + 4) and im.size == out.size \
+            and list(im.getdata()) == list(out.getdata()):
+        return True
+    if write:
+        out.save(path)
+        print(f'  tiles.png {have} -> {BASE_TILE_COUNT + 4} tiles '
+              f'(4 chevron tiles at 0x{chevron_tile_ids()[0]:03X})')
+    return False
+
+
 def append(write=False):
     mt_path, at_path = _paths(TILESET)
     mt = bytearray(mt_path.read_bytes())
     at = bytearray(at_path.read_bytes())
     count = len(mt) // 16
 
-    if count not in (BASE_COUNT, BASE_COUNT + len(DOORS)):
+    # A RANGE, not the two exact counts, because the tail already on disk was
+    # written by a PREVIOUS version of the DOORS table and need not be the
+    # length this one produces - growing the table from two entries to three is
+    # exactly that case. What the guard has to prevent is truncating into the
+    # imported set, so the floor is what matters and the ceiling is only a
+    # sanity bound.
+    if not BASE_COUNT <= count <= BASE_COUNT + max(len(DOORS), 8):
         raise SystemExit(f'{TILESET} has {count} metatiles, expected '
-                         f'{BASE_COUNT} or {BASE_COUNT + len(DOORS)} - '
+                         f'{BASE_COUNT} plus a short appended tail - '
                          f'BASE_COUNT is stale, fix it before appending')
 
     def entry_of(metatile):
@@ -127,25 +302,50 @@ def append(write=False):
     def attr_of(metatile):
         return struct.unpack_from('<H', at, (metatile - NUM_METATILES_IN_PRIMARY) * 2)[0]
 
+    chevron_src = None
+    for name, src, _behaviour, chevron in DOORS:
+        if chevron == 'W':
+            chevron_src = entry_of(src)
+    if chevron_src is None:
+        raise SystemExit('no west chevron entry - the east one mirrors it')
+
     # Build the tail against the BASE entries, so this is the same answer
     # whether or not a previous append is still sitting on the end.
     tail_mt, tail_at = b'', b''
-    for name, src in DOORS:
+    for name, src, behaviour, chevron in DOORS:
         if src >= NUM_METATILES_IN_PRIMARY + BASE_COUNT:
             raise SystemExit(f'{name} clones 0x{src:03X}, which is itself '
                              f'appended - clone from the imported set only')
-        tail_mt += struct.pack('<8H', *entry_of(src))
+        entry = list(entry_of(src))
+        if chevron:
+            tiles = chevron_tile_ids()
+            palette = chevron_src[0] & 0xF000
+            if chevron == 'W':
+                bottom = [tiles[0], tiles[1], tiles[2], tiles[3]]
+                flip = 0
+            else:
+                # The horizontal mirror: swap the left and right slots and set
+                # HFLIP on each. Costs no tiles, which is the whole reason the
+                # chevron is only ever drawn once.
+                bottom = [tiles[1], tiles[0], tiles[3], tiles[2]]
+                flip = 1 << 10
+            for slot in range(4):
+                entry[slot] = bottom[slot] | flip | palette
+        tail_mt += struct.pack('<8H', *entry)
         # keep the source's layer type, replace only the behaviour
-        tail_at += struct.pack('<H', (attr_of(src) & ~0xFF) | DOOR_BEHAVIOUR)
+        tail_at += struct.pack('<H', (attr_of(src) & ~0xFF) | MB[behaviour])
 
     ids = door_ids()
-    for name, src in DOORS:
-        print(f'  {name:<20} 0x{ids[name]:03X}  clone of 0x{src:03X}  '
-              f'{MB_NAME[attr_of(src) & 0xFF]} -> {MB_NAME[DOOR_BEHAVIOUR]}')
+    for name, src, behaviour, chevron in DOORS:
+        art = {'W': 'west chevron', 'E': 'east chevron (hflip)'}.get(chevron, 'art unchanged')
+        print(f'  {name:<24} 0x{ids[name]:03X}  from 0x{src:03X}  '
+              f'{MB_NAME[attr_of(src) & 0xFF]} -> {MB_NAME[MB[behaviour]]}  {art}')
+
+    tiles_ok = _write_chevron_tiles(chevron_src, write)
 
     current = bytes(mt[BASE_COUNT * 16:])
     if count == BASE_COUNT + len(DOORS) and current == tail_mt \
-            and bytes(at[BASE_COUNT * 2:]) == tail_at:
+            and bytes(at[BASE_COUNT * 2:]) == tail_at and tiles_ok:
         print(f'  already appended ({count} metatiles, tail matches)')
         return ids
     if not write:

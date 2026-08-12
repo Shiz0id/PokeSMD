@@ -2,7 +2,9 @@
 import re, collections
 from pathlib import Path
 
-MAP = Path(__file__).resolve().parents[2] / 'pokeemerald.map'
+# Globbed, not named: the ROM name is a Makefile setting and has already
+# changed once. See tools/rogue/rom_paths.py.
+MAP = sorted(Path(__file__).resolve().parents[2].glob('*.map'))[0]
 
 lines = MAP.read_text(errors='replace').split('\n')
 

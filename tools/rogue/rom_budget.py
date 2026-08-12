@@ -28,8 +28,11 @@ import os
 import re
 from collections import defaultdict
 from pathlib import Path
+import sys as _sys
+_sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+from rom_paths import find_map
 
-MAP = 'pokeemerald.map'
+
 ROM_ORIGIN = 0x08000000
 
 #  Categories are matched in order, first hit wins, so put the specific ones
@@ -150,7 +153,7 @@ def main():
     args = ap.parse_args()
 
     repo = Path(args.repo)
-    mp = repo / MAP
+    mp = find_map(repo)
     if not mp.exists():
         raise SystemExit(f'{mp} is missing - run make first')
 

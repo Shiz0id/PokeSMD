@@ -24,6 +24,9 @@ fixing the divers.
 import re
 import sys
 from pathlib import Path
+import sys as _sys
+_sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+from rom_paths import find_map
 
 SKIP = {"SPECIES_NONE", "SPECIES_EGG"}
 
@@ -87,9 +90,9 @@ def main(argv):
         return 2
 
     repo = Path(argv[1])
-    mapfile = repo / "pokeemerald.map"
-    if not mapfile.exists():
-        print(f"no {mapfile} -- this is a POST-BUILD check, link first")
+    mapfile = find_map(repo)
+    if mapfile is None or not mapfile.exists():
+        print("no link map in %s -- this is a POST-BUILD check, link first" % repo)
         return 2
 
     symbols = set(re.findall(r"\bgMonFrontPic_(\w+)", mapfile.read_text(errors="ignore")))

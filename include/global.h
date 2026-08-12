@@ -265,6 +265,31 @@ struct PACKED Usm_SavedItems {
     u8 count;
 };
 
+#include "constants/rogue_charms.h"
+
+struct RogueCharm
+{
+    u8 id;        // ROGUE_CHARM_*; ROGUE_CHARM_NONE means the slot is empty
+    u8 duration;  // battles remaining, or ROGUE_CHARM_DURATION_RUN / _ACT
+};
+
+// The run's charms. KEYED ON PERSONALITY, NOT ON PARTY SLOT, and that is the
+// whole correctness story: this build merged both the SwSh party menu and the
+// storage system, so reordering the party and depositing to a box are things
+// the player does constantly. A slot-keyed charm would silently move to
+// whichever Pokemon took the slot.
+//
+// personality[i] is the identity currently occupying slot i, resynced by
+// RogueCharm_SyncParty. mon[i] belongs to that identity, not to that slot.
+struct RogueRunModifiers
+{
+    u32 personality[PARTY_SIZE];
+    struct RogueCharm mon[PARTY_SIZE][ROGUE_CHARMS_PER_MON];
+    struct RogueCharm party[ROGUE_PARTY_CHARM_SLOTS];
+    u8 version;      // ROGUE_CHARMS_SAVE_VERSION; a mismatch zeroes the struct
+    u8 lastDungeon;  // dungeon index last seen, for expiring act-scoped charms
+};
+
 struct SaveBlock3
 {
 #if OW_USE_FAKE_RTC
@@ -284,6 +309,7 @@ struct SaveBlock3
     u8 apricornTrees[NUM_APRICORN_TREE_BYTES];
 #endif
     struct Usm_SavedItems usmSaved;
+    struct RogueRunModifiers rogueCharms;
 }; /* max size 1624 bytes */
 
 extern struct SaveBlock3 *gSaveBlock3Ptr;

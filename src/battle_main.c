@@ -48,6 +48,7 @@
 #include "recorded_battle.h"
 #include "roamer.h"
 #include "rogue_bw_anim.h"
+#include "rogue_charms.h"
 #include "safari_zone.h"
 #include "scanline_effect.h"
 #include "script.h"
@@ -3075,6 +3076,11 @@ static void BattleStartClearSetData(void)
 {
     s32 i;
 
+    // Recoil charms, applied here rather than in the first-turn events because
+    // BeginBattleIntro has not sent anything out yet - the party HP drops before
+    // gBattleMons is built from it. See rogue_charms.c.
+    RogueCharm_OnBattleStart();
+
     TurnValuesCleanUp(FALSE);
     memset(&gSpecialStatuses, 0, sizeof(gSpecialStatuses));
 
@@ -3340,6 +3346,11 @@ void SwitchInClearSetData(enum BattlerId battler, struct Volatiles *volatilesCop
     #endif // TESTING
 
     Ai_UpdateSwitchInData(battler);
+
+    // Charms flagged reapplyOnSwitchIn. LAST, because this function resets every
+    // stat stage to default on its way through and a drop applied earlier would
+    // be wiped by it.
+    RogueCharm_OnSwitchIn(battler);
 }
 
 void FaintClearSetData(enum BattlerId battler)
@@ -3814,8 +3825,25 @@ static void TryDoEventsBeforeFirstTurn(void)
 
         gBattleStruct->speedTieBreaks = RandomUniform(RNG_SPEED_TIE, 0, Factorial(MAX_BATTLERS_COUNT) - 1);
         gBattleTurnCounter = 0;
+        // Stat-drop charms. First point where gBattlerPartyIndexes maps a
+        // battler back to the party slot whose charms these are.
+        RogueCharm_QueueBattleStatDrops();
         gBattleStruct->eventState.beforeFirstTurn++;
         break;
+    case FIRST_TURN_EVENTS_ROGUE_CHARMS:
+    {
+        // One message per charm, returning between each so the main loop can
+        // run the script - the same shape FIRST_TURN_EVENTS_TOTEM_BOOST uses.
+        u32 charmId = RogueCharm_NextAnnouncement();
+        if (charmId != ROGUE_CHARM_NONE)
+        {
+            gBattleCommunication[MULTISTRING_CHOOSER] = charmId;
+            BattleScriptPushCursorAndCallback(RogueBattleScript_CharmAnnounce);
+            return;
+        }
+        gBattleStruct->eventState.beforeFirstTurn++;
+        break;
+    }
     case FIRST_TURN_EVENTS_OVERWORLD_WEATHER:
         gBattleStruct->eventState.beforeFirstTurn++;
         if (TryFieldEffects(FIELD_EFFECT_OVERWORLD_WEATHER))
@@ -5646,6 +5674,10 @@ static void FreeResetData_ReturnToOvOrDoEvolutions(void)
     if (!gPaletteFade.active)
     {
         memset(&gBattleMons, 0, sizeof(struct BattlePokemon) * MAX_BATTLERS_COUNT);
+        // One battle off every duration-limited charm. At battle END, because
+        // the two apply sites are at two different moments during the intro and
+        // a counter ticked at the first would expire before the second read it.
+        RogueCharm_OnBattleEnd();
         gIsFishingEncounter = FALSE;
         gIsSurfingEncounter = FALSE;
         if (gDexNavSpecies && (gBattleOutcome == B_OUTCOME_WON || gBattleOutcome == B_OUTCOME_CAUGHT))

@@ -1154,9 +1154,49 @@ struct MultichoiceListStruct
     u8 count;
 };
 
+
+// The roguelike floor events that offer more than a yes or a no. A multichoice
+// rather than a chain of yes/no boxes: three sequential yes/nos reads as three
+// separate offers being declined, where the drafts are one decision with three
+// branches, and the difference is the whole point of an event.
+static const struct MenuAction MultichoiceList_RogueFossil[] =
+{
+    {COMPOUND_STRING("EXTRACT")},
+    {COMPOUND_STRING("SELL")},
+    {COMPOUND_STRING("STUDY")},
+    {gText_Exit},
+};
+
+static const struct MenuAction MultichoiceList_RogueTotem[] =
+{
+    {COMPOUND_STRING("CHALLENGE")},
+    {COMPOUND_STRING("SNEAK PAST")},
+    {COMPOUND_STRING("LEAVE FOOD")},
+    {gText_Exit},
+};
+
+static const struct MenuAction MultichoiceList_RogueShrine[] =
+{
+    {COMPOUND_STRING("COMMUNE")},
+    {COMPOUND_STRING("OFFERING")},
+    {COMPOUND_STRING("DISTURB")},
+    {gText_Exit},
+};
+
+static const struct MenuAction MultichoiceList_RogueHerbalist[] =
+{
+    {COMPOUND_STRING("BREW")},
+    {COMPOUND_STRING("FORAGE")},
+    {gText_Exit},
+};
+
 static const struct MultichoiceListStruct sMultichoiceLists[] =
 {
     [MULTI_BRINEY_ON_DEWFORD]          = MULTICHOICE(MultichoiceList_BrineyOnDewford),
+    [MULTI_ROGUE_FOSSIL]               = MULTICHOICE(MultichoiceList_RogueFossil),
+    [MULTI_ROGUE_TOTEM]                = MULTICHOICE(MultichoiceList_RogueTotem),
+    [MULTI_ROGUE_SHRINE]               = MULTICHOICE(MultichoiceList_RogueShrine),
+    [MULTI_ROGUE_HERBALIST]            = MULTICHOICE(MultichoiceList_RogueHerbalist),
     [MULTI_PC]                         = MULTICHOICE(MultichoiceList_Exit),
     [MULTI_ENTERINFO]                  = MULTICHOICE(MultichoiceList_EnterInfo),
     [MULTI_CONTEST_INFO]               = MULTICHOICE(MultichoiceList_ContestInfo),

@@ -52,6 +52,10 @@ enum BattleIntroStates
 enum FirstTurnEventsStates
 {
     FIRST_TURN_EVENTS_START,
+    // Announces the run's charms. Its own state because it prints one message
+    // per charm and has to return to the main loop between them, the same shape
+    // FIRST_TURN_EVENTS_TOTEM_BOOST uses.
+    FIRST_TURN_EVENTS_ROGUE_CHARMS,
     FIRST_TURN_EVENTS_OVERWORLD_WEATHER,
     FIRST_TURN_EVENTS_TERRAIN,
     FIRST_TURN_EVENTS_STARTING_STATUS,

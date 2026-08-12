@@ -28,6 +28,9 @@ import argparse
 import re
 import sys
 from pathlib import Path
+import sys as _sys
+_sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+from rom_paths import find_map
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 try:
@@ -476,7 +479,7 @@ def verify_against_link_map(repo, pools):
 
     Needs a built ROM; skipped with a warning if there is not one.
     """
-    mapfile = repo / 'pokeemerald.map'
+    mapfile = find_map(repo)
     if not mapfile.exists():
         return None
     present = set(re.findall(r'gMonFrontPic_(\w+)', mapfile.read_text(errors='replace')))

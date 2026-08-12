@@ -20,6 +20,7 @@
 #include "util.h"
 #include "battle_scripts.h"
 #include "random.h"
+#include "rogue_charms.h"
 #include "text.h"
 #include "safari_zone.h"
 #include "sound.h"
@@ -7648,6 +7649,23 @@ s32 ApplyModifiersAfterDmgRoll(struct DamageContext *ctx, s32 dmg)
     DAMAGE_APPLY_MODIFIER(GetBurnOrFrostBiteModifier(ctx));
     DAMAGE_APPLY_MODIFIER(GetZMaxMoveAgainstProtectionModifier(ctx));
     DAMAGE_APPLY_MODIFIER(GetOtherModifiers(ctx));
+
+    // Roguelike damage-taken charms. LAST, and after the type multiplier has
+    // already been applied, because the charm is defined as extra damage on a
+    // super-effective hit - it needs the effectiveness to have been decided.
+    //
+    // Applied to the DEFENDER's party Pokemon, so it follows the mon rather than
+    // the battler slot, and it costs nothing when no charm is held.
+    if (IsOnPlayerSide(ctx->battlerDef))
+    {
+        struct Pokemon *party = GetBattlerParty(ctx->battlerDef);
+        u32 extra = RogueCharm_ExtraDamagePercent(
+            &party[gBattlerPartyIndexes[ctx->battlerDef]],
+            ctx->typeEffectivenessModifier > UQ_4_12(1.0));
+
+        if (extra != 0)
+            DAMAGE_APPLY_MODIFIER(UQ_4_12(1.0) + (UQ_4_12(1.0) * extra) / 100);
+    }
 
     return dmg;
 }

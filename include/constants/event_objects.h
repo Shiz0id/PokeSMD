@@ -416,6 +416,14 @@ enum
     OBJ_EVENT_GFX_ROGUE_DIVER_M,
     OBJ_EVENT_GFX_ROGUE_DIVER_F,
     OBJ_EVENT_GFX_ROGUE_DIVER_JUAN,
+    // A PALETTE SWAP of the breakable rock - same sprite data, different
+    // colours. That is the whole cost of "a giant crackling geode".
+    OBJ_EVENT_GFX_ROGUE_CRYSTAL,
+    // The Mt Pyre gravestone, lifted out of gTileset_Facility metatile
+    // 0x2EE by tools/rogue/make_grave_sprite.py. A SPRITE rather than a
+    // metatile because a metatile id means a different thing under every
+    // tileset pair, and the shrine has to work in all fourteen themes.
+    OBJ_EVENT_GFX_ROGUE_GRAVE,
     NUM_OBJ_EVENT_GFX,
 };
 
@@ -613,6 +621,8 @@ enum
 // Juan gets his own - PrepareFloor returns before PlaceTrainers on a boss
 // floor, so he is never on screen beside them.
 #define OBJ_EVENT_PAL_TAG_ROGUE_DIVER             0x116B
+#define OBJ_EVENT_PAL_TAG_ROGUE_CRYSTAL           0x116E
+#define OBJ_EVENT_PAL_TAG_ROGUE_GRAVE             0x116F
 #define OBJ_EVENT_PAL_TAG_ROGUE_DIVER_JUAN        0x116C
 
 #define OBJ_EVENT_PAL_TAG_SUBSTITUTE              0x7611

@@ -27,6 +27,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from check_pool_evolutions import (  # noqa: E402
+import sys as _sys
+_sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+from rom_paths import find_map
     build_prevo, min_level, read_babies, read_evolutions,
 )
 
@@ -79,7 +82,7 @@ def in_rom(repo):
     Amoonguss: real enum constants, absent sprites, and 200-odd wasted entries.
     """
     import re
-    path = repo / "pokeemerald.map"
+    path = find_map(repo)
     if not path.is_file():
         die("no pokeemerald.map -- build first; the link map is the only proof "
             "a species survived the generation toggles")

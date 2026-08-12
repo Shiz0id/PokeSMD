@@ -75,6 +75,7 @@
 #include "load_save.h"
 #include "battle_partner.h"
 #include "rogue_dungeon.h"
+#include "rogue_charms.h"
 
 enum FollowerNPCCreateDebugMenu
 {
@@ -281,6 +282,8 @@ static void DebugAction_Util_WatchCredits(u8 taskId);
 static void DebugAction_Util_CheatStart(u8 taskId);
 static void DebugAction_Util_RogueFloor(u8 taskId);
 static void DebugAction_Util_RogueFloor_SelectFloor(u8 taskId);
+static void DebugAction_Util_RogueCharms(u8 taskId);
+static void DebugAction_Util_RogueCharms_Select(u8 taskId);
 
 static void DebugAction_TimeMenu_ChangeTimeOfDay(u8 taskId);
 static void DebugAction_TimeMenu_ChangeWeekdays(u8 taskId);
@@ -445,6 +448,7 @@ static const u8 sDebugText_Util_WarpToMap_SelectWarp[] =     _("Warp:{CLEAR_TO 9
 static const u8 sDebugText_Util_WarpToMap_SelMax[] =         _("{STR_VAR_1} / {STR_VAR_2}");
 static const u8 sDebugText_Util_Weather_ID[] =               _("Weather ID: {STR_VAR_3}\n{STR_VAR_1}\n{STR_VAR_2}");
 static const u8 sDebugText_Util_RogueFloor[] =               _("Floor: {STR_VAR_1}\n{STR_VAR_2}\n{STR_VAR_3}");
+static const u8 sDebugText_Util_RogueCharms[] =              _("{STR_VAR_1} -> {STR_VAR_2}\nA grant  SELECT wipe\n{STR_VAR_3}");
 static const u8 sDebugText_Util_RogueFloor_OfTotal[] =       _("{STR_VAR_1} / {STR_VAR_2}");
 
 //Time Menu
@@ -589,6 +593,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("Fly to map…"),       DebugAction_Util_Fly },
     { COMPOUND_STRING("Warp to map warp…"), DebugAction_Util_Warp_Warp },
     { COMPOUND_STRING("Rogue floor warp…"), DebugAction_Util_RogueFloor },
+    { COMPOUND_STRING("Rogue charms…"),     DebugAction_Util_RogueCharms },
     { COMPOUND_STRING("Set weather…"),      DebugAction_Util_Weather },
     { COMPOUND_STRING("Font Test…"),        DebugAction_ExecuteScript, Debug_EventScript_FontTest },
     { COMPOUND_STRING("Time Functions…"),   DebugAction_OpenSubMenu, sDebugMenu_Actions_TimeMenu, },
@@ -1767,6 +1772,99 @@ static void DebugAction_Util_RogueFloor(u8 taskId)
         gTasks[taskId].tInput = DUNGEON_TOTAL_FLOORS;
 
     DebugRogueFloor_Redraw(taskId);
+}
+
+// Grant any charm to any party slot, or to the party-wide row, and watch what
+// the run is holding. UP/DOWN picks the charm, LEFT/RIGHT the target.
+//
+// The readout is redrawn after every grant, so the live listing IS the test:
+// grant a charm here, back out, reorder the party in the party menu, and come
+// back. If the charm followed the Pokemon, the resync works. That check cannot
+// be written host-side, which is the whole reason this tool exists.
+static void DebugRogueCharms_Redraw(u8 taskId)
+{
+    StringCopy(gStringVar1, RogueCharm_GetName(gTasks[taskId].tInput));
+    RogueCharm_GetDebugTargetName(gTasks[taskId].tDigit, gStringVar2);
+    RogueCharm_GetDebugSummary(gStringVar3);
+
+    StringExpandPlaceholders(gStringVar4, sDebugText_Util_RogueCharms);
+    AddTextPrinterParameterized(gTasks[taskId].tSubWindowId, DEBUG_MENU_FONT, gStringVar4, 0, 0, 0, NULL);
+}
+
+static void DebugAction_Util_RogueCharms(u8 taskId)
+{
+    u8 windowId;
+
+    ClearStdWindowAndFrame(gTasks[taskId].tWindowId, TRUE);
+    RemoveWindow(gTasks[taskId].tWindowId);
+
+    HideMapNamePopUpWindow();
+    LoadMessageBoxAndBorderGfx();
+    windowId = AddWindow(&sDebugMenuWindowTemplateWeather);
+    DrawStdWindowFrame(windowId, FALSE);
+
+    CopyWindowToVram(windowId, COPYWIN_FULL);
+
+    gTasks[taskId].func = DebugAction_Util_RogueCharms_Select;
+    gTasks[taskId].tSubWindowId = windowId;
+
+    // tInput is the charm id and tDigit the target, reusing the floor tool's
+    // task slots rather than adding fields - they mean whatever the tool using
+    // them says they mean, and nothing else reads them.
+    gTasks[taskId].tInput = ROGUE_CHARM_NONE + 1;
+    gTasks[taskId].tDigit = 0;
+
+    DebugRogueCharms_Redraw(taskId);
+}
+
+static void DebugAction_Util_RogueCharms_Select(u8 taskId)
+{
+    if (JOY_NEW(DPAD_UP))
+    {
+        PlaySE(SE_SELECT);
+        if (++gTasks[taskId].tInput >= ROGUE_CHARM_COUNT)
+            gTasks[taskId].tInput = ROGUE_CHARM_NONE + 1;
+        DebugRogueCharms_Redraw(taskId);
+    }
+    else if (JOY_NEW(DPAD_DOWN))
+    {
+        PlaySE(SE_SELECT);
+        if (--gTasks[taskId].tInput <= ROGUE_CHARM_NONE)
+            gTasks[taskId].tInput = ROGUE_CHARM_COUNT - 1;
+        DebugRogueCharms_Redraw(taskId);
+    }
+    else if (JOY_NEW(DPAD_RIGHT))
+    {
+        PlaySE(SE_SELECT);
+        if (++gTasks[taskId].tDigit > PARTY_SIZE)
+            gTasks[taskId].tDigit = 0;
+        DebugRogueCharms_Redraw(taskId);
+    }
+    else if (JOY_NEW(DPAD_LEFT))
+    {
+        PlaySE(SE_SELECT);
+        if (--gTasks[taskId].tDigit < 0)
+            gTasks[taskId].tDigit = PARTY_SIZE;
+        DebugRogueCharms_Redraw(taskId);
+    }
+
+    if (JOY_NEW(A_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        RogueCharm_DebugGrant(gTasks[taskId].tInput, gTasks[taskId].tDigit);
+        DebugRogueCharms_Redraw(taskId);
+    }
+    else if (JOY_NEW(SELECT_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        RogueCharm_ResetRun();
+        DebugRogueCharms_Redraw(taskId);
+    }
+    else if (JOY_NEW(B_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        DebugAction_DestroyExtraWindow(taskId);
+    }
 }
 
 static void DebugAction_Util_RogueFloor_SelectFloor(u8 taskId)

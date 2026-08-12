@@ -91,17 +91,26 @@ ELEV_FLOOR, ELEV_WALL = 3, 0
 # A warp_event does nothing on a tile whose behaviour is not a warp behaviour,
 # and both of these were plain rock - the descent MB_NORMAL, the alcove MB_CAVE
 # - so both warps were dead the moment this layout replaced the Pokemon Center.
-# warp_tiles.py appends a clone of each with MB_NON_ANIMATED_DOOR, the
-# behaviour vanilla's own cave descent carries. Same art, same eight tiles.
+# warp_tiles.py appends a clone of each carrying a real warp behaviour.
+#
+# THE TWO ALCOVES ARE NOT THE SAME TILE ANY MORE, and the difference is the
+# facing fix. They were one shared MB_NON_ANIMATED_DOOR clone, and a door faces
+# the arriving player SOUTH - which in a one-tile notch walled on three sides is
+# solid rock. They are now a west and an east ARROW warp, which face the player
+# back into the chamber and carry a drawn chevron so the notch reads as a way
+# out rather than as a dead end. See the DOORS table in warp_tiles.py.
 DOOR = warp_tiles.door_ids()
 DESCENT = DOOR['REST_STOP_DESCENT']
-ALCOVE = DOOR['REST_STOP_ALCOVE']
+ALCOVE_WEST = DOOR['REST_STOP_ALCOVE_WEST']
+ALCOVE_EAST = DOOR['REST_STOP_ALCOVE_EAST']
 
 # The clones must be clones OF THIS THEME'S tiles. Checked rather than assumed,
 # because the ids live in two files and a theme swap would silently point the
 # doors at whatever the murky tileset happened to have in those slots.
-assert dict(warp_tiles.DOORS)['REST_STOP_DESCENT'] == STAIRS_DOWN
-assert dict(warp_tiles.DOORS)['REST_STOP_ALCOVE'] == FLOOR
+_SRC = warp_tiles.door_sources()
+assert _SRC['REST_STOP_DESCENT'] == STAIRS_DOWN
+assert _SRC['REST_STOP_ALCOVE_WEST'] == FLOOR
+assert _SRC['REST_STOP_ALCOVE_EAST'] == FLOOR
 
 # The chamber. Walls are two thick everywhere so no cell ever has floor on
 # opposite sides - the sliver slots exist for generated floors and are art this
@@ -116,9 +125,10 @@ assert dict(warp_tiles.DOORS)['REST_STOP_ALCOVE'] == FLOOR
 #   G  the alcove cut west into the rock, through to the game room
 #   S  the alcove cut east into the rock, through to the Safari Zone
 #
-# G and S are the same art and the same door metatile - a one-tile notch in the
-# wall, mirrored. They are told apart by which warp_event sits on them, not by
-# anything in the layout.
+# G and S are a mirrored pair of one-tile notches. They are DIFFERENT metatiles:
+# the arrow has to point the way the player is walking, so the west notch cannot
+# use the east notch's tile. Which warp_event sits on them still decides where
+# they go - the metatile only decides the facing and the art.
 PLAN = (
     '#################',
     '#################',
@@ -135,11 +145,13 @@ PLAN = (
     '#################',
 )
 
-# Everything that is not wall, by plan character. The alcove looks like plain
-# floor - there is no door art in a tileset made of cut rock, and a one-tile
-# notch in a wall reads as a way through on its own - but it and the descent are
-# the DOOR clones, so the engine will fire their warps.
-OPEN = {'.': FLOOR, 'X': DESCENT, 'G': ALCOVE, 'S': ALCOVE}
+# Everything that is not wall, by plan character.
+#
+# The alcoves used to be plain floor on the reasoning that "a one-tile notch in
+# a wall reads as a way through on its own". PLAY SAYS OTHERWISE - neither side
+# of either entrance had any cue that it was one - so they now carry a drawn
+# chevron pointing the way out.
+OPEN = {'.': FLOOR, 'X': DESCENT, 'G': ALCOVE_WEST, 'S': ALCOVE_EAST}
 
 
 def is_wall(plan, x, y):

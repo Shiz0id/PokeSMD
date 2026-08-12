@@ -891,6 +891,18 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_LIGHTSCREENWOREOFF]                   = COMPOUND_STRING("{B_DEF_TEAM1} team's Light Screen wore off!"),
     [STRINGID_AURORAVEILWOREOFF]                    = COMPOUND_STRING("{B_DEF_TEAM1} team's Aurora Veil wore off!"),
     [STRINGID_STICKYWEBDISAPPEAREDFROMYOU]          = COMPOUND_STRING("The sticky web has disappeared from the ground around you!"),
+    // Roguelike charms. Each names what the player is losing, because the
+    // effect has ALREADY happened by the time this prints - recoil is taken
+    // before the intro and the stat drops before the first turn, so without
+    // these lines the player sees a shorter HP bar and no reason for it.
+    [STRINGID_ROGUECHARM_UNSTABLE]                  = COMPOUND_STRING("The unstable energy tore at your party!"),
+    [STRINGID_ROGUECHARM_OVEREXERTED]               = COMPOUND_STRING("The forbidden training took its toll!"),
+    [STRINGID_ROGUECHARM_CURSED]                    = COMPOUND_STRING("The ancient curse weakened your party's defenses!"),
+    [STRINGID_ROGUECHARM_SLUGGISH]                  = COMPOUND_STRING("The bitter brew left your party sluggish!"),
+    [STRINGID_ROGUECHARM_EMBOLDENED]                = COMPOUND_STRING("The blessing steeled your party's resolve!"),
+    [STRINGID_ROGUECHARM_REJUVENATING]              = COMPOUND_STRING("A gentle warmth flowed through your party!"),
+    [STRINGID_ROGUECHARM_FRAIL]                     = COMPOUND_STRING("The forbidden training has left scars!"),
+    [STRINGID_ROGUECHARM_HEXED]                     = COMPOUND_STRING("An ancient hex leaves your party exposed!"),
 };
 
 const u16 gTrainerUsedItemStringIds[] =

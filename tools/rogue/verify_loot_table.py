@@ -101,6 +101,46 @@ def known_items():
     return set(re.findall(r'^\s*(ITEM_[A-Z0-9_]+)', ITEMS.read_text(encoding='utf-8'), re.M))
 
 
+# THE REPORT ABOVE COUNTS KINDS; THE PLAYER EXPERIENCES WEIGHTS.
+#
+# "3 util entries against 1 potion entry" reads as variety, and it was not: the
+# Potion carried weight 22 against 8, 8 and 6, so HALF of every early item ball
+# was the same Potion. Reported from play as "it is all I have picked up this
+# run", and every category count above said nothing about it.
+#
+# Same lesson as the events table, arrived at independently twice: a weight means
+# nothing without what it competes against, so print the SHARE.
+def consumable_shares(rows, floor):
+    """[(item, percent chance)] on this floor, most likely first."""
+    live = [r for r in rows if r[2] <= floor < r[3]]
+    total = sum(r[1] for r in live)
+    if not total:
+        return []
+    return sorted(((r[0], 100.0 * r[1] / total) for r in live),
+                  key=lambda kv: -kv[1])
+
+
+def report_shares(rows, floors):
+    print()
+    print('what an item ball actually holds, by chance')
+    worst, worst_at = 0.0, None
+    for f in (0, 5, 15, 25, 45, 70, 100):
+        if f >= floors:
+            continue
+        shares = consumable_shares(rows, f)
+        if not shares:
+            continue
+        head = ', '.join('%s %.0f%%' % (n.replace('ITEM_', ''), pct)
+                         for n, pct in shares[:4])
+        print('  floor %-4d %s' % (f, head))
+        if shares[0][1] > worst:
+            worst, worst_at = shares[0][1], (f, shares[0][0])
+    if worst_at:
+        print('  most concentrated: floor %d, %s at %.0f%%'
+              % (worst_at[0], worst_at[1].replace('ITEM_', ''), worst))
+    return worst
+
+
 def main(argv):
     rows = parse_table()
     total_floors = constant('DUNGEON_TOTAL_FLOORS', 115)
@@ -185,6 +225,8 @@ def main(argv):
               f'{per_ball:>8.1f}  {per_floor:>9.1f}')
 
     failures.extend(check_held(total_floors))
+    report_shares(rows, total_floors)
+
     failures.extend(check_berries(total_floors))
 
     print()

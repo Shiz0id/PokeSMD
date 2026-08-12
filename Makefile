@@ -1,5 +1,9 @@
 GAME_VERSION ?= EMERALD
-TITLE        ?= POKEMON EMER
+# Shattered Mystery Dungeon. The GBA header title field is EXACTLY 12 bytes -
+# "SHATTERED MD" fills it. GAME_CODE is deliberately left as BPEE: emulators
+# and save managers key save files off it, so changing it orphans existing
+# .sav files for no gain.
+TITLE        ?= SHATTERED MD
 GAME_CODE    ?= BPEE
 BUILD_NAME   ?= emerald
 MAP_VERSION  ?= emerald
@@ -26,7 +30,10 @@ REVISION    := 0
 KEEP_TEMPS  ?= 0
 
 # `File name`.gba
-FILE_NAME := poke$(BUILD_NAME)
+# Set outright rather than derived from BUILD_NAME, because BUILD_NAME also
+# names the object directory (build/emerald) - deriving it would move every
+# object path and force a full rebuild for a cosmetic rename.
+FILE_NAME := PokeSMD
 BUILD_DIR := build
 
 # Compares the ROM to a checksum of the original - only makes sense using when non-modern

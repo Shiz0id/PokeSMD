@@ -1662,12 +1662,20 @@ struct RogueFloorMapOverride
 // and for the same reason: one floor in four rolls an event across 115 floors, so
 // a uniform table would show every event about five times a run. Bands mean the
 // run's first stretch and its last draw from different subsets.
+// EVERY FIELD BELOW THE FIRST FOUR IS DEFAULT-SAFE. A row that sets none of them
+// gets a normal weight, every theme, and no prop - so adding an event stays a
+// four-field job, and forgetting the new fields cannot make an event silently
+// unreachable. That is deliberate: the failure this table already had was a band
+// nothing could roll, invisible in the build and invisible in play.
 struct RogueFloorEvent
 {
     u16 gfxId;
     const u8 *script;
     u8 minFloor;    // inclusive, 0-based run floor
     u8 maxFloor;    // inclusive; DUNGEON_TOTAL_FLOORS means "never retires"
+    u8 weight;      // 0 = DUNGEON_EVENT_WEIGHT_DEFAULT; lower is rarer
+    u16 themeMask;  // 0 = any theme; else DUNGEON_EVENT_THEME(t) bits
+    u16 propGfxId;  // 0 = none; else an object placed on an adjacent tile
 };
 
 // Half-resolution grid for DUNGEON_GEN_WOODS, so a cell is one 2x2 stamp.
@@ -1868,6 +1876,12 @@ void RogueDungeon_GiveBossAce(void);
 u16 RogueDungeon_IsDungeonEndFloor(void);
 u16 RogueDungeon_IsRunCompleteFloor(void);
 u16 RogueDungeon_PrepareBossAceOffer(void);
+u16 RogueDungeon_AbandonBossAce(void);
+
+// Not a specialvar target - called from GetBattleBGM in src/pokemon.c. Returns
+// 0 for any trainer that is not one of the fourteen dungeon bosses, which is
+// what leaves every other battle on the engine's own class-derived choice.
+u16 RogueDungeon_GetBossBGM(u16 trainerId);
 u16 RogueDungeon_GiveBossTM(void);
 bool8 RogueDungeon_IsGeneratedTrainer(void);
 bool8 RogueDungeon_HasTrainerBeenBeaten(u8 objectEventId);

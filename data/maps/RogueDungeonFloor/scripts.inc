@@ -170,9 +170,12 @@ RogueDungeonFloor_Text_Stairs:
 RogueDungeonFloor_EventScript_EventSpring::
 	lock
 	faceplayer
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
 	msgbox RogueDungeonFloor_Text_SpringOffer, MSGBOX_YESNO
 	compare VAR_RESULT, NO
 	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	setvar VAR_ROGUE_EVENT_SPENT, 1
 	special HealPlayerParty
 	playfanfare MUS_HEAL
 	waitfanfare
@@ -189,6 +192,8 @@ RogueDungeonFloor_EventScript_EventSpring::
 RogueDungeonFloor_EventScript_EventGambler::
 	lock
 	faceplayer
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
 	special RogueDungeon_BufferEventStake
 	compare VAR_RESULT, 0
 	goto_if_eq RogueDungeonFloor_EventScript_EventGamblerBroke
@@ -198,6 +203,7 @@ RogueDungeonFloor_EventScript_EventGambler::
 	special RogueDungeon_ResolveEventStake
 	compare VAR_RESULT, 0
 	goto_if_eq RogueDungeonFloor_EventScript_EventGamblerLost
+	setvar VAR_ROGUE_EVENT_SPENT, 1
 	msgbox RogueDungeonFloor_Text_GamblerWon, MSGBOX_DEFAULT
 	playfanfare MUS_OBTAIN_ITEM
 	waitfanfare
@@ -221,6 +227,8 @@ RogueDungeonFloor_EventScript_EventGamblerBroke::
 RogueDungeonFloor_EventScript_EventPedlar::
 	lock
 	faceplayer
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
 	special RogueDungeon_BufferEventWares
 	compare VAR_RESULT, 0
 	goto_if_eq RogueDungeonFloor_EventScript_EventPedlarBroke
@@ -230,6 +238,7 @@ RogueDungeonFloor_EventScript_EventPedlar::
 	special RogueDungeon_BuyEventWares
 	compare VAR_RESULT, 0
 	goto_if_eq RogueDungeonFloor_EventScript_EventPedlarNoRoom
+	setvar VAR_ROGUE_EVENT_SPENT, 1
 	playfanfare MUS_OBTAIN_ITEM
 	waitfanfare
 	msgbox RogueDungeonFloor_Text_PedlarBought, MSGBOX_DEFAULT
@@ -259,6 +268,8 @@ RogueDungeonFloor_EventScript_EventPedlarBroke::
 RogueDungeonFloor_EventScript_EventTrader::
 	lock
 	faceplayer
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
 	special RogueDungeon_EventTraderCanTrade
 	compare VAR_RESULT, 0
 	goto_if_eq RogueDungeonFloor_EventScript_EventTraderAlone
@@ -277,6 +288,7 @@ RogueDungeonFloor_EventScript_EventTrader::
 	special RogueDungeon_EventTraderDo
 	compare VAR_RESULT, 0
 	goto_if_eq RogueDungeonFloor_EventScript_EventTraderDeclined
+	setvar VAR_ROGUE_EVENT_SPENT, 1
 	playfanfare MUS_OBTAIN_ITEM
 	waitfanfare
 	msgbox RogueDungeonFloor_Text_TraderDone, MSGBOX_DEFAULT
@@ -294,12 +306,15 @@ RogueDungeonFloor_EventScript_EventTraderAlone::
 RogueDungeonFloor_EventScript_EventEgg::
 	lock
 	faceplayer
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
 	msgbox RogueDungeonFloor_Text_EggOffer, MSGBOX_YESNO
 	compare VAR_RESULT, NO
 	goto_if_eq RogueDungeonFloor_EventScript_EventDone
 	special RogueDungeon_EventEggTake
 	compare VAR_RESULT, 0
 	goto_if_eq RogueDungeonFloor_EventScript_EventEggNoRoom
+	setvar VAR_ROGUE_EVENT_SPENT, 1
 	playfanfare MUS_EVOLVED
 	waitfanfare
 	msgbox RogueDungeonFloor_Text_EggHatched, MSGBOX_DEFAULT
@@ -317,18 +332,31 @@ RogueDungeonFloor_EventScript_EventEggNoRoom::
 @
 @ The ambush goes through a special rather than setwildbattle because that command
 @ takes its level as a byte literal, and this one is the floor's level plus five.
+@
+@ THE PROMPT COMES BEFORE THE REVEAL, and it is the same prompt either way. The
+@ first cut branched to the ambush BEFORE asking anything, so a feigning Pokemon
+@ jumped the player with no choice offered at all - the decision the event is
+@ built around only existed on the outcome that was already safe. Now approaching
+@ is the wager, and what was swaying at you is what you find out.
+@
+@ VAR_ROGUE_EVENT_SCRATCH holds the answer across the msgbox, because
+@ MSGBOX_YESNO writes into VAR_RESULT and would destroy it.
 RogueDungeonFloor_EventScript_EventInjured::
 	lock
 	faceplayer
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
 	special RogueDungeon_EventInjuredApproach
-	compare VAR_RESULT, 0
-	goto_if_eq RogueDungeonFloor_EventScript_EventInjuredAmbush
-	msgbox RogueDungeonFloor_Text_InjuredOffer, MSGBOX_YESNO
+	copyvar VAR_ROGUE_EVENT_SCRATCH, VAR_RESULT
+	msgbox RogueDungeonFloor_Text_InjuredApproach, MSGBOX_YESNO
 	compare VAR_RESULT, NO
 	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	compare VAR_ROGUE_EVENT_SCRATCH, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventInjuredAmbush
 	special RogueDungeon_EventInjuredJoin
 	compare VAR_RESULT, 0
 	goto_if_eq RogueDungeonFloor_EventScript_EventInjuredNoRoom
+	setvar VAR_ROGUE_EVENT_SPENT, 1
 	playfanfare MUS_OBTAIN_ITEM
 	waitfanfare
 	msgbox RogueDungeonFloor_Text_InjuredJoined, MSGBOX_DEFAULT
@@ -338,15 +366,16 @@ RogueDungeonFloor_EventScript_EventInjuredNoRoom::
 	msgbox RogueDungeonFloor_Text_InjuredNoRoom, MSGBOX_DEFAULT
 	goto RogueDungeonFloor_EventScript_EventDone
 
-@ No yes/no here on purpose. Approaching WAS the choice, and a prompt after the
-@ trap has sprung would be the game asking permission to spring it.
-RogueDungeonFloor_EventScript_EventInjuredAmbush::
+@ Reached only after the player chose to approach, so there is no second prompt:
+@ approaching WAS the choice, and asking again after the trap has sprung would be
+@ the game requesting permission to spring it.
 @ And the bag is NOT locked. An ambusher is an ordinary wild Pokemon and should
 @ be catchable - FLAG_SYS_NO_BAG_USE is for battles the player must not win with
 @ a ball, which this is not. Catching the thing that jumped you is the best
 @ outcome this event has.
 RogueDungeonFloor_EventScript_EventInjuredAmbush::
 	msgbox RogueDungeonFloor_Text_InjuredAmbush, MSGBOX_DEFAULT
+	setvar VAR_ROGUE_EVENT_SPENT, 1
 	special RogueDungeon_EventInjuredAmbush
 	dowildbattle
 	release
@@ -355,9 +384,26 @@ RogueDungeonFloor_EventScript_EventInjuredAmbush::
 @ Shared tail. The NPC is NOT removed after being used: a floor is never
 @ revisited - the stairs warp into a freshly generated one - so there is nothing
 @ to persist and no flag to spend on it.
+@
+@ THAT REASONING HAS A HOLE, and it shipped: it is about coming BACK to a floor
+@ and says nothing about talking to the same NPC twice while standing on it.
+@ Every event was repeatable - infinite eggs, infinite heals, infinite money from
+@ the fossil, and a trader that ratcheted a Pokemon up five levels a conversation.
+@ VAR_ROGUE_EVENT_SPENT is the guard; see its note in constants/rogue_dungeon.h.
 RogueDungeonFloor_EventScript_EventDone::
 	release
 	end
+
+@ Reached when the floor's event has already been taken. Deliberately NOT silent:
+@ an NPC who stops responding reads as broken, where one who says the moment has
+@ passed reads as an event that happened.
+RogueDungeonFloor_EventScript_EventSpent::
+	msgbox RogueDungeonFloor_Text_EventSpent, MSGBOX_DEFAULT
+	release
+	end
+
+RogueDungeonFloor_Text_EventSpent:
+	.string "There is nothing more for you here.$"
 
 RogueDungeonFloor_Text_SpringOffer:
 	.string "An old woman is resting beside a\n"
@@ -443,10 +489,9 @@ RogueDungeonFloor_Text_EggNoRoom:
 	.string "“You have no room for it. Come back\n"
 	.string "lighter and it is yours.”$"
 
-RogueDungeonFloor_Text_InjuredOffer:
-	.string "A {STR_VAR_1} is curled up here.\n"
-	.string "It is hurt, and it is watching you.\p"
-	.string "Help it?$"
+RogueDungeonFloor_Text_InjuredApproach:
+	.string "A {STR_VAR_1} is swaying dangerously.\p"
+	.string "Approach it?$"
 
 RogueDungeonFloor_Text_InjuredJoined:
 	.string "The {STR_VAR_1} got to its feet.\p"
@@ -457,7 +502,7 @@ RogueDungeonFloor_Text_InjuredNoRoom:
 	.string "full party, and settled back down.$"
 
 RogueDungeonFloor_Text_InjuredAmbush:
-	.string "The {STR_VAR_1} was not hurt at all!$"
+	.string "The {STR_VAR_1} was not injured after all!$"
 
 @ Shared by every generated trainer. The opponent is picked per floor, so the
 @ ordinary trainerbattle command cannot be used - it bakes the trainer id in at
@@ -495,19 +540,60 @@ RogueDungeonFloor_EventScript_ItemBall::
 @ answers "you already beat this trainer" by jumping to the post-battle script.
 @ So only the exit half may repeat. The reward half is behind a flag, or the ace
 @ could be taken once per conversation until the party was full of clones.
+@ THE ORDER OF THE FIRST THREE CALLS IS THE WHOLE SCENE, and it is why the
+@ vanish comes before the TM rather than after. The boss is not defeated here so
+@ much as taken: they cry for help, they lose, and then they are simply gone.
+@ Their TM hitting the floor is the evidence they were ever standing there, so
+@ it has to land on an empty tile - dropped by nobody. Reordered, the TM is
+@ handed over by a trainer who then disappears, which is a different and much
+@ weaker beat.
 RogueDungeonFloor_EventScript_BossDone::
 	special RogueDungeon_OnBossDefeated
 	goto_if_set FLAG_ROGUE_BOSS_REWARD_TAKEN, RogueDungeonFloor_EventScript_BossExit
 	setflag FLAG_ROGUE_BOSS_REWARD_TAKEN
+	call RogueDungeonFloor_EventScript_BossVanish
 	call RogueDungeonFloor_EventScript_BossTM
 	call RogueDungeonFloor_EventScript_BossAce
 	goto RogueDungeonFloor_EventScript_BossExit
 
+@ Swaps the boss object for their abandoned ace, in place. Declines on a mini
+@ boss floor, so this is a no-op there.
+@
+@ THE OBJECT LEFT STANDING HERE IS THE ONLY WAY OFF THE FLOOR. A dungeon boss
+@ arena draws no stairs - RogueDungeon_OnBossDefeated returns early on exactly
+@ these floors - so the exit is a conversation, and deleting the boss without
+@ putting something talkable in its place seals the run permanently. The ace
+@ inherits this same script, which is what keeps the re-talk exit working: it
+@ re-enters here, finds the reward flag already set, and falls straight through
+@ to BossExit.
+@ A specialvar rather than a special so the mini boss floors, which share this
+@ whole script, skip the message as well as the swap. Nothing is abandoned
+@ there, so "the trainer disappeared" would be a lie told over a grunt who is
+@ still standing in front of the player.
+RogueDungeonFloor_EventScript_BossVanish::
+	specialvar VAR_RESULT, RogueDungeon_AbandonBossAce
+	goto_if_eq VAR_RESULT, FALSE, RogueDungeonFloor_EventScript_BossVanishDone
+	msgbox RogueDungeonFloor_Text_BossVanished, MSGBOX_DEFAULT
+RogueDungeonFloor_EventScript_BossVanishDone::
+	return
+
 @ The stock game's Gym reward. Both specials decline on a mini boss floor, so
 @ this whole block is a no-op there.
+@
+@ Two message boxes rather than one, and the pause between them is the point.
+@ The drop line names no item and no trainer: the player has just been told the
+@ boss vanished, and something falling out of that empty air is the beat. The
+@ receipt line then names it, from the STR_VAR_1 that GiveBossTM's CopyItemName
+@ leaves behind - a TM's name in this build IS "TM39", see src/data/items.h.
+@
+@ THAT CLOBBER IS LOAD BEARING IN BOTH DIRECTIONS. GiveBossTM overwrites the
+@ trainer name the vanish message just used, which is fine because the vanish
+@ message has already printed - and it is why PrepareBossAceOffer re-buffers the
+@ trainer name rather than trusting the one BossVanish put there.
 RogueDungeonFloor_EventScript_BossTM::
 	specialvar VAR_RESULT, RogueDungeon_GiveBossTM
 	goto_if_eq VAR_RESULT, FALSE, RogueDungeonFloor_EventScript_BossTMDone
+	msgbox RogueDungeonFloor_Text_TMDropped, MSGBOX_DEFAULT
 	playfanfare MUS_OBTAIN_TMHM
 	msgbox RogueDungeonFloor_Text_GotTM, MSGBOX_DEFAULT
 	waitfanfare
@@ -537,9 +623,14 @@ RogueDungeonFloor_EventScript_BossAceDone::
 @ the choice to a point where the dungeon is already survived and there is no
 @ cost left to weigh, which makes the ace automatic and the wager a formality.
 @
-@ Naming the ace is what makes it a wager rather than a loss: STR_VAR_1 is
+@ Naming the ace is what makes it a wager rather than a loss: STR_VAR_2 is
 @ already buffered by RogueDungeon_PrepareBossAceOffer, so the player learns
 @ exactly which Pokemon they walked past and can price the next one.
+@
+@ It is STR_VAR_2 and not STR_VAR_1 because the offer now names the TRAINER as
+@ well as the species, and the trainer took the first slot. The Pokemon is still
+@ standing on the floor when this prints - it is only the adoption that is
+@ refused, not the abandonment.
 RogueDungeonFloor_EventScript_BossAceNoRoom::
 	msgbox RogueDungeonFloor_Text_AceNoRoom, MSGBOX_DEFAULT
 	return
@@ -611,6 +702,15 @@ RogueDungeonFloor_EventScript_ToRestStop::
 RogueDungeonFloor_Text_TrainerIntro::
 	.string "You there! Let us settle this here!$"
 
+@ Every dungeon boss says this and no ordinary trainer does. Deliberately not
+@ per-boss: fourteen distinct pleas would read as fourteen characters, and the
+@ whole point is that whatever is down here has reduced all of them to the same
+@ one voice. The stammer is doing the work, so it stays exactly as short as it
+@ is - a longer line gives the player time to read it as dialogue rather than
+@ hear it as panic.
+RogueDungeonFloor_Text_BossIntro::
+	.string "H-H-Help me!$"
+
 RogueDungeonFloor_Text_BossCleared:
 	.string "The way onward has opened!$"
 
@@ -640,20 +740,42 @@ RogueDungeonFloor_Text_PickFirst:
 RogueDungeonFloor_Text_PickSecond:
 	.string "And one more to stand beside them.$"
 
+@ STR_VAR_1 is the TRAINER's name and STR_VAR_2 the species, both buffered by
+@ RogueDungeon_PrepareBossAceOffer. Naming the trainer in the possessive while
+@ they are the one thing no longer on the floor is what makes the abandonment
+@ land - it is still their Nosepass, and they are gone.
+@
+@ EVERY LINE HERE IS TRAINER NEUTRAL and must stay that way: one string serves
+@ all fourteen bosses, so nothing may assume a gender, a title or a party size.
+@ The line breaks are placed for the LONGEST names the table can produce -
+@ TATE&LIZA with a seven-letter species - not for the Roxanne case they were
+@ drafted against.
 RogueDungeonFloor_Text_OfferAce:
-	.string "Their {STR_VAR_1} stayed behind,\n"
-	.string "and it is watching you.\p"
-	.string "Take it with you?$"
+	.string "{STR_VAR_1}'s {STR_VAR_2} lets out\n"
+	.string "a cry and looks at you pleadingly.\p"
+	.string "Adopt {STR_VAR_2} into your party?$"
 
 RogueDungeonFloor_Text_AceJoined:
-	.string "{STR_VAR_1} joined your team!$"
+	.string "{STR_VAR_2} joined your team!$"
 
 RogueDungeonFloor_Text_AceNoRoom:
-	.string "Their {STR_VAR_1} watched you go.\p"
+	.string "{STR_VAR_1}'s {STR_VAR_2} watched\n"
+	.string "you go.\p"
 	.string "There was no room for it.$"
 
+@ Printed on a floor the boss has just vanished from, before the fanfare and the
+@ receipt line. Names NO item and no trainer - something falls out of the empty
+@ air the boss left, and only the next box says what it was.
+RogueDungeonFloor_Text_TMDropped:
+	.string "A TM fell to the floor\n"
+	.string "with a thud.$"
+
+@ STR_VAR_1 is the trainer name, buffered by RogueDungeon_AbandonBossAce.
+RogueDungeonFloor_Text_BossVanished:
+	.string "{STR_VAR_1} disappeared!$"
+
 RogueDungeonFloor_Text_GotTM:
-	.string "You received {STR_VAR_1}!$"
+	.string "Received {STR_VAR_1}!$"
 
 @ A mining rock. The minigame is a special, so this is a lock, a call and a
 @ cleanup -- StartMining sets its own callback and returns to the field itself,
@@ -669,3 +791,568 @@ RogueDungeonFloor_EventScript_MiningRock::
 	special StartMining
 	releaseall
 	end
+
+@ ============================================================ the second slate
+@
+@ Eight more events. NONE of them needed a map or a single pixel: each is a
+@ stock overworld sprite, a msgbox, and a special. Where a draft asked for a
+@ setting -- a dig site, an overgrown cabin -- the setting is the PROP object
+@ beside the NPC, which sFloorEvents places for them.
+@
+@ Every one that costs the player something uses the same BUFFER-then-RESOLVE
+@ split the gambler and pedlar established: the real figure is shown before the
+@ yes/no, and the commit cannot disagree with what was offered.
+
+@ ---------------------------------------------------------------- the scout
+@
+@ THE RUN'S FIRST SHINY, and the reason this is a trainer rather than the
+@ drafted timed enclosure. The draft wanted a three-turn Safari minigame with
+@ bait and rocks; what it was really asking for was a rare encounter the player
+@ has to decide to chase, and a trainer pointing at one does that with no new
+@ battle mode at all.
+RogueDungeonFloor_EventScript_EventScout::
+	lock
+	faceplayer
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
+	special RogueDungeon_EventScoutApproach
+	msgbox RogueDungeonFloor_Text_ScoutOffer, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventScoutDeclined
+	msgbox RogueDungeonFloor_Text_ScoutLead, MSGBOX_DEFAULT
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	special RogueDungeon_EventScoutBattle
+	dowildbattle
+	release
+	end
+
+RogueDungeonFloor_EventScript_EventScoutDeclined::
+	msgbox RogueDungeonFloor_Text_ScoutDeclined, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+@ --------------------------------------------------------- the memorial shrine
+@
+@ Theme-restricted in sFloorEvents, because the grave the old woman stands at is
+@ a PROP and not every theme has one worth standing at.
+@
+@ The commune branch is only a real choice because Revives are scarce -- see
+@ DUNGEON_LOOT_REVIVE_WEIGHT. It was cut from the first slate for exactly that
+@ reason and came back with the loot change.
+RogueDungeonFloor_EventScript_EventShrine::
+	lock
+	faceplayer
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
+	msgbox RogueDungeonFloor_Text_ShrineIntro, MSGBOX_DEFAULT
+	multichoice 0, 0, MULTI_ROGUE_SHRINE, FALSE
+	switch VAR_RESULT
+	case 0, RogueDungeonFloor_EventScript_EventShrineCommune
+	case 1, RogueDungeonFloor_EventScript_EventShrineOffering
+	case 2, RogueDungeonFloor_EventScript_EventShrineDisturb
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventShrineCommune::
+	special RogueDungeon_EventShrineCanRevive
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventShrineNothing
+	msgbox RogueDungeonFloor_Text_ShrineCommuneOffer, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	special RogueDungeon_EventShrineRevive
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventShrineNothing
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	playfanfare MUS_HEAL
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_ShrineCommuneDone, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+@ The counterplay charms were built for. Refuses to charge when there is nothing
+@ to cleanse, which is the whole reason RogueCharm_ScriptCount exists.
+RogueDungeonFloor_EventScript_EventShrineOffering::
+	special RogueDungeon_EventShrineOffer
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventShrineNoCurse
+	compare VAR_RESULT, 2
+	goto_if_eq RogueDungeonFloor_EventScript_EventShrineBroke
+	msgbox RogueDungeonFloor_Text_ShrineOfferingAsk, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	special RogueDungeon_EventShrineCleanse
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventShrineBroke
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	playfanfare MUS_HEAL
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_ShrineOfferingDone, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventShrineDisturb::
+	msgbox RogueDungeonFloor_Text_ShrineDisturb, MSGBOX_DEFAULT
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	special RogueDungeon_EventShrineGhost
+	dowildbattle
+	release
+	end
+
+RogueDungeonFloor_EventScript_EventShrineNothing::
+	msgbox RogueDungeonFloor_Text_ShrineNothing, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventShrineBroke::
+	msgbox RogueDungeonFloor_Text_ShrineBroke, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventShrineNoCurse::
+	msgbox RogueDungeonFloor_Text_ShrineNoCurse, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+@ ------------------------------------------------------------- the herbalist
+@
+@ Stands beside a berry tree, which is her whole setting. The drafted "fully
+@ revive all fainted Pokemon" is HealPlayerParty, which already does that -- so
+@ the only new thing here is the price, and the price is a charm.
+RogueDungeonFloor_EventScript_EventHerbalist::
+	lock
+	faceplayer
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
+	msgbox RogueDungeonFloor_Text_HerbIntro, MSGBOX_DEFAULT
+	multichoice 0, 0, MULTI_ROGUE_HERBALIST, FALSE
+	switch VAR_RESULT
+	case 0, RogueDungeonFloor_EventScript_EventHerbBrew
+	case 1, RogueDungeonFloor_EventScript_EventHerbForage
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventHerbBrew::
+	msgbox RogueDungeonFloor_Text_HerbBrewOffer, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	special RogueDungeon_EventHerbBrew
+	playfanfare MUS_HEAL
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_HerbBrewDone, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventHerbForage::
+	special RogueDungeon_EventHerbForage
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventHerbNoRoom
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	playfanfare MUS_OBTAIN_ITEM
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_HerbForageDone, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventHerbNoRoom::
+	msgbox RogueDungeonFloor_Text_HerbNoRoom, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+@ ------------------------------------------------------------ the fossil dig
+@
+@ A hiker beside a breakable rock. The drafted "underground dig site with two
+@ fossils embedded in the rock wall" is exactly that, and needed no map.
+RogueDungeonFloor_EventScript_EventFossil::
+	lock
+	faceplayer
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
+	special RogueDungeon_EventFossilOffer
+	msgbox RogueDungeonFloor_Text_FossilIntro, MSGBOX_DEFAULT
+	multichoice 0, 0, MULTI_ROGUE_FOSSIL, FALSE
+	switch VAR_RESULT
+	case 0, RogueDungeonFloor_EventScript_EventFossilTake
+	case 1, RogueDungeonFloor_EventScript_EventFossilSell
+	case 2, RogueDungeonFloor_EventScript_EventFossilStudy
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventFossilTake::
+	msgbox RogueDungeonFloor_Text_FossilTakeAsk, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	special RogueDungeon_EventFossilTake
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventFossilNoRoom
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	playfanfare MUS_OBTAIN_ITEM
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_FossilTaken, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventFossilSell::
+	msgbox RogueDungeonFloor_Text_FossilSellAsk, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	special RogueDungeon_EventFossilSell
+	playfanfare MUS_OBTAIN_ITEM
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_FossilSold, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventFossilStudy::
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	special RogueDungeon_EventFossilStudy
+	playfanfare MUS_OBTAIN_ITEM
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_FossilStudied, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventFossilNoRoom::
+	msgbox RogueDungeonFloor_Text_FossilNoRoom, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+@ ------------------------------------------------------- the shady move tutor
+@
+@ ChoosePartyMon, NOT the move tutor's own selection flow. That one filters to
+@ Pokemon which CAN learn the move, and teaching a move the Pokemon could never
+@ have learned is the entire point of this event.
+RogueDungeonFloor_EventScript_EventTutor::
+	lock
+	faceplayer
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
+	msgbox RogueDungeonFloor_Text_TutorIntro, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	special ChoosePartyMon
+	waitstate
+	compare VAR_0x8004, PARTY_NOTHING_CHOSEN
+	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	special RogueDungeon_EventTutorOffer
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventTutorRefused
+	compare VAR_RESULT, 2
+	goto_if_eq RogueDungeonFloor_EventScript_EventTutorOverwrite
+	msgbox RogueDungeonFloor_Text_TutorOfferFree, MSGBOX_YESNO
+	goto RogueDungeonFloor_EventScript_EventTutorConfirm
+
+@ The move being LOST is named before the yes/no. Overwriting a move without
+@ saying which would be the least fair thing in the run.
+RogueDungeonFloor_EventScript_EventTutorOverwrite::
+	msgbox RogueDungeonFloor_Text_TutorOfferOverwrite, MSGBOX_YESNO
+	goto RogueDungeonFloor_EventScript_EventTutorConfirm
+
+RogueDungeonFloor_EventScript_EventTutorConfirm::
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	special RogueDungeon_EventTutorTeach
+	playfanfare MUS_LEVEL_UP
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_TutorTaught, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventTutorRefused::
+	msgbox RogueDungeonFloor_Text_TutorRefused, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+@ ------------------------------------------------- the volatile evolution crystal
+@
+@ ULTRA RARE -- see its weight in sFloorEvents. It is a palette variant of the
+@ breakable rock rather than new art, which is what made "a giant crackling
+@ geode" cost nothing.
+RogueDungeonFloor_EventScript_EventCrystal::
+	lock
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
+	msgbox RogueDungeonFloor_Text_CrystalIntro, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	special ChoosePartyMon
+	waitstate
+	compare VAR_0x8004, PARTY_NOTHING_CHOSEN
+	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	special RogueDungeon_EventCrystalOffer
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventCrystalCannot
+	msgbox RogueDungeonFloor_Text_CrystalOffer, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	special RogueDungeon_EventCrystalEvolve
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventCrystalCannot
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	playfanfare MUS_EVOLVED
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_CrystalEvolved, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventCrystalCannot::
+	msgbox RogueDungeonFloor_Text_CrystalCannot, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+@ --------------------------------------------------------- the Ditto item ball
+@
+@ A trap that looks exactly like a reward, which is why it wears the item ball
+@ sprite and says nothing until it is touched.
+@
+@ A DOUBLE battle: Ditto's own Transform copies the player's lead, so the trap
+@ fights back with the team that walked into it and no code makes that happen.
+RogueDungeonFloor_EventScript_EventDittoBall::
+	lock
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
+	msgbox RogueDungeonFloor_Text_DittoSpring, MSGBOX_DEFAULT
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	special RogueDungeon_EventDittoAmbush
+	dowildbattle
+	release
+	end
+
+@ ------------------------------------------------------------ the enraged totem
+@
+@ Wears the rolled species' own overworld sprite, the same way the injured
+@ Pokemon does. NO LEGENDARIES: the pool it draws from carries none.
+@
+@ The stat boost is settotemboost, the engine's OWN totem-battle feature -- it
+@ brings its own animation and its own message, and reimplementing it in C would
+@ have been a second copy of something already in the build.
+RogueDungeonFloor_EventScript_EventTotem::
+	lock
+	faceplayer
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
+	special RogueDungeon_EventTotemApproach
+	msgbox RogueDungeonFloor_Text_TotemIntro, MSGBOX_DEFAULT
+	multichoice 0, 0, MULTI_ROGUE_TOTEM, FALSE
+	switch VAR_RESULT
+	case 0, RogueDungeonFloor_EventScript_EventTotemFight
+	case 1, RogueDungeonFloor_EventScript_EventTotemSneak
+	case 2, RogueDungeonFloor_EventScript_EventTotemFeed
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventTotemFight::
+	msgbox RogueDungeonFloor_Text_TotemFight, MSGBOX_DEFAULT
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	special RogueDungeon_EventTotemBattle
+	settotemboost B_POSITION_OPPONENT_LEFT, 1, 1, 1, 1, 1
+	dowildbattle
+	release
+	end
+
+RogueDungeonFloor_EventScript_EventTotemSneak::
+	special RogueDungeon_EventTotemSneak
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventTotemBroke
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	msgbox RogueDungeonFloor_Text_TotemSneak, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventTotemFeed::
+	special RogueDungeon_EventTotemFeed
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventTotemNoFood
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	msgbox RogueDungeonFloor_Text_TotemFeed, MSGBOX_DEFAULT
+	dowildbattle
+	release
+	end
+
+RogueDungeonFloor_EventScript_EventTotemBroke::
+	msgbox RogueDungeonFloor_Text_TotemBroke, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventTotemNoFood::
+	msgbox RogueDungeonFloor_Text_TotemNoFood, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+@ ------------------------------------------------------------------------ text
+
+RogueDungeonFloor_Text_ScoutOffer:
+	.string "I have been tracking a {STR_VAR_1}\n"
+	.string "through these halls for days.\p"
+	.string "It is not like the others. Will you\n"
+	.string "help me corner it?$"
+
+RogueDungeonFloor_Text_ScoutLead:
+	.string "There! Do you see how it shines?$"
+
+RogueDungeonFloor_Text_ScoutDeclined:
+	.string "Then I will keep looking alone.$"
+
+RogueDungeonFloor_Text_ShrineIntro:
+	.string "An old woman tends a grave here.\p"
+	.string "The flames above it burn purple,\n"
+	.string "and they do not flicker.$"
+
+RogueDungeonFloor_Text_ShrineCommuneOffer:
+	.string "The spirits will trade, she says.\p"
+	.string "Your lead's strength for one who\n"
+	.string "has already fallen. Agreed?$"
+
+RogueDungeonFloor_Text_ShrineCommuneDone:
+	.string "{STR_VAR_1} drew breath again.$"
+
+RogueDungeonFloor_Text_ShrineNothing:
+	.string "The flames stay still.\p"
+	.string "There is nothing here to trade for.$"
+
+RogueDungeonFloor_Text_ShrineOfferingAsk:
+	.string "Leave an offering, she says, and\n"
+	.string "what clings to you may let go.\p"
+	.string "{STR_VAR_2} of them cling to you.\n"
+	.string "The offering is {STR_VAR_1}. Pay it?$"
+
+RogueDungeonFloor_Text_ShrineBroke:
+	.string "She looks at your empty hands and\n"
+	.string "says nothing at all.$"
+
+RogueDungeonFloor_Text_ShrineOfferingDone:
+	.string "The purple flames guttered out,\n"
+	.string "and the weight went with them.$"
+
+RogueDungeonFloor_Text_ShrineNoCurse:
+	.string "She looks you over and shakes\n"
+	.string "her head. Nothing clings to you.$"
+
+RogueDungeonFloor_Text_ShrineDisturb:
+	.string "You reach into the flames.\p"
+	.string "Something reaches back!$"
+
+RogueDungeonFloor_Text_HerbIntro:
+	.string "An old woman is stripping the tree\n"
+	.string "beside her with practised hands.$"
+
+RogueDungeonFloor_Text_HerbBrewOffer:
+	.string "She offers a bitter brew.\p"
+	.string "It will wake every one of them, she\n"
+	.string "says, but they will be slow for a\l"
+	.string "long while after. Drink it?$"
+
+RogueDungeonFloor_Text_HerbBrewDone:
+	.string "Your team stirred and stood.$"
+
+RogueDungeonFloor_Text_HerbForageDone:
+	.string "You gathered {STR_VAR_2} {STR_VAR_1}!$"
+
+RogueDungeonFloor_Text_HerbNoRoom:
+	.string "You had nowhere to put them.$"
+
+RogueDungeonFloor_Text_FossilIntro:
+	.string "A hiker is working at the rock face.\p"
+	.string "Something old is set into it, and it\n"
+	.string "is not stone.$"
+
+RogueDungeonFloor_Text_FossilTakeAsk:
+	.string "He can free it, he says, but the\n"
+	.string "rock is not the only thing set here.\p"
+	.string "Take the fossil anyway?$"
+
+RogueDungeonFloor_Text_FossilTaken:
+	.string "{STR_VAR_1} came loose from the rock!$"
+
+RogueDungeonFloor_Text_FossilNoRoom:
+	.string "Your team was full.\p"
+	.string "He set it back into the rock.$"
+
+RogueDungeonFloor_Text_FossilSellAsk:
+	.string "A curator would pay {STR_VAR_1} for\n"
+	.string "this, he says. Sell it?$"
+
+RogueDungeonFloor_Text_FossilSold:
+	.string "He counted it out on the spot.$"
+
+RogueDungeonFloor_Text_FossilStudied:
+	.string "You studied the carvings around\n"
+	.string "the fossil for a long while.\p"
+	.string "Your team learned something.$"
+
+RogueDungeonFloor_Text_TutorIntro:
+	.string "Someone is leaning against the wall\n"
+	.string "with their collar up.\p"
+	.string "They know techniques nothing here\n"
+	.string "should know. Interested?$"
+
+RogueDungeonFloor_Text_TutorOfferFree:
+	.string "{STR_VAR_2} can be taught {STR_VAR_1}.\p"
+	.string "It will leave a mark. Go ahead?$"
+
+RogueDungeonFloor_Text_TutorOfferOverwrite:
+	.string "{STR_VAR_2} can be taught {STR_VAR_1},\n"
+	.string "but it will forget {STR_VAR_3}.\p"
+	.string "It will leave a mark, too.\n"
+	.string "Go ahead?$"
+
+RogueDungeonFloor_Text_TutorTaught:
+	.string "{STR_VAR_2} learned {STR_VAR_1}!$"
+
+RogueDungeonFloor_Text_TutorRefused:
+	.string "They look that one over and\n"
+	.string "wave you away.$"
+
+RogueDungeonFloor_Text_CrystalIntro:
+	.string "A geode the size of a door stands\n"
+	.string "here, crackling.\p"
+	.string "Hold something up to it?$"
+
+RogueDungeonFloor_Text_CrystalOffer:
+	.string "The light bends around {STR_VAR_1}.\p"
+	.string "It could become {STR_VAR_2} right\n"
+	.string "now, ready or not. Let it?$"
+
+RogueDungeonFloor_Text_CrystalEvolved:
+	.string "{STR_VAR_1} became {STR_VAR_2}!\p"
+	.string "Something in it will not settle.$"
+
+RogueDungeonFloor_Text_CrystalCannot:
+	.string "The light passed straight through.\n"
+	.string "Nothing happened.$"
+
+RogueDungeonFloor_Text_DittoSpring:
+	.string "You reach for the ball.\p"
+	.string "It reaches back!$"
+
+RogueDungeonFloor_Text_TotemIntro:
+	.string "A {STR_VAR_1} blocks the way, far\n"
+	.string "larger than it has any right to be.\p"
+	.string "Something glitters behind it.$"
+
+RogueDungeonFloor_Text_TotemFight:
+	.string "It draws itself up!$"
+
+RogueDungeonFloor_Text_TotemSneak:
+	.string "You scatter {STR_VAR_2} worth of\n"
+	.string "supplies and slip past in the fuss.$"
+
+RogueDungeonFloor_Text_TotemBroke:
+	.string "You have nothing to distract it with.$"
+
+RogueDungeonFloor_Text_TotemFeed:
+	.string "You set the {STR_VAR_2} down and\n"
+	.string "step back.\p"
+	.string "It calms, and looks at you plainly.$"
+
+RogueDungeonFloor_Text_TotemNoFood:
+	.string "You have nothing it would want.$"
+
+@ The dungeon's berry trees. Vanilla's BerryTreeScript everywhere except for one
+@ check in front of it.
+@
+@ A ROTTEN TREE IS A DUD AND SAYS SO. It used to yield 1 berry against a good
+@ tree's 6, which is invisible unless the player is counting - the mechanic was
+@ working perfectly and had never once been noticed. Now it gives nothing and
+@ tells you why, which is the difference between a rule and a rumour.
+@
+@ The tree is left standing rather than removed. A floor is never revisited, so
+@ there is nothing to gain by clearing it, and a withered tree the player can
+@ walk back past is a better memory of the floor than an empty tile.
+RogueDungeonFloor_EventScript_BerryTree::
+	lockall
+	special RogueDungeon_EventBerryIsRotten
+	compare VAR_RESULT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_BerryTreeRotten
+	releaseall
+	goto BerryTreeScript
+	end
+
+RogueDungeonFloor_EventScript_BerryTreeRotten::
+	msgbox RogueDungeonFloor_Text_BerryRotten, MSGBOX_DEFAULT
+	releaseall
+	end
+
+RogueDungeonFloor_Text_BerryRotten:
+	.string "The berries on this tree are black\n"
+	.string "and shrivelled.\p"
+	.string "There is nothing worth taking.$"

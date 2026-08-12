@@ -139,6 +139,50 @@ def dungeon_maps():
     return found
 
 
+# Every static the object template builder reads to decide how many of a thing
+# to spawn. If PrepareFloor does not zero one of these before it branches, the
+# arena path - which returns early, without ever reaching the placers - leaves
+# the PREVIOUS floor's value standing and the builder spawns that many objects at
+# last floor's coordinates.
+#
+# That shipped, and playing found it: boss and mini boss floors carried the
+# previous floor's event NPC, item balls, berry trees and mining rocks.
+PLACEMENT_COUNTERS = ('sRoomCount', 'sTrainerCount', 'sItemCount',
+                      'sBerryCount', 'sRockCount', 'sEventCount')
+
+
+def check_counter_resets(repo):
+    """Is every placement counter zeroed before PrepareFloor can branch away?
+
+    Checked against the PROLOGUE only - the text between the function opening
+    and the first early return - because a reset that happens after the arena
+    path has already returned is not a reset at all.
+    """
+    src = (repo / 'src/rogue_dungeon.c').read_text(errors='replace')
+
+    m = re.search(r'\nstatic void PrepareFloor\b', src)
+    if m is None:
+        m = re.search(r'\nvoid PrepareFloor\b', src)
+    if m is None:
+        return ['could not find PrepareFloor in src/rogue_dungeon.c']
+
+    tail = src[m.start():]
+    stop = tail.find('IsBossFloor(floor)')
+    if stop < 0:
+        return ['PrepareFloor has no boss-floor branch; this check needs '
+                'rewriting for whatever replaced it']
+    prologue = tail[:stop]
+
+    fails = []
+    for name in PLACEMENT_COUNTERS:
+        if not re.search(r'\b%s\s*=\s*0\s*;' % name, prologue):
+            fails.append('%s is not zeroed in PrepareFloor before it branches, '
+                         'so a boss or mini boss floor keeps the previous '
+                         "floor's value and spawns objects that are not there"
+                         % name)
+    return fails
+
+
 def main(argv):
     trainers = constant('DUNGEON_MAX_TRAINERS')
     items = constant('DUNGEON_MAX_ITEMS')
@@ -179,6 +223,10 @@ def main(argv):
         with open(path, 'w', encoding='utf-8', newline='\n') as f:
             f.write(json.dumps(doc, indent=2) + '\n')
         print(f'  {" ":<24}      rewrote {path.relative_to(REPO)}')
+
+    for msg in check_counter_resets(REPO):
+        print('  %s' % msg)
+        failed = True
 
     if failed:
         raise SystemExit('object event counts do not match - re-run with --write')

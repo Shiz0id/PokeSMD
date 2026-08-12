@@ -645,6 +645,7 @@ gSpecials::
 	def_special RogueDungeon_OnBossDefeated
 	def_special RogueDungeon_IsDungeonEndFloor
 	def_special RogueDungeon_GiveChosenStarter
+	def_special RogueDungeon_AbandonBossAce
 	def_special RogueDungeon_PrepareBossAceOffer
 	def_special RogueDungeon_GiveBossAce
 	def_special RogueDungeon_GiveBossTM
@@ -668,6 +669,29 @@ gSpecials::
 	def_special RogueDungeon_EventInjuredApproach
 	def_special RogueDungeon_EventInjuredJoin
 	def_special RogueDungeon_EventInjuredAmbush
+	def_special RogueDungeon_EventBerryIsRotten
+	def_special RogueDungeon_EventScoutApproach
+	def_special RogueDungeon_EventScoutBattle
+	def_special RogueDungeon_EventShrineCanRevive
+	def_special RogueDungeon_EventShrineRevive
+	def_special RogueDungeon_EventShrineOffer
+	def_special RogueDungeon_EventShrineCleanse
+	def_special RogueDungeon_EventShrineGhost
+	def_special RogueDungeon_EventHerbBrew
+	def_special RogueDungeon_EventHerbForage
+	def_special RogueDungeon_EventFossilOffer
+	def_special RogueDungeon_EventFossilTake
+	def_special RogueDungeon_EventFossilSell
+	def_special RogueDungeon_EventFossilStudy
+	def_special RogueDungeon_EventTutorOffer
+	def_special RogueDungeon_EventTutorTeach
+	def_special RogueDungeon_EventCrystalOffer
+	def_special RogueDungeon_EventCrystalEvolve
+	def_special RogueDungeon_EventDittoAmbush
+	def_special RogueDungeon_EventTotemApproach
+	def_special RogueDungeon_EventTotemBattle
+	def_special RogueDungeon_EventTotemFeed
+	def_special RogueDungeon_EventTotemSneak
 	def_special Special_ViewVoltorbFlip
 	def_special StartFlappyBird
 	def_special StartSnake

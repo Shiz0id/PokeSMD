@@ -711,6 +711,18 @@ enum StringID
     STRINGID_LIGHTSCREENWOREOFF,
     STRINGID_AURORAVEILWOREOFF,
     STRINGID_STICKYWEBDISAPPEAREDFROMYOU,
+    // Roguelike charms. One line per charm rather than one line with the charm
+    // name buffered into it: the battle string buffers can only splice in
+    // strings that are themselves STRINGIDs, and a per-charm sentence reads far
+    // better than "Cursed took hold!" anyway.
+    STRINGID_ROGUECHARM_UNSTABLE,
+    STRINGID_ROGUECHARM_OVEREXERTED,
+    STRINGID_ROGUECHARM_CURSED,
+    STRINGID_ROGUECHARM_SLUGGISH,
+    STRINGID_ROGUECHARM_EMBOLDENED,
+    STRINGID_ROGUECHARM_REJUVENATING,
+    STRINGID_ROGUECHARM_FRAIL,
+    STRINGID_ROGUECHARM_HEXED,
     STRINGID_COUNT
 };
 

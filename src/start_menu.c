@@ -71,6 +71,7 @@ enum
     MENU_ACTION_STAT_EDITOR,
     MENU_ACTION_DEBUG,
     MENU_ACTION_DEXNAV,
+    MENU_ACTION_ROGUE_CHARMS,
 };
 
 // Save status
@@ -114,6 +115,7 @@ static bool8 StartMenuBattlePyramidBagCallback(void);
 static bool8 StartMenuStatEditorCallback(void);
 static bool8 StartMenuDebugCallback(void);
 static bool8 StartMenuDexNavCallback(void);
+static bool8 StartMenuRogueCharmsCallback(void);
 
 // Menu callbacks
 static bool8 SaveStartCallback(void);
@@ -191,6 +193,10 @@ static const struct WindowTemplate sWindowTemplate_PyramidPeak = {
 };
 
 static const u8 sText_MenuDebug[] = _("DEBUG");
+static const u8 sText_MenuRogueCharms[] = _("CHARMS");
+
+// Declared here the way safari_zone.c declares its own prompt script.
+extern const u8 RogueCharms_EventScript_ShowList[];
 
 static const struct MenuAction sStartMenuItems[] =
 {
@@ -210,6 +216,7 @@ static const struct MenuAction sStartMenuItems[] =
     [MENU_ACTION_STAT_EDITOR]     = {gText_StatEditor,  {.u8_void = StartMenuStatEditorCallback}},
     [MENU_ACTION_DEBUG]           = {sText_MenuDebug,   {.u8_void = StartMenuDebugCallback}},
     [MENU_ACTION_DEXNAV]          = {gText_MenuDexNav,  {.u8_void = StartMenuDexNavCallback}},
+    [MENU_ACTION_ROGUE_CHARMS]    = {sText_MenuRogueCharms, {.u8_void = StartMenuRogueCharmsCallback}},
 };
 
 static const struct BgTemplate sBgTemplates_LinkBattleSave[] =
@@ -351,6 +358,9 @@ static void BuildNormalStartMenu(void)
     
     //AddStartMenuAction(MENU_ACTION_STAT_EDITOR);
 
+    // Between the party and the trainer card, where a player looking for
+    // "what is wrong with my team" would already be heading.
+    AddStartMenuAction(MENU_ACTION_ROGUE_CHARMS);
     AddStartMenuAction(MENU_ACTION_PLAYER);
     AddStartMenuAction(MENU_ACTION_SAVE);
     AddStartMenuAction(MENU_ACTION_OPTION);
@@ -815,6 +825,18 @@ static bool8 StartMenuDebugCallback(void)
     }
 
 return TRUE;
+}
+
+// Hands off to a script rather than opening a screen, the same shape
+// StartMenuSafariZoneRetireCallback uses. See the listing comment in
+// rogue_charms.c for why this is a message box and not a UI.
+static bool8 StartMenuRogueCharmsCallback(void)
+{
+    RemoveExtraStartMenuWindows();
+    HideStartMenu();
+    ScriptContext_SetupScript(RogueCharms_EventScript_ShowList);
+
+    return TRUE;
 }
 
 static bool8 StartMenuSafariZoneRetireCallback(void)

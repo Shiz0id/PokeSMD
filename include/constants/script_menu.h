@@ -11,6 +11,10 @@
 enum
 {
     MULTI_BRINEY_ON_DEWFORD,
+    MULTI_ROGUE_FOSSIL,
+    MULTI_ROGUE_TOTEM,
+    MULTI_ROGUE_SHRINE,
+    MULTI_ROGUE_HERBALIST,
     MULTI_PC,                           // Exit only, populated by CreatePCMultichoice
     MULTI_ENTERINFO,
     MULTI_CONTEST_INFO,

@@ -42,13 +42,18 @@ non-zero exit before, so use `cmd && echo pass || echo fail`.
 import re
 import sys
 from pathlib import Path
+import sys as _sys
+_sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+from rom_paths import find_map
 
 LEGAL_HUE = {0, 10, 20, 30, 45, 60, 90, 180}
 LEGAL_CL = {0, 5, 10, 25}
 PAL_COLOURS = 16
 
 SRC = "src/variant_colours.c"
-MAP = "pokeemerald.map"
+# The link map is found rather than named - see rom_paths.py. MAP_LABEL is
+# only ever used in messages.
+MAP_LABEL = "the link map"
 
 
 def die(msg):
@@ -113,10 +118,10 @@ def species_in_rom(repo):
 
     Same test gen_safari_pool.py uses, and for the same reason.
     """
-    path = repo / MAP
+    path = find_map(repo)
     if not path.is_file():
         die("no %s -- build first, the link map is the only proof a species "
-            "survived the generation toggles" % MAP)
+            "survived the generation toggles" % MAP_LABEL)
     text = path.read_text(encoding="utf-8", errors="replace")
     return set(re.findall(r"gMonFrontPic_([A-Za-z0-9_]+)", text))
 
@@ -205,7 +210,7 @@ def main(argv):
             failures.append(
                 "%s has no gMonFrontPic symbol in %s -- a disabled generation still "
                 "compiles to a zeroed species_info row, so this entry would resolve, "
-                "index the table and do nothing visible" % (species, MAP))
+                "index the table and do nothing visible" % (species, MAP_LABEL))
 
     if failures:
         print("check_variant_colours: FAIL (%d)" % len(failures))

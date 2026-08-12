@@ -171,8 +171,70 @@
 // than uniform - the events a run meets in its first forty floors are not the
 // ones it meets after eighty, so the repetition is spread across subsets instead
 // of being felt against the whole pool.
-#define DUNGEON_MAX_EVENTS 1
-#define DUNGEON_EVENT_ODDS 4
+// Two: the event's NPC, and an optional PROP placed beside it - the berry tree
+// the herbalist works from, the rock the hiker is digging at. The prop is a
+// second OBJECT EVENT, not a metatile, because a metatile id means a different
+// thing under every tileset pair and an event can appear under any of them.
+#define DUNGEON_MAX_EVENTS 2
+// A PERCENTAGE, not a 1-in-N. It was 1 in 4, which is the only shape a modulo
+// can express - 50% and 25% are reachable that way but 75% is not, and the
+// difference between "one floor in four" and "most floors" is a design decision
+// that should not be constrained by how the roll happens to be written.
+//
+// Still exactly ONE draw from the seeded stream, which is the part that matters:
+// every placer shares it, and changing the number of draws here would move every
+// object placed afterwards.
+#define DUNGEON_EVENT_PERCENT 50
+
+// Relative frequency, used by PlaceEvents. ZERO MEANS DEFAULT, not "never" - a
+// row that forgets to set a weight must behave normally rather than silently
+// vanishing from the table, which is the class of failure this project keeps
+// paying for. Rarity is therefore expressed as a weight BELOW the default.
+#define DUNGEON_EVENT_WEIGHT_DEFAULT 10
+#define DUNGEON_EVENT_WEIGHT_RARE     1
+// Above default, for the one or two events a run should be BUILT around rather
+// than merely offered. Note that a weight is relative to what else is eligible
+// at that depth, so this does not buy a fixed frequency - check_floor_events.py
+// reports the expected count per run, which is the number to actually read.
+#define DUNGEON_EVENT_WEIGHT_COMMON  20
+
+// themeMask of 0 means "any theme", so a row that omits it is unrestricted - the
+// same default-safe reasoning as the weight. Otherwise it is a bitmask over enum
+// DungeonThemeId, so one event can be allowed in several themes at once. That
+// matters for props that only some tilesets carry.
+#define DUNGEON_EVENT_THEME(t) (1 << (t))
+#define DUNGEON_EVENT_ANY_THEME 0
+
+// propGfxId of this means no prop. Graphics id 0 is the player's own sprite,
+// which is never a usable prop, so zero is both a safe sentinel and the right
+// default for a row that does not want one.
+#define DUNGEON_EVENT_NO_PROP 0
+
+// Set once a floor's event has been TAKEN, so it cannot be taken twice.
+//
+// A TEMP VAR, and that is the whole trick. The first 0x10 vars are wiped by
+// ClearTempFieldEventData on every map load, and every floor is reached by a
+// warp - so this clears itself on arrival with no flag spent, no var spent from
+// the eight that are left, and no cleanup code that could be forgotten.
+//
+// THIS EXISTS BECAUSE THE ORIGINAL REASONING HAD A HOLE. The shared event tail
+// argued that an NPC need not be removed after use because a floor is never
+// revisited, which is true ACROSS floors and says nothing about talking to the
+// same NPC twice ON one. Every event was repeatable: infinite eggs, infinite
+// heals, infinite money from the fossil, and a trader that ratchets a Pokemon
+// up five levels per conversation. Found by playing, not by any check.
+//
+// Set on the COMMITTING path only. Declining an offer and walking back is fine;
+// it is taking the reward twice that is not.
+#define VAR_ROGUE_EVENT_SPENT VAR_TEMP_0
+
+// Scratch for an event that has to remember something ACROSS a msgbox, because
+// MSGBOX_YESNO writes its answer into VAR_RESULT and destroys whatever a special
+// left there. The injured Pokemon needs exactly that: it asks before it reveals
+// whether the thing swaying at you is hurt or waiting.
+//
+// Temp for the same reason as above - it cannot leak into the next floor.
+#define VAR_ROGUE_EVENT_SCRATCH VAR_TEMP_1
 
 // A gfxId of this in sFloorEvents means "the sprite is the species the floor
 // rolled", which is how the injured Pokemon wears its own overworld sprite.
@@ -216,7 +278,19 @@
 // is no decision in walking up to it - and reducing the yield keeps the tree
 // worth picking while making the good ones feel like the good ones.
 #define DUNGEON_BERRY_ROTTEN_ODDS  4
-#define DUNGEON_BERRY_ROTTEN_YIELD 1
+
+// EVERY FLOOR WITH TREES HAS AT LEAST ONE ROTTEN ONE, chosen by hash from the
+// floor seed, and the remaining trees still roll independently at the odds
+// above. Before this it was purely a per-tree roll, so a run could go a long
+// way without meeting one - and because rot was only a smaller NUMBER of
+// berries, with no message and no visual, a player could pick a dozen rotten
+// trees and never learn the mechanic existed.
+#define DUNGEON_BERRY_ROTTEN_GUARANTEED TRUE
+
+// A DUD, not a small harvest. Zero, plus its own message - see
+// RogueDungeonFloor_EventScript_BerryTree. A yield of 1 against 6 is invisible
+// unless the player is counting, which is the same thing as not existing.
+#define DUNGEON_BERRY_ROTTEN_YIELD 0
 
 #define DUNGEON_EVENT_FIRST_LOCAL_ID                                   \
     (DUNGEON_MAX_TRAINERS + DUNGEON_MAX_ITEMS + DUNGEON_MAX_BERRIES    \

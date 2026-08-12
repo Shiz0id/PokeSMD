@@ -5612,6 +5612,15 @@ BattleScript_TotemBoost::
 	waitmessage B_WAIT_TIME_LONG
     end3
 
+@ Roguelike charms. One line per charm, chosen by gRogueCharmStringIds indexed
+@ on MULTISTRING_CHOOSER - the charm id is set by FIRST_TURN_EVENTS_ROGUE_CHARMS.
+@ No animation: recoil has already been taken before the intro and the stat drops
+@ before the first turn, so there is nothing left here to animate.
+RogueBattleScript_CharmAnnounce::
+	printfromtable gRogueCharmStringIds
+	waitmessage B_WAIT_TIME_LONG
+	end3
+
 BattleScript_AnnounceAirLockCloudNine::
 	call BattleScript_AbilityPopUp
 	printstring STRINGID_AIRLOCKACTIVATES

@@ -32,6 +32,9 @@ const u32 gObjectEventPic_MayDecorating[] = INCGFX_U32("graphics/object_events/p
 // Divers for the seafloor dungeon, composed by tools/rogue/make_diver_sprites.py
 // from the player's own underwater sprite. Three frames, not nine: the
 // underwater player has no walk cycle and neither do these.
+const u32 gObjectEventPic_RogueGrave[] = INCGFX_U32("graphics/object_events/pics/misc/rogue_grave.png", ".4bpp", "-mwidth 2 -mheight 2");
+const u16 gObjectEventPal_RogueGrave[] = INCGFX_U16("graphics/object_events/palettes/rogue_grave.pal", ".gbapal");
+const u16 gObjectEventPal_RogueCrystal[] = INCGFX_U16("graphics/object_events/palettes/rogue_crystal.pal", ".gbapal");
 const u32 gObjectEventPic_RogueDiverM[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_diver_m.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u32 gObjectEventPic_RogueDiverF[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_diver_f.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u32 gObjectEventPic_RogueDiverJuan[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_diver_juan.png", ".4bpp", "-mwidth 4 -mheight 4");

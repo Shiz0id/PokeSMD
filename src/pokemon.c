@@ -42,6 +42,8 @@
 #include "pokemon_storage_system.h"
 #include "pokerus.h"
 #include "random.h"
+#include "rogue_charms.h"
+#include "rogue_dungeon.h"
 #include "recorded_battle.h"
 #include "regions.h"
 #include "rtc.h"
@@ -1426,6 +1428,24 @@ void CalculateMonStats(struct Pokemon *mon)
     {
         s32 n = 2 * GetSpeciesBaseHP(species) + iv[STAT_HP];
         newMaxHP = (((n + ev[STAT_HP] / 4) * level) / 100) + level + 10;
+    }
+
+    // Roguelike max-HP charms. Applied to the FRESHLY COMPUTED maximum rather
+    // than to the stored one, which is what makes this idempotent - the value is
+    // rebuilt from base stats on every call, so repeated recalculation cannot
+    // compound the reduction. Removing the charm and recalculating restores it.
+    //
+    // Floored at 1: HasShedinjaHPHandling already produces a maximum of 1, and
+    // a maximum of 0 is a divide by zero in the first HP bar that draws it.
+    {
+        u32 lost = RogueCharm_MaxHpPercentLost(mon);
+
+        if (lost != 0)
+        {
+            newMaxHP -= (newMaxHP * (s32)lost) / 100;
+            if (newMaxHP < 1)
+                newMaxHP = 1;
+        }
     }
 
     gBattleScripting.levelUpHP = newMaxHP - oldMaxHP;
@@ -5215,7 +5235,24 @@ u16 GetBattleBGM(void)
         else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL)
             trainerClass = TRAINER_CLASS_EXPERT;
         else
+        {
+            // A roguelike boss whose stock CLASS would misfile it. Steven is
+            // class Rival, so the switch below hands the run's final boss the
+            // same MUS_VS_RIVAL as the mini boss five floors above him. Returns
+            // 0 for every other trainer in the game, which leaves the switch to
+            // decide exactly as before.
+            //
+            // INSIDE THIS BRANCH ON PURPOSE: the two above it read opponentA as
+            // a Frontier or Trainer Hill index rather than as a trainer id, so
+            // a lookup hoisted out of here would be matching boss ids against a
+            // number that does not mean a trainer.
+            u16 rogueBgm = RogueDungeon_GetBossBGM(TRAINER_BATTLE_PARAM.opponentA);
+
+            if (rogueBgm != 0)
+                return rogueBgm;
+
             trainerClass = GetTrainerClassFromId(TRAINER_BATTLE_PARAM.opponentA);
+        }
 
         switch (trainerClass)
         {
