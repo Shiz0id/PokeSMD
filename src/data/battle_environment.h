@@ -363,6 +363,54 @@ const struct BattleEnvironment gBattleEnvironmentInfo[BATTLE_ENVIRONMENT_COUNT] 
         .battleIntroSlide = CAVE_BATTLE_INTRO_SLIDE,
     },
 
+    // The three Victory Roads. All cave, all RogueCave's art, all differing by
+    // one palette - the same shape their TILESETS already have, which is what
+    // makes the backdrop and the floor agree by construction.
+    //
+    // Glacia is absent on purpose: hers is real art rather than a recolour,
+    // because BATTLE_ENVIRONMENT_FROZEN_DEPTHS carries snow a palette cannot.
+    [BATTLE_ENVIRONMENT_VR_SIDNEY] =
+    {
+        .name = _("Cave"),
+        .naturePower = CAVE_NATURE_POWER,
+        .secretPowerAnimation = CAVE_SECRET_POWER_ANIMATION,
+        .secretPowerEffect = CAVE_SECRET_POWER_EFFECT,
+        .camouflageType = CAVE_CAMOUFLAGE_TYPE,
+        .camouflageBlend = CAVE_CAMOUFLAGE_BLEND,
+        .entry = ENVIRONMENT_ENTRY(Cave),
+        .background = ENVIRONMENT_BACKGROUND(RogueCave),
+        .palette = gBattleEnvironmentPalette_VictoryRoadSidney,
+        .battleIntroSlide = CAVE_BATTLE_INTRO_SLIDE,
+    },
+
+    [BATTLE_ENVIRONMENT_VR_PHOEBE] =
+    {
+        .name = _("Cave"),
+        .naturePower = CAVE_NATURE_POWER,
+        .secretPowerAnimation = CAVE_SECRET_POWER_ANIMATION,
+        .secretPowerEffect = CAVE_SECRET_POWER_EFFECT,
+        .camouflageType = CAVE_CAMOUFLAGE_TYPE,
+        .camouflageBlend = CAVE_CAMOUFLAGE_BLEND,
+        .entry = ENVIRONMENT_ENTRY(Cave),
+        .background = ENVIRONMENT_BACKGROUND(RogueCave),
+        .palette = gBattleEnvironmentPalette_VictoryRoadPhoebe,
+        .battleIntroSlide = CAVE_BATTLE_INTRO_SLIDE,
+    },
+
+    [BATTLE_ENVIRONMENT_VR_DRAKE] =
+    {
+        .name = _("Cave"),
+        .naturePower = CAVE_NATURE_POWER,
+        .secretPowerAnimation = CAVE_SECRET_POWER_ANIMATION,
+        .secretPowerEffect = CAVE_SECRET_POWER_EFFECT,
+        .camouflageType = CAVE_CAMOUFLAGE_TYPE,
+        .camouflageBlend = CAVE_CAMOUFLAGE_BLEND,
+        .entry = ENVIRONMENT_ENTRY(Cave),
+        .background = ENVIRONMENT_BACKGROUND(RogueCave),
+        .palette = gBattleEnvironmentPalette_VictoryRoadDrake,
+        .battleIntroSlide = CAVE_BATTLE_INTRO_SLIDE,
+    },
+
     [BATTLE_ENVIRONMENT_BUILDING] =
     {
         .name = _("Building"),

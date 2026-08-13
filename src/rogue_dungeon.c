@@ -1759,6 +1759,11 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         },
         .species = sSidneySpecies,
         .speciesCount = ARRAY_COUNT(sSidneySpecies),
+
+        // The cave art under this theme's own palette, sampled from the very
+        // tileset palette its walls draw with. Ramp 2-7 of 1-7, chosen by
+        // looking - the full ramp lights the floor lilac.
+        .battleEnvironment = BATTLE_ENVIRONMENT_VR_SIDNEY,
     },
 
     // Phoebe is the only one with a mapId of its own. Weather lives in the map
@@ -1808,6 +1813,11 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         },
         .species = sPhoebeSpecies,
         .speciesCount = ARRAY_COUNT(sPhoebeSpecies),
+
+        // Ramp 5-7. This palette is the darkest of the four - it tops out at
+        // luminance 97 where the source art reaches 155 - so every ramp comes
+        // out dark and the choice is only how much violet survives.
+        .battleEnvironment = BATTLE_ENVIRONMENT_VR_PHOEBE,
     },
     // The second theme with a map of its own, for the same reason Phoebe has
     // one - weather is in the map header, out of reach of the tileset patch.
@@ -1924,6 +1934,12 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         // choice. The default of 8 would leave the window permanently one short
         // and the floor repeating a species across its twelve slots.
         .encounterWindow = ARRAY_COUNT(sDrakeSpecies),
+
+        // Ramp 3-7 rather than the full one, and the reason is Fiery Path.
+        // Drake's palette at 1-7 lights the floor hot red on the SAME
+        // silhouette Fiery Path already uses, so the two dungeons would have
+        // read as the same room. The narrow end keeps it maroon stone.
+        .battleEnvironment = BATTLE_ENVIRONMENT_VR_DRAKE,
     },
     // Ever Grande, Wallace's, and the first theme whose ENCOUNTER SURFACE is
     // something other than grass, cave floor or water.

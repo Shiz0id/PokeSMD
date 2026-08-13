@@ -85,6 +85,16 @@ const u32 gBattleEnvironmentTilemap_JungleCanopy[] = INCGFX_U32("graphics/battle
 // the floor agree without anyone matching them by eye.
 const u16 gBattleEnvironmentPalette_MirageSands[] = INCGFX_U16("graphics/battle_environment/mirage_sands/palette.pal", ".gbapal");
 
+// The three Victory Roads, same trick. Their tilesets already work this way -
+// gTileset_RogueVictoryRoad* share gTilesetTiles_Cave and differ only in
+// palettes - so the backdrop now matches the floor by construction rather than
+// by anyone eyeballing it. Sampled from palette 6 of each, which the header in
+// src/data/tilesets/graphics.h notes is the only palette the cave wall table
+// draws from.
+const u16 gBattleEnvironmentPalette_VictoryRoadSidney[] = INCGFX_U16("graphics/battle_environment/vr_sidney/palette.pal", ".gbapal");
+const u16 gBattleEnvironmentPalette_VictoryRoadPhoebe[] = INCGFX_U16("graphics/battle_environment/vr_phoebe/palette.pal", ".gbapal");
+const u16 gBattleEnvironmentPalette_VictoryRoadDrake[] = INCGFX_U16("graphics/battle_environment/vr_drake/palette.pal", ".gbapal");
+
 const u32 gBattleEnvironmentTiles_Building[] = INCGFX_U32("graphics/battle_environment/building/tiles.png", ".4bpp.smol");
 const u16 gBattleEnvironmentPalette_Building[] = INCGFX_U16("graphics/battle_environment/building/palette.pal", ".gbapal");
 const u32 gBattleEnvironmentTilemap_Building[] = INCGFX_U32("graphics/battle_environment/building/map.bin", ".smolTM");

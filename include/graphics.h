@@ -288,6 +288,10 @@ extern const u16 gBattleEnvironmentPalette_JungleCanopy[];
 // nothing but the colours, which is the axis gBattleEnvironmentInfo is built on
 // - vanilla runs the whole Elite Four off one Stadium background this way.
 extern const u16 gBattleEnvironmentPalette_MirageSands[];
+// Three more of the same: RogueCave's art under each Victory Road's own colours.
+extern const u16 gBattleEnvironmentPalette_VictoryRoadSidney[];
+extern const u16 gBattleEnvironmentPalette_VictoryRoadPhoebe[];
+extern const u16 gBattleEnvironmentPalette_VictoryRoadDrake[];
 extern const u32 gBattleEnvironmentTiles_Building[];
 extern const u32 gBattleEnvironmentTilemap_Building[];
 extern const u32 gBattleEnvironmentAnimTiles_Building[];
