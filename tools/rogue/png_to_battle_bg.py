@@ -90,19 +90,38 @@ def _flip_v(px):
 # do-not-draw key colour from 112 down, and the message box covers the rest.
 ART_ROWS = 112
 
+# HOW MUCH ONE COLOUR MAY WEIGH when a bank's palette is chosen. Median cut
+# follows pixel counts, so an ocean of flat blue will take every slot and leave
+# a small detailed object - a fish, a coral - sharing two. Capping each colour's
+# vote lets rare detail compete with large flat areas.
+#
+# Not zero-cost: a cap this low also stops a genuinely dominant colour getting
+# the several near-neighbours a smooth gradient needs, so a sky can band. 24 is
+# where the underwater piece stopped smearing Magikarp without visibly banding
+# its water. Raise it for art that is mostly gradient, lower it for art that is
+# mostly detail.
+FLAT_CAP = 64
 
-def fit_to_canvas(path, out_path):
+
+def fit_to_canvas(path, out_path, top=0):
     """Reframe arbitrary art into the 256x512 shape the converter expects.
 
     Commissioned and community art does not arrive GBA-shaped. The jungle piece
     is 512x288 - a widescreen illustration - where a battle background is 256
     wide with its art in the top 112 rows.
 
-    Scales to 256 wide PRESERVING ASPECT and keeps the top ART_ROWS. That is a
-    crop, not a squash: 512x288 halves to 256x144 and loses its bottom 32 rows,
-    which sit behind the message box in game and so were never going to be seen.
+    Scales to 256 wide PRESERVING ASPECT and keeps ART_ROWS starting at `top`.
+    That is a crop, not a squash: 512x288 halves to 256x144 and loses 32 rows.
     Any other fit would distort, and distorted pixel art reads as broken rather
     than as scaled.
+
+    WHICH ROWS TO KEEP IS A COMPOSITION DECISION, not a default. A battle
+    background shows 112 rows and the combatants stand in front of them, so what
+    belongs in frame is the middle distance - the thing the scene is ABOUT. The
+    underwater piece is the case that forced the parameter: its top is empty
+    sunlit water and everything worth seeing, the kelp and the silhouettes, sits
+    lower down. `top` is in SCALED rows, so it is read off the same image the
+    crop is taken from.
 
     The key colour is INVENTED here, because art that was never a background has
     no do-not-draw region. It is chosen to be absent from the art so it cannot
@@ -113,7 +132,8 @@ def fit_to_canvas(path, out_path):
     im = Image.open(path).convert("RGB")
     scaled = im.resize((SRC_W, max(1, round(im.height * SRC_W / im.width))),
                        Image.LANCZOS)
-    band = scaled.crop((0, 0, SRC_W, min(ART_ROWS, scaled.height)))
+    top = max(0, min(top, max(0, scaled.height - ART_ROWS)))
+    band = scaled.crop((0, top, SRC_W, min(top + ART_ROWS, scaled.height)))
 
     present = set(band.getdata())
     key = next(((r, g, b) for r in (255, 254) for g in (0, 1) for b in (255, 254)
@@ -125,27 +145,77 @@ def fit_to_canvas(path, out_path):
     canvas.paste(band, (0, 0))
     canvas.save(out_path)
     print(f"{path.name}: {im.width}x{im.height} -> {SRC_W}x{scaled.height}, "
-          f"kept top {band.height} rows, key {key} -> {out_path}")
+          f"kept rows {top}-{top + band.height - 1}, key {key} -> {out_path}")
     return out_path
 
 
-def _palette_from(weighted, n):
-    """Median-cut a {colour: count} bag down to n colours."""
+def _palette_from(weighted, n, pinned=()):
+    """Median-cut a {colour: count} bag down to n colours.
+
+    `pinned` colours are placed in the palette VERBATIM and the median cut fills
+    what is left. That is the difference between a colour being approximated and
+    a colour being kept: a quantiser optimises the average, and the average does
+    not care about a fish, so a small object of unique hue gets blended into its
+    surroundings however good the overall error looks.
+
+    Pinning is not free. Each pinned colour costs a slot the rest of the bank
+    would have had, so protecting a large area makes everything around it worse.
+    It is for the handful of colours that carry a subject.
+    """
     from PIL import Image
 
+    pins = []
+    for c in pinned:
+        if c in weighted and c not in pins and len(pins) < n:
+            pins.append(c)
+
+    rest = {c: w for c, w in weighted.items() if c not in pins}
+    remaining = n - len(pins)
+    if remaining <= 0 or not rest:
+        return pins
+
     pixels = []
-    for colour, count in weighted.items():
+    for colour, count in rest.items():
         # Cap the weight so one enormous flat region cannot starve the detail
-        # of every palette slot. 64 is a tile's worth of influence.
-        pixels.extend([colour] * min(count, 64))
+        # of every palette slot.
+        pixels.extend([colour] * min(count, FLAT_CAP))
     if not pixels:
-        return []
+        return pins
     strip = Image.new("RGB", (len(pixels), 1))
     strip.putdata(pixels)
-    q = strip.quantize(colors=n, method=Image.MEDIANCUT, dither=Image.Dither.NONE)
+    q = strip.quantize(colors=remaining, method=Image.MEDIANCUT,
+                       dither=Image.Dither.NONE)
     pal = q.getpalette()
     used = len(set(q.getdata()))
-    return [tuple(pal[i * 3:i * 3 + 3]) for i in range(used)]
+    return pins + [tuple(pal[i * 3:i * 3 + 3]) for i in range(used)]
+
+
+# How much luminance counts when deciding WHICH BANK a tile belongs to. Below 1
+# the grouping follows hue and saturation instead of lighting. 0.25 is enough to
+# stop a beam-lit sea splitting into three shades of itself while still keeping
+# genuinely dark material apart from genuinely light material.
+CHROMA_WEIGHT = 0.25
+
+
+def _chroma(c):
+    """-> a colour in a space where luminance is de-emphasised."""
+    r, g, b = c
+    return (r - g, g - b, (r + g + b) * CHROMA_WEIGHT / 3.0)
+
+
+def _chroma_dist2(a, b):
+    ca, cb = _chroma(a), _chroma(b)
+    return sum((ca[i] - cb[i]) ** 2 for i in range(3))
+
+
+def _nearest_chroma(colour, palette):
+    """-> squared chroma distance to the closest palette entry."""
+    best = None
+    for p in palette:
+        d = _chroma_dist2(colour, p)
+        if best is None or d < best:
+            best = d
+    return best or 0
 
 
 def _nearest(colour, palette):
@@ -159,7 +229,58 @@ def _nearest(colour, palette):
     return best, best_d
 
 
-def fit_banks(im, key, name, banks=MAX_PALETTES, rounds=12):
+def protected_colours(im, key, boxes, limit=6):
+    """-> the colours DISTINCTIVE to a protected region, most distinctive first.
+
+    RANKING BY FREQUENCY INSIDE THE BOX IS WRONG, and wrong in a way that looks
+    right until measured. A subject worth protecting is small, so its own
+    bounding box is mostly background: ranking by count pinned six shades of
+    water around Magikarp and made the whole image worse than not pinning at
+    all. What deserves a slot is what the region has and the rest of the image
+    does not.
+
+    Scored by enrichment - how much more of this colour is inside than outside -
+    so a body tone that appears nowhere else outranks a water tone that appears
+    everywhere, however much water is in the box.
+
+    Capped, because pinning costs a slot each. Six carries a small subject: a
+    body tone, two shades of it, an eye, an outline, a highlight.
+
+    PINNING ONLY HELPS A SUBJECT THAT IS CHROMATICALLY DISTINCT, and the case
+    that prompted it was not one. The underwater piece looked like it needed
+    Magikarp protecting; measuring found the whole 256x112 band holds 162
+    non-blue pixels and his body tones sit two or three pixels apart right
+    beside the water in colour space. He is drawn as a low-contrast shape IN the
+    water rather than against it, so there was nothing distinctive to keep -
+    pinning spent six slots on near-duplicate blues and took the mean error from
+    74 to 109, dithering the coral to pay for it.
+
+    So: check that the subject actually differs in hue from its surroundings
+    before reaching for this. It is for a red coral in a blue sea, not for a
+    blue fish in one.
+    """
+    px = im.load()
+    inside, outside = {}, {}
+    boxes = [tuple(b) for b in boxes]
+    for y in range(SRC_H):
+        for x in range(SRC_W):
+            c = px[x, y]
+            if c == key:
+                continue
+            hit = any(x0 <= x < x1 and y0 <= y < y1 for (x0, y0, x1, y1) in boxes)
+            bag = inside if hit else outside
+            bag[c] = bag.get(c, 0) + 1
+
+    def score(c):
+        return inside[c] / (1.0 + outside.get(c, 0))
+
+    # A colour needs to actually cover something to be worth a slot; one stray
+    # pixel of a unique tone scores infinitely and is not what carries a subject.
+    worth = [c for c in inside if inside[c] >= 4]
+    return sorted(worth, key=score, reverse=True)[:limit]
+
+
+def fit_banks(im, key, name, banks=MAX_PALETTES, rounds=12, protect=()):
     """Split an image across `banks` palettes so every TILE uses only one.
 
     THIS IS THE CONSTRAINT THAT MAKES BATTLE BACKGROUNDS HARD TO SOURCE. A
@@ -207,10 +328,25 @@ def fit_banks(im, key, name, banks=MAX_PALETTES, rounds=12):
     # Seed by splitting on the dominant axis of tile means, which puts visibly
     # different material - canopy, water, sand - in different banks to begin
     # with. A random seed converges to the same place more slowly.
+    #
+    # SEEDED AND MEASURED ON CHROMA, NOT BRIGHTNESS, and that is the whole
+    # difference between grouping by material and grouping by shade. The first
+    # version split on the widest axis of the raw RGB mean, which on any image
+    # with lighting is BRIGHTNESS - so the underwater piece, which is lit by
+    # beams, came out with three near-identical blue ramps: light water, medium
+    # water, dark water. All 45 colours went on the sea and nothing was left for
+    # the pink fish or the green kelp, which is exactly the muddiness that got
+    # noticed.
+    #
+    # CHROMA_WEIGHT scales luminance down in the distance used for grouping.
+    # Final pixel mapping still uses true RGB - a colour must be reproduced
+    # accurately once its bank is chosen - but which bank a tile BELONGS to is a
+    # question about what the tile is made of, and lighting is not that.
     means = {t: mean(b) for t, b in art.items()}
-    axis = max(range(3), key=lambda i: max(m[i] for m in means.values())
-               - min(m[i] for m in means.values()))
-    order = sorted(art, key=lambda t: means[t][axis])
+    chroma = {t: _chroma(m) for t, m in means.items()}
+    axis = max(range(3), key=lambda i: max(c[i] for c in chroma.values())
+               - min(c[i] for c in chroma.values()))
+    order = sorted(art, key=lambda t: chroma[t][axis])
     assign = {}
     for i, t in enumerate(order):
         assign[t] = min(i * banks // len(order), banks - 1)
@@ -226,7 +362,11 @@ def fit_banks(im, key, name, banks=MAX_PALETTES, rounds=12):
                 for c, w in art[t].items():
                     if c != key:
                         bag[c] = bag.get(c, 0) + w
-            palettes.append(_palette_from(bag, COLOURS - 1))
+            # Only pin a protected colour into a bank that actually contains
+            # it. Pinning it everywhere would spend a slot in every bank to
+            # protect a subject that lives in one.
+            pins = [c for c in protect if c in bag]
+            palettes.append(_palette_from(bag, COLOURS - 1, pins))
 
         moved = 0
         for t, bag in art.items():
@@ -238,7 +378,10 @@ def fit_banks(im, key, name, banks=MAX_PALETTES, rounds=12):
                 for c, w in bag.items():
                     if c == key:
                         continue
-                    err += _nearest(c, pal)[1] * w
+                    # Chroma-weighted, matching the seed. Plain RGB error here
+                    # pulls every tile back toward whichever bank is closest in
+                    # brightness and undoes the grouping the seed just made.
+                    err += _nearest_chroma(c, pal) * w
                 if best_err is None or err < best_err:
                     best, best_err = b, err
             if best != assign[t]:
@@ -288,7 +431,7 @@ def fit_banks(im, key, name, banks=MAX_PALETTES, rounds=12):
     return out
 
 
-def load_indexed(path):
+def load_indexed(path, protect=()):
     """-> an indexed image, quantising a truecolour source when it is safe to.
 
     Not every background ships indexed. Leob0505's are RGBA with a uniform alpha
@@ -354,7 +497,10 @@ def load_indexed(path):
             break
 
     if too_many:
-        return fit_banks(im, key, path.name)
+        pins = protected_colours(im, key, protect) if protect else ()
+        if pins:
+            print(f"{path.name}: pinning {len(pins)} protected colours {pins}")
+        return fit_banks(im, key, path.name, protect=pins)
 
     out = Image.new("P", im.size, 0)
     flat = []
@@ -549,10 +695,17 @@ def main(argv):
     outdir = Path(argv[1])
 
     if "--fit" in argv:
+        top = 0
+        if "--top" in argv:
+            top = int(argv[argv.index("--top") + 1])
         outdir.mkdir(parents=True, exist_ok=True)
-        src = fit_to_canvas(src, outdir / "source_fitted.png")
+        src = fit_to_canvas(src, outdir / "source_fitted.png", top)
 
-    im = load_indexed(src)
+    protect = []
+    if "--protect" in argv:
+        for spec in argv[argv.index("--protect") + 1].split(";"):
+            protect.append(tuple(int(v) for v in spec.split(",")))
+    im = load_indexed(src, protect)
     im, note = repack(im)
     if note:
         print(f"{src.name}: {note}")

@@ -1696,6 +1696,12 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         // SURFABLE, so it is a WATER encounter even though the player is
         // walking. Vanilla agrees: every UNDERWATER map registers water_mons.
         .wildArea = WILD_AREA_WATER,
+
+        // The one theme that already resolved CORRECTLY on its own - it has a
+        // map of its own and MAP_TYPE_UNDERWATER short-circuits the picker - so
+        // this is an upgrade rather than a fix. Vanilla's underwater backdrop
+        // is fine; this one is the seafloor the theme actually paints.
+        .battleEnvironment = BATTLE_ENVIRONMENT_ABYSSAL_DEPTHS,
     },
 
     // Victory Road, the Elite Four's four dungeons. One theme each, differing

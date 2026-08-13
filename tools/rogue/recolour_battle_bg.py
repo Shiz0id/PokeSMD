@@ -79,15 +79,67 @@ def parse_indices(spec):
     return out
 
 
+def deepen(src_pal, factor, tint, weight):
+    """Sink a palette toward depth without flattening what it distinguishes.
+
+    RAMP-MAPPING IS THE WRONG TOOL FOR A MULTI-BANK BACKGROUND. Every bank would
+    be read onto the same target ramp, so a background whose three banks
+    deliberately hold different MATERIALS - water, creatures, weed - would come
+    back as three copies of one ramp, undoing the separation that made it worth
+    banking. This scales and tints instead, so every colour moves the same way
+    and the differences between them survive.
+
+    `factor` multiplies, `tint` and `weight` blend toward a deep colour. The two
+    together are what reads as depth: darkening alone gives muddy grey, and
+    tinting alone gives a blue photograph of a bright scene.
+
+    Index 0 of each bank is the transparency key and is left alone.
+    """
+    out = list(src_pal)
+    for bank in range(BANKS):
+        base = bank * COLOURS
+        for i in range(1, COLOURS):
+            if base + i >= len(src_pal):
+                break
+            c = src_pal[base + i]
+            if c == (0, 0, 0):
+                continue
+            lit = [min(255, round(v * factor)) for v in c]
+            out[base + i] = tuple(
+                round(lit[k] * (1 - weight) + tint[k] * weight) for k in range(3))
+    return out
+
+
 def main(argv):
     ap = argparse.ArgumentParser()
     ap.add_argument("src")
-    ap.add_argument("tileset")
-    ap.add_argument("pal_n", type=int)
+    ap.add_argument("tileset", nargs="?")
+    ap.add_argument("pal_n", type=int, nargs="?")
     ap.add_argument("out")
     ap.add_argument("--indices", default="1-7")
+    ap.add_argument("--deepen", help="FACTOR,R,G,B,WEIGHT - transform instead "
+                                     "of remapping, for multi-bank art")
     ap.add_argument("--write", action="store_true")
     args = ap.parse_args(argv)
+
+    if args.deepen:
+        parts = [float(x) for x in args.deepen.split(",")]
+        factor, tint, weight = parts[0], tuple(parts[1:4]), parts[4]
+        src_pal = read_pal(Path(args.src) / "palette.pal")
+        out = deepen(src_pal, factor, tint, weight)
+        lit = [c for c in src_pal if c != (0, 0, 0)]
+        new = [c for c in out if c != (0, 0, 0)]
+        print(f"deepened {len(lit)} colours: mean luminance "
+              f"{sum(lum(c) for c in lit) / max(len(lit), 1):.0f} -> "
+              f"{sum(lum(c) for c in new) / max(len(new), 1):.0f}")
+        dest = Path(args.out)
+        if args.write:
+            dest.mkdir(parents=True, exist_ok=True)
+            write_pal(dest / "palette.pal", out)
+            print(f"wrote {dest / 'palette.pal'}")
+        else:
+            print("not written - pass --write")
+        return
 
     src_pal = read_pal(Path(args.src) / "palette.pal")
     target_all = read_pal(Path(args.tileset) / "palettes" / f"{args.pal_n:02d}.pal")

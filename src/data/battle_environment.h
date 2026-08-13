@@ -411,6 +411,23 @@ const struct BattleEnvironment gBattleEnvironmentInfo[BATTLE_ENVIRONMENT_COUNT] 
         .battleIntroSlide = CAVE_BATTLE_INTRO_SLIDE,
     },
 
+    // The seafloor. Underwater behaviour throughout, matching vanilla's own
+    // UNDERWATER row - this theme is the one the player DIVES into, so Nature
+    // Power giving Hydro Pump and Camouflage giving Water are literally right.
+    [BATTLE_ENVIRONMENT_ABYSSAL_DEPTHS] =
+    {
+        .name = _("Underwater"),
+        .naturePower = MOVE_HYDRO_PUMP,
+        .secretPowerAnimation = B_SECRET_POWER_ANIMATION >= GEN_6 ? gBattleAnimMove_WaterPulse : gBattleAnimMove_Waterfall,
+        .secretPowerEffect = B_SECRET_POWER_EFFECT >= GEN_6 ? SECRET_POWER_ATK_MINUS_1 : SECRET_POWER_DEF_MINUS_1,
+        .camouflageType = TYPE_WATER,
+        .camouflageBlend = RGB(0, 0, 18),
+        .entry = ENVIRONMENT_ENTRY(Underwater),
+        .background = ENVIRONMENT_BACKGROUND(AbyssalDepths),
+        .palette = gBattleEnvironmentPalette_AbyssalDepths,
+        .battleIntroSlide = BattleIntroSlide2,
+    },
+
     [BATTLE_ENVIRONMENT_BUILDING] =
     {
         .name = _("Building"),

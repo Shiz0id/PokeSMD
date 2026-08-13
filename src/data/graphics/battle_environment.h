@@ -95,6 +95,16 @@ const u16 gBattleEnvironmentPalette_VictoryRoadSidney[] = INCGFX_U16("graphics/b
 const u16 gBattleEnvironmentPalette_VictoryRoadPhoebe[] = INCGFX_U16("graphics/battle_environment/vr_phoebe/palette.pal", ".gbapal");
 const u16 gBattleEnvironmentPalette_VictoryRoadDrake[] = INCGFX_U16("graphics/battle_environment/vr_drake/palette.pal", ".gbapal");
 
+// The seafloor, by Nena-Daconte. Three banks, because it is the first
+// background here whose subject is MATERIAL rather than lighting: water,
+// creatures and weed each hold a bank. Its palette is darkened after
+// conversion, so the .pal on disk is not what the converter emitted - see the
+// deepen note in tools/rogue/recolour_battle_bg.py and keep source_fitted.png
+// beside it, which is the exact 256x512 input that was read.
+const u32 gBattleEnvironmentTiles_AbyssalDepths[] = INCGFX_U32("graphics/battle_environment/abyssal_depths/tiles.png", ".4bpp.smol");
+const u16 gBattleEnvironmentPalette_AbyssalDepths[] = INCGFX_U16("graphics/battle_environment/abyssal_depths/palette.pal", ".gbapal");
+const u32 gBattleEnvironmentTilemap_AbyssalDepths[] = INCGFX_U32("graphics/battle_environment/abyssal_depths/map.bin", ".smolTM");
+
 const u32 gBattleEnvironmentTiles_Building[] = INCGFX_U32("graphics/battle_environment/building/tiles.png", ".4bpp.smol");
 const u16 gBattleEnvironmentPalette_Building[] = INCGFX_U16("graphics/battle_environment/building/palette.pal", ".gbapal");
 const u32 gBattleEnvironmentTilemap_Building[] = INCGFX_U32("graphics/battle_environment/building/map.bin", ".smolTM");
