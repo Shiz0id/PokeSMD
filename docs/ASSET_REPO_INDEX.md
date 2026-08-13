@@ -113,6 +113,59 @@ it is two populations, mostly-zero and a few heavy users. Do not use the mean.
 | Johto + Sinnoh leaders "do not exist at all" (gap 16) | trainer sprites, both dirs | all 17 present; only parties and classes still needed |
 | woods floor patch | ~~Shady Forest~~ | **rejected** — village set, and 25.3% lossy |
 
+## Battle backdrops — how selection works, and what is staged
+
+`BattleSetup_GetEnvironmentId()` (`src/battle_setup.c:715`) derives the backdrop
+from the **metatile behaviour under the player** plus `gMapHeader.mapType`, and
+nothing else. Every dungeon floor is `MAP_TYPE_UNDERGROUND`, so the whole run
+collapses to `CAVE`, or `GRASS`/`LONG_GRASS` on an encounter surface and `POND`
+on the water themes. Fourteen themes, about four backdrops.
+
+**Row format** — `struct BattleEnvironment` in `include/battle_environment.h`,
+table in `src/data/battle_environment.h`. The parts that matter for a new one:
+
+```c
+.entry      = ENVIRONMENT_ENTRY(Building),   // the intro slide-in graphics
+.background = ENVIRONMENT_BACKGROUND(Cave),  // tileset + tilemap
+.palette    = gBattleEnvironmentPalette_Cave,
+```
+
+`ENVIRONMENT_BACKGROUND(X)` expands to `gBattleEnvironmentTiles_X` /
+`...Tilemap_X`, so **art is shared by name and varied by palette** — the whole
+Elite Four is one `Stadium` background with five palettes. That is the cheap
+axis: a recolour is a palette, not a tileset.
+
+`LoadBattleEnvironmentGfx` clamps anything past the table to
+`BATTLE_ENVIRONMENT_PLAIN`, so appending a row is safe and an out-of-range id
+degrades rather than corrupting VRAM.
+
+**DONE: the per-boss backdrops vanilla already ships are now used.**
+`sDungeonBossEnvironment[]` in `src/rogue_dungeon.c`, parallel to
+`sDungeonBosses`, hooked into `BattleMainCB2`. Eight leaders take
+`BATTLE_ENVIRONMENT_LEADER`, the Elite Four take their own stadium palettes,
+Wallace and Steven take `CHAMPION`. **Zero new art** — all of it verified
+present in `PokeSMD.map`, +88 bytes of ROM, RAM unmoved.
+
+### Scalding Cave for Fiery Path — what it needs
+
+Source: `Battle Backgrounds/CFRU/BG_Cave_Scalding.png`, 256x512 indexed.
+
+1. Split the PNG into a tileset and a tilemap, then compress both the way
+   `ENVIRONMENT_BACKGROUND` expects, emitting
+   `gBattleEnvironmentTiles_ScaldingCave` and `...Tilemap_ScaldingCave`.
+   **This is the unmeasured step** — CFRU ships a finished image, not the
+   tiles/tilemap pair the macro names, so something has to do that split.
+2. Palette to `gBattleEnvironmentPalette_ScaldingCave`.
+3. Append `BATTLE_ENVIRONMENT_SCALDING_CAVE` to `enum BattleEnvironments` and a
+   row to `gBattleEnvironmentInfo`, reusing `ENVIRONMENT_ENTRY(Cave)` and the
+   cave nature-power / camouflage constants.
+4. Add a `battleEnvironment` field to the theme table and point Fiery Path at
+   it, defaulting to the sentinel so every other theme is unchanged. The boss
+   override already in `BattleMainCB2` is where a theme override would join.
+
+**Check step 1 before promising the rest is cheap.** Every other CFRU terrain
+is the same shape, so whatever splits one splits all forty-eight.
+
 ## Pointers
 
 - `Tilesets/Other Tilesets/` — 6 more collections, uncensused

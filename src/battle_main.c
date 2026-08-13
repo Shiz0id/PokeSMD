@@ -49,6 +49,7 @@
 #include "roamer.h"
 #include "rogue_bw_anim.h"
 #include "rogue_charms.h"
+#include "rogue_dungeon.h"
 #include "safari_zone.h"
 #include "scanline_effect.h"
 #include "script.h"
@@ -571,7 +572,25 @@ static void CB2_InitBattleInternal(void)
     gBattle_BG3_Y = 0;
 
     if (!DEBUG_OVERWORLD_MENU || (DEBUG_OVERWORLD_MENU && !gIsDebugBattle))
+    {
+        u8 rogueEnvironment;
+
         gBattleEnvironment = BattleSetup_GetEnvironmentId();
+
+        // A roguelike boss gets the backdrop vanilla already drew for them.
+        // BattleSetup_GetEnvironmentId reads the metatile under the player and
+        // the map type, and every dungeon floor is MAP_TYPE_UNDERGROUND - so
+        // without this a gym leader fights in front of the same cave wall as an
+        // ordinary trainer two floors above. Returns the sentinel for every
+        // non-boss battle in the game, leaving the line above untouched.
+        //
+        // AFTER the assignment rather than in place of it, so the recorded and
+        // test-runner overrides below still win over ours exactly as they win
+        // over the metatile answer.
+        rogueEnvironment = RogueDungeon_GetBossEnvironment(TRAINER_BATTLE_PARAM.opponentA);
+        if (rogueEnvironment != BATTLE_ENVIRONMENT_COUNT)
+            gBattleEnvironment = rogueEnvironment;
+    }
     if (gBattleTypeFlags & BATTLE_TYPE_RECORDED)
         gBattleEnvironment = BATTLE_ENVIRONMENT_BUILDING;
     if (TestRunner_Battle_GetForcedEnvironment())

@@ -1882,6 +1882,11 @@ u16 RogueDungeon_AbandonBossAce(void);
 // 0 for any trainer that is not one of the fourteen dungeon bosses, which is
 // what leaves every other battle on the engine's own class-derived choice.
 u16 RogueDungeon_GetBossBGM(u16 trainerId);
+
+// Not a specialvar target - called from BattleMainCB2 in src/battle_main.c.
+// Returns BATTLE_ENVIRONMENT_COUNT for any trainer that is not one of the
+// fourteen dungeon bosses, leaving the engine's metatile-derived backdrop alone.
+u8 RogueDungeon_GetBossEnvironment(u16 trainerId);
 u16 RogueDungeon_GiveBossTM(void);
 bool8 RogueDungeon_IsGeneratedTrainer(void);
 bool8 RogueDungeon_HasTrainerBeenBeaten(u8 objectEventId);

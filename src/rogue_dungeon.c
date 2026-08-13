@@ -4630,6 +4630,66 @@ u16 RogueDungeon_GetBossBGM(u16 trainerId)
     return 0;
 }
 
+// Parallel to sDungeonBosses again, and this one costs NO NEW ART AT ALL.
+//
+// BattleSetup_GetEnvironmentId derives the backdrop from the metatile under the
+// player and gMapHeader.mapType, and every dungeon floor is MAP_TYPE_UNDERGROUND
+// - so the whole run resolves to CAVE, or GRASS/LONG_GRASS on an encounter
+// surface and POND on the water themes. Fourteen themes and fourteen bosses
+// collapse onto about four backdrops, and a gym leader fights in front of the
+// same cave wall as the trainer two floors above.
+//
+// Vanilla already ships the right ones and this build simply never asked for
+// them. The Elite Four share ENVIRONMENT_BACKGROUND(Stadium) and differ only by
+// PALETTE, and all of it is in the ROM today - verified against PokeSMD.map,
+// not against the enum, because an enum entry proves nothing about what linked.
+//
+// Steven takes CHAMPION rather than a stadium of his own: there is no STEVEN
+// environment, and the run ends on his floor, so the champion stadium is the
+// closest thing to a final-battle backdrop that costs nothing.
+//
+// BATTLE_ENVIRONMENT_COUNT is the "no override" sentinel rather than 0, because
+// 0 is BATTLE_ENVIRONMENT_GRASS and a real answer.
+#define DUNGEON_ENV_DEFAULT BATTLE_ENVIRONMENT_COUNT
+
+static const u8 sDungeonBossEnvironment[] =
+{
+    // The eight gym leaders, on vanilla's own gym-leader interior.
+    BATTLE_ENVIRONMENT_LEADER, BATTLE_ENVIRONMENT_LEADER,
+    BATTLE_ENVIRONMENT_LEADER, BATTLE_ENVIRONMENT_LEADER,
+    BATTLE_ENVIRONMENT_LEADER, BATTLE_ENVIRONMENT_LEADER,
+    BATTLE_ENVIRONMENT_LEADER, BATTLE_ENVIRONMENT_LEADER,
+    // The Elite Four, each with their own stadium palette.
+    BATTLE_ENVIRONMENT_SIDNEY, BATTLE_ENVIRONMENT_PHOEBE,
+    BATTLE_ENVIRONMENT_GLACIA, BATTLE_ENVIRONMENT_DRAKE,
+    // Wallace, then Steven.
+    BATTLE_ENVIRONMENT_CHAMPION,
+    BATTLE_ENVIRONMENT_CHAMPION,
+};
+
+STATIC_ASSERT(ARRAY_COUNT(sDungeonBossEnvironment) == ARRAY_COUNT(sDungeonBosses),
+              BossEnvironmentMustBeParallelToBosses);
+
+// Called from BattleMainCB2. Returns DUNGEON_ENV_DEFAULT for anything that is
+// not one of our bosses, which leaves every other battle on the engine's own
+// metatile-derived answer.
+//
+// Keyed on the trainer id for the same reason the music is: a floor test would
+// have to trust VAR_ROGUE_DUNGEON_FLOOR to mean something at the moment the
+// backdrop is picked, and these fourteen ids are reserved for boss floors.
+u8 RogueDungeon_GetBossEnvironment(u16 trainerId)
+{
+    u32 i;
+
+    for (i = 0; i < ARRAY_COUNT(sDungeonBosses); i++)
+    {
+        if (sDungeonBosses[i] == trainerId)
+            return sDungeonBossEnvironment[i];
+    }
+
+    return DUNGEON_ENV_DEFAULT;
+}
+
 // Mini bosses are picked by level from sRogueDungeonMiniBosses, not from a
 // fixed list. A fixed list meant the floor-5 mini boss was whatever grunt
 // happened to be in it - which was an Aqua Hideout one, so a level 31 Zubat
