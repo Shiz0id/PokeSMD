@@ -885,7 +885,33 @@
 #define TRAINER_ROGUE_DIVER_6               861
 #define TRAINER_ROGUE_DIVER_7               862
 
-#define TRAINERS_COUNT_EMERALD     863
+// The Kanto leaders, Elite Four and Champion, ported from the FRLG trainer set
+// by tools/rogue/port_kanto_leaders.py. Their parties, battle pics and
+// overworld sprites all already existed in this tree - see docs/KANTO_LEADERS.md
+// - so what the port actually does is rename the ids and fix the gender bit,
+// which FRLG leaves at zero for every one of them including Misty and Sabrina.
+//
+// The Champion is three trainers in FRLG, one per starter the player chose.
+// TRAINER_CHAMPION_FIRST_SQUIRTLE is the one taken; the other two are left.
+//
+// LEVELS ARE STOCK FIRERED AND ARE NOT SCALED. Brock leads with a level 12
+// Geodude. Scale them wherever they are eventually placed - verify_run_structure.py
+// check 7 is what judges a boss against the curve.
+#define TRAINER_ROGUE_KANTO_BROCK           863
+#define TRAINER_ROGUE_KANTO_MISTY           864
+#define TRAINER_ROGUE_KANTO_LT_SURGE        865
+#define TRAINER_ROGUE_KANTO_ERIKA           866
+#define TRAINER_ROGUE_KANTO_KOGA            867
+#define TRAINER_ROGUE_KANTO_SABRINA         868
+#define TRAINER_ROGUE_KANTO_BLAINE          869
+#define TRAINER_ROGUE_KANTO_GIOVANNI        870
+#define TRAINER_ROGUE_KANTO_LORELEI         871
+#define TRAINER_ROGUE_KANTO_BRUNO           872
+#define TRAINER_ROGUE_KANTO_AGATHA          873
+#define TRAINER_ROGUE_KANTO_LANCE           874
+#define TRAINER_ROGUE_KANTO_BLUE            875
+
+#define TRAINERS_COUNT_EMERALD     876
 
 // RAISED FROM 864, AND IT IS A FLAG BUDGET RATHER THAN A TRAINER BUDGET.
 //

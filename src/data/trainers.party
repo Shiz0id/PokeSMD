@@ -17029,3 +17029,560 @@ IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
 Gorebyss
 Level: 46
 IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+
+/* Kanto leaders, Elite Four and Champion, ported from trainers_frlg.party by tools/rogue/port_kanto_leaders.py. Do not edit below this line by hand. */
+
+=== TRAINER_ROGUE_KANTO_BROCK ===
+Name: BROCK
+Class: Leader Frlg
+Pic: Leader Brock Frlg
+Gender: Male
+Music: Male
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+
+Geodude
+Level: 12
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Tackle
+- Defense Curl
+
+Onix
+Level: 14
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Tackle
+- Bind
+- Rock Tomb
+
+=== TRAINER_ROGUE_KANTO_MISTY ===
+Name: MISTY
+Class: Leader Frlg
+Pic: Leader Misty Frlg
+Gender: Female
+Music: Female
+Items: Super Potion
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+
+Staryu
+Level: 18
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Tackle
+- Harden
+- Recover
+- Water Pulse
+
+Starmie
+Level: 21
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Swift
+- Recover
+- Rapid Spin
+- Water Pulse
+
+=== TRAINER_ROGUE_KANTO_LT_SURGE ===
+Name: LT. SURGE
+Class: Leader Frlg
+Pic: Leader Lt Surge Frlg
+Gender: Male
+Music: Male
+Items: Super Potion / Full Heal
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+
+Voltorb
+Level: 21
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Sonic Boom
+- Tackle
+- Screech
+- Shock Wave
+
+Pikachu
+Level: 18
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Quick Attack
+- Thunder Wave
+- Double Team
+- Shock Wave
+
+Raichu
+Level: 24
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Quick Attack
+- Thunder Wave
+- Double Team
+- Shock Wave
+
+=== TRAINER_ROGUE_KANTO_ERIKA ===
+Name: ERIKA
+Class: Leader Frlg
+Pic: Leader Erika Frlg
+Gender: Female
+Music: Female
+Items: Hyper Potion / Full Heal
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+
+Victreebel
+Level: 29
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Stun Spore
+- Acid
+- Poison Powder
+- Giga Drain
+
+Tangela
+Level: 24
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Poison Powder
+- Constrict
+- Ingrain
+- Giga Drain
+
+Vileplume
+Level: 29
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Sleep Powder
+- Acid
+- Stun Spore
+- Giga Drain
+
+=== TRAINER_ROGUE_KANTO_KOGA ===
+Name: KOGA
+Class: Leader Frlg
+Pic: Leader Koga Frlg
+Gender: Male
+Music: Male
+Items: Hyper Potion / Hyper Potion / Full Heal
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+
+Koffing
+Level: 37
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Self Destruct
+- Sludge
+- Smokescreen
+- Toxic
+
+Muk
+Level: 39
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Minimize
+- Sludge
+- Acid Armor
+- Toxic
+
+Koffing
+Level: 37
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Self Destruct
+- Sludge
+- Smokescreen
+- Toxic
+
+Weezing
+Level: 43
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Tackle
+- Sludge
+- Smokescreen
+- Toxic
+
+=== TRAINER_ROGUE_KANTO_SABRINA ===
+Name: SABRINA
+Class: Leader Frlg
+Pic: Leader Sabrina Frlg
+Gender: Female
+Music: Female
+Items: Hyper Potion / Hyper Potion / Full Heal
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+
+Kadabra
+Level: 38
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Psybeam
+- Reflect
+- Future Sight
+- Calm Mind
+
+Mr Mime
+Level: 37
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Barrier
+- Psybeam
+- Baton Pass
+- Calm Mind
+
+Venomoth
+Level: 38
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Psybeam
+- Gust
+- Leech Life
+- Supersonic
+
+Alakazam
+Level: 43
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Psychic
+- Recover
+- Future Sight
+- Calm Mind
+
+=== TRAINER_ROGUE_KANTO_BLAINE ===
+Name: BLAINE
+Class: Leader Frlg
+Pic: Leader Blaine Frlg
+Gender: Male
+Music: Male
+Items: Hyper Potion / Hyper Potion / Full Heal
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+
+Growlithe
+Level: 42
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Bite
+- Roar
+- Take Down
+- Fire Blast
+
+Ponyta
+Level: 40
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Stomp
+- Bounce
+- Fire Spin
+- Fire Blast
+
+Rapidash
+Level: 42
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Stomp
+- Bounce
+- Fire Spin
+- Fire Blast
+
+Arcanine
+Level: 47
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Bite
+- Roar
+- Take Down
+- Fire Blast
+
+=== TRAINER_ROGUE_KANTO_GIOVANNI ===
+Name: GIOVANNI
+Class: Leader Frlg
+Pic: Leader Giovanni Frlg
+Gender: Male
+Music: Aqua
+Items: Hyper Potion / Hyper Potion / Full Heal
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+
+Rhyhorn
+Level: 45
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Take Down
+- Rock Blast
+- Scary Face
+- Earthquake
+
+Dugtrio
+Level: 42
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Slash
+- Sand Tomb
+- Mud Slap
+- Earthquake
+
+Nidoqueen
+Level: 44
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Body Slam
+- Double Kick
+- Poison Sting
+- Earthquake
+
+Nidoking
+Level: 45
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Thrash
+- Double Kick
+- Poison Sting
+- Earthquake
+
+Rhyhorn
+Level: 50
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Take Down
+- Rock Blast
+- Scary Face
+- Earthquake
+
+=== TRAINER_ROGUE_KANTO_LORELEI ===
+Name: LORELEI
+Class: Elite Four Frlg
+Pic: Elite Four Lorelei Frlg
+Gender: Female
+Music: Elite Four
+Items: Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Purple
+
+Dewgong
+Level: 52
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Ice Beam
+- Surf
+- Hail
+- Safeguard
+
+Cloyster
+Level: 51
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Spikes
+- Protect
+- Hail
+- Dive
+
+Slowbro
+Level: 52
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Ice Beam
+- Surf
+- Amnesia
+- Yawn
+
+Jynx
+Level: 54
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Ice Punch
+- Double Slap
+- Lovely Kiss
+- Attract
+
+Lapras @ Sitrus Berry
+Level: 54
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Confuse Ray
+- Ice Beam
+- Surf
+- Body Slam
+
+=== TRAINER_ROGUE_KANTO_BRUNO ===
+Name: BRUNO
+Class: Elite Four Frlg
+Pic: Elite Four Bruno Frlg
+Gender: Male
+Music: Elite Four
+Items: Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Green
+
+Onix
+Level: 51
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Earthquake
+- Rock Tomb
+- Iron Tail
+- Roar
+
+Hitmonchan
+Level: 53
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Sky Uppercut
+- Mach Punch
+- Rock Tomb
+- Counter
+
+Hitmonlee
+Level: 53
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Mega Kick
+- Foresight
+- Brick Break
+- Facade
+
+Onix
+Level: 54
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Double Edge
+- Earthquake
+- Iron Tail
+- Sand Tomb
+
+Machamp @ Sitrus Berry
+Level: 56
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Cross Chop
+- Bulk Up
+- Scary Face
+- Rock Tomb
+
+=== TRAINER_ROGUE_KANTO_AGATHA ===
+Name: AGATHA
+Class: Elite Four Frlg
+Pic: Elite Four Agatha Frlg
+Gender: Female
+Music: Elite Four
+Items: Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Pink
+
+Gengar
+Level: 54
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Shadow Punch
+- Confuse Ray
+- Toxic
+- Double Team
+
+Golbat
+Level: 54
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Confuse Ray
+- Poison Fang
+- Air Cutter
+- Bite
+
+Haunter
+Level: 53
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Hypnosis
+- Dream Eater
+- Curse
+- Mean Look
+
+Arbok
+Level: 56
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Sludge Bomb
+- Screech
+- Iron Tail
+- Bite
+
+Gengar @ Sitrus Berry
+Level: 58
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Shadow Ball
+- Sludge Bomb
+- Hypnosis
+- Nightmare
+
+=== TRAINER_ROGUE_KANTO_LANCE ===
+Name: LANCE
+Class: Elite Four Frlg
+Pic: Elite Four Lance Frlg
+Gender: Male
+Music: Elite Four
+Items: Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Blue
+
+Gyarados
+Level: 56
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Hyper Beam
+- Dragon Rage
+- Twister
+- Bite
+
+Dragonair
+Level: 54
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Hyper Beam
+- Safeguard
+- Dragon Rage
+- Outrage
+
+Dragonair
+Level: 54
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Hyper Beam
+- Safeguard
+- Thunder Wave
+- Outrage
+
+Aerodactyl
+Level: 58
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Hyper Beam
+- Ancient Power
+- Wing Attack
+- Scary Face
+
+Dragonite @ Sitrus Berry
+Level: 60
+IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
+- Hyper Beam
+- Safeguard
+- Outrage
+- Wing Attack
+
+=== TRAINER_ROGUE_KANTO_BLUE ===
+Name: TERRY
+Class: Champion Frlg
+Pic: Champion Rival Frlg
+Gender: Male
+Music: Male
+Items: Full Restore / Full Restore / Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Yellow
+
+Pidgeot
+Level: 59
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Aerial Ace
+- Feather Dance
+- Sand Attack
+- Whirlwind
+
+Alakazam
+Level: 57
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Psychic
+- Future Sight
+- Recover
+- Reflect
+
+Rhydon
+Level: 59
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Take Down
+- Earthquake
+- Rock Tomb
+- Scary Face
+
+Arcanine
+Level: 59
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Extreme Speed
+- Flamethrower
+- Roar
+- Bite
+
+Exeggutor
+Level: 61
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Giga Drain
+- Egg Bomb
+- Sleep Powder
+- Light Screen
+
+Blastoise @ Sitrus Berry
+Level: 63
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hydro Pump
+- Rain Dance
+- Skull Bash
+- Bite
