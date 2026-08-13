@@ -1168,6 +1168,12 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .species = sWoodsSpecies,
         .speciesCount = ARRAY_COUNT(sWoodsSpecies),
         .encounterWindow = 12,
+
+        // The woods paints tall grass, so the engine already gave this theme
+        // GRASS on its encounter surface and CAVE everywhere else - two
+        // backdrops on one floor depending on where the player was standing.
+        // Naming one makes the floor consistent with itself.
+        .battleEnvironment = BATTLE_ENVIRONMENT_DEEP_WOODS,
     },
     [DUNGEON_THEME_CAVE] =
     {
@@ -1567,6 +1573,12 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         // MB_OCEAN_WATER is a WATER encounter, not a land one - five slots
         // rather than twelve. See BuildWildEncounterTable.
         .wildArea = WILD_AREA_WATER,
+
+        // The ocean surface resolved to POND, because
+        // MetatileBehavior_IsSurfableWaterOrUnderwater is the only water test
+        // the environment picker makes and a pond is what it answers with. An
+        // open sea with islands on the horizon is the honest one.
+        .battleEnvironment = BATTLE_ENVIRONMENT_OPEN_OCEAN,
     },
     [DUNGEON_THEME_UNDERWATER] =
     {
@@ -2098,6 +2110,10 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
 
         .species = sStevenSpecies,
         .speciesCount = ARRAY_COUNT(sStevenSpecies),
+
+        // Steven's dungeon, and the run's last floors before the finale. Mossy
+        // grey rock, which is what the theme already looks like on the floor.
+        .battleEnvironment = BATTLE_ENVIRONMENT_MURKY_DEPTHS,
     },
 };
 

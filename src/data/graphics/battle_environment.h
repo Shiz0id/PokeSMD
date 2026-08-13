@@ -48,6 +48,20 @@ const u32 gBattleEnvironmentTiles_FrozenDepths[] = INCGFX_U32("graphics/battle_e
 const u16 gBattleEnvironmentPalette_FrozenDepths[] = INCGFX_U16("graphics/battle_environment/frozen_depths/palette.pal", ".gbapal");
 const u32 gBattleEnvironmentTilemap_FrozenDepths[] = INCGFX_U32("graphics/battle_environment/frozen_depths/map.bin", ".smolTM");
 
+// Murky Cave, the woods and the ocean. From Leob0505 rather than CFRU, which is
+// why they do not share the cave silhouette the three above do.
+const u32 gBattleEnvironmentTiles_MurkyDepths[] = INCGFX_U32("graphics/battle_environment/murky_depths/tiles.png", ".4bpp.smol");
+const u16 gBattleEnvironmentPalette_MurkyDepths[] = INCGFX_U16("graphics/battle_environment/murky_depths/palette.pal", ".gbapal");
+const u32 gBattleEnvironmentTilemap_MurkyDepths[] = INCGFX_U32("graphics/battle_environment/murky_depths/map.bin", ".smolTM");
+
+const u32 gBattleEnvironmentTiles_DeepWoods[] = INCGFX_U32("graphics/battle_environment/deep_woods/tiles.png", ".4bpp.smol");
+const u16 gBattleEnvironmentPalette_DeepWoods[] = INCGFX_U16("graphics/battle_environment/deep_woods/palette.pal", ".gbapal");
+const u32 gBattleEnvironmentTilemap_DeepWoods[] = INCGFX_U32("graphics/battle_environment/deep_woods/map.bin", ".smolTM");
+
+const u32 gBattleEnvironmentTiles_OpenOcean[] = INCGFX_U32("graphics/battle_environment/open_ocean/tiles.png", ".4bpp.smol");
+const u16 gBattleEnvironmentPalette_OpenOcean[] = INCGFX_U16("graphics/battle_environment/open_ocean/palette.pal", ".gbapal");
+const u32 gBattleEnvironmentTilemap_OpenOcean[] = INCGFX_U32("graphics/battle_environment/open_ocean/map.bin", ".smolTM");
+
 const u32 gBattleEnvironmentTiles_Building[] = INCGFX_U32("graphics/battle_environment/building/tiles.png", ".4bpp.smol");
 const u16 gBattleEnvironmentPalette_Building[] = INCGFX_U16("graphics/battle_environment/building/palette.pal", ".gbapal");
 const u32 gBattleEnvironmentTilemap_Building[] = INCGFX_U32("graphics/battle_environment/building/map.bin", ".smolTM");

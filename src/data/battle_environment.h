@@ -262,6 +262,53 @@ const struct BattleEnvironment gBattleEnvironmentInfo[BATTLE_ENVIRONMENT_COUNT] 
         .battleIntroSlide = CAVE_BATTLE_INTRO_SLIDE,
     },
 
+    // Murky Cave. A cave in every respect but the art.
+    [BATTLE_ENVIRONMENT_MURKY_DEPTHS] =
+    {
+        .name = _("Cave"),
+        .naturePower = CAVE_NATURE_POWER,
+        .secretPowerAnimation = CAVE_SECRET_POWER_ANIMATION,
+        .secretPowerEffect = CAVE_SECRET_POWER_EFFECT,
+        .camouflageType = CAVE_CAMOUFLAGE_TYPE,
+        .camouflageBlend = CAVE_CAMOUFLAGE_BLEND,
+        .entry = ENVIRONMENT_ENTRY(Cave),
+        .background = ENVIRONMENT_BACKGROUND(MurkyDepths),
+        .palette = gBattleEnvironmentPalette_MurkyDepths,
+        .battleIntroSlide = CAVE_BATTLE_INTRO_SLIDE,
+    },
+
+    // The woods. Grass behaviour, not cave: the theme paints tall grass and
+    // Camouflage turning the player Rock in a forest would be wrong.
+    [BATTLE_ENVIRONMENT_DEEP_WOODS] =
+    {
+        .name = _("Grass"),
+        .naturePower = B_NATURE_POWER_MOVES >= GEN_4 ? MOVE_ENERGY_BALL : MOVE_RAZOR_LEAF,
+        .secretPowerAnimation = B_SECRET_POWER_ANIMATION >= GEN_4 ? gBattleAnimMove_NeedleArm : gBattleAnimMove_MagicalLeaf,
+        .secretPowerEffect = MOVE_EFFECT_SLEEP,
+        .camouflageType = TYPE_GRASS,
+        .camouflageBlend = RGB(0, 15, 2),
+        .entry = ENVIRONMENT_ENTRY(LongGrass),
+        .background = ENVIRONMENT_BACKGROUND(DeepWoods),
+        .palette = gBattleEnvironmentPalette_DeepWoods,
+        .battleIntroSlide = BattleIntroSlide1,
+    },
+
+    // The ocean surface. Water behaviour throughout - this theme is crossed
+    // surfing, so Nature Power giving Surf is the literally correct answer.
+    [BATTLE_ENVIRONMENT_OPEN_OCEAN] =
+    {
+        .name = _("Water"),
+        .naturePower = B_NATURE_POWER_MOVES >= GEN_4 ? MOVE_HYDRO_PUMP : MOVE_SURF,
+        .secretPowerAnimation = B_SECRET_POWER_ANIMATION >= GEN_4 ? gBattleAnimMove_WaterPulse : gBattleAnimMove_Surf,
+        .secretPowerEffect = SECRET_POWER_ATK_MINUS_1,
+        .camouflageType = TYPE_WATER,
+        .camouflageBlend = RGB(11, 22, 31),
+        .entry = ENVIRONMENT_ENTRY(Water),
+        .background = ENVIRONMENT_BACKGROUND(OpenOcean),
+        .palette = gBattleEnvironmentPalette_OpenOcean,
+        .battleIntroSlide = BattleIntroSlide2,
+    },
+
     [BATTLE_ENVIRONMENT_BUILDING] =
     {
         .name = _("Building"),

@@ -86,17 +86,82 @@ def _flip_v(px):
 
 
 def load_indexed(path):
+    """-> an indexed image, quantising a truecolour source when it is safe to.
+
+    Not every background ships indexed. Leob0505's are RGBA with a uniform alpha
+    of 255, so the extra channels carry nothing and the image is really a
+    16-colour picture in a truecolour container. Quantising that is exact, so it
+    is done rather than refused - but ONLY when the source genuinely holds no
+    more colours than one bank, because anything else would be a lossy guess
+    dressed up as a conversion.
+
+    THE KEY COLOUR IS THE ONE FILLING THE MOST COMPLETE ROWS, and it becomes
+    index 0. Battle backgrounds draw art in the top 112 rows and fill the rest
+    with a do-not-draw colour the message box covers - black in the CFRU set,
+    hot pink in Leob0505's.
+
+    Two simpler rules were tried and are wrong. THE BOTTOM-LEFT PIXEL fails on
+    building.png, whose key band is rows 112 to 495 with other content below it,
+    so the corner is ordinary grey - and grey as index 0 would have turned every
+    grey pixel of the rock face transparent. THE MOST COMMON COLOUR happens to
+    work on all three of these and breaks on the first background whose sky is
+    larger than its message box. Counting uniform rows keys on the thing that is
+    actually true of a message-box fill: it spans the full width, repeatedly.
+    """
     from PIL import Image
 
     im = Image.open(path)
-    if im.mode != "P":
-        raise SystemExit(f"{path.name}: not an indexed PNG (mode {im.mode}) - "
-                         f"a battle background must be 4bpp-able")
     if im.size != (SRC_W, SRC_H):
         raise SystemExit(f"{path.name}: {im.size[0]}x{im.size[1]}, expected "
                          f"{SRC_W}x{SRC_H} - that is the 32x64 tile grid every "
                          f"vanilla map.bin is sized for")
-    return im
+    if im.mode == "P":
+        return im
+    if im.mode not in ("RGB", "RGBA"):
+        raise SystemExit(f"{path.name}: mode {im.mode} is not something this "
+                         f"can index")
+
+    if im.mode == "RGBA":
+        alpha = {p[3] for p in im.getdata()}
+        if alpha != {255}:
+            raise SystemExit(f"{path.name}: has real transparency "
+                            f"(alpha {sorted(alpha)[:4]}) - index it by hand, "
+                            f"because which colour becomes index 0 is a "
+                            f"decision this cannot make")
+        im = im.convert("RGB")
+
+    px = im.load()
+    uniform = {}
+    for y in range(SRC_H):
+        first = px[0, y]
+        if all(px[x, y] == first for x in range(SRC_W)):
+            uniform[first] = uniform.get(first, 0) + 1
+    key = max(uniform, key=uniform.get) if uniform else px[0, SRC_H - 1]
+    colours = [key]
+    for y in range(SRC_H):
+        for x in range(SRC_W):
+            c = px[x, y]
+            if c not in colours:
+                colours.append(c)
+                if len(colours) > COLOURS:
+                    raise SystemExit(
+                        f"{path.name}: more than {COLOURS} distinct colours - "
+                        f"index it by hand and choose the palette split")
+
+    out = Image.new("P", im.size, 0)
+    flat = []
+    for c in colours:
+        flat.extend(c)
+    flat.extend([0, 0, 0] * (256 - len(colours)))
+    out.putpalette(flat)
+    dst = out.load()
+    lookup = {c: i for i, c in enumerate(colours)}
+    for y in range(SRC_H):
+        for x in range(SRC_W):
+            dst[x, y] = lookup[px[x, y]]
+    print(f"{path.name}: quantised {im.mode} to {len(colours)} colours, "
+          f"key {key} -> index 0")
+    return out
 
 
 def repack(im):
