@@ -71,6 +71,7 @@ enum Usm_IconTiletags {
     USM_TILETAG_OPTIONS,
     USM_TILETAG_RETIRE,
     USM_TILETAG_DEBUG,
+    USM_TILETAG_CHARMS,
     USM_TILETAG_HAND,
 };
 
@@ -132,6 +133,12 @@ static const u32 sSaveIconGfx[] = INCBIN_U32("graphics/unbound_start_menu/sprite
 static const u32 sOptionsIconGfx[] = INCBIN_U32("graphics/unbound_start_menu/sprites/options.4bpp.smol");
 static const u32 sDebugIconGfx[] = INCBIN_U32("graphics/unbound_start_menu/sprites/debug.4bpp.smol");
 static const u32 sRetireIconGfx[] = INCBIN_U32("graphics/unbound_start_menu/sprites/retire.4bpp.smol");
+// FRLG's Volcano Badge, recoloured into the shared icon palette by
+// tools/rogue/make_charm_icon.py. A shield with a flame in it already reads
+// as a status condition, and the flame is a single palette index in the
+// source - so it sits grey in the inactive frame and lights up in the
+// selected one without a second drawing.
+static const u32 sCharmsIconGfx[] = INCBIN_U32("graphics/unbound_start_menu/sprites/charms.4bpp.smol");
 
 static const u32 sUsmHandGfx[] = INCBIN_U32("graphics/unbound_start_menu/sprites/hand.4bpp.smol");
 
@@ -231,6 +238,7 @@ ICON_TEMPLATE(SAVE, Save)
 ICON_TEMPLATE(OPTIONS, Options)
 ICON_TEMPLATE(DEBUG, Debug)
 ICON_TEMPLATE(RETIRE, Retire)
+ICON_TEMPLATE(CHARMS, Charms)
 
 static const struct SpritePalette sSpritePalette_Icons = {.data = sIconPal, .tag = USM_PALTAG_ICON};
 
@@ -283,6 +291,8 @@ static bool32 IsPlayerInBattlePyramid(void);
 
 // Menu Callbacks
 static bool8 StartMenuPokedexCallback(void);
+static bool8 Usm_RogueCharmsCallback(void);
+extern const u8 RogueCharms_EventScript_ShowList[];
 static bool8 StartMenuPokemonCallback(void);
 static bool8 StartMenuBagCallback(void);
 static bool8 StartMenuPokeNavCallback(void);
@@ -361,6 +371,15 @@ static const struct Usm_MenuItem sUsmMenuItems[USM_ICO_COUNT] = {
             .shouldFade = TRUE,
             .callback = StartMenuOptionCallback,
         },
+    [USM_ICO_CHARMS] =
+        {
+            .iconId = USM_ICO_CHARMS,
+            .template = &sSpriteTemplate_Charms,
+            .sheet = &sSpriteSheet_Charms,
+            .label = COMPOUND_STRING("Charms"),
+            .shouldFade = TRUE,
+            .callback = Usm_RogueCharmsCallback,
+        },
     [USM_ICO_DEBUG] =
         {
             .iconId = USM_ICO_DEBUG,
@@ -389,6 +408,15 @@ static const struct Usm_MenuItem sUsmMenuItems[USM_ICO_COUNT] = {
             .callback = StartMenuBattlePyramidRetireCallback,
         },
 };
+
+// Hands off to a script rather than opening a screen, the same shape the
+// safari retire option uses. The listing itself is built in C by
+// RogueCharm_ScriptBufferSummary.
+static bool8 Usm_RogueCharmsCallback(void)
+{
+    ScriptContext_SetupScript(RogueCharms_EventScript_ShowList);
+    return TRUE;
+}
 
 bool8 StartMenuPokedexCallback(void)
 {
@@ -810,6 +838,9 @@ static void Usm_BuildDefaultMenuItems(void)
     if (FlagGet(FLAG_SYS_POKENAV_GET))
         Usm_AddMenuItem(USM_ICO_POKENAV);
 
+    // Beside the trainer card, where someone asking "what is wrong with my
+    // team" is already heading.
+    Usm_AddMenuItem(USM_ICO_CHARMS);
     Usm_AddMenuItem(USM_ICO_TRAINER);
     Usm_AddMenuItem(USM_ICO_SAVE);
     Usm_AddMenuItem(USM_ICO_OPTIONS);

@@ -360,6 +360,8 @@ RogueDungeonFloor_EventScript_EventInjured::
 	playfanfare MUS_OBTAIN_ITEM
 	waitfanfare
 	msgbox RogueDungeonFloor_Text_InjuredJoined, MSGBOX_DEFAULT
+@ It left with the player, so it is certainly not still lying there.
+	removeobject VAR_LAST_TALKED
 	goto RogueDungeonFloor_EventScript_EventDone
 
 RogueDungeonFloor_EventScript_EventInjuredNoRoom::
@@ -378,6 +380,12 @@ RogueDungeonFloor_EventScript_EventInjuredAmbush::
 	setvar VAR_ROGUE_EVENT_SPENT, 1
 	special RogueDungeon_EventInjuredAmbush
 	dowildbattle
+@ AND IT LEAVES. A wild Pokemon that is defeated or caught and then goes on
+@ standing exactly where it was reads as a broken event - the spent guard
+@ stops it being fought twice, but nothing was telling the player that.
+@ removeobject rather than a flag: a floor is never revisited, so there is
+@ nothing to persist.
+	removeobject VAR_LAST_TALKED
 	release
 	end
 
@@ -823,6 +831,12 @@ RogueDungeonFloor_EventScript_EventScout::
 	setvar VAR_ROGUE_EVENT_SPENT, 1
 	special RogueDungeon_EventScoutBattle
 	dowildbattle
+@ AND IT LEAVES. A wild Pokemon that is defeated or caught and then goes on
+@ standing exactly where it was reads as a broken event - the spent guard
+@ stops it being fought twice, but nothing was telling the player that.
+@ removeobject rather than a flag: a floor is never revisited, so there is
+@ nothing to persist.
+	removeobject VAR_LAST_TALKED
 	release
 	end
 
@@ -843,7 +857,12 @@ RogueDungeonFloor_EventScript_EventShrine::
 	faceplayer
 	compare VAR_ROGUE_EVENT_SPENT, 1
 	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
-	msgbox RogueDungeonFloor_Text_ShrineIntro, MSGBOX_DEFAULT
+@ message + waitmessage rather than msgbox: the text box has to STAY UP
+@ while the menu is open. msgbox closes it, which left a multichoice
+@ floating over an empty screen with nothing saying what the options were.
+@ This is the shape the Poke Mart clerk uses in front of `pokemart`.
+	message RogueDungeonFloor_Text_ShrineIntro
+	waitmessage
 	multichoice 0, 0, MULTI_ROGUE_SHRINE, FALSE
 	switch VAR_RESULT
 	case 0, RogueDungeonFloor_EventScript_EventShrineCommune
@@ -917,7 +936,12 @@ RogueDungeonFloor_EventScript_EventHerbalist::
 	faceplayer
 	compare VAR_ROGUE_EVENT_SPENT, 1
 	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
-	msgbox RogueDungeonFloor_Text_HerbIntro, MSGBOX_DEFAULT
+@ message + waitmessage rather than msgbox: the text box has to STAY UP
+@ while the menu is open. msgbox closes it, which left a multichoice
+@ floating over an empty screen with nothing saying what the options were.
+@ This is the shape the Poke Mart clerk uses in front of `pokemart`.
+	message RogueDungeonFloor_Text_HerbIntro
+	waitmessage
 	multichoice 0, 0, MULTI_ROGUE_HERBALIST, FALSE
 	switch VAR_RESULT
 	case 0, RogueDungeonFloor_EventScript_EventHerbBrew
@@ -959,7 +983,12 @@ RogueDungeonFloor_EventScript_EventFossil::
 	compare VAR_ROGUE_EVENT_SPENT, 1
 	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
 	special RogueDungeon_EventFossilOffer
-	msgbox RogueDungeonFloor_Text_FossilIntro, MSGBOX_DEFAULT
+@ message + waitmessage rather than msgbox: the text box has to STAY UP
+@ while the menu is open. msgbox closes it, which left a multichoice
+@ floating over an empty screen with nothing saying what the options were.
+@ This is the shape the Poke Mart clerk uses in front of `pokemart`.
+	message RogueDungeonFloor_Text_FossilIntro
+	waitmessage
 	multichoice 0, 0, MULTI_ROGUE_FOSSIL, FALSE
 	switch VAR_RESULT
 	case 0, RogueDungeonFloor_EventScript_EventFossilTake
@@ -1098,6 +1127,8 @@ RogueDungeonFloor_EventScript_EventDittoBall::
 	setvar VAR_ROGUE_EVENT_SPENT, 1
 	special RogueDungeon_EventDittoAmbush
 	dowildbattle
+@ The ball WAS the Ditto - leaving it on the floor would be a second one.
+	removeobject VAR_LAST_TALKED
 	release
 	end
 
@@ -1115,7 +1146,12 @@ RogueDungeonFloor_EventScript_EventTotem::
 	compare VAR_ROGUE_EVENT_SPENT, 1
 	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
 	special RogueDungeon_EventTotemApproach
-	msgbox RogueDungeonFloor_Text_TotemIntro, MSGBOX_DEFAULT
+@ message + waitmessage rather than msgbox: the text box has to STAY UP
+@ while the menu is open. msgbox closes it, which left a multichoice
+@ floating over an empty screen with nothing saying what the options were.
+@ This is the shape the Poke Mart clerk uses in front of `pokemart`.
+	message RogueDungeonFloor_Text_TotemIntro
+	waitmessage
 	multichoice 0, 0, MULTI_ROGUE_TOTEM, FALSE
 	switch VAR_RESULT
 	case 0, RogueDungeonFloor_EventScript_EventTotemFight
@@ -1129,8 +1165,29 @@ RogueDungeonFloor_EventScript_EventTotemFight::
 	special RogueDungeon_EventTotemBattle
 	settotemboost B_POSITION_OPPONENT_LEFT, 1, 1, 1, 1, 1
 	dowildbattle
-	release
-	end
+@ AND IT LEAVES. A wild Pokemon that is defeated or caught and then goes on
+@ standing exactly where it was reads as a broken event - the spent guard
+@ stops it being fought twice, but nothing was telling the player that.
+@ removeobject rather than a flag: a floor is never revisited, so there is
+@ nothing to persist.
+	removeobject VAR_LAST_TALKED
+@ AND THE PRIZE. The intro has always said something glitters behind it; for a
+@ long time nothing did. A mega stone for a Pokemon the party actually has, or a
+@ Z-crystal - see RogueDungeon_EventTotemReward.
+@
+@ Only on a WIN, and being knocked out or running away has to come away with
+@ nothing or the challenge is not a wager at all.
+	special RogueDungeon_EventBattleWon
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	special RogueDungeon_EventTotemReward
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventTotemNoRoom
+	playfanfare MUS_OBTAIN_ITEM
+	msgbox RogueDungeonFloor_Text_TotemPrize, MSGBOX_DEFAULT
+	waitfanfare
+	goto RogueDungeonFloor_EventScript_EventDone
+
 
 RogueDungeonFloor_EventScript_EventTotemSneak::
 	special RogueDungeon_EventTotemSneak
@@ -1147,11 +1204,21 @@ RogueDungeonFloor_EventScript_EventTotemFeed::
 	setvar VAR_ROGUE_EVENT_SPENT, 1
 	msgbox RogueDungeonFloor_Text_TotemFeed, MSGBOX_DEFAULT
 	dowildbattle
+@ AND IT LEAVES. A wild Pokemon that is defeated or caught and then goes on
+@ standing exactly where it was reads as a broken event - the spent guard
+@ stops it being fought twice, but nothing was telling the player that.
+@ removeobject rather than a flag: a floor is never revisited, so there is
+@ nothing to persist.
+	removeobject VAR_LAST_TALKED
 	release
 	end
 
 RogueDungeonFloor_EventScript_EventTotemBroke::
 	msgbox RogueDungeonFloor_Text_TotemBroke, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventTotemNoRoom::
+	msgbox RogueDungeonFloor_Text_TotemNoRoom, MSGBOX_DEFAULT
 	goto RogueDungeonFloor_EventScript_EventDone
 
 RogueDungeonFloor_EventScript_EventTotemNoFood::
@@ -1173,9 +1240,10 @@ RogueDungeonFloor_Text_ScoutDeclined:
 	.string "Then I will keep looking alone.$"
 
 RogueDungeonFloor_Text_ShrineIntro:
-	.string "An old woman tends a grave here.\p"
-	.string "The flames above it burn purple,\n"
-	.string "and they do not flicker.$"
+	.string "An old woman tends a grave here.\n"
+	.string "The purple flames do not flicker.\p"
+	.string "Trade your lead's health to REVIVE,\n"
+	.string "pay to be CLEANSED, or DISTURB them.$"
 
 RogueDungeonFloor_Text_ShrineCommuneOffer:
 	.string "The spirits will trade, she says.\p"
@@ -1212,8 +1280,10 @@ RogueDungeonFloor_Text_ShrineDisturb:
 	.string "Something reaches back!$"
 
 RogueDungeonFloor_Text_HerbIntro:
-	.string "An old woman is stripping the tree\n"
-	.string "beside her with practised hands.$"
+	.string "An old woman strips the tree beside\n"
+	.string "her with practised hands.\p"
+	.string "Her BREW wakes a fallen team but\n"
+	.string "slows it, or you may FORAGE freely.$"
 
 RogueDungeonFloor_Text_HerbBrewOffer:
 	.string "She offers a bitter brew.\p"
@@ -1231,9 +1301,10 @@ RogueDungeonFloor_Text_HerbNoRoom:
 	.string "You had nowhere to put them.$"
 
 RogueDungeonFloor_Text_FossilIntro:
-	.string "A hiker is working at the rock face.\p"
-	.string "Something old is set into it, and it\n"
-	.string "is not stone.$"
+	.string "A hiker works at the rock face.\n"
+	.string "Something old is set into it.\p"
+	.string "EXTRACT it and take what follows,\n"
+	.string "SELL it, or STUDY the carvings.$"
 
 RogueDungeonFloor_Text_FossilTakeAsk:
 	.string "He can free it, he says, but the\n"
@@ -1306,8 +1377,9 @@ RogueDungeonFloor_Text_DittoSpring:
 
 RogueDungeonFloor_Text_TotemIntro:
 	.string "A {STR_VAR_1} blocks the way, far\n"
-	.string "larger than it has any right to be.\p"
-	.string "Something glitters behind it.$"
+	.string "larger than it should be.\p"
+	.string "CHALLENGE it for what it guards,\n"
+	.string "SNEAK past for money, or LEAVE FOOD.$"
 
 RogueDungeonFloor_Text_TotemFight:
 	.string "It draws itself up!$"
@@ -1327,6 +1399,14 @@ RogueDungeonFloor_Text_TotemFeed:
 RogueDungeonFloor_Text_TotemNoFood:
 	.string "You have nothing it would want.$"
 
+RogueDungeonFloor_Text_TotemPrize:
+	.string "Behind it, half buried, was\n"
+	.string "{STR_VAR_1}!$"
+
+RogueDungeonFloor_Text_TotemNoRoom:
+	.string "Something was buried behind it,\n"
+	.string "but there was no room in your bag.$"
+
 @ The dungeon's berry trees. Vanilla's BerryTreeScript everywhere except for one
 @ check in front of it.
 @
@@ -1338,21 +1418,70 @@ RogueDungeonFloor_Text_TotemNoFood:
 @ The tree is left standing rather than removed. A floor is never revisited, so
 @ there is nothing to gain by clearing it, and a withered tree the player can
 @ walk back past is a better memory of the floor than an empty tile.
+@ THE WHOLE PICK, RATHER THAN A JUMP INTO BerryTreeScript.
+@
+@ Delegating left an INVISIBLE WALL. Vanilla's pick ends in
+@ ObjectEventInteractionRemoveBerryTree, which clears the tree data and leaves
+@ the OBJECT EVENT standing - in the overworld that is the point, because the
+@ soil is replantable and the sprite becomes a dirt patch. Here the object had no
+@ tree left to draw, so it rendered as nothing and went on blocking the tile.
+@
+@ Control could not come back to fix it either: `goto BerryTreeScript` never
+@ returns, so there was nowhere to hang a removeobject.
+@
+@ Owning the path costs little because a dungeon tree is only ever in ONE state.
+@ PlantBerryTree puts every one of them at BERRY_STAGE_BERRIES and the rotten
+@ ones are intercepted above, so the eight other stages vanilla branches on
+@ cannot happen here.
 RogueDungeonFloor_EventScript_BerryTree::
-	lockall
+	lock
+	faceplayer
 	special RogueDungeon_EventBerryIsRotten
 	compare VAR_RESULT, 1
 	goto_if_eq RogueDungeonFloor_EventScript_BerryTreeRotten
-	releaseall
-	goto BerryTreeScript
+	special ObjectEventInteractionGetBerryTreeData
+	buffernumberstring STR_VAR_2, VAR_0x8006
+	msgbox RogueDungeonFloor_Text_BerryPick, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_BerryTreeDone
+	special ObjectEventInteractionPickBerryTree
+	compare VAR_0x8004, 0
+	goto_if_eq RogueDungeonFloor_EventScript_BerryTreeFull
+	special ObjectEventInteractionRemoveBerryTree
+@ The tree data is gone; the OBJECT has to go with it or the tile stays solid.
+	removeobject VAR_LAST_TALKED
+	playfanfare MUS_OBTAIN_BERRY
+	msgbox RogueDungeonFloor_Text_BerryPicked, MSGBOX_DEFAULT
+	waitfanfare
+RogueDungeonFloor_EventScript_BerryTreeDone::
+	release
+	end
+
+@ Deliberately leaves the tree standing - the berries are still on it, and the
+@ player can come back once they have made room.
+RogueDungeonFloor_EventScript_BerryTreeFull::
+	msgbox RogueDungeonFloor_Text_BerryPocketFull, MSGBOX_DEFAULT
+	release
 	end
 
 RogueDungeonFloor_EventScript_BerryTreeRotten::
 	msgbox RogueDungeonFloor_Text_BerryRotten, MSGBOX_DEFAULT
-	releaseall
+	release
 	end
 
 RogueDungeonFloor_Text_BerryRotten:
 	.string "The berries on this tree are black\n"
 	.string "and shrivelled.\p"
 	.string "There is nothing worth taking.$"
+
+RogueDungeonFloor_Text_BerryPick:
+	.string "There are {STR_VAR_2} {STR_VAR_1} on\n"
+	.string "this tree.\p"
+	.string "Pick them?$"
+
+RogueDungeonFloor_Text_BerryPicked:
+	.string "You picked the {STR_VAR_1}.$"
+
+RogueDungeonFloor_Text_BerryPocketFull:
+	.string "There is no room for any more\n"
+	.string "berries.$"

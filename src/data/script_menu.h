@@ -1175,10 +1175,13 @@ static const struct MenuAction MultichoiceList_RogueTotem[] =
     {gText_Exit},
 };
 
+// Labels match the words the standing text box uses, because the text is what
+// explains them - a menu reading COMMUNE against text describing a revival is
+// two names for one thing and the player has to guess they are the same.
 static const struct MenuAction MultichoiceList_RogueShrine[] =
 {
-    {COMPOUND_STRING("COMMUNE")},
-    {COMPOUND_STRING("OFFERING")},
+    {COMPOUND_STRING("REVIVE")},
+    {COMPOUND_STRING("CLEANSE")},
     {COMPOUND_STRING("DISTURB")},
     {gText_Exit},
 };

@@ -691,6 +691,8 @@ gSpecials::
 	def_special RogueDungeon_EventTotemApproach
 	def_special RogueDungeon_EventTotemBattle
 	def_special RogueDungeon_EventTotemFeed
+	def_special RogueDungeon_EventTotemReward
+	def_special RogueDungeon_EventBattleWon
 	def_special RogueDungeon_EventTotemSneak
 	def_special Special_ViewVoltorbFlip
 	def_special StartFlappyBird

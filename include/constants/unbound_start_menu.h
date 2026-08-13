@@ -12,6 +12,10 @@ enum Usm_Icons {
     USM_ICO_SAFARI_RETIRE,
     USM_ICO_FRONTIER_RETIRE,
     USM_ICO_DEBUG,
+    // Appended rather than slotted in beside the others: these ids are
+    // STORED, in Usm_SavedItems.items[] in SaveBlock3, so inserting one
+    // would silently renumber every icon a player has already arranged.
+    USM_ICO_CHARMS,
     USM_ICO_COUNT
 };
 

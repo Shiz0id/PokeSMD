@@ -40,6 +40,7 @@
 #include "constants/rogue_safari_pool.h"
 #include "rogue_dungeon.h"
 #include "rogue_charms.h"
+#include "battle.h"
 
 extern const u8 RogueDungeonFloor_EventScript_Stairs[];
 extern const u8 RogueDungeonFloor_EventScript_Trainer[];
@@ -2682,21 +2683,31 @@ u16 RogueDungeon_PrepareBossAceOffer(void)
 // reason - see the comment there. Drop that and every adopted ace starts
 // ignoring orders. Nothing in the experience path reads OT id, so there is no
 // traded-experience interaction to weigh.
-static void SetBossAceOriginalTrainer(struct Pokemon *mon, u16 trainerId)
+// THE OT ID MUST BE CHOSEN BEFORE THE POKEMON IS BUILT, NOT WRITTEN AFTERWARDS.
+//
+// This shipped as a BAD EGG. The substructs of a box mon are encrypted with
+// personality ^ otId, and MON_DATA_OT_ID is one of the fields SetBoxMonData
+// handles in its UNENCRYPTED branch - it writes boxMon->otId and does not
+// decrypt or re-encrypt anything. So changing the id after creation leaves every
+// substruct encrypted under the old key while every later read uses the new one:
+// the next GetMonData decrypts garbage, the checksum fails, and the engine marks
+// the Pokemon isBadEgg. CalculateMonStats at the end of the gift did exactly
+// that, one line later.
+//
+// Nothing about it looked wrong. Every write went through SetMonData, the
+// shininess was carefully preserved, and the mon was corrupt before the script
+// printed its congratulations.
+static u32 BossAceOriginalTrainerId(u16 trainerId)
 {
-    const struct Trainer *trainer = GetTrainerStructFromId(trainerId);
-    u8 gender = trainer->gender;
-    u32 otId, wasShiny;
-
-    // The mon was created moments ago with the player as its original trainer,
-    // so this IS the player's id - read from the Pokemon rather than assembled
-    // out of gSaveBlock2Ptr->playerTrainerId's four bytes, which is the same
-    // number by a longer route.
-    u32 playerId = GetMonData(mon, MON_DATA_OT_ID, NULL);
-
     // A golden-ratio mix, so trainer ids that sit next to each other in the
     // table do not produce OT ids that look related.
-    otId = trainerId * 0x9E3779B1u;
+    u32 otId = trainerId * 0x9E3779B1u;
+    // The player's own id, assembled from the four bytes the save keeps it in.
+    u32 playerId = gSaveBlock2Ptr->playerTrainerId[0]
+                 | (gSaveBlock2Ptr->playerTrainerId[1] << 8)
+                 | (gSaveBlock2Ptr->playerTrainerId[2] << 16)
+                 | (gSaveBlock2Ptr->playerTrainerId[3] << 24);
+
     otId ^= otId >> 16;
 
     // A collision would make the ace read as the player's own, silently undoing
@@ -2704,20 +2715,17 @@ static void SetBossAceOriginalTrainer(struct Pokemon *mon, u16 trainerId)
     if (otId == playerId)
         otId++;
 
-    // SHININESS IS DERIVED FROM THE OT ID, so changing the id after the mon is
-    // created silently re-rolls whether it is shiny: GetMonData computes
-    // GET_SHINY_VALUE(otId, personality) and XORs a shinyModifier that was set
-    // when the OLD id was in place. Reading the intended answer first and
-    // writing it back afterwards recomputes that modifier against the new id,
-    // which makes this whole function shiny-neutral rather than a 1-in-4096
-    // source of accidental shinies.
-    wasShiny = GetMonData(mon, MON_DATA_IS_SHINY, NULL);
+    return otId;
+}
 
-    SetMonData(mon, MON_DATA_OT_ID, &otId);
+// The NAME and GENDER are safe to write after creation - neither is part of the
+// encryption key, which is only personality and otId.
+static void SetBossAceTrainerName(struct Pokemon *mon, u16 trainerId)
+{
+    u8 gender = GetTrainerStructFromId(trainerId)->gender;
+
     SetMonData(mon, MON_DATA_OT_NAME, GetTrainerNameFromId(trainerId));
     SetMonData(mon, MON_DATA_OT_GENDER, &gender);
-
-    SetMonData(mon, MON_DATA_IS_SHINY, &wasShiny);
 }
 
 // Grants the ace at the level the boss ran it, with the same moveset, so it
@@ -2733,7 +2741,15 @@ void RogueDungeon_GiveBossAce(void)
         return;
 
     mon = &gParties[B_TRAINER_PLAYER][slot];
-    CreateRandomMonWithIVs(mon, sBossAceSpecies, sBossAceLevel, MAX_PER_STAT_IVS);
+
+    // CreateMonWithIVs rather than CreateRandomMonWithIVs, purely so the OT id
+    // can be handed in at creation - see BossAceOriginalTrainerId. The moveset
+    // is set below from the boss's own party, so the initial moveset that
+    // CreateRandomMonWithIVs would have added is not wanted either.
+    CreateMonWithIVs(mon, sBossAceSpecies, sBossAceLevel, Random32(),
+                     OTID_STRUCT_PRESET(BossAceOriginalTrainerId(sTrainerIds[0])),
+                     MAX_PER_STAT_IVS);
+    GiveMonInitialMoveset(mon);
 
     for (i = 0; i < MAX_MON_MOVES; i++)
     {
@@ -2748,7 +2764,7 @@ void RogueDungeon_GiveBossAce(void)
         SetMonData(mon, MON_DATA_HELD_ITEM, &item);
     }
 
-    SetBossAceOriginalTrainer(mon, sTrainerIds[0]);
+    SetBossAceTrainerName(mon, sTrainerIds[0]);
 
     CalculateMonStats(mon);
     CalculatePlayerPartyCount();
@@ -4994,6 +5010,140 @@ void RogueDungeon_OnBossDefeated(void)
 // Returns the trainer, and writes its overworld sprite through gfxOut when the
 // theme brought its own. gfxOut is left alone for the stock table, whose
 // entries have no sprite and leave the caller alternating theme->trainerGfx.
+// THE OVERWORLD SPRITE COMES FROM THE TRAINER'S CLASS, and this table is why a
+// floor is no longer four hikers.
+//
+// Before this, a generated trainer took theme->trainerGfx or trainerGfxAlt by
+// slot parity, so a floor showed at most TWO figures and a theme that set
+// neither showed OBJ_EVENT_GFX_HIKER for every single battle. The class is
+// already known - it rides on the trainer id, which is what picks the BATTLE
+// pic - so deriving the overworld sprite from it costs one lookup and makes the
+// two halves agree. Walking up to a Lass and fighting a Lass is the point; the
+// variety is the side effect.
+//
+// This is the same fault the seafloor's own trainer table was invented to fix,
+// generalised. A theme table still wins where one exists, because a diver needs
+// a diver sprite and no stock class describes that.
+//
+// GENDERED, because struct Trainer carries a gender bit and half these classes
+// come in pairs. A Swimmer drawn male in the overworld opening a battle as a
+// woman is exactly the mismatch the divers hit.
+//
+// THE ALT IS A SECOND SPRITE FOR THE SAME CLASS, taken from the FRLG set that
+// is now compiled in, chosen by a bit of the trainer id so it is stable for a
+// given trainer rather than varying by where they stand. Ten classes have one,
+// which roughly doubles the apparent variety on the floors those classes are
+// common on. Zero means no alt and the primary is always used.
+//
+// Zero for a class means NO OPINION, and the caller falls back to the theme's
+// own sprites exactly as before - so the bosses, the Frontier brains and the
+// rivals, none of which the generated pool draws from, are simply absent here.
+struct RogueClassGfx
+{
+    u16 male, female;
+    u16 maleAlt, femaleAlt;
+};
+
+static const struct RogueClassGfx sTrainerClassGfx[TRAINER_CLASS_COUNT] =
+{
+    [TRAINER_CLASS_HIKER]        = { OBJ_EVENT_GFX_HIKER, OBJ_EVENT_GFX_HIKER,
+                                     OBJ_EVENT_GFX_HIKER_FRLG, OBJ_EVENT_GFX_HIKER_FRLG },
+    [TRAINER_CLASS_TEAM_AQUA]    = { OBJ_EVENT_GFX_AQUA_MEMBER_M, OBJ_EVENT_GFX_AQUA_MEMBER_F },
+    [TRAINER_CLASS_AQUA_ADMIN]   = { OBJ_EVENT_GFX_AQUA_MEMBER_M, OBJ_EVENT_GFX_AQUA_MEMBER_F },
+    [TRAINER_CLASS_TEAM_MAGMA]   = { OBJ_EVENT_GFX_MAGMA_MEMBER_M, OBJ_EVENT_GFX_MAGMA_MEMBER_F },
+    [TRAINER_CLASS_MAGMA_ADMIN]  = { OBJ_EVENT_GFX_MAGMA_MEMBER_M, OBJ_EVENT_GFX_MAGMA_MEMBER_F },
+    [TRAINER_CLASS_PKMN_BREEDER] = { OBJ_EVENT_GFX_POKEFAN_M, OBJ_EVENT_GFX_POKEFAN_F },
+    [TRAINER_CLASS_POKEFAN]      = { OBJ_EVENT_GFX_POKEFAN_M, OBJ_EVENT_GFX_POKEFAN_F },
+    [TRAINER_CLASS_COOLTRAINER]  = { OBJ_EVENT_GFX_COOLTRAINER_M, OBJ_EVENT_GFX_COOLTRAINER_F },
+    [TRAINER_CLASS_COOLTRAINER_2]= { OBJ_EVENT_GFX_COOLTRAINER_M, OBJ_EVENT_GFX_COOLTRAINER_F },
+    [TRAINER_CLASS_DRAGON_TAMER] = { OBJ_EVENT_GFX_COOLTRAINER_M, OBJ_EVENT_GFX_COOLTRAINER_F },
+    [TRAINER_CLASS_EXPERT]       = { OBJ_EVENT_GFX_EXPERT_M, OBJ_EVENT_GFX_EXPERT_F },
+    [TRAINER_CLASS_BLACK_BELT]   = { OBJ_EVENT_GFX_BLACK_BELT, OBJ_EVENT_GFX_CRUSH_GIRL,
+                                     OBJ_EVENT_GFX_BLACK_BELT_FRLG, 0 },
+    [TRAINER_CLASS_BATTLE_GIRL]  = { OBJ_EVENT_GFX_CRUSH_GIRL, OBJ_EVENT_GFX_CRUSH_GIRL },
+    [TRAINER_CLASS_HEX_MANIAC]   = { OBJ_EVENT_GFX_HEX_MANIAC, OBJ_EVENT_GFX_HEX_MANIAC },
+    [TRAINER_CLASS_PSYCHIC]      = { OBJ_EVENT_GFX_PSYCHIC_M, OBJ_EVENT_GFX_HEX_MANIAC },
+    [TRAINER_CLASS_AROMA_LADY]   = { OBJ_EVENT_GFX_PICNICKER, OBJ_EVENT_GFX_PICNICKER },
+    [TRAINER_CLASS_RUIN_MANIAC]  = { OBJ_EVENT_GFX_MANIAC, OBJ_EVENT_GFX_MANIAC },
+    [TRAINER_CLASS_POKEMANIAC]   = { OBJ_EVENT_GFX_MANIAC, OBJ_EVENT_GFX_MANIAC },
+    [TRAINER_CLASS_BUG_MANIAC]   = { OBJ_EVENT_GFX_BUG_CATCHER, OBJ_EVENT_GFX_BUG_CATCHER },
+    [TRAINER_CLASS_BUG_CATCHER]  = { OBJ_EVENT_GFX_BUG_CATCHER, OBJ_EVENT_GFX_BUG_CATCHER,
+                                     OBJ_EVENT_GFX_BUG_CATCHER_FRLG, OBJ_EVENT_GFX_BUG_CATCHER_FRLG },
+    [TRAINER_CLASS_INTERVIEWER]  = { OBJ_EVENT_GFX_REPORTER_M, OBJ_EVENT_GFX_REPORTER_F },
+    [TRAINER_CLASS_TUBER_M]      = { OBJ_EVENT_GFX_TUBER_M, OBJ_EVENT_GFX_TUBER_M },
+    [TRAINER_CLASS_TUBER_F]      = { OBJ_EVENT_GFX_TUBER_F, OBJ_EVENT_GFX_TUBER_F,
+                                     OBJ_EVENT_GFX_TUBER_F_FRLG, OBJ_EVENT_GFX_TUBER_F_FRLG },
+    [TRAINER_CLASS_LADY]         = { OBJ_EVENT_GFX_BEAUTY, OBJ_EVENT_GFX_BEAUTY },
+    [TRAINER_CLASS_BEAUTY]       = { OBJ_EVENT_GFX_BEAUTY, OBJ_EVENT_GFX_BEAUTY,
+                                     OBJ_EVENT_GFX_BEAUTY_FRLG, OBJ_EVENT_GFX_BEAUTY_FRLG },
+    [TRAINER_CLASS_PARASOL_LADY] = { OBJ_EVENT_GFX_WOMAN_2, OBJ_EVENT_GFX_WOMAN_2 },
+    [TRAINER_CLASS_RICH_BOY]     = { OBJ_EVENT_GFX_RICH_BOY, OBJ_EVENT_GFX_RICH_BOY },
+    [TRAINER_CLASS_COLLECTOR]    = { OBJ_EVENT_GFX_RICH_BOY, OBJ_EVENT_GFX_RICH_BOY },
+    [TRAINER_CLASS_GENTLEMAN]    = { OBJ_EVENT_GFX_GENTLEMAN, OBJ_EVENT_GFX_GENTLEMAN,
+                                     OBJ_EVENT_GFX_GENTLEMAN_FRLG, OBJ_EVENT_GFX_GENTLEMAN_FRLG },
+    [TRAINER_CLASS_GUITARIST]    = { OBJ_EVENT_GFX_BIKER, OBJ_EVENT_GFX_BIKER },
+    [TRAINER_CLASS_KINDLER]      = { OBJ_EVENT_GFX_CAMPER, OBJ_EVENT_GFX_CAMPER },
+    [TRAINER_CLASS_CAMPER]       = { OBJ_EVENT_GFX_CAMPER, OBJ_EVENT_GFX_CAMPER,
+                                     OBJ_EVENT_GFX_CAMPER_FRLG, OBJ_EVENT_GFX_CAMPER_FRLG },
+    [TRAINER_CLASS_PICNICKER]    = { OBJ_EVENT_GFX_PICNICKER, OBJ_EVENT_GFX_PICNICKER,
+                                     OBJ_EVENT_GFX_PICNICKER_FRLG, OBJ_EVENT_GFX_PICNICKER_FRLG },
+    [TRAINER_CLASS_PKMN_RANGER]  = { OBJ_EVENT_GFX_CAMPER, OBJ_EVENT_GFX_PICNICKER },
+    [TRAINER_CLASS_BIRD_KEEPER]  = { OBJ_EVENT_GFX_CAMPER, OBJ_EVENT_GFX_PICNICKER },
+    [TRAINER_CLASS_SCHOOL_KID]   = { OBJ_EVENT_GFX_SCHOOL_KID_M, OBJ_EVENT_GFX_LASS },
+    [TRAINER_CLASS_YOUNGSTER]    = { OBJ_EVENT_GFX_YOUNGSTER, OBJ_EVENT_GFX_YOUNGSTER,
+                                     OBJ_EVENT_GFX_YOUNGSTER_FRLG, OBJ_EVENT_GFX_YOUNGSTER_FRLG },
+    [TRAINER_CLASS_LASS]         = { OBJ_EVENT_GFX_LASS, OBJ_EVENT_GFX_LASS,
+                                     OBJ_EVENT_GFX_LASS_FRLG, OBJ_EVENT_GFX_LASS_FRLG },
+    [TRAINER_CLASS_NINJA_BOY]    = { OBJ_EVENT_GFX_NINJA_BOY, OBJ_EVENT_GFX_NINJA_BOY },
+    [TRAINER_CLASS_FISHERMAN]    = { OBJ_EVENT_GFX_FISHERMAN, OBJ_EVENT_GFX_FISHERMAN },
+    [TRAINER_CLASS_SAILOR]       = { OBJ_EVENT_GFX_SAILOR, OBJ_EVENT_GFX_SAILOR,
+                                     OBJ_EVENT_GFX_SAILOR_FRLG, OBJ_EVENT_GFX_SAILOR_FRLG },
+    // The LAND variants deliberately. The plain SWIMMER_M/F are the in-water
+    // sprites and a swimmer standing on cave floor in them reads as a bug.
+    [TRAINER_CLASS_SWIMMER_M]    = { OBJ_EVENT_GFX_SWIMMER_M_LAND, OBJ_EVENT_GFX_SWIMMER_M_LAND },
+    [TRAINER_CLASS_SWIMMER_F]    = { OBJ_EVENT_GFX_SWIMMER_F_LAND, OBJ_EVENT_GFX_SWIMMER_F_LAND },
+    [TRAINER_CLASS_TRIATHLETE]   = { OBJ_EVENT_GFX_RUNNING_TRIATHLETE_M, OBJ_EVENT_GFX_RUNNING_TRIATHLETE_F },
+    [TRAINER_CLASS_TWINS]        = { OBJ_EVENT_GFX_TWIN, OBJ_EVENT_GFX_TWIN },
+    [TRAINER_CLASS_SR_AND_JR]    = { OBJ_EVENT_GFX_TWIN, OBJ_EVENT_GFX_TWIN },
+    [TRAINER_CLASS_SIS_AND_BRO]  = { OBJ_EVENT_GFX_TWIN, OBJ_EVENT_GFX_TWIN },
+    [TRAINER_CLASS_YOUNG_COUPLE] = { OBJ_EVENT_GFX_MAN_1, OBJ_EVENT_GFX_WOMAN_1 },
+    [TRAINER_CLASS_WINSTRATE]    = { OBJ_EVENT_GFX_MAN_1, OBJ_EVENT_GFX_WOMAN_1 },
+    [TRAINER_CLASS_OLD_COUPLE]   = { OBJ_EVENT_GFX_OLD_MAN, OBJ_EVENT_GFX_OLD_WOMAN },
+    // The last six of the pool, found by check_trainer_sprites.py rather than by
+    // reading the class list - gen_trainer_table.py excludes gym leaders and the
+    // Elite Four but NOT the team leaders, so Maxie and Archie are ordinary
+    // dungeon opponents and were falling through to a hiker.
+    [TRAINER_CLASS_MAGMA_LEADER] = { OBJ_EVENT_GFX_MAXIE, OBJ_EVENT_GFX_MAXIE },
+    [TRAINER_CLASS_AQUA_LEADER]  = { OBJ_EVENT_GFX_ARCHIE, OBJ_EVENT_GFX_ARCHIE },
+    [TRAINER_CLASS_RS_PROTAG]    = { OBJ_EVENT_GFX_RUBY, OBJ_EVENT_GFX_SAPPHIRE },
+};
+
+// -> the overworld sprite for this trainer, or 0 when the class has no entry.
+//
+// The alt is chosen from BIT 1 of the trainer id rather than bit 0, because the
+// stock table is sorted by average party level and adjacent ids are therefore
+// adjacent in difficulty; bit 0 would make the two sprites alternate in lockstep
+// with the level ramp on any floor that picks a contiguous run.
+static u16 TrainerClassGfx(u16 trainerId)
+{
+    const struct Trainer *trainer = GetTrainerStructFromId(trainerId);
+    enum TrainerClassID class = trainer->trainerClass;
+    const struct RogueClassGfx *row;
+    u16 gfx, alt;
+
+    if (class >= TRAINER_CLASS_COUNT)
+        return 0;
+
+    row = &sTrainerClassGfx[class];
+    gfx = trainer->gender ? row->female : row->male;
+    alt = trainer->gender ? row->femaleAlt : row->maleAlt;
+
+    if (alt != 0 && (trainerId & 2))
+        return alt;
+
+    return gfx;
+}
+
 static u16 PickTrainerForLevel(u8 target, const struct RogueDungeonTheme *theme,
                                u16 *gfxOut)
 {
@@ -5660,6 +5810,27 @@ static const struct RogueFloorEvent sFloorEvents[] =
 // species as its overworld sprite, and a Dragonite sprite that hands over a
 // Dratini is the bug this split exists to avoid.
 
+// THE FLOOR'S SPECIES, DEVOLVED FOR WHATEVER LEVEL IS ABOUT TO USE IT.
+//
+// EVERY event that fights, gifts or names the rolled species goes through this,
+// and reading sEventSpecies raw for any of those is a bug. It shipped as one: the
+// devolve at prepare time is gated on gfxId == DUNGEON_EVENT_GFX_ROLLED, which is
+// a COSMETIC condition - does the NPC wear the species as its sprite - being used
+// to answer a BALANCE question. The scout wears a hiker, so its shiny was never
+// devolved and a floor 11 encounter could be a fully evolved Aggron. Not a hard
+// fight; a run ending.
+//
+// Idempotent, so events whose sprite already forced a devolve at prepare time can
+// call it again for free - DevolveForLevel only ever walks downward.
+//
+// The TRADER is the one caller that must not go through a floor level: its level
+// is the traded Pokemon's plus five, which nothing knows until the player picks
+// one, and that is the whole reason sEventSpecies holds the raw roll.
+static u16 EventSpeciesForLevel(u8 level)
+{
+    return RogueDungeon_DevolveForLevel(sEventSpecies, level);
+}
+
 // Rolls the floor's event, and places it the way everything else on a floor is
 // placed - pick a room, pick a point, refuse anything already standing there.
 //
@@ -6066,7 +6237,10 @@ void RogueDungeon_EventEggTake(void)
 // told the wrong name would be worse than being told none.
 void RogueDungeon_EventInjuredApproach(void)
 {
-    StringCopy(gStringVar1, GetSpeciesName(sEventSpecies));
+    u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+
+    StringCopy(gStringVar1,
+               GetSpeciesName(EventSpeciesForLevel(FloorTargetLevel(floor))));
     gSpecialVar_Result = !sEventAmbush;
 }
 
@@ -6076,7 +6250,8 @@ void RogueDungeon_EventInjuredJoin(void)
 {
     u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
 
-    gSpecialVar_Result = GiveEventMon(sEventSpecies, FloorTargetLevel(floor));
+    gSpecialVar_Result = GiveEventMon(EventSpeciesForLevel(FloorTargetLevel(floor)),
+                                      FloorTargetLevel(floor));
 }
 
 // Sets up the ambush for the script's dowildbattle. CreateScriptedWildMon is what
@@ -6090,7 +6265,7 @@ void RogueDungeon_EventInjuredAmbush(void)
     if (level > MAX_LEVEL)
         level = MAX_LEVEL;
 
-    CreateScriptedWildMon(sEventSpecies, level, ITEM_NONE);
+    CreateScriptedWildMon(EventSpeciesForLevel(level), level, ITEM_NONE);
 }
 
 // ------------------------------------------------- the second slate of events
@@ -6115,7 +6290,10 @@ void RogueDungeon_EventInjuredAmbush(void)
 // is a worse memory than no shiny at all.
 void RogueDungeon_EventScoutApproach(void)
 {
-    StringCopy(gStringVar1, GetSpeciesName(sEventSpecies));
+    u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+
+    StringCopy(gStringVar1,
+               GetSpeciesName(EventSpeciesForLevel(FloorTargetLevel(floor))));
 }
 
 void RogueDungeon_EventScoutBattle(void)
@@ -6123,7 +6301,8 @@ void RogueDungeon_EventScoutBattle(void)
     u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
     u32 isShiny = TRUE;
 
-    CreateScriptedWildMon(sEventSpecies, FloorTargetLevel(floor), ITEM_NONE);
+    CreateScriptedWildMon(EventSpeciesForLevel(FloorTargetLevel(floor)),
+                          FloorTargetLevel(floor), ITEM_NONE);
     SetMonData(&gParties[B_TRAINER_OPPONENT_A][0], MON_DATA_IS_SHINY, &isShiny);
 }
 
@@ -6579,7 +6758,10 @@ void RogueDungeon_EventDittoAmbush(void)
 
 void RogueDungeon_EventTotemApproach(void)
 {
-    StringCopy(gStringVar1, GetSpeciesName(sEventSpecies));
+    u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+
+    StringCopy(gStringVar1,
+               GetSpeciesName(EventSpeciesForLevel(FloorTargetLevel(floor))));
 }
 
 // The stat boost itself is the SCRIPT's settotemboost, not ours - the engine
@@ -6593,7 +6775,12 @@ void RogueDungeon_EventTotemBattle(void)
     if (level > MAX_LEVEL)
         level = MAX_LEVEL;
 
-    CreateScriptedWildMon(sEventSpecies, level, ITEM_NONE);
+    // Devolved against the FLOOR's level, not the totem's boosted one. It is
+    // already five levels up with every stat raised a stage; letting it be a
+    // whole evolution higher as well is the difference between a hard fight
+    // and an unwinnable one.
+    CreateScriptedWildMon(EventSpeciesForLevel(FloorTargetLevel(floor)),
+                          level, ITEM_NONE);
 }
 
 // Laying down food. Costs one healing item from the bag and turns the fight into
@@ -6619,10 +6806,143 @@ void RogueDungeon_EventTotemFeed(void)
 
         RemoveBagItem(sFood[i], 1);
         StringCopy(gStringVar2, GetItemName(sFood[i]));
-        CreateScriptedWildMon(sEventSpecies, FloorTargetLevel(floor), ITEM_NONE);
+        CreateScriptedWildMon(EventSpeciesForLevel(FloorTargetLevel(floor)),
+                              FloorTargetLevel(floor), ITEM_NONE);
         gSpecialVar_Result = 1;
         return;
     }
+}
+
+// ---- what the totem is guarding.
+//
+// The event's own text has always said "something glitters behind it" and the
+// challenge branch handed over nothing at all. This is the something.
+//
+// A MEGA STONE FOR A POKEMON THE PLAYER ACTUALLY HAS. A stone is the most
+// run-defining item in the build and also the most useless one: Charizardite
+// found by a team with no Charizard is a bag slot. So the party is searched
+// first and the reward is drawn from what it can actually use, which turns the
+// totem from a loot roll into the moment a run's plan comes together.
+//
+// The lookup walks the species' own form change table rather than keeping a
+// second species-to-stone list. Those tables are where the pairing is DEFINED -
+// {FORM_CHANGE_BATTLE_MEGA_EVOLUTION_ITEM, SPECIES_x_MEGA, ITEM_xITE} - and a
+// copy here would drift the moment P_MEGA_EVOLUTIONS or the species roster moved.
+//
+// Z-CRYSTALS ARE THE OTHER HALF, and they are the fallback as well as the rare
+// roll. A crystal is keyed on a TYPE rather than a species, so it is the one
+// reward that is never dead weight - which makes it exactly right for a party
+// with nothing that megas, and worth a rare roll even for one that does.
+#define DUNGEON_TOTEM_Z_ODDS 8
+
+// Type-indexed, matching the item ids' own order. Read straight off the run of
+// ITEM_NORMALIUM_Z onward in constants/items.h.
+static const u16 sTotemZCrystals[] =
+{
+    [TYPE_NORMAL]   = ITEM_NORMALIUM_Z,
+    [TYPE_FIRE]     = ITEM_FIRIUM_Z,
+    [TYPE_WATER]    = ITEM_WATERIUM_Z,
+    [TYPE_ELECTRIC] = ITEM_ELECTRIUM_Z,
+    [TYPE_GRASS]    = ITEM_GRASSIUM_Z,
+    [TYPE_ICE]      = ITEM_ICIUM_Z,
+    [TYPE_FIGHTING] = ITEM_FIGHTINIUM_Z,
+    [TYPE_POISON]   = ITEM_POISONIUM_Z,
+    [TYPE_GROUND]   = ITEM_GROUNDIUM_Z,
+    [TYPE_FLYING]   = ITEM_FLYINIUM_Z,
+    [TYPE_PSYCHIC]  = ITEM_PSYCHIUM_Z,
+    [TYPE_BUG]      = ITEM_BUGINIUM_Z,
+    [TYPE_ROCK]     = ITEM_ROCKIUM_Z,
+    [TYPE_GHOST]    = ITEM_GHOSTIUM_Z,
+    [TYPE_DRAGON]   = ITEM_DRAGONIUM_Z,
+    [TYPE_DARK]     = ITEM_DARKINIUM_Z,
+    [TYPE_STEEL]    = ITEM_STEELIUM_Z,
+    [TYPE_FAIRY]    = ITEM_FAIRIUM_Z,
+};
+
+// The stone this species megas with, or ITEM_NONE. Charizard and Mewtwo have
+// two; the first is taken, because a run cannot use both and picking between
+// them is a decision the player has no information to make here.
+static u16 MegaStoneFor(u16 species)
+{
+    const struct FormChange *changes = GetSpeciesFormChanges(species);
+    u32 i;
+
+    if (changes == NULL)
+        return ITEM_NONE;
+
+    for (i = 0; changes[i].method != FORM_CHANGE_TERMINATOR; i++)
+    {
+        if (changes[i].method == FORM_CHANGE_BATTLE_MEGA_EVOLUTION_ITEM)
+            return changes[i].param1;
+    }
+
+    return ITEM_NONE;
+}
+
+// A crystal for a type somebody on the team actually attacks with, chosen from a
+// party member at random rather than always the lead - the lead is whoever is
+// healthiest, which is not the same as whoever the run is built around.
+static u16 TotemZCrystal(void)
+{
+    u32 count = CalculatePlayerPartyCount();
+    struct Pokemon *mon;
+    u32 type;
+
+    if (count == 0)
+        return sTotemZCrystals[TYPE_NORMAL];
+
+    mon = &gParties[B_TRAINER_PLAYER][Random() % count];
+    type = GetSpeciesType(GetMonData(mon, MON_DATA_SPECIES), Random() % 2);
+
+    if (type >= ARRAY_COUNT(sTotemZCrystals) || sTotemZCrystals[type] == ITEM_NONE)
+        type = TYPE_NORMAL;
+
+    return sTotemZCrystals[type];
+}
+
+// VAR_RESULT: 0 the bag had no room, 1 it was handed over.
+void RogueDungeon_EventTotemReward(void)
+{
+    u32 count = CalculatePlayerPartyCount();
+    u16 stones[PARTY_SIZE];
+    u32 found = 0, i;
+    u16 item;
+
+    gSpecialVar_Result = 0;
+
+    for (i = 0; i < count; i++)
+    {
+        u16 stone = MegaStoneFor(GetMonData(&gParties[B_TRAINER_PLAYER][i],
+                                            MON_DATA_SPECIES));
+
+        // Skipped if the player already carries it: a second Charizardite is a
+        // bag slot, and this is the one event whose whole promise is that the
+        // prize was worth the fight.
+        if (stone != ITEM_NONE && !CheckBagHasItem(stone, 1))
+            stones[found++] = stone;
+    }
+
+    if (found != 0 && (Random() % DUNGEON_TOTEM_Z_ODDS) != 0)
+        item = stones[Random() % found];
+    else
+        item = TotemZCrystal();
+
+    if (!AddBagItem(item, 1))
+        return;
+
+    StringCopy(gStringVar1, GetItemName(item));
+    gSpecialVar_Result = 1;
+}
+
+// Did the player actually beat it? dowildbattle leaves the outcome in
+// gBattleOutcome and nothing puts it where a script can compare it.
+//
+// CAUGHT COUNTS. A totem that is caught rather than knocked out was still
+// overcome, and withholding the prize for the better outcome would be perverse.
+void RogueDungeon_EventBattleWon(void)
+{
+    gSpecialVar_Result = (gBattleOutcome == B_OUTCOME_WON
+                          || gBattleOutcome == B_OUTCOME_CAUGHT);
 }
 
 void RogueDungeon_EventTotemSneak(void)
@@ -6906,13 +7226,25 @@ static void PlaceTrainers(u16 floor)
 
         sTrainerIds[sTrainerCount] = trainerId;
 
-        // A themed trainer names its own sprite, because parity and level are
-        // picked independently and a diver drawn female must not open the
-        // battle as a man. Otherwise alternate the theme's two, so a floor is
-        // not populated by one repeated figure.
-        gfx = themedGfx ? themedGfx
-            : ((sTrainerCount & 1) && theme->trainerGfxAlt ? theme->trainerGfxAlt
-                                                           : theme->trainerGfx);
+        // Four ways to answer, most specific first.
+        //
+        //   1. A THEMED trainer names its own sprite, because parity and level
+        //      are picked independently and a diver drawn female must not open
+        //      the battle as a man.
+        //   2. The trainer's own CLASS, which is the answer for almost every
+        //      trainer in the run and the reason a floor is no longer four
+        //      hikers. It also makes the overworld figure agree with the battle
+        //      pic, which is the same fault the diver table was built to fix.
+        //   3. The theme's two sprites, alternating, for any class the table
+        //      has no entry for.
+        //   4. A hiker, which used to be step two and was therefore most of
+        //      what the player ever saw.
+        gfx = themedGfx;
+        if (gfx == 0)
+            gfx = TrainerClassGfx(trainerId);
+        if (gfx == 0)
+            gfx = ((sTrainerCount & 1) && theme->trainerGfxAlt) ? theme->trainerGfxAlt
+                                                                : theme->trainerGfx;
         sTrainerGfx[sTrainerCount] = gfx ? gfx : OBJ_EVENT_GFX_HIKER;
         sTrainerCount++;
     }

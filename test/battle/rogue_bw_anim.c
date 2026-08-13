@@ -1,6 +1,7 @@
 #include "global.h"
 #include "test/battle.h"
 #include "decompress.h"
+#include "palette.h"
 #include "rogue_bw_anim.h"
 
 // The nine emitted species are the two boss parties this was built to test -
@@ -101,6 +102,129 @@ SINGLE_BATTLE_TEST("BW anim: a species with no entry is left alone")
         OPPONENT(SPECIES_PATRAT);
     } WHEN {
         TURN { }
+    }
+}
+
+// A container carries the gif's palette and nothing else, so a shiny animated
+// Pokemon showed normal colours until the shiny map landed. These three guard
+// the map, the permutation property, and the load, in that order.
+
+TEST("BW shiny: every emitted species builds a shiny palette from stock colours")
+{
+    static const u16 species[] = {
+        SPECIES_GEODUDE, SPECIES_NOSEPASS,
+        SPECIES_CLAYDOL, SPECIES_XATU, SPECIES_LUNATONE, SPECIES_SOLROCK,
+        SPECIES_TREECKO, SPECIES_TORCHIC, SPECIES_MUDKIP,
+    };
+
+    for (u32 i = 0; i < ARRAY_COUNT(species); i++)
+    {
+        const struct BwAnim *anim = GetBwAnim(species[i], FALSE);
+        const u16 *stock = GetMonSpritePalFromSpecies(species[i], TRUE, FALSE);
+        u16 pal[16];
+        u32 differs = 0;
+
+        EXPECT(anim != NULL);
+        EXPECT(stock != NULL);
+        if (anim == NULL || stock == NULL)
+            continue;
+
+        EXPECT_EQ(RogueBwAnim_BuildShinyPalette(pal, species[i], FALSE), TRUE);
+
+        for (u32 j = 1; j < 16; j++)
+        {
+            u32 found = FALSE;
+
+            // EVERY COLOUR MUST COME FROM THE STOCK SHINY PALETTE. The map is a
+            // permutation and nothing else, so a colour that is not in that
+            // palette means a nibble indexed somewhere it should not have.
+            for (u32 k = 0; k < 16; k++)
+            {
+                if (pal[j] == stock[k])
+                    found = TRUE;
+            }
+            EXPECT(found);
+
+            if (pal[j] != anim->palette[j])
+                differs++;
+        }
+
+        // THE POINT OF THE FEATURE. A shiny palette identical to the normal one
+        // is exactly the bug this fixes, and it would look like a build that
+        // worked right up until somebody met a shiny.
+        EXPECT(differs > 0);
+    }
+}
+
+TEST("BW shiny: distinct container colours stay distinct")
+{
+    static const u16 species[] = {
+        SPECIES_GEODUDE, SPECIES_NOSEPASS,
+        SPECIES_CLAYDOL, SPECIES_XATU, SPECIES_LUNATONE, SPECIES_SOLROCK,
+        SPECIES_TREECKO, SPECIES_TORCHIC, SPECIES_MUDKIP,
+    };
+
+    for (u32 i = 0; i < ARRAY_COUNT(species); i++)
+    {
+        const struct BwAnim *anim = GetBwAnim(species[i], FALSE);
+        u16 pal[16];
+
+        if (anim == NULL || !RogueBwAnim_BuildShinyPalette(pal, species[i], FALSE))
+            continue;
+
+        // The map is emitted as a BIJECTION, and this is what that buys. Two
+        // container colours collapsing onto one stock colour would flatten a
+        // shading ramp: the sprite would still be the right hue and would have
+        // lost a band of detail, which is the kind of fault nobody reports and
+        // no table can show.
+        //
+        // Unused slots are all black and all map to stock index 0, so the guard
+        // on the left is what keeps them out of it.
+        for (u32 j = 1; j < 16; j++)
+        {
+            for (u32 k = j + 1; k < 16; k++)
+            {
+                if (anim->palette[j] != anim->palette[k])
+                    EXPECT(pal[j] != pal[k]);
+            }
+        }
+    }
+}
+
+// Proof that RogueBwAnim_OnLoadSprite actually prefers the shiny palette to the
+// container's. Nothing above this proves the load hook runs at all.
+//
+// IT CANNOT SEE A WRONG MAP, and the two break tests are what showed that:
+// disabling the hook fails this test and neither of the others, while
+// unpacking the nibbles wrongly fails the distinctness test above and NOT this
+// one - because this compares the loaded palette against the same builder that
+// produced it, so a builder that is wrong the same way on both sides agrees
+// with itself. The two tests cover different halves on purpose; do not merge
+// them.
+SINGLE_BATTLE_TEST("BW shiny: a shiny opponent loads the shiny palette")
+{
+    GIVEN {
+        PLAYER(SPECIES_WOBBUFFET);
+        OPPONENT(SPECIES_GEODUDE) { Shiny(TRUE); }
+    } WHEN {
+        TURN { }
+    } THEN {
+        const struct BwAnim *anim = GetBwAnim(SPECIES_GEODUDE, FALSE);
+        u16 expected[16];
+        u32 matched = 0, differs = 0;
+
+        EXPECT_EQ(RogueBwAnim_BuildShinyPalette(expected, SPECIES_GEODUDE, FALSE), TRUE);
+
+        for (u32 j = 1; j < 16; j++)
+        {
+            if (gPlttBufferUnfaded[OBJ_PLTT_ID(B_POSITION_OPPONENT_LEFT) + j] == expected[j])
+                matched++;
+            if (expected[j] != anim->palette[j])
+                differs++;
+        }
+
+        EXPECT_EQ(matched, 15);
+        EXPECT(differs > 0);
     }
 }
 

@@ -51,6 +51,24 @@ COLS, ROWS = SRC_W // TILE, SRC_H // TILE     # 32 x 64
 ENTRIES = COLS * ROWS                          # 2048, and map.bin is 2 * this
 MAX_PALETTES = 3
 COLOURS = 16
+
+# THE BANK A TILEMAP ENTRY NAMES IS NOT THE PALETTE INDEX. battle_bg.c loads an
+# environment with LoadPalette(info.palette, BG_PLTT_ID(2), 3 * PLTT_SIZE_4BPP),
+# so a background's three palettes land in BG banks 2, 3 and 4. Banks 0 and 1
+# hold the battle TEXTBOX palette.
+#
+# THIS SHIPPED WRONG ONCE, on all three backgrounds this tool has produced.
+# Exporting a single-palette image gives every tile bank 0, which is right for a
+# standalone image and wrong here - the palette loads and is never referenced,
+# and every tile draws in the textbox colours. The art, the .pal and the table
+# row were all correct; the only disagreement was between a tilemap and a load
+# call in another file, which no build step can see.
+#
+# The round trip below CANNOT catch it, and that is the lesson. It rebuilds the
+# image from the same map.bin it wrote, so bank 0 out matches bank 0 in and the
+# verifier agrees with itself. check_battle_bg_palettes.py is what catches it,
+# by holding the tilemap against the load call.
+BG_FIRST_BANK = 2
 MAX_TILES = 1024                               # a tilemap entry has 10 index bits
 OUT_COLS = 16                                  # tiles.png grid width
 
@@ -199,7 +217,8 @@ def dedupe(tiles):
             lookup[_key(px)] = idx
             found = (idx, 0, 0)
         idx, hf, vf = found
-        entries.append(idx | (hf << 10) | (vf << 11) | (pal << 12))
+        entries.append(idx | (hf << 10) | (vf << 11)
+                       | ((pal + BG_FIRST_BANK) << 12))
     return unique, entries
 
 
@@ -232,7 +251,8 @@ def verify(im, unique, entries):
     src = im.load()
     bad = 0
     for i, entry in enumerate(entries):
-        idx, hf, vf, pal = entry & 0x3FF, (entry >> 10) & 1, (entry >> 11) & 1, entry >> 12
+        idx, hf, vf = entry & 0x3FF, (entry >> 10) & 1, (entry >> 11) & 1
+        pal = (entry >> 12) - BG_FIRST_BANK
         px = unique[idx]
         if hf:
             px = _flip_h(px)

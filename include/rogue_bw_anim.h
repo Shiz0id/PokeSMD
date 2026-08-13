@@ -61,6 +61,36 @@ struct BwAnim
     u8 width, height;               // pixels, always whole tiles
 };
 
+// How a container's palette becomes a SHINY palette.
+//
+// A container carries one palette and it is the gif's, so a shiny animated
+// Pokemon showed normal colours - the one thing the sprite feature could not
+// express. There is no shiny gif set to emit from, and shipping a second
+// palette per container would be colour data the ROM already holds: every
+// species carries gSpeciesInfo[species].shinyPalette for its stock sprite.
+//
+// So what ships is a PERMUTATION, not a palette. For each of the container's
+// 16 slots, the index of the stock shiny entry that slot takes. Eight bytes a
+// container, two slots to a byte, LOW NIBBLE FIRST, and the runtime rebuilds
+// the palette with sixteen indexed loads and no arithmetic.
+//
+// IT IS FAITHFUL RATHER THAN APPROXIMATE, and that is not luck. This build has
+// P_GBA_STYLE_SPECIES_GFX FALSE, so the shipped sprites are the Gen 4/5 art -
+// the same generation the BW gifs were ripped from. 80.9% of container slots
+// hold a colour appearing VERBATIM in the stock normal palette, and 385 of the
+// 772 containers match on every slot they use, so those take the official
+// shiny palette exactly rather than something derived from it.
+//
+// The map is chosen at emit time by tools/rogue/emit_bw_shiny.py as a
+// minimum-cost bijection in OkLab. Read that file before changing any of it:
+// three other formulations were built and rejected on the rendered result, and
+// the reasons are recorded there so they are not tried again.
+struct BwShinyMap
+{
+    u16 species;
+    u8 map[8];
+};
+
 // NULL when the species has no animation for that side - callers fall back to
 // the stock pic. Front and back are separate tables rather than one table with
 // a flag, because a species may have both and a single species-sorted table
@@ -69,6 +99,19 @@ struct BwAnim
 // Most species have a front and no back: the 1,253 gif set this is built from
 // is front sprites only. Backs come from elsewhere, one at a time.
 const struct BwAnim *GetBwAnim(u16 species, bool32 isBack);
+
+// Write this species' SHINY palette into dst, or return FALSE and leave dst
+// untouched. FALSE means the species has no container or no map for that side,
+// and the caller keeps the normal palette - which is what every shiny did
+// before this existed, so a miss degrades to the old behaviour rather than to
+// a wrong one.
+//
+// Public rather than static because it is the only part of the shiny path a
+// headless test can reach. The battle test compares what a battler's OBJ
+// palette actually holds against what this returns, which is the one assertion
+// that spans the emitted map, the bisect and the load - and none of the three
+// is observable on its own.
+bool32 RogueBwAnim_BuildShinyPalette(u16 dst[16], u16 species, bool32 isBack);
 
 // Bytes one decoded frame occupies. Always MON_PIC_SIZE - every battle sprite
 // is 64x64 and the frames are padded to it - but derived rather than assumed so
