@@ -177,6 +177,51 @@ straddling check still refuses it. Real multi-palette art needs per-tile palette
 assignment, which the tool does not attempt — **budget more than a conversion for
 Snow and anything like it.**
 
+### Attribution for what is actually shipped
+
+Every background in the ROM, and who to credit. Kept here rather than trusting
+each source folder, because one of them is not covered by the folder it sits in.
+
+| shipped as | source | artist |
+|---|---|---|
+| `scalding_cave` | `CFRU/BG_Cave_Scalding.png` | CFRU, see `CFRU/Credits.md` |
+| `rogue_cave` | `CFRU/BG_Cave.png` | CFRU |
+| `frozen_depths` | `CFRU/BG_Cave_TormaDepths.png` | CFRU |
+| `murky_depths` | `Leob0505/building.png` | Leob0505 |
+| `deep_woods` | `Leob0505/forest_from_cfru.png` | Leob0505 |
+| `open_ocean` | `Leob0505/water.png` | Leob0505 |
+| `open_plain` | `Leob0505/plain.png` | Leob0505 |
+
+**NOT SHIPPED, and not from the repo at all:**
+`Leob0505/battlebgjungle_by_aveontrainer_dd2p5b8.png` is **aveontrainer's**, from
+DeviantArt, free to use **with attribution required**. It was dropped into the
+Leob0505 folder by hand, so that folder's `Credits.md` does NOT cover it and a
+re-clone or `git pull` of the asset repo would lose or orphan it. **Move it out
+of the clone before relying on it.**
+
+### The jungle art, and why it is not in yet
+
+Measured rather than guessed. The geometry is fine: a clean 2x downscale of its
+512x288 gives 256x144, and dropping the bottom 32 rows leaves exactly the 112-row
+art band, with the loss falling behind the message box.
+
+Colour is the blocker. 152 distinct colours against a ceiling of 48, and 48 means
+**three banks of 16 with every 8x8 tile drawing from ONE bank**. Median cut
+respects the total and ignores the per-tile rule, so:
+
+| | |
+|---|---|
+| quantise to 48 | 18% of pixels change - acceptable |
+| quantise to 16 | 66% change - visibly muddied |
+| **48, naive banking** | **353 of 448 tiles straddle two banks (79%)** |
+
+`png_to_battle_bg.py` refuses this, correctly - same category as `BG_Snow`, worse
+degree. What it needs is a **per-tile palette assignment pass**: cluster tiles by
+colour usage, assign each a bank, quantise within. That is a real algorithm, and
+it would also unlock `BG_Snow`, the harder half of the CFRU set, and any future
+commissioned art that does not arrive pre-banked. **Today the converter can only
+take art that is already GBA-shaped, which is a live constraint on sourcing.**
+
 ### The rest of the CFRU set
 
 Seven are already decomp-shaped in `CFRU/Pokeemerald ready to use/` (cave,
