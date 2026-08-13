@@ -146,7 +146,45 @@ degrades rather than corrupting VRAM.
 Wallace and Steven take `CHAMPION`. **Zero new art** — all of it verified
 present in `PokeSMD.map`, +88 bytes of ROM, RAM unmoved.
 
-### Scalding Cave for Fiery Path — what it needs
+### DONE: three backdrops in, and the converter that made them
+
+`tools/rogue/png_to_battle_bg.py` turns a flat 256x512 indexed PNG into the
+`tiles.png` / `map.bin` / `palette.pal` trio. **The step I flagged as unmeasured
+turned out to be ordinary** — a tilemap is a deduplication, not a re-layout, and
+the build compresses the trio to `.4bpp.smol` / `.smolTM` itself.
+
+| theme | floors | source | unique tiles |
+|---|---|---|---|
+| Cave (dungeon 2) | 11-20 | `BG_Cave` | 427 |
+| Fiery Path | 31-40 | `BG_Cave_Scalding` | 382 |
+| Glacia | 91-100 | `BG_Cave_TormaDepths` | 320 |
+
+All three share a silhouette — CFRU drew them as one cave at three temperatures
+— so the run reads as a single cave system rather than three rooms. **Glacia the
+BOSS is overridden to hers too**, the only boss whose vanilla backdrop is
+replaced.
+
+**The verifier and the repack pass are the parts worth knowing about.** Torma
+Depths had **128 tiles spanning two 16-colour blocks**, which the hardware cannot
+draw; the round-trip check caught it and refused to write. The cause was an
+export artefact rather than an art problem — twelve distinct colours spread over
+a 48-entry palette, with index 47 pure black when index 0 already is. Where every
+colour fits one block, `repack()` rebuilds the palette from distinct RGB and
+remaps every pixel, losslessly.
+
+**`BG_Snow` genuinely exceeds fifteen colours**, so repack declines and the
+straddling check still refuses it. Real multi-palette art needs per-tile palette
+assignment, which the tool does not attempt — **budget more than a conversion for
+Snow and anything like it.**
+
+### The rest of the CFRU set
+
+Seven are already decomp-shaped in `CFRU/Pokeemerald ready to use/` (cave,
+long_grass, pond_water, rock, sand, tall_grass, water) with bonus
+`palette_morning.pal` / `palette_night.pal`. The other 41 go through the
+converter. Leob0505 ships ten more ready-to-use.
+
+### Original notes: what Scalding Cave needed
 
 Source: `Battle Backgrounds/CFRU/BG_Cave_Scalding.png`, 256x512 indexed.
 
