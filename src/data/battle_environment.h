@@ -309,6 +309,23 @@ const struct BattleEnvironment gBattleEnvironmentInfo[BATTLE_ENVIRONMENT_COUNT] 
         .battleIntroSlide = BattleIntroSlide2,
     },
 
+    // Ever Grande, STANDING IN FOR A MEADOW until real meadow art exists. Grass
+    // behaviour, which is right for both the placeholder and its replacement -
+    // the theme paints flower beds and long grass, so only the art is provisional.
+    [BATTLE_ENVIRONMENT_OPEN_PLAIN] =
+    {
+        .name = _("Grass"),
+        .naturePower = B_NATURE_POWER_MOVES >= GEN_4 ? MOVE_ENERGY_BALL : MOVE_RAZOR_LEAF,
+        .secretPowerAnimation = B_SECRET_POWER_ANIMATION >= GEN_4 ? gBattleAnimMove_NeedleArm : gBattleAnimMove_MagicalLeaf,
+        .secretPowerEffect = MOVE_EFFECT_SLEEP,
+        .camouflageType = TYPE_GRASS,
+        .camouflageBlend = RGB(0, 15, 2),
+        .entry = ENVIRONMENT_ENTRY(LongGrass),
+        .background = ENVIRONMENT_BACKGROUND(OpenPlain),
+        .palette = gBattleEnvironmentPalette_OpenPlain,
+        .battleIntroSlide = BattleIntroSlide1,
+    },
+
     [BATTLE_ENVIRONMENT_BUILDING] =
     {
         .name = _("Building"),

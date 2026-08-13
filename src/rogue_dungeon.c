@@ -2048,6 +2048,12 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .arenaPlatform = TRUE,
         .species = sEverGrandeSpecies,
         .speciesCount = ARRAY_COUNT(sEverGrandeSpecies),
+
+        // PLACEHOLDER, pending meadow art. It also closes the same split the
+        // woods had: this theme paints flower beds and long grass, so the
+        // engine gave it LONG_GRASS on those and CAVE on the cobble - two
+        // backdrops on one floor depending where the player was standing.
+        .battleEnvironment = BATTLE_ENVIRONMENT_OPEN_PLAIN,
     },
     // Steven's, dungeon 13, and the last theme the run needed. Everything
     // before this either had a dungeon of its own or was borrowing one; with

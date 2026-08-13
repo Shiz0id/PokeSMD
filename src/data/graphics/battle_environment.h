@@ -62,6 +62,13 @@ const u32 gBattleEnvironmentTiles_OpenOcean[] = INCGFX_U32("graphics/battle_envi
 const u16 gBattleEnvironmentPalette_OpenOcean[] = INCGFX_U16("graphics/battle_environment/open_ocean/palette.pal", ".gbapal");
 const u32 gBattleEnvironmentTilemap_OpenOcean[] = INCGFX_U32("graphics/battle_environment/open_ocean/map.bin", ".smolTM");
 
+// Ever Grande. A PLACEHOLDER for a meadow, which is why it is named for what it
+// actually is rather than for the theme it stands in for - swapping the art
+// later should not leave a symbol called Meadow pointing at a plain.
+const u32 gBattleEnvironmentTiles_OpenPlain[] = INCGFX_U32("graphics/battle_environment/open_plain/tiles.png", ".4bpp.smol");
+const u16 gBattleEnvironmentPalette_OpenPlain[] = INCGFX_U16("graphics/battle_environment/open_plain/palette.pal", ".gbapal");
+const u32 gBattleEnvironmentTilemap_OpenPlain[] = INCGFX_U32("graphics/battle_environment/open_plain/map.bin", ".smolTM");
+
 const u32 gBattleEnvironmentTiles_Building[] = INCGFX_U32("graphics/battle_environment/building/tiles.png", ".4bpp.smol");
 const u16 gBattleEnvironmentPalette_Building[] = INCGFX_U16("graphics/battle_environment/building/palette.pal", ".gbapal");
 const u32 gBattleEnvironmentTilemap_Building[] = INCGFX_U32("graphics/battle_environment/building/map.bin", ".smolTM");
