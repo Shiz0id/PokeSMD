@@ -78,6 +78,13 @@ const u32 gBattleEnvironmentTiles_JungleCanopy[] = INCGFX_U32("graphics/battle_e
 const u16 gBattleEnvironmentPalette_JungleCanopy[] = INCGFX_U16("graphics/battle_environment/jungle_canopy/palette.pal", ".gbapal");
 const u32 gBattleEnvironmentTilemap_JungleCanopy[] = INCGFX_U32("graphics/battle_environment/jungle_canopy/map.bin", ".smolTM");
 
+// Mirage Tower. NO tiles.png and NO map.bin - it borrows RogueCave's, and its
+// folder holds a palette and nothing else. Built by
+// tools/rogue/recolour_battle_bg.py from gTileset_MirageTower palette 6, the
+// one the theme's own floor and wall metatiles draw with, so the backdrop and
+// the floor agree without anyone matching them by eye.
+const u16 gBattleEnvironmentPalette_MirageSands[] = INCGFX_U16("graphics/battle_environment/mirage_sands/palette.pal", ".gbapal");
+
 const u32 gBattleEnvironmentTiles_Building[] = INCGFX_U32("graphics/battle_environment/building/tiles.png", ".4bpp.smol");
 const u16 gBattleEnvironmentPalette_Building[] = INCGFX_U16("graphics/battle_environment/building/palette.pal", ".gbapal");
 const u32 gBattleEnvironmentTilemap_Building[] = INCGFX_U32("graphics/battle_environment/building/map.bin", ".smolTM");

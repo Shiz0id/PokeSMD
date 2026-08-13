@@ -1410,6 +1410,10 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .species = sMirageTowerSpecies,
         .speciesCount = ARRAY_COUNT(sMirageTowerSpecies),
         .encounterWindow = 12,
+
+        // The cave backdrop under this theme's own sand ramp. Costs a palette
+        // and no tiles - see BATTLE_ENVIRONMENT_MIRAGE_SANDS.
+        .battleEnvironment = BATTLE_ENVIRONMENT_MIRAGE_SANDS,
     },
     [DUNGEON_THEME_JUNGLE] =
     {

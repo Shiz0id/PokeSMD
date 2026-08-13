@@ -284,6 +284,10 @@ extern const u16 gBattleEnvironmentPalette_OpenPlain[];
 extern const u32 gBattleEnvironmentTiles_JungleCanopy[];
 extern const u32 gBattleEnvironmentTilemap_JungleCanopy[];
 extern const u16 gBattleEnvironmentPalette_JungleCanopy[];
+// A PALETTE ONLY. Mirage Tower reuses RogueCave's tiles and tilemap and changes
+// nothing but the colours, which is the axis gBattleEnvironmentInfo is built on
+// - vanilla runs the whole Elite Four off one Stadium background this way.
+extern const u16 gBattleEnvironmentPalette_MirageSands[];
 extern const u32 gBattleEnvironmentTiles_Building[];
 extern const u32 gBattleEnvironmentTilemap_Building[];
 extern const u32 gBattleEnvironmentAnimTiles_Building[];

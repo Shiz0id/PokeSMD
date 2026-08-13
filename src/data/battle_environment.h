@@ -342,6 +342,27 @@ const struct BattleEnvironment gBattleEnvironmentInfo[BATTLE_ENVIRONMENT_COUNT] 
         .battleIntroSlide = BattleIntroSlide1,
     },
 
+    // Mirage Tower - THE CAVE'S OWN ART under Mirage Tower's sand ramp. The
+    // background macro names RogueCave deliberately; only .palette differs, so
+    // this whole environment costs one .pal file and no tiles at all.
+    //
+    // Cave behaviour, because it is one: the theme's floor metatile is
+    // MB_CAVE and its walls are sandstone, so the room is a sandstone cavern
+    // rather than open desert.
+    [BATTLE_ENVIRONMENT_MIRAGE_SANDS] =
+    {
+        .name = _("Cave"),
+        .naturePower = CAVE_NATURE_POWER,
+        .secretPowerAnimation = CAVE_SECRET_POWER_ANIMATION,
+        .secretPowerEffect = CAVE_SECRET_POWER_EFFECT,
+        .camouflageType = CAVE_CAMOUFLAGE_TYPE,
+        .camouflageBlend = CAVE_CAMOUFLAGE_BLEND,
+        .entry = ENVIRONMENT_ENTRY(Cave),
+        .background = ENVIRONMENT_BACKGROUND(RogueCave),
+        .palette = gBattleEnvironmentPalette_MirageSands,
+        .battleIntroSlide = CAVE_BATTLE_INTRO_SLIDE,
+    },
+
     [BATTLE_ENVIRONMENT_BUILDING] =
     {
         .name = _("Building"),
