@@ -114,6 +114,23 @@ this once and doing it again for the Johto and Sinnoh leaders.
 
 Two bytes against SaveBlock1, which has ~132 free. Storage is not the cost.
 
+### DONE: raised to 920
+
+Built and measured. `NUM_FLAG_BYTES` 300 -> 307 as predicted, and **EWRAM moved
++8 bytes** (240348 -> 240356) rather than the +7 the flag arithmetic implies,
+which is alignment. IWRAM unmoved, 26/26 checks passing.
+
+**ROM moved +9,584 bytes, and that is NOT explained by the flag budget.** The
+obvious suspect was `sTestTrainerSlides` in `src/trainer_slide.c`, a
+`[DIFFICULTY_COUNT][MAX_TRAINERS_COUNT_EMERALD + PARTNER_COUNT][TRAINER_SLIDE_COUNT]`
+pointer array that is declared unguarded but only read inside `#if TESTING` -
+except it does not appear in `PokeSMD.map` at all, so it is being collected and
+is not the cause. The delta is unexplained.
+
+It is also immaterial: ROM is at 73.88% of 32 MB. Recorded rather than chased,
+but if someone is ever hunting ROM, **start by re-measuring this** rather than
+assuming the flag raise was free.
+
 ### The real cost is save invalidation
 
 Shifting `SYSTEM_FLAGS` from 0x860 to 0x870 moves **every** system flag, badge

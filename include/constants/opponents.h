@@ -873,10 +873,10 @@
 // The seafloor dungeon's own opponents, so a diver's battle pic matches the
 // diver standing on the floor. See sUnderwaterTrainers in src/rogue_dungeon.c.
 //
-// These take seven of the eight ids left after TRAINER_ROGUE_RIVAL, leaving
-// ONE. That is the ceiling on per-theme trainer tables: thirteen more themes
-// cannot have their own trainers without raising MAX_TRAINERS_COUNT_EMERALD,
-// which costs saveblock space because every trainer id owns a defeat flag.
+// These take seven of the eight ids left after TRAINER_ROGUE_RIVAL. That used
+// to leave exactly ONE, and to be the ceiling on per-theme trainer tables;
+// MAX_TRAINERS_COUNT_EMERALD has since been raised and there are 57 spare. See
+// the note on it below before spending them.
 #define TRAINER_ROGUE_DIVER_1               856
 #define TRAINER_ROGUE_DIVER_2               857
 #define TRAINER_ROGUE_DIVER_3               858
@@ -886,7 +886,37 @@
 #define TRAINER_ROGUE_DIVER_7               862
 
 #define TRAINERS_COUNT_EMERALD     863
-#define MAX_TRAINERS_COUNT_EMERALD 864
+
+// RAISED FROM 864, AND IT IS A FLAG BUDGET RATHER THAN A TRAINER BUDGET.
+//
+// The stock note above says there is space for nine more trainers before
+// "trainer flag space overflows", which reads like a wall and is not one.
+// Trainer flags run from TRAINER_FLAGS_START, and SYSTEM_FLAGS in
+// constants/flags.h is defined as TRAINER_FLAGS_END + 1 - so raising this does
+// not collide with anything. It SHIFTS every system flag upward and grows
+// NUM_FLAG_BYTES, which is ROUND_BITS_TO_BYTES(FLAGS_COUNT).
+//
+// Measured, not estimated:
+//
+//     864 -> FLAGS_COUNT 2400, NUM_FLAG_BYTES 300, SYSTEM_FLAGS 0x860
+//     880 -> FLAGS_COUNT 2416, NUM_FLAG_BYTES 302, SYSTEM_FLAGS 0x870
+//     920 -> FLAGS_COUNT 2456, NUM_FLAG_BYTES 307, SYSTEM_FLAGS 0x898
+//
+// Seven bytes of SaveBlock1 for 57 spare ids. Note the rounding: 876 and 880
+// cost the same 302, so a raise should always land on a byte boundary rather
+// than on the exact number of ids wanted.
+//
+// THE COST IS NOT THE BYTES, IT IS THE RENUMBERING. Every system flag, badge
+// flag and FLAG_ROGUE_* alias moves. That is compile-time and nothing breaks at
+// runtime, but a save written before this reads its bits at the old offsets -
+// badges, run-completed, every event flag. Pair any future change here with the
+// other save-invalidating change in flight rather than spending two version
+// bumps.
+//
+// Headroom for the Kanto leaders, Elite Four and Champion (13), with the rest
+// left for the Johto and Sinnoh leaders and per-theme trainer tables. See
+// docs/KANTO_LEADERS.md.
+#define MAX_TRAINERS_COUNT_EMERALD 920
 
 #if IS_FRLG
 #define TRAINERS_COUNT                      TRAINERS_COUNT_FRLG
