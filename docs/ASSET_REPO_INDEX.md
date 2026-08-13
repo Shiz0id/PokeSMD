@@ -1,0 +1,120 @@
+# Team Aqua's Asset Repo — index
+
+Clone: `D:\PokemonTest\Team-Aquas-Asset-Repo` (Windows side, outside the decomp).
+Source: `github.com/TeamAquasHideout/Team-Aquas-Asset-Repo`. 2.5 GB, 16,011 files.
+Previews rendered by us: `D:\PokemonTest\tileset_previews`.
+
+**Licence:** free to use *and edit* by default. Two conditions: attribution is
+required (each asset carries its own `credits.md` / `README.md`, often listing
+several artists), and individual assets may opt out of editing — check per
+folder, do not assume from the top-level README.
+
+**Organisation:** level 1 is asset type, level 2 is **creator**, not content. So
+only the tilesets are findable by name; everything else needs a subject search.
+
+**NAMES LIE — verify by rendering.** Three of three name-based picks were wrong:
+"Shady Forest" is a village set, "Underwater Secondary" is sunken ruins, and
+`gTileset_General` 0x024 (vanilla, for comparison) is gravel despite being the
+only Hoenn arrow warp. Render or open before committing to anything.
+
+## Top level
+
+| dir | size | verdict |
+|---|---|---|
+| Battle Backgrounds | 47 MB | **highest value.** 118 PNGs, 256x512 indexed. Two creators ship "Pokeemerald ready to use" folders |
+| Tilesets | 337 MB | 34 full decomp-format sets, see below |
+| Audio | 121 MB | 443 `.mid` + **84 `.inc` voicegroups**, decomp naming (`mus_*`, `se_*`) |
+| Overworld Trainer Sprites | 185 MB | 33 creators. **All Johto + Sinnoh leaders present** |
+| Trainer Front Sprites | 24 MB | 27 creators. Same |
+| Official Pokemon Assets | 135 MB | `HGSS_Front_Sprites.png`, `Gen3_Front_Sprites.png`, item icons, HGSS OW mons |
+| Overworld Other Sprites | 5.7 MB | includes a **Berry trees** folder |
+| Items | 2.9 MB | 4 creators |
+| Field Effects | 512 KB | one `emotes.png` |
+| User Interface | 24 MB | 9 creators + Fonts |
+| Battle effects | 512 KB | 2 creators |
+| Overworld Pokemon Sprites | 405 MB | we already ship 1.12 MB of these; replacement art, not new capability |
+| Trainer Back Sprites | 277 MB | **trap** — back sprites were deliberately dropped in `8bd9b05f4f` |
+| Other | 397 MB | 381 MB is `Pokemon LIFE`, a whole fan-game dump. Not decomp assets |
+| Projects | 178 MB | FFVII sprites, a Zelda port. Novelty |
+| Pokemon | 78 MB | custom mon sprites |
+| Pokemon Essentials Packs | 93 MB | **RPG Maker**, wrong engine, needs conversion |
+| Maps | 18 MB | one contributor |
+
+## Tilesets — format
+
+`Tilesets/The Great Tileset Exchange/Full Tilesets/`. Each is real decomp layout:
+`metatiles.bin`, `metatile_attributes.bin`, `palettes/NN.pal`, `tiles.png`, often
+`anim/`, plus `example.png` and `credits.md`. No sheet importing needed.
+
+**THEY ARE TRIPLE-LAYER: 24 bytes per metatile, 12 tile entries in 3 layers.**
+We are 16-byte dual-layer. Confirmed by rendering, not by the 12:1
+metatiles:attributes ratio that first suggested it — a wrong stride still
+renders *something*, so the ratio alone is not proof.
+
+Conversion is lossless when a metatile populates at most **two** of its three
+layers; only 3-layer metatiles force discarding art. Measured below.
+
+They also ship 13–16 palettes (the full primary+secondary range); a secondary in
+our build owns slots 7–12 only.
+
+## Tilesets — census
+
+`used` counts non-empty metatiles; `3L` is the lossy count. Sets are far sparser
+than their nominal size, which matters against our 512-metatile secondary cap.
+
+| tileset | total | used | 3L | lossy |
+|---|---|---|---|---|
+| **Underwater Reef Secondary** | 256 | 206 | **0** | **0%** — real seafloor: sand, rock, kelp, coral, anemones |
+| **Underwater Secondary** | 256 | 184 | **0** | **0%** — sunken ruins, scenery not floor |
+| **Underwater Primary** | 256 | 216 | **0** | **0%** |
+| Beach Cave Secondary | 256 | 208 | 0 | 0% |
+| Alternative Pokecenter Secondary | 256 | 96 | 0 | 0% |
+| Gate Platinum Secondary | 128 | 52 | 0 | 0% |
+| Gen 4 Interior Secondary | 512 | 416 | 0 | 0% |
+| Hidden Grotto Primary FRLG | 512 | 207 | 0 | 0% |
+| Emerald Slide | 512 | 504 | 0 | 0% — **no tiles.png**, cannot render |
+| Gatehouse Secondary | 176 | 136 | 1 | 0.7% |
+| Dojo Interior Secondary | 512 | 122 | 1 | 0.8% |
+| Sewer Secondary | 256 | 128 | 1 | 0.8% |
+| Sewer (Clear water) Secondary | 256 | 127 | 1 | 0.8% |
+| Pyramid Interior Primary | 208 | 126 | 1 | 0.8% |
+| Gen 4 Cave Secondary | 256 | 110 | 1 | 0.9% |
+| Distortion World Secondary | 512 | 214 | 2 | 0.9% |
+| Gatehouse Secondary Alt | 256 | 180 | 4 | 2.2% |
+| Pyramid Interior Secondary | 512 | 33 | 1 | 3.0% |
+| Space Meteor Secondary | 256 | 150 | 5 | 3.3% |
+| Desert Village Secondary | 512 | 207 | 7 | 3.4% |
+| Legend of Zelda House Secondary | 512 | 82 | 3 | 3.7% |
+| Caves Alt Primary | 1024 | 479 | 24 | 5.0% |
+| Small town with lab Secondary | 256 | 232 | 12 | 5.2% |
+| Dojo Exterior Secondary | 512 | 154 | 9 | 5.8% |
+| Lugia Movie Altar Secondary | 512 | 94 | 7 | 7.4% |
+| Volcano Secondary | 256 | 170 | 16 | 9.4% |
+| Brick City Secondary | 375 | 336 | 34 | 10.1% |
+| Brick Cafe Interior Secondary | 512 | 284 | 41 | 14.4% |
+| Caves Alt Secondary | 1024 | 983 | 204 | 20.8% — also over the 512 cap |
+| Shady Forest Secondary | 512 | 186 | 47 | 25.3% — **a village**, not a forest floor |
+| Desert Primary | 512 | 346 | 89 | 25.7% |
+| Little Office Interior Secondary | 120 | 105 | 80 | 76.2% |
+| Autumn Ruins Secondary | 512 | 512 | 511 | 99.8% — effectively a rewrite |
+| Desert Pyramid Exterior Secondary | 512 | **0** | 0 | empty, a dud |
+| LeoB ORAS | — | — | — | no `metatiles.bin` |
+| Valencia Island | — | — | — | no `metatiles.bin` |
+
+Aggregate is 14.5% over 7,585 used metatiles, but **no tileset sits near 14%** —
+it is two populations, mostly-zero and a few heavy users. Do not use the mean.
+
+## What maps onto our open gaps
+
+| our gap | candidate | state |
+|---|---|---|
+| Underwater has no one-block-thick wall art | **Underwater Reef Secondary** | 0% lossy, the one survivor of three name-based picks |
+| 14 themes share one battle backdrop (**not in the state file**) | Battle Backgrounds | cave/snow/sand/water/underwater/long_grass all present |
+| Johto + Sinnoh leaders "do not exist at all" (gap 16) | trainer sprites, both dirs | all 17 present; only parties and classes still needed |
+| woods floor patch | ~~Shady Forest~~ | **rejected** — village set, and 25.3% lossy |
+
+## Pointers
+
+- `Tilesets/Other Tilesets/` — 6 more collections, uncensused
+- `Tilesets/The Great Tileset Exchange/Individual Tiles/` — 4 creators, uncensused
+- Wiki (feature branches, tutorials) is on the GitHub repo, not in the clone
