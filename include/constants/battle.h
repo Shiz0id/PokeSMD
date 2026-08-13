@@ -679,6 +679,8 @@ enum BattleEnvironments
     // an index into gBattleEnvironmentInfo, so inserting one renumbers every
     // entry after it.
     BATTLE_ENVIRONMENT_SCALDING_CAVE,
+    BATTLE_ENVIRONMENT_ROGUE_CAVE,
+    BATTLE_ENVIRONMENT_FROZEN_DEPTHS,
     BATTLE_ENVIRONMENT_COUNT,
 };
 

@@ -227,6 +227,41 @@ const struct BattleEnvironment gBattleEnvironmentInfo[BATTLE_ENVIRONMENT_COUNT] 
         .battleIntroSlide = CAVE_BATTLE_INTRO_SLIDE,
     },
 
+    // The cave dungeon. Vanilla's CAVE above is what it resolved to already, so
+    // this is a straight upgrade of the same idea rather than a new one - which
+    // is why it keeps every cave behaviour and changes only what is drawn.
+    [BATTLE_ENVIRONMENT_ROGUE_CAVE] =
+    {
+        .name = _("Cave"),
+        .naturePower = CAVE_NATURE_POWER,
+        .secretPowerAnimation = CAVE_SECRET_POWER_ANIMATION,
+        .secretPowerEffect = CAVE_SECRET_POWER_EFFECT,
+        .camouflageType = CAVE_CAMOUFLAGE_TYPE,
+        .camouflageBlend = CAVE_CAMOUFLAGE_BLEND,
+        .entry = ENVIRONMENT_ENTRY(Cave),
+        .background = ENVIRONMENT_BACKGROUND(RogueCave),
+        .palette = gBattleEnvironmentPalette_RogueCave,
+        .battleIntroSlide = CAVE_BATTLE_INTRO_SLIDE,
+    },
+
+    // Glacia's dungeon, and Glacia herself - the one boss whose own stadium is
+    // overridden, because a frozen cave says more about her than a stadium
+    // recolour does. Still a cave for Nature Power and Camouflage: it is an ice
+    // cave, and the engine has no ice environment that carries a backdrop.
+    [BATTLE_ENVIRONMENT_FROZEN_DEPTHS] =
+    {
+        .name = _("Cave"),
+        .naturePower = CAVE_NATURE_POWER,
+        .secretPowerAnimation = CAVE_SECRET_POWER_ANIMATION,
+        .secretPowerEffect = CAVE_SECRET_POWER_EFFECT,
+        .camouflageType = CAVE_CAMOUFLAGE_TYPE,
+        .camouflageBlend = CAVE_CAMOUFLAGE_BLEND,
+        .entry = ENVIRONMENT_ENTRY(Cave),
+        .background = ENVIRONMENT_BACKGROUND(FrozenDepths),
+        .palette = gBattleEnvironmentPalette_FrozenDepths,
+        .battleIntroSlide = CAVE_BATTLE_INTRO_SLIDE,
+    },
+
     [BATTLE_ENVIRONMENT_BUILDING] =
     {
         .name = _("Building"),

@@ -81,6 +81,67 @@ def load_indexed(path):
     return im
 
 
+def repack(im):
+    """Collapse an image into one 16-colour block when its colours fit.
+
+    THE STRADDLING PROBLEM IS USUALLY AN EXPORT ARTEFACT, NOT AN ART PROBLEM.
+    CFRU backgrounds are exported across a 48-colour palette even when they use
+    a dozen colours, and the spare entries are frequently DUPLICATES - Torma
+    Depths spends index 47 on pure black when index 0 is already pure black, and
+    then has 128 tiles that touch both blocks and so cannot be drawn at all.
+
+    Where every distinct COLOUR fits in one block this is fixable with no loss
+    whatsoever: rebuild the palette from the distinct RGB values and remap every
+    pixel. Same picture, one palette, hardware-legal.
+
+    Returns (image, report) with the image unchanged when no repack is possible,
+    so a genuine multi-palette background still reaches the straddling check.
+    """
+    from PIL import Image
+
+    pal = im.getpalette() or []
+    src = im.load()
+
+    used = []
+    seen = {}
+    for y in range(im.size[1]):
+        for x in range(im.size[0]):
+            v = src[x, y] & 0xFF
+            rgb = tuple(pal[v * 3 : v * 3 + 3]) if v * 3 + 2 < len(pal) else (0, 0, 0)
+            if v not in seen:
+                seen[v] = rgb
+                if rgb not in used:
+                    used.append(rgb)
+
+    # Index 0 is the transparent entry and keeps its slot; everything else has
+    # to fit in the remaining fifteen.
+    zero = tuple(pal[0:3]) if len(pal) >= 3 else (0, 0, 0)
+    others = [c for c in used if c != zero]
+    if len(others) > COLOURS - 1:
+        return im, (f"{len(others)} distinct non-transparent colours - too many "
+                    f"for one block, leaving the palette layout alone")
+
+    order = [zero] + others
+    remap = {v: order.index(rgb) for v, rgb in seen.items()}
+    if all(v == n for v, n in remap.items()):
+        return im, None
+
+    out = Image.new("P", im.size, 0)
+    flat = []
+    for c in order:
+        flat.extend(c)
+    flat.extend([0, 0, 0] * (256 - len(order)))
+    out.putpalette(flat)
+    dst = out.load()
+    for y in range(im.size[1]):
+        for x in range(im.size[0]):
+            dst[x, y] = remap[src[x, y] & 0xFF]
+
+    moved = sorted(v for v, n in remap.items() if v != n)
+    return out, (f"repacked {len(seen)} palette entries into {len(order)} "
+                 f"colours in one block (moved {moved})")
+
+
 def cut_tiles(im):
     """-> [(palette_number, [64 pixel values 0-15])] in tilemap order."""
     px = im.load()
@@ -195,6 +256,9 @@ def main(argv):
     outdir = Path(argv[1])
 
     im = load_indexed(src)
+    im, note = repack(im)
+    if note:
+        print(f"{src.name}: {note}")
     tiles, straddling = cut_tiles(im)
     unique, entries = dedupe(tiles)
 

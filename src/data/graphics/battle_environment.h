@@ -38,6 +38,16 @@ const u32 gBattleEnvironmentTiles_ScaldingCave[] = INCGFX_U32("graphics/battle_e
 const u16 gBattleEnvironmentPalette_ScaldingCave[] = INCGFX_U16("graphics/battle_environment/scalding_cave/palette.pal", ".gbapal");
 const u32 gBattleEnvironmentTilemap_ScaldingCave[] = INCGFX_U32("graphics/battle_environment/scalding_cave/map.bin", ".smolTM");
 
+// The cave dungeon, and Glacia's. Same converter, same trio, same everything -
+// only the source PNG differs.
+const u32 gBattleEnvironmentTiles_RogueCave[] = INCGFX_U32("graphics/battle_environment/rogue_cave/tiles.png", ".4bpp.smol");
+const u16 gBattleEnvironmentPalette_RogueCave[] = INCGFX_U16("graphics/battle_environment/rogue_cave/palette.pal", ".gbapal");
+const u32 gBattleEnvironmentTilemap_RogueCave[] = INCGFX_U32("graphics/battle_environment/rogue_cave/map.bin", ".smolTM");
+
+const u32 gBattleEnvironmentTiles_FrozenDepths[] = INCGFX_U32("graphics/battle_environment/frozen_depths/tiles.png", ".4bpp.smol");
+const u16 gBattleEnvironmentPalette_FrozenDepths[] = INCGFX_U16("graphics/battle_environment/frozen_depths/palette.pal", ".gbapal");
+const u32 gBattleEnvironmentTilemap_FrozenDepths[] = INCGFX_U32("graphics/battle_environment/frozen_depths/map.bin", ".smolTM");
+
 const u32 gBattleEnvironmentTiles_Building[] = INCGFX_U32("graphics/battle_environment/building/tiles.png", ".4bpp.smol");
 const u16 gBattleEnvironmentPalette_Building[] = INCGFX_U16("graphics/battle_environment/building/palette.pal", ".gbapal");
 const u32 gBattleEnvironmentTilemap_Building[] = INCGFX_U32("graphics/battle_environment/building/map.bin", ".smolTM");

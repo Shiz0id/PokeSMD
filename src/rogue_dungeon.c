@@ -1211,6 +1211,11 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .species = sCaveSpecies,
         .speciesCount = ARRAY_COUNT(sCaveSpecies),
         .encounterWindow = 12,
+
+        // A straight upgrade rather than a change of idea: this theme already
+        // resolved to vanilla's CAVE through the metatile, and this is the same
+        // cave drawn better.
+        .battleEnvironment = BATTLE_ENVIRONMENT_ROGUE_CAVE,
     },
     [DUNGEON_THEME_NEWMAUVILLE] =
     {
@@ -1847,6 +1852,11 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
 
         .species = sGlaciaSpecies,
         .speciesCount = ARRAY_COUNT(sGlaciaSpecies),
+
+        // The snow dungeon, and the one place a theme and a BOSS agree: Glacia
+        // herself is overridden to this too, in sDungeonBossEnvironment, so her
+        // arena does not switch to a stadium after nine floors of ice.
+        .battleEnvironment = BATTLE_ENVIRONMENT_FROZEN_DEPTHS,
     },
     [DUNGEON_THEME_VICTORYROAD_DRAKE] =
     {
@@ -4664,9 +4674,16 @@ static const u8 sDungeonBossEnvironment[] =
     BATTLE_ENVIRONMENT_LEADER, BATTLE_ENVIRONMENT_LEADER,
     BATTLE_ENVIRONMENT_LEADER, BATTLE_ENVIRONMENT_LEADER,
     BATTLE_ENVIRONMENT_LEADER, BATTLE_ENVIRONMENT_LEADER,
-    // The Elite Four, each with their own stadium palette.
+    // The Elite Four, each with their own stadium palette - except Glacia.
+    //
+    // SHE IS THE ONE DELIBERATE EXCEPTION. Her dungeon is nine floors of ice
+    // and her arena is the tenth, so BATTLE_ENVIRONMENT_GLACIA - a recoloured
+    // stadium - throws away everything the descent has been building. The
+    // frozen cave is the more honest backdrop for her and it is the same one
+    // her floors already use, so the run does not change scenery for its own
+    // boss. Her stadium palette is still in the ROM if this reads wrong.
     BATTLE_ENVIRONMENT_SIDNEY, BATTLE_ENVIRONMENT_PHOEBE,
-    BATTLE_ENVIRONMENT_GLACIA, BATTLE_ENVIRONMENT_DRAKE,
+    BATTLE_ENVIRONMENT_FROZEN_DEPTHS, BATTLE_ENVIRONMENT_DRAKE,
     // Wallace, then Steven.
     BATTLE_ENVIRONMENT_CHAMPION,
     BATTLE_ENVIRONMENT_CHAMPION,
