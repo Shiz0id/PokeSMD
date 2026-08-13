@@ -1403,7 +1403,19 @@ static const struct SpriteFrameImage sPicTable_ApricornTree[] = {
     overworld_frame(gObjectEventPic_ApricornTree, 2, 2, 0),
 };
 
-#if IS_FRLG
+/* UNGUARDED DELIBERATELY. This block was `#if IS_FRLG`, so in an Emerald build
+ * none of it was ever emitted - not collected away by --gc-sections, never
+ * compiled. That hid roughly 150 overworld NPC sprites whose PNGs and
+ * OBJ_EVENT_GFX_* constants are already in this tree.
+ *
+ * Opened for TRAINER VARIETY. PickTrainerForLevel in src/rogue_dungeon.c leaves
+ * gfxOut alone for the stock trainer table, so generated dungeon trainers fall
+ * back on alternating theme->trainerGfx and a floor reads as the same few people
+ * over and over. This is the cheap fix, and it also carries the Kanto leaders,
+ * Elite Four and Champion - see docs/KANTO_LEADERS.md.
+ *
+ * To revert, put IS_FRLG back in place of the 1 below. */
+#if 1 // was IS_FRLG
 
 static const struct SpriteFrameImage sPicTable_RedNormal[] = {
     overworld_frame(gObjectEventPic_RedNormal, 2, 4, 0),

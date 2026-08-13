@@ -36,8 +36,27 @@ In an Emerald build they are not compiled, so `gObjectEventGraphicsInfo_Brock`
 does not appear in the link map at all — not dropped by the collector, never
 emitted.
 
-Un-guarding the thirteen rows we want is the cheap move. Un-guarding the whole
-block pulls in every FRLG overworld sprite, which is far more than this needs.
+**DONE - and the whole block was opened, not the thirteen rows.** The narrow
+move was the cheaper one and was the wrong call: `PickTrainerForLevel` in
+`src/rogue_dungeon.c` leaves `gfxOut` alone for the stock trainer table, so
+generated dungeon trainers fall back on alternating `theme->trainerGfx` and a
+floor reads as the same few people over and over. Opening the block is the cheap
+fix for that, and it carries these thirteen along with it.
+
+Measured: **ROM +246,720 bytes** (24,794,216 -> 25,040,936, 73.89% -> 74.63% of
+32 MB), EWRAM and IWRAM **unmoved** - overworld sprites cost ROM until something
+loads them. 398 `gObjectEventGraphicsInfo_*` are now linked, all thirteen of
+these among them, and the build was clean first time with no duplicate-symbol or
+missing-palette trouble.
+
+The guards are `#if 1 // was IS_FRLG` in four files, each carrying a comment
+saying what it was and how to revert:
+`object_event_graphics.h`, `object_event_pic_tables.h`,
+`object_event_graphics_info.h`, `object_event_graphics_info_pointers.h`.
+
+Note the ordering trap if this is ever re-done narrowly: `sPicTable_*` is
+`static`, so it has to stay in the same translation unit as the graphics info
+that names it. A graphics info points at a pic table, which points at a pic.
 
 ## The thirteen
 
