@@ -1493,6 +1493,11 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .species = sJungleSpecies,
         .speciesCount = ARRAY_COUNT(sJungleSpecies),
         .encounterWindow = 12,
+
+        // The theme paints long grass, so like the woods it was showing GRASS
+        // on the grass and CAVE on the dirt - a jungle whose battles half
+        // happened in a cave.
+        .battleEnvironment = BATTLE_ENVIRONMENT_JUNGLE_CANOPY,
     },
     [DUNGEON_THEME_OCEAN] =
     {

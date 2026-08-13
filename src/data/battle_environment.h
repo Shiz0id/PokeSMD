@@ -326,6 +326,22 @@ const struct BattleEnvironment gBattleEnvironmentInfo[BATTLE_ENVIRONMENT_COUNT] 
         .battleIntroSlide = BattleIntroSlide1,
     },
 
+    // The jungle. Grass behaviour: the theme paints long grass and puddles, and
+    // there is no jungle type for Camouflage to reach for.
+    [BATTLE_ENVIRONMENT_JUNGLE_CANOPY] =
+    {
+        .name = _("Grass"),
+        .naturePower = B_NATURE_POWER_MOVES >= GEN_4 ? MOVE_ENERGY_BALL : MOVE_RAZOR_LEAF,
+        .secretPowerAnimation = B_SECRET_POWER_ANIMATION >= GEN_4 ? gBattleAnimMove_NeedleArm : gBattleAnimMove_MagicalLeaf,
+        .secretPowerEffect = MOVE_EFFECT_SLEEP,
+        .camouflageType = TYPE_GRASS,
+        .camouflageBlend = RGB(0, 15, 2),
+        .entry = ENVIRONMENT_ENTRY(LongGrass),
+        .background = ENVIRONMENT_BACKGROUND(JungleCanopy),
+        .palette = gBattleEnvironmentPalette_JungleCanopy,
+        .battleIntroSlide = BattleIntroSlide1,
+    },
+
     [BATTLE_ENVIRONMENT_BUILDING] =
     {
         .name = _("Building"),

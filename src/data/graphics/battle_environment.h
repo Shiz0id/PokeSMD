@@ -69,6 +69,15 @@ const u32 gBattleEnvironmentTiles_OpenPlain[] = INCGFX_U32("graphics/battle_envi
 const u16 gBattleEnvironmentPalette_OpenPlain[] = INCGFX_U16("graphics/battle_environment/open_plain/palette.pal", ".gbapal");
 const u32 gBattleEnvironmentTilemap_OpenPlain[] = INCGFX_U32("graphics/battle_environment/open_plain/map.bin", ".smolTM");
 
+// The jungle, by aveontrainer - free to use WITH ATTRIBUTION, see
+// docs/ASSET_REPO_INDEX.md. The first background that arrived as an ordinary
+// illustration rather than GBA-shaped art, so its folder also keeps
+// source_fitted.png: the 256x512 input the converter actually read. That is the
+// only copy of it outside a third-party clone, which is why it is committed.
+const u32 gBattleEnvironmentTiles_JungleCanopy[] = INCGFX_U32("graphics/battle_environment/jungle_canopy/tiles.png", ".4bpp.smol");
+const u16 gBattleEnvironmentPalette_JungleCanopy[] = INCGFX_U16("graphics/battle_environment/jungle_canopy/palette.pal", ".gbapal");
+const u32 gBattleEnvironmentTilemap_JungleCanopy[] = INCGFX_U32("graphics/battle_environment/jungle_canopy/map.bin", ".smolTM");
+
 const u32 gBattleEnvironmentTiles_Building[] = INCGFX_U32("graphics/battle_environment/building/tiles.png", ".4bpp.smol");
 const u16 gBattleEnvironmentPalette_Building[] = INCGFX_U16("graphics/battle_environment/building/palette.pal", ".gbapal");
 const u32 gBattleEnvironmentTilemap_Building[] = INCGFX_U32("graphics/battle_environment/building/map.bin", ".smolTM");

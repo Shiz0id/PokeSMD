@@ -85,6 +85,209 @@ def _flip_v(px):
     return [px[(TILE - 1 - y) * TILE + x] for y in range(TILE) for x in range(TILE)]
 
 
+# How many rows of a battle background are actually drawn. Measured, not
+# assumed: every CFRU and Leob0505 source puts art in rows 0-111 and a
+# do-not-draw key colour from 112 down, and the message box covers the rest.
+ART_ROWS = 112
+
+
+def fit_to_canvas(path, out_path):
+    """Reframe arbitrary art into the 256x512 shape the converter expects.
+
+    Commissioned and community art does not arrive GBA-shaped. The jungle piece
+    is 512x288 - a widescreen illustration - where a battle background is 256
+    wide with its art in the top 112 rows.
+
+    Scales to 256 wide PRESERVING ASPECT and keeps the top ART_ROWS. That is a
+    crop, not a squash: 512x288 halves to 256x144 and loses its bottom 32 rows,
+    which sit behind the message box in game and so were never going to be seen.
+    Any other fit would distort, and distorted pixel art reads as broken rather
+    than as scaled.
+
+    The key colour is INVENTED here, because art that was never a background has
+    no do-not-draw region. It is chosen to be absent from the art so it cannot
+    swallow a real colour.
+    """
+    from PIL import Image
+
+    im = Image.open(path).convert("RGB")
+    scaled = im.resize((SRC_W, max(1, round(im.height * SRC_W / im.width))),
+                       Image.LANCZOS)
+    band = scaled.crop((0, 0, SRC_W, min(ART_ROWS, scaled.height)))
+
+    present = set(band.getdata())
+    key = next(((r, g, b) for r in (255, 254) for g in (0, 1) for b in (255, 254)
+                if (r, g, b) not in present), None)
+    if key is None:
+        raise SystemExit("cannot find an unused key colour")
+
+    canvas = Image.new("RGB", (SRC_W, SRC_H), key)
+    canvas.paste(band, (0, 0))
+    canvas.save(out_path)
+    print(f"{path.name}: {im.width}x{im.height} -> {SRC_W}x{scaled.height}, "
+          f"kept top {band.height} rows, key {key} -> {out_path}")
+    return out_path
+
+
+def _palette_from(weighted, n):
+    """Median-cut a {colour: count} bag down to n colours."""
+    from PIL import Image
+
+    pixels = []
+    for colour, count in weighted.items():
+        # Cap the weight so one enormous flat region cannot starve the detail
+        # of every palette slot. 64 is a tile's worth of influence.
+        pixels.extend([colour] * min(count, 64))
+    if not pixels:
+        return []
+    strip = Image.new("RGB", (len(pixels), 1))
+    strip.putdata(pixels)
+    q = strip.quantize(colors=n, method=Image.MEDIANCUT, dither=Image.Dither.NONE)
+    pal = q.getpalette()
+    used = len(set(q.getdata()))
+    return [tuple(pal[i * 3:i * 3 + 3]) for i in range(used)]
+
+
+def _nearest(colour, palette):
+    """-> (index, squared distance) of the closest palette entry."""
+    r, g, b = colour
+    best, best_d = 0, None
+    for i, (pr, pg, pb) in enumerate(palette):
+        d = (r - pr) ** 2 + (g - pg) ** 2 + (b - pb) ** 2
+        if best_d is None or d < best_d:
+            best, best_d = i, d
+    return best, best_d
+
+
+def fit_banks(im, key, name, banks=MAX_PALETTES, rounds=12):
+    """Split an image across `banks` palettes so every TILE uses only one.
+
+    THIS IS THE CONSTRAINT THAT MAKES BATTLE BACKGROUNDS HARD TO SOURCE. A
+    background gets three 16-colour banks, but an 8x8 tile names ONE bank in its
+    tilemap entry, so it is not enough to fit 48 colours overall - each tile must
+    fit 16. Ordinary quantisers optimise the total and ignore that, which is why
+    a median cut of the jungle art left 79% of its tiles straddling two banks and
+    therefore undrawable.
+
+    The method is k-means over TILES rather than over pixels. Start by clustering
+    tiles on their average colour, then alternate: build each bank's palette from
+    the tiles currently assigned to it, and reassign every tile to whichever bank
+    reproduces it with least error. Both halves only ever lower the total error,
+    so it settles.
+
+    INDEX 0 OF EVERY BANK IS THE KEY COLOUR AND IS NOT AVAILABLE TO ART. On a BG
+    layer, palette index 0 is transparent whatever colour sits there, so a real
+    colour placed at 0 would render as the backdrop instead. That leaves FIFTEEN
+    usable colours a bank, not sixteen - 45 in total rather than 48, which is a
+    tighter budget than the naive figure and the reason a 48-colour quantise
+    still is not enough.
+    """
+    from PIL import Image
+
+    px = im.load()
+    tiles = {}          # (tx, ty) -> {colour: count}
+    for ty in range(SRC_H // TILE):
+        for tx in range(SRC_W // TILE):
+            bag = {}
+            for y in range(TILE):
+                for x in range(TILE):
+                    c = px[tx * TILE + x, ty * TILE + y]
+                    bag[c] = bag.get(c, 0) + 1
+            tiles[(tx, ty)] = bag
+
+    # Tiles that are nothing but key need no bank; they draw as index 0.
+    art = {t: bag for t, bag in tiles.items() if set(bag) != {key}}
+    if not art:
+        raise SystemExit(f"{name}: the whole image is the key colour")
+
+    def mean(bag):
+        n = sum(bag.values())
+        return tuple(sum(c[i] * w for c, w in bag.items()) / n for i in range(3))
+
+    # Seed by splitting on the dominant axis of tile means, which puts visibly
+    # different material - canopy, water, sand - in different banks to begin
+    # with. A random seed converges to the same place more slowly.
+    means = {t: mean(b) for t, b in art.items()}
+    axis = max(range(3), key=lambda i: max(m[i] for m in means.values())
+               - min(m[i] for m in means.values()))
+    order = sorted(art, key=lambda t: means[t][axis])
+    assign = {}
+    for i, t in enumerate(order):
+        assign[t] = min(i * banks // len(order), banks - 1)
+
+    palettes = []
+    for _ in range(rounds):
+        palettes = []
+        for b in range(banks):
+            bag = {}
+            for t, a in assign.items():
+                if a != b:
+                    continue
+                for c, w in art[t].items():
+                    if c != key:
+                        bag[c] = bag.get(c, 0) + w
+            palettes.append(_palette_from(bag, COLOURS - 1))
+
+        moved = 0
+        for t, bag in art.items():
+            best, best_err = assign[t], None
+            for b, pal in enumerate(palettes):
+                if not pal:
+                    continue
+                err = 0
+                for c, w in bag.items():
+                    if c == key:
+                        continue
+                    err += _nearest(c, pal)[1] * w
+                if best_err is None or err < best_err:
+                    best, best_err = b, err
+            if best != assign[t]:
+                assign[t] = best
+                moved += 1
+        if moved == 0:
+            break
+
+    # Report the damage honestly: worst-case per-pixel error tells you whether a
+    # bank is being asked to hold two unrelated materials.
+    total, worst = 0, 0
+    for t, bag in art.items():
+        pal = palettes[assign[t]]
+        for c, w in bag.items():
+            if c == key:
+                continue
+            d = _nearest(c, pal)[1]
+            total += d * w
+            worst = max(worst, d)
+    pixels = sum(w for bag in art.values() for c, w in bag.items() if c != key)
+    print(f"{name}: banked into {banks} palettes of {COLOURS - 1}, "
+          f"mean error {total / max(pixels, 1):.1f}, worst {worst} "
+          f"(squared RGB distance)")
+
+    flat = []
+    for b in range(banks):
+        flat.extend(key)
+        for c in palettes[b]:
+            flat.extend(c)
+        flat.extend([0, 0, 0] * (COLOURS - 1 - len(palettes[b])))
+    flat.extend([0, 0, 0] * (256 - banks * COLOURS))
+
+    out = Image.new("P", im.size, 0)
+    out.putpalette(flat)
+    dst = out.load()
+    for (tx, ty), bag in tiles.items():
+        b = assign.get((tx, ty), 0)
+        pal = palettes[b]
+        for y in range(TILE):
+            for x in range(TILE):
+                sx, sy = tx * TILE + x, ty * TILE + y
+                c = px[sx, sy]
+                if c == key or not pal:
+                    dst[sx, sy] = b * COLOURS
+                else:
+                    dst[sx, sy] = b * COLOURS + 1 + _nearest(c, pal)[0]
+    return out
+
+
 def load_indexed(path):
     """-> an indexed image, quantising a truecolour source when it is safe to.
 
@@ -138,15 +341,20 @@ def load_indexed(path):
             uniform[first] = uniform.get(first, 0) + 1
     key = max(uniform, key=uniform.get) if uniform else px[0, SRC_H - 1]
     colours = [key]
+    too_many = False
     for y in range(SRC_H):
         for x in range(SRC_W):
             c = px[x, y]
             if c not in colours:
                 colours.append(c)
                 if len(colours) > COLOURS:
-                    raise SystemExit(
-                        f"{path.name}: more than {COLOURS} distinct colours - "
-                        f"index it by hand and choose the palette split")
+                    too_many = True
+                    break
+        if too_many:
+            break
+
+    if too_many:
+        return fit_banks(im, key, path.name)
 
     out = Image.new("P", im.size, 0)
     flat = []
@@ -339,6 +547,10 @@ def main(argv):
         raise SystemExit(__doc__.strip().splitlines()[-3].strip())
     src = Path(argv[0])
     outdir = Path(argv[1])
+
+    if "--fit" in argv:
+        outdir.mkdir(parents=True, exist_ok=True)
+        src = fit_to_canvas(src, outdir / "source_fitted.png")
 
     im = load_indexed(src)
     im, note = repack(im)

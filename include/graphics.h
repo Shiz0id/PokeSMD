@@ -279,6 +279,11 @@ extern const u16 gBattleEnvironmentPalette_OpenOcean[];
 extern const u32 gBattleEnvironmentTiles_OpenPlain[];
 extern const u32 gBattleEnvironmentTilemap_OpenPlain[];
 extern const u16 gBattleEnvironmentPalette_OpenPlain[];
+// The first background here that needed all three palette banks. See
+// fit_banks in tools/rogue/png_to_battle_bg.py.
+extern const u32 gBattleEnvironmentTiles_JungleCanopy[];
+extern const u32 gBattleEnvironmentTilemap_JungleCanopy[];
+extern const u16 gBattleEnvironmentPalette_JungleCanopy[];
 extern const u32 gBattleEnvironmentTiles_Building[];
 extern const u32 gBattleEnvironmentTilemap_Building[];
 extern const u32 gBattleEnvironmentAnimTiles_Building[];
