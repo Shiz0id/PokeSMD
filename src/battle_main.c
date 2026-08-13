@@ -577,17 +577,20 @@ static void CB2_InitBattleInternal(void)
 
         gBattleEnvironment = BattleSetup_GetEnvironmentId();
 
-        // A roguelike boss gets the backdrop vanilla already drew for them.
-        // BattleSetup_GetEnvironmentId reads the metatile under the player and
-        // the map type, and every dungeon floor is MAP_TYPE_UNDERGROUND - so
-        // without this a gym leader fights in front of the same cave wall as an
-        // ordinary trainer two floors above. Returns the sentinel for every
-        // non-boss battle in the game, leaving the line above untouched.
+        // A roguelike boss gets the backdrop vanilla already drew for them, and
+        // a themed floor gets its own. BattleSetup_GetEnvironmentId reads the
+        // metatile under the player and the map type, and every dungeon floor
+        // is MAP_TYPE_UNDERGROUND - so without this a gym leader fights in
+        // front of the same cave wall as an ordinary trainer two floors above,
+        // and a lava cave fights in front of a grey one. Returns the sentinel
+        // for every battle outside a dungeon, leaving the line above untouched.
         //
         // AFTER the assignment rather than in place of it, so the recorded and
         // test-runner overrides below still win over ours exactly as they win
         // over the metatile answer.
-        rogueEnvironment = RogueDungeon_GetBossEnvironment(TRAINER_BATTLE_PARAM.opponentA);
+        rogueEnvironment = RogueDungeon_GetBattleEnvironment(
+            (gBattleTypeFlags & BATTLE_TYPE_TRAINER) != 0,
+            TRAINER_BATTLE_PARAM.opponentA);
         if (rogueEnvironment != BATTLE_ENVIRONMENT_COUNT)
             gBattleEnvironment = rogueEnvironment;
     }

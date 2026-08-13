@@ -255,6 +255,12 @@ extern const u32 gBattleEnvironmentTilemap_Cave[];
 extern const u32 gBattleEnvironmentAnimTiles_Cave[];
 extern const u32 gBattleEnvironmentAnimTilemap_Cave[];
 extern const u16 gBattleEnvironmentPalette_Cave[];
+// Scalding cave, for Fiery Path. Converted from the Team Aqua repo by
+// tools/rogue/png_to_battle_bg.py. It borrows Cave's entry animation, so it
+// declares no AnimTiles of its own.
+extern const u32 gBattleEnvironmentTiles_ScaldingCave[];
+extern const u32 gBattleEnvironmentTilemap_ScaldingCave[];
+extern const u16 gBattleEnvironmentPalette_ScaldingCave[];
 extern const u32 gBattleEnvironmentTiles_Building[];
 extern const u32 gBattleEnvironmentTilemap_Building[];
 extern const u32 gBattleEnvironmentAnimTiles_Building[];

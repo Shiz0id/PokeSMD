@@ -203,6 +203,30 @@ const struct BattleEnvironment gBattleEnvironmentInfo[BATTLE_ENVIRONMENT_COUNT] 
         .battleIntroSlide = CAVE_BATTLE_INTRO_SLIDE,
     },
 
+    // Fiery Path, which rendered as the plain cave above because
+    // BattleSetup_GetEnvironmentId only ever sees MAP_TYPE_UNDERGROUND and a
+    // non-encounter metatile. Everything except the background art is
+    // deliberately Cave's: Nature Power, Secret Power, Camouflage and the intro
+    // slide should all behave as a cave, because that is what it is.
+    //
+    // ENTRY IS CAVE'S TOO, and that is not laziness. The entry graphics are the
+    // slide-in that plays before the background is drawn; the Team Aqua source
+    // is a single finished background and ships no entry animation, so
+    // borrowing one is the only option that is not a blank screen.
+    [BATTLE_ENVIRONMENT_SCALDING_CAVE] =
+    {
+        .name = _("Cave"),
+        .naturePower = CAVE_NATURE_POWER,
+        .secretPowerAnimation = CAVE_SECRET_POWER_ANIMATION,
+        .secretPowerEffect = CAVE_SECRET_POWER_EFFECT,
+        .camouflageType = CAVE_CAMOUFLAGE_TYPE,
+        .camouflageBlend = CAVE_CAMOUFLAGE_BLEND,
+        .entry = ENVIRONMENT_ENTRY(Cave),
+        .background = ENVIRONMENT_BACKGROUND(ScaldingCave),
+        .palette = gBattleEnvironmentPalette_ScaldingCave,
+        .battleIntroSlide = CAVE_BATTLE_INTRO_SLIDE,
+    },
+
     [BATTLE_ENVIRONMENT_BUILDING] =
     {
         .name = _("Building"),

@@ -1625,6 +1625,25 @@ struct RogueDungeonTheme
     // took the water branch, found NULL and returned - no wild encounters, on
     // either water theme, for as long as they have existed.
     u8 wildArea;
+
+    // The battle backdrop this theme fights in front of. ZERO MEANS "let the
+    // engine decide", which is what twelve of the thirteen themes want.
+    //
+    // BattleSetup_GetEnvironmentId derives the backdrop from the metatile under
+    // the player and gMapHeader.mapType, and every dungeon floor is
+    // MAP_TYPE_UNDERGROUND - so a theme that paints no encounter surface always
+    // resolves to BATTLE_ENVIRONMENT_CAVE, however it looks on the floor. Fiery
+    // Path is a lava cave that fought in front of a grey one.
+    //
+    // Zero is safe as the sentinel here where it was NOT safe in
+    // sDungeonBossEnvironment, and the difference is worth knowing: that table
+    // is indexed by boss and every row is a real answer, so it needs
+    // BATTLE_ENVIRONMENT_COUNT to mean "nothing". This one is a struct field
+    // that most themes never set, so the designated-initialiser default has to
+    // BE the "unset" value. BATTLE_ENVIRONMENT_GRASS is therefore unreachable
+    // from here - no dungeon theme wants it, since a grass floor already
+    // resolves to it through the metatile.
+    u8 battleEnvironment;
 };
 
 // A map used for the LAST FEW FLOORS of one theme's dungeon, instead of that
@@ -1887,6 +1906,13 @@ u16 RogueDungeon_GetBossBGM(u16 trainerId);
 // Returns BATTLE_ENVIRONMENT_COUNT for any trainer that is not one of the
 // fourteen dungeon bosses, leaving the engine's metatile-derived backdrop alone.
 u8 RogueDungeon_GetBossEnvironment(u16 trainerId);
+
+// The one BattleMainCB2 calls. Layers the theme's own backdrop under the boss
+// table; returns BATTLE_ENVIRONMENT_COUNT when this project has no opinion,
+// which leaves the engine's metatile-derived answer alone. isTrainerBattle is
+// a parameter because TRAINER_BATTLE_PARAM.opponentA is not cleared between
+// battles and still names the last trainer during a wild encounter.
+u8 RogueDungeon_GetBattleEnvironment(bool8 isTrainerBattle, u16 trainerId);
 u16 RogueDungeon_GiveBossTM(void);
 bool8 RogueDungeon_IsGeneratedTrainer(void);
 bool8 RogueDungeon_HasTrainerBeenBeaten(u8 objectEventId);

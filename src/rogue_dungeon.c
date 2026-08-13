@@ -1343,6 +1343,11 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         .species = sFieryPathSpecies,
         .speciesCount = ARRAY_COUNT(sFieryPathSpecies),
         .encounterWindow = 12,
+
+        // The first theme to name its own backdrop. Without it Fiery Path is a
+        // lava cave that fights in front of a grey one, because the engine only
+        // ever sees MAP_TYPE_UNDERGROUND and a non-encounter metatile.
+        .battleEnvironment = BATTLE_ENVIRONMENT_SCALDING_CAVE,
     },
     [DUNGEON_THEME_MIRAGETOWER] =
     {
@@ -4686,6 +4691,64 @@ u8 RogueDungeon_GetBossEnvironment(u16 trainerId)
         if (sDungeonBosses[i] == trainerId)
             return sDungeonBossEnvironment[i];
     }
+
+    return DUNGEON_ENV_DEFAULT;
+}
+
+// Is the player standing on the floor the run thinks they are on? Compares the
+// live map against the one MapForFloor picks, so the rest stop, the Safari and
+// the game room all answer no even though VAR_ROGUE_DUNGEON_FLOOR still holds a
+// perfectly good floor number in all three.
+//
+// THE THEME OVERRIDE NEEDS THIS AND THE BOSS OVERRIDE DID NOT, which is the
+// whole reason it exists. A boss lookup is keyed on a trainer id that only ever
+// appears on a boss floor and so cannot fire anywhere else; a theme lookup is
+// keyed on the floor counter alone, and without this a Safari battle would take
+// whichever theme the counter happened to be sitting in.
+static bool8 IsOnDungeonFloor(u16 floor)
+{
+    u16 map = MapForFloor(floor);
+
+    return gSaveBlock1Ptr->location.mapGroup == MAP_GROUP(map)
+        && gSaveBlock1Ptr->location.mapNum == MAP_NUM(map);
+}
+
+// Called from BattleMainCB2. The one place that decides whether this project
+// has an opinion about the backdrop, and the order is the design:
+//
+//   1. A BOSS wins. Flannery should stand in vanilla's gym-leader interior even
+//      though her floor is a lava cave - she is the more specific fact. Flip
+//      these two if that reads wrong on screen; it is one line.
+//   2. Then the THEME, for every other battle on that floor, wild or trainer.
+//   3. Otherwise the sentinel, and the engine's metatile answer stands.
+//
+// isTrainerBattle is passed rather than read here because
+// TRAINER_BATTLE_PARAM.opponentA IS NOT CLEARED between battles. On a wild
+// encounter it still holds the last trainer fought, so a boss lookup against it
+// would give a wild Numel the champion stadium as soon as the player had beaten
+// a champion.
+u8 RogueDungeon_GetBattleEnvironment(bool8 isTrainerBattle, u16 trainerId)
+{
+    u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+    const struct RogueDungeonTheme *theme;
+
+    if (isTrainerBattle)
+    {
+        u8 boss = RogueDungeon_GetBossEnvironment(trainerId);
+
+        if (boss != DUNGEON_ENV_DEFAULT)
+            return boss;
+    }
+
+    if (!IsOnDungeonFloor(floor))
+        return DUNGEON_ENV_DEFAULT;
+
+    theme = ThemeForFloor(floor);
+
+    // Zero is "unset" here, not BATTLE_ENVIRONMENT_GRASS - see the field's note
+    // in rogue_dungeon.h for why this sentinel differs from the boss table's.
+    if (theme != NULL && theme->battleEnvironment != 0)
+        return theme->battleEnvironment;
 
     return DUNGEON_ENV_DEFAULT;
 }

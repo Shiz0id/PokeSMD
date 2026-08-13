@@ -30,6 +30,14 @@ const u32 gBattleEnvironmentTiles_Cave[] = INCGFX_U32("graphics/battle_environme
 const u16 gBattleEnvironmentPalette_Cave[] = INCGFX_U16("graphics/battle_environment/cave/palette.pal", ".gbapal");
 const u32 gBattleEnvironmentTilemap_Cave[] = INCGFX_U32("graphics/battle_environment/cave/map.bin", ".smolTM");
 
+// Fiery Path. Converted from the Team Aqua repo by tools/rogue/png_to_battle_bg.py,
+// which is why the source here is an ordinary tiles.png and map.bin pair like
+// every other environment rather than anything special - the conversion happens
+// before the build, not in it.
+const u32 gBattleEnvironmentTiles_ScaldingCave[] = INCGFX_U32("graphics/battle_environment/scalding_cave/tiles.png", ".4bpp.smol");
+const u16 gBattleEnvironmentPalette_ScaldingCave[] = INCGFX_U16("graphics/battle_environment/scalding_cave/palette.pal", ".gbapal");
+const u32 gBattleEnvironmentTilemap_ScaldingCave[] = INCGFX_U32("graphics/battle_environment/scalding_cave/map.bin", ".smolTM");
+
 const u32 gBattleEnvironmentTiles_Building[] = INCGFX_U32("graphics/battle_environment/building/tiles.png", ".4bpp.smol");
 const u16 gBattleEnvironmentPalette_Building[] = INCGFX_U16("graphics/battle_environment/building/palette.pal", ".gbapal");
 const u32 gBattleEnvironmentTilemap_Building[] = INCGFX_U32("graphics/battle_environment/building/map.bin", ".smolTM");

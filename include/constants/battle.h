@@ -675,6 +675,10 @@ enum BattleEnvironments
     BATTLE_ENVIRONMENT_DISTORTION_WORLD,
     BATTLE_ENVIRONMENT_SPACE,
     BATTLE_ENVIRONMENT_ULTRA_SPACE,
+    // Appended by this project, for Fiery Path. APPEND ONLY: an environment is
+    // an index into gBattleEnvironmentInfo, so inserting one renumbers every
+    // entry after it.
+    BATTLE_ENVIRONMENT_SCALDING_CAVE,
     BATTLE_ENVIRONMENT_COUNT,
 };
 
