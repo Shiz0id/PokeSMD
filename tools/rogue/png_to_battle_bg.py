@@ -86,9 +86,37 @@ def _flip_v(px):
 
 
 # How many rows of a battle background are actually drawn. Measured, not
-# assumed: every CFRU and Leob0505 source puts art in rows 0-111 and a
-# do-not-draw key colour from 112 down, and the message box covers the rest.
+# assumed: every CFRU and Leob0505 source puts art in rows 0-111 of a half and a
+# do-not-draw key colour below it, and the message box covers the rest.
 ART_ROWS = 112
+
+# THE 256x512 CANVAS IS NOT ONE 256-WIDE IMAGE. BG3 is set up with screenSize 1
+# in gBattleBgTemplates - 512x256 - so its two 32x32 screenblocks sit SIDE BY
+# SIDE, and the flat tile order the converter walks puts rows 0-31 in the LEFT
+# half of the background and rows 32-63 in the RIGHT half. Every background in
+# the tree has art in both:
+#
+#     rows 0-111     art, left half
+#     rows 256-367   art, right half
+#     rows 496-511   the right half's bottom 16 rows
+#
+# THIS COST A VISIBLE BUG. fit_to_canvas used to fill only rows 0-111 and leave
+# the rest key colour, which builds and renders fine standing still - the left
+# half is what BG3HOFS 0 shows. The intro slide is what exposes it:
+# BattleIntroSlide* drives REG_BG3HOFS per scanline from +DISPLAY_WIDTH down to
+# 0 on the top half and -DISPLAY_WIDTH up to 0 on the bottom, so the whole 512
+# is scrolled across the screen and an empty right half reads as a black bar
+# sliding in. jungle_canopy and abyssal_depths shipped that way; the four
+# backgrounds converted straight from CFRU sources did not, because the sources
+# already carried the full canvas.
+#
+# The bottom 16 rows are the vertical-wrap strip: the map is 256 tall against a
+# 160-tall screen, so a negative BG3VOFS - every screen-shake animation - pulls
+# rows 240-255 in above row 0. Copying the top 16 rows there costs NO unique
+# tiles, only tilemap entries, because they are tiles the sheet already has.
+SLICE_ROWS = 16
+RIGHT_HALF_TOP = SRC_H // 2                    # row 256, the right half's row 0
+SLICE_TOP = SRC_H - SLICE_ROWS                 # row 496
 
 # HOW MUCH ONE COLOUR MAY WEIGH when a bank's palette is chosen. Median cut
 # follows pixel counts, so an ocean of flat blue will take every slot and leave
@@ -114,6 +142,13 @@ def fit_to_canvas(path, out_path, top=0):
     That is a crop, not a squash: 512x288 halves to 256x144 and loses 32 rows.
     Any other fit would distort, and distorted pixel art reads as broken rather
     than as scaled.
+
+    THE BAND IS THEN LAID OUT TWICE, plus the wrap slice - see the comment on
+    SLICE_ROWS for why, and for what a canvas missing them looks like in game.
+    A 256-wide piece has no separate right half to give the background, so the
+    right half is the same band again: the scene repeats across the 512 rather
+    than continuing, which is what the four CFRU conversions already in the tree
+    do and is invisible during a slide that lasts under two seconds.
 
     WHICH ROWS TO KEEP IS A COMPOSITION DECISION, not a default. A battle
     background shows 112 rows and the combatants stand in front of them, so what
@@ -143,6 +178,8 @@ def fit_to_canvas(path, out_path, top=0):
 
     canvas = Image.new("RGB", (SRC_W, SRC_H), key)
     canvas.paste(band, (0, 0))
+    canvas.paste(band, (0, RIGHT_HALF_TOP))
+    canvas.paste(band.crop((0, 0, SRC_W, SLICE_ROWS)), (0, SLICE_TOP))
     canvas.save(out_path)
     print(f"{path.name}: {im.width}x{im.height} -> {SRC_W}x{scaled.height}, "
           f"kept rows {top}-{top + band.height - 1}, key {key} -> {out_path}")

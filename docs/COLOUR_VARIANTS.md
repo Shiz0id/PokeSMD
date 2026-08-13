@@ -233,3 +233,40 @@ Still unverified, and this is a feature whose entire output is pixels:
 - the overworld follower, which has no personality threaded to it and so is
   still on stock colours while its battle sprite is not. **That inconsistency is
   visible in normal play** and is the most likely thing to be noticed first.
+- **mon ICONS, everywhere they appear** — the party menu, the storage boxes and
+  the nickname screen a caught mon goes straight to. `GetValidMonIconPalettePtr`
+  keys on `gSpeciesInfo[species].iconPalIndex` and nothing else, so there is no
+  personality to shift by even though `LoadMonIconPalettePersonality` is handed
+  one for gender. Same family as the follower, and reported from play as the
+  nickname screen "discarding" the variant. A fix means per-icon palettes, which
+  is a VRAM question rather than a maths one.
+
+## The caught-mon Pokédex page: pixels the screen did not decode
+
+**Reported from play as a corrupt sprite on capture, and it was not a variant
+bug at all** — the variant was being applied faithfully to the wrong base.
+
+`Pokedex_CreateCaughtMonSprite` does not build a sprite. It calls
+`SetMultiuseSpriteTemplateToPokemon`, which copies
+`gMonSpritesGfxPtr->templates[position]`, whose images point back at
+`spritesGfx[position]` — **the battler's own buffer**. Its comment says why:
+there is not enough heap to use `CreateMonPicSprite`. In vanilla that is
+harmless, because those pixels and the stock palette agree.
+
+They do not agree once BW animations exist. `PublishBwFrame` has overwritten
+that buffer with the gif's frames, and `LoadDexMonPalette` then loaded the stock
+palette over them. **No container in the set shares the stock sprite's slot
+order — 0 of 772 — and a mean 13.99 of the 15 drawn slots differ**, so the
+result is a near-total colour scramble rather than a wrong tint.
+
+`RogueBwAnim_GetPublishedPalette(battler, species)` returns the palette recorded
+alongside those pixels, after the shiny rebuild and the variant. **It survives
+`RogueBwAnim_Free` on purpose**, because `CloseMainBattleScreen` calls that and
+*then* shows the dex page; what makes it safe is that `ClearBwState` invalidates
+it on the next load into the battler, which is the same pass that overwrites the
+pixels. `tools/rogue/check_bw_published_palette.py` asserts that pairing, since
+clearing it in `Free` looks like tidying up and silently restores the bug.
+
+**The general shape: any screen that reuses battler sprite GFX inherits BW
+pixels and must ask for the BW palette.** This one was found by playing; nothing
+else has been swept for it.

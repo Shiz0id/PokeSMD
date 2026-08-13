@@ -284,6 +284,8 @@ static void DebugAction_Util_RogueFloor(u8 taskId);
 static void DebugAction_Util_RogueFloor_SelectFloor(u8 taskId);
 static void DebugAction_Util_RogueCharms(u8 taskId);
 static void DebugAction_Util_RogueCharms_Select(u8 taskId);
+static void DebugAction_Util_RogueObjects(u8 taskId);
+static void DebugAction_Util_RogueObjects_Watch(u8 taskId);
 
 static void DebugAction_TimeMenu_ChangeTimeOfDay(u8 taskId);
 static void DebugAction_TimeMenu_ChangeWeekdays(u8 taskId);
@@ -594,6 +596,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("Warp to map warp…"), DebugAction_Util_Warp_Warp },
     { COMPOUND_STRING("Rogue floor warp…"), DebugAction_Util_RogueFloor },
     { COMPOUND_STRING("Rogue charms…"),     DebugAction_Util_RogueCharms },
+    { COMPOUND_STRING("Rogue objects…"),    DebugAction_Util_RogueObjects },
     { COMPOUND_STRING("Set weather…"),      DebugAction_Util_Weather },
     { COMPOUND_STRING("Font Test…"),        DebugAction_ExecuteScript, Debug_EventScript_FontTest },
     { COMPOUND_STRING("Time Functions…"),   DebugAction_OpenSubMenu, sDebugMenu_Actions_TimeMenu, },
@@ -1772,6 +1775,59 @@ static void DebugAction_Util_RogueFloor(u8 taskId)
         gTasks[taskId].tInput = DUNGEON_TOTAL_FLOORS;
 
     DebugRogueFloor_Redraw(taskId);
+}
+
+// What the floor placed, the worst live count reached while walking it, and
+// whether the engine ever refused a spawn.
+//
+// LIVE PEAK, NOT LIVE NOW, because opening this menu is not the moment that
+// matters - the count rises and falls with the camera, and the interesting
+// instant is one the player walks through without being able to count it. Walk a
+// lap of the floor, then read this. SELECT clears the peaks so a single room can
+// be measured without leaving the floor.
+static void DebugRogueObjects_Redraw(u8 taskId)
+{
+    RogueDungeon_GetDebugObjectCensus(gStringVar4);
+    AddTextPrinterParameterized(gTasks[taskId].tSubWindowId, DEBUG_MENU_FONT, gStringVar4, 0, 0, 0, NULL);
+}
+
+static void DebugAction_Util_RogueObjects_Watch(u8 taskId)
+{
+    // Redrawn every frame. The window is up while the game is paused so nothing
+    // moves, but the peaks survive a SELECT-clear and this keeps that honest.
+    DebugRogueObjects_Redraw(taskId);
+
+    if (JOY_NEW(SELECT_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        RogueDungeon_Debug_ResetObjectCensus();
+    }
+    else if (JOY_NEW(B_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        DebugAction_DestroyExtraWindow(taskId);
+    }
+}
+
+static void DebugAction_Util_RogueObjects(u8 taskId)
+{
+    u8 windowId;
+
+    ClearStdWindowAndFrame(gTasks[taskId].tWindowId, TRUE);
+    RemoveWindow(gTasks[taskId].tWindowId);
+
+    HideMapNamePopUpWindow();
+    LoadMessageBoxAndBorderGfx();
+    windowId = AddWindow(&sDebugMenuWindowTemplateWeather);
+    DrawStdWindowFrame(windowId, FALSE);
+
+    CopyWindowToVram(windowId, COPYWIN_FULL);
+
+    gTasks[taskId].func = DebugAction_Util_RogueObjects_Watch;
+    gTasks[taskId].tSubWindowId = windowId;
+    gTasks[taskId].tDigit = 0;
+
+    DebugRogueObjects_Redraw(taskId);
 }
 
 // Grant any charm to any party slot, or to the party-wide row, and watch what

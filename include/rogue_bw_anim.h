@@ -139,6 +139,28 @@ void RogueBwAnim_OnSpriteFreed(u32 battler);
 // Called from FreeMonSpritesGfx. Releases the chunk buffers.
 void RogueBwAnim_Free(void);
 
+// The palette the animation last published for this battler, or NULL if what is
+// sitting in that battler's sprite GFX is not this species' animation frames.
+//
+// EXISTS BECAUSE THE PIXELS OUTLIVE THE BATTLE SCREEN. PublishBwFrame writes the
+// gif's frames into gMonSpritesGfxPtr->spritesGfx[position], and the caught-mon
+// Pokedex page draws its sprite straight out of that same buffer rather than
+// building a new one - Pokedex_CreateCaughtMonSprite says why: there is not
+// enough heap to use CreateMonPicSprite. So that screen inherits animation
+// PIXELS, and reloading the stock palette over them scrambles the mon: no
+// container in the set shares the stock sprite's slot order, and on average 14
+// of the 15 drawn slots differ.
+//
+// KEYED ON SPECIES, and that is the whole safety argument. The answer has to
+// survive RogueBwAnim_Free, because CloseMainBattleScreen calls it BEFORE the
+// dex page runs - so the usual "cleared on teardown" rule would return NULL
+// exactly when the caller needs an answer. What makes that safe is that the
+// published palette is invalidated by ClearBwState, which runs at the top of
+// every RogueBwAnim_OnLoadSprite: any mon loading into this battler either
+// republishes or clears. A species mismatch therefore cannot be stale, it can
+// only be a different mon, and that returns NULL.
+const u16 *RogueBwAnim_GetPublishedPalette(u32 battler, u16 species);
+
 // Whether a frame published now would reach VRAM for this battler. For tests -
 // a frozen sprite is not otherwise observable, because the tick and the buffer
 // writes carry on exactly as normal and only the VRAM copy stops.

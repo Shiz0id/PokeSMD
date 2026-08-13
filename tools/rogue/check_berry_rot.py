@@ -119,6 +119,8 @@ def main():
                     (args.repo / 'include/constants/rogue_dungeon.h')
                     .read_text(errors='replace'))
     trees = constant(consts, 'DUNGEON_MAX_BERRIES')
+    berry_min = constant(consts, 'DUNGEON_BERRY_MIN')
+    min_trees = constant(consts, 'DUNGEON_BERRY_ROTTEN_MIN_TREES')
     odds = constant(consts, 'DUNGEON_BERRY_ROTTEN_ODDS')
     good = constant(consts, 'DUNGEON_BERRY_YIELD')
     rot = constant(consts, 'DUNGEON_BERRY_ROTTEN_YIELD')
@@ -156,12 +158,40 @@ def main():
                          % (i, pct, nominal, i))
 
     # --- and no floor may come up with nothing rotten on it at all ---
-    if guaranteed:
+    if guaranteed and trees >= min_trees:
         barren = floors_with_no_rot(decor_hash, trees, odds, True)
         if barren:
             fails.append('%d seeds in 65536 produce a floor with NO rotten tree, '
                          'but DUNGEON_BERRY_ROTTEN_GUARANTEED is TRUE'
                          % barren)
+
+    # --- EVERY REACHABLE TREE COUNT, not just the ceiling ---
+    #
+    # The count scales with depth now (DUNGEON_BERRY_MIN upward), and the
+    # guarantee picks its victim with `% sBerryCount` - so the per-tree rate is a
+    # function of how many trees a floor has, and measuring only
+    # DUNGEON_MAX_BERRIES measures a floor the player does not reach until the
+    # last tenth of a run. That is the mixed-category trap wearing a new hat: one
+    # honest number, for the case that is least common and least bad, standing in
+    # for the cases the player actually meets.
+    per_count = []
+    for n in range(berry_min, trees + 1):
+        applies = guaranteed and n >= min_trees
+        want = 100.0 * (1.0 / n + (1.0 - 1.0 / n) / odds) if applies else 100.0 / odds
+        got = rates(decor_hash, n, odds, applies)
+        for i, pct in enumerate(got):
+            if abs(pct - want) > TOLERANCE_PP:
+                fails.append('with %d trees, slot %d is rotten %.2f%% against a '
+                             'nominal %.2f%%' % (n, i, pct, want))
+        # A floor whose ONLY tree is guaranteed rotten is worthless, and the
+        # modulo makes that the default at n=1 rather than an edge case. This is
+        # what DUNGEON_BERRY_ROTTEN_MIN_TREES exists to stop, so assert it here
+        # rather than trusting the constant to stay above 1.
+        if applies and n < 2:
+            fails.append('the guarantee applies at %d tree(s), so that floor\'s '
+                         'only berry is ALWAYS a dud - raise '
+                         'DUNGEON_BERRY_ROTTEN_MIN_TREES' % n)
+        per_count.append((n, sum(got) / 100.0))
 
     if args.selftest:
         bad = rates(biased_hash(odds), trees, odds, guaranteed)
@@ -198,6 +228,12 @@ def main():
           % (trees, odds, rot, good))
     print('  measured over all 65536 seeds: %s (nominal %.2f%%)'
           % (', '.join('%.2f%%' % p for p in measured), nominal))
+    # DUDS PER FLOOR is the number a player actually experiences; the per-tree
+    # percentage rises as the count falls, purely because the guarantee is one
+    # per floor, and reading only that would say the rot got worse when the
+    # player is meeting fewer duds.
+    print('  duds per floor by tree count: %s'
+          % ', '.join('%d trees %.2f' % (n, d) for n, d in per_count))
     return 0
 
 

@@ -1974,4 +1974,28 @@ void RogueDungeon_EventInjuredAmbush(void);   // sets up the script's dowildbatt
 // tool in src/debug.c.
 void RogueDungeon_GetDebugFloorInfo(u16 floor, u8 *dest);
 
+// Object census. See ROGUE_DEBUG_OBJECT_CENSUS in constants/rogue_dungeon.h.
+//
+// The three hooks are called from event_object_movement.c and compile to nothing
+// when the census is off, so the engine keeps no debug-only branches in release.
+//
+// NoteObjectSpawnOutcome takes the template's identity rather than a bare "it
+// failed" ON PURPOSE. The engine returns one sentinel for both "no slot free"
+// and "already loaded", and the second fires once per live object per camera
+// update - counting the sentinel alone measures walking time, not dropped
+// objects. The census re-derives which one happened.
+void RogueDungeon_Debug_NoteObjectSpawnOutcome(u16 localId, u8 mapNum, u8 mapGroup);
+
+// The other silent drop: the sprite table is full rather than the object event
+// table.
+void RogueDungeon_Debug_NoteSpriteExhausted(void);
+
+void RogueDungeon_Debug_NoteSpawnPass(u32 wanted);
+void RogueDungeon_Debug_ResetObjectCensus(void);
+
+// Fills dest with the census, ready for the debug menu. Safe to call anywhere,
+// including off a dungeon floor, where it reports zeroes rather than stale
+// numbers from the last one.
+void RogueDungeon_GetDebugObjectCensus(u8 *dest);
+
 #endif // GUARD_ROGUE_DUNGEON_H

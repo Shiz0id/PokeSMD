@@ -32,6 +32,7 @@
 #include "pokeball.h"
 #include "random.h"
 #include "region_map.h"
+#include "rogue_dungeon.h"
 #include "rtc.h"
 #include "script.h"
 #include "sound.h"
@@ -535,7 +536,13 @@ static const struct SpritePalette sObjectEventSpritePalettes[] = {
     {gObjectEventPal_Lugia,                 OBJ_EVENT_PAL_TAG_LUGIA},
     {gObjectEventPal_RubySapphireBrendan,   OBJ_EVENT_PAL_TAG_RS_BRENDAN},
     {gObjectEventPal_RubySapphireMay,       OBJ_EVENT_PAL_TAG_RS_MAY},
-#if IS_FRLG
+/* The FRLG overworld sprites are unguarded in the four object_events data
+ * files, so their palettes must be registered here too - a sprite whose
+ * paletteTag is missing from this table keeps whatever palette its slot
+ * already held, and draws in the wrong colours with no error.
+ *
+ * To revert, put IS_FRLG back in place of the 1 below. */
+#if 1 // was IS_FRLG
     {gObjectEventPal_PlayerFrlg,            OBJ_EVENT_PAL_TAG_PLAYER_RED},
     {gObjectEventPal_PlayerReflectionFrlg,  OBJ_EVENT_PAL_TAG_PLAYER_RED_REFLECTION},
     {gObjectEventPal_PlayerFrlg,            OBJ_EVENT_PAL_TAG_PLAYER_GREEN},
@@ -551,7 +558,7 @@ static const struct SpritePalette sObjectEventSpritePalettes[] = {
     {gObjectEventPal_Meteorite,             OBJ_EVENT_PAL_TAG_METEORITE},
     {gObjectEventPal_SSAnne,                OBJ_EVENT_PAL_TAG_SS_ANNE},
     {gObjectEventPal_Seagallop,             OBJ_EVENT_PAL_TAG_SEAGALLOP},
-#endif // IS_FRLG
+#endif // was IS_FRLG
 #if OW_FOLLOWERS_POKEBALLS
     {gObjectEventPal_MasterBall,            OBJ_EVENT_PAL_TAG_BALL_MASTER},
     {gObjectEventPal_UltraBall,             OBJ_EVENT_PAL_TAG_BALL_ULTRA},
@@ -1591,7 +1598,16 @@ static u8 InitObjectEventStateFromTemplate(const struct ObjectEventTemplate *tem
 
     objectEventId = GetAvailableObjectEventId(template->localId, mapNum, mapGroup);
     if (objectEventId == OBJECT_EVENTS_COUNT)
+    {
+        // TWO DIFFERENT THINGS RETURN THIS - read GetAvailableObjectEventId's own
+        // comment. "No slot free" is an object that silently does not appear;
+        // "already loaded" is the ordinary case, and it is BY FAR the common one,
+        // because this function re-attempts every in-range template on every
+        // camera update. Only the census can tell them apart, so it is handed the
+        // identity rather than a bare "it failed".
+        RogueDungeon_Debug_NoteObjectSpawnOutcome(template->localId, mapNum, mapGroup);
         return OBJECT_EVENTS_COUNT;
+    }
 
     if (!ShouldInitObjectEventStateFromTemplate(template, isClone, x3, y3))
         return OBJECT_EVENTS_COUNT;
@@ -1871,6 +1887,9 @@ static u8 TrySetupObjectEventSprite(const struct ObjectEventTemplate *objectEven
     spriteId = CreateSprite(spriteTemplate, 0, 0, 0);
     if (spriteId == MAX_SPRITES)
     {
+        // Unambiguous, unlike the object event case above: the sprite table is
+        // full and this object does not appear.
+        RogueDungeon_Debug_NoteSpriteExhausted();
         gObjectEvents[objectEventId].active = FALSE;
         return OBJECT_EVENTS_COUNT;
     }
@@ -2908,6 +2927,8 @@ void TrySpawnObjectEvents(s16 cameraX, s16 cameraY)
         else
             objectCount = gMapHeader.events->objectEventCount;
 
+        u32 wanted = 0;
+
         for (i = 0; i < objectCount; i++)
         {
             struct ObjectEventTemplate *template = &gSaveBlock1Ptr->objectEventTemplates[i];
@@ -2916,12 +2937,18 @@ void TrySpawnObjectEvents(s16 cameraX, s16 cameraY)
 
             if (top <= npcY && bottom >= npcY && left <= npcX && right >= npcX && !FlagGet(template->flagId))
             {
+                // Counted before the attempt, not after: this is what the engine
+                // WANTED live, which only differs from what it got when the
+                // ceiling bites - and that difference is the whole question.
+                wanted++;
                 if (template->graphicsId == OBJ_EVENT_GFX_LIGHT_SPRITE)
                     SpawnLightSprite(npcX, npcY, cameraX, cameraY, template->trainerRange_berryTreeId); // light sprite instead
                 else
                     TrySpawnObjectEventTemplate(template, gSaveBlock1Ptr->location.mapNum, gSaveBlock1Ptr->location.mapGroup, cameraX, cameraY);
             }
         }
+
+        RogueDungeon_Debug_NoteSpawnPass(wanted);
     }
 }
 

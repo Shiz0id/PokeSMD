@@ -35,22 +35,49 @@
 #define ROGUE_ACE_OFFER      1
 #define ROGUE_ACE_PARTY_FULL 2
 
+// Counts objects on a floor so the live sprite ceiling can be read instead of
+// counted by hand.
+//
+// THE NUMBER THAT MATTERS IS NOT WHAT IS ON SCREEN NOW. Object events spawn and
+// despawn by proximity as the player walks, so the interesting moment is the
+// WORST one, and standing in it is exactly when you are least able to count.
+// This records peaks and refusals as they happen and hands them back afterwards,
+// so one lap of a floor answers the question.
+//
+// A refusal is the thing to watch: TrySpawnObjectEventTemplate returns
+// OBJECT_EVENTS_COUNT when no slot is free and the object silently does not
+// appear, which is invisible from inside the game by construction.
+#define ROGUE_DEBUG_OBJECT_CENSUS TRUE
+
 // map.json must declare exactly DUNGEON_MAX_TRAINERS + DUNGEON_MAX_ITEMS object
 // events: the engine reads templates from the save block but takes the count
 // from ROM. check_dungeon_objects.py enforces that, because the two live in
 // different files and nothing else would notice them drifting apart.
 #define DUNGEON_MAX_TRAINERS            4
-#define DUNGEON_TRAINER_FLOORS_PER_EXTRA 25
+// TWO, NOT ONE, and the ramp is slower to match. A floor has ten rooms and
+// placement picks one uniformly WITH REPLACEMENT, so what matters is not the
+// object count but how many rooms end up holding nothing a player would cross a
+// room for. At one trainer and two item balls that was 7.3 rooms of ten - most
+// of the floor was a tree, a rock, or bare ground. tools/rogue/room_density.py
+// prints the table.
+#define DUNGEON_TRAINER_MIN             2
+#define DUNGEON_TRAINER_FLOORS_PER_EXTRA 40
 #define DUNGEON_TRAINER_SIGHT_RANGE      4
 
 // Item balls. These cost NO new RAM: gSaveBlock1Ptr->objectEventTemplates is a
 // fixed 64 entries whether or not a map uses them, and the floor spends 4 on
-// trainers. The live-sprite limit (OBJECT_EVENTS_COUNT, 16) is the real ceiling
-// and is nowhere near - objects spawn by proximity, so what matters is how many
-// crowd one screen, not how many exist.
+// trainers. The live-sprite limit (OBJECT_EVENTS_COUNT) is the real ceiling, and
+// it is 24 now rather than vanilla's 16 - the floor's 21 declared objects plus
+// the player and a follower fit under it with one to spare.
+//
+// FOUR AT THE BOTTOM, NOT TWO, for the room-coverage reason on the trainers
+// above. The ramp is stretched to match so the ceiling still lands inside a run
+// (4 + 115/25 = 8) rather than being reached in the first quarter of it.
+// MAX is untouched: raising it would mean more declarations in map.json and the
+// floor is already 23 of 24 live slots with the player and a follower.
 #define DUNGEON_MAX_ITEMS            8
-#define DUNGEON_ITEM_MIN             2
-#define DUNGEON_ITEM_FLOORS_PER_EXTRA 20
+#define DUNGEON_ITEM_MIN             4
+#define DUNGEON_ITEM_FLOORS_PER_EXTRA 25
 
 // Object event local ids are 1-based and the trainers hold the first block, so
 // item ball i is localId DUNGEON_ITEM_FIRST_LOCAL_ID + i.
@@ -113,7 +140,23 @@
 
 // Berry trees, on the themes that have soil. Object events again, so like the
 // item balls they come out of the 64 templates already allocated.
+//
+// A CEILING, NOT A COUNT - and it was a count until play found it. PlaceBerryTrees
+// looped to MAX with no depth term, so floor 1 of a berry theme stood four trees
+// and three rocks against one trainer and two item balls: seven pieces of scenery
+// to three of content, at the exact moment a run makes its first impression. The
+// items and trainers beside it had scaled with depth all along, so this reads as
+// the same shape and now behaves like it.
 #define DUNGEON_MAX_BERRIES 4
+// SET EQUAL TO MAX ON PURPOSE, which makes the scaling above inert for berries:
+// four trees on every floor with soil, as before. Early floors were yielding
+// under one good tree once the count scaled down, and berries are an early
+// resource. The rot fix carries the complaint on its own now - odds of 8 give
+// 1.37 duds of 4 rather than 1.75 - so the count did not have to.
+// Rocks still scale. To re-enable berry scaling, drop this below MAX.
+#define DUNGEON_BERRY_MIN   4
+// Inert while MIN == MAX. Kept so the shape is still there to turn back on.
+#define DUNGEON_BERRY_FLOORS_PER_EXTRA 55
 
 // Berry tree ids index gSaveBlock1Ptr->berryTrees[BERRY_TREES_COUNT], which is
 // 128 long and of which vanilla names 0..89. Ours start above that. Unlike the
@@ -145,12 +188,20 @@
 // THREE, AND THE NUMBER IS A TEMPLATE BUDGET RATHER THAN A TASTE. map.json
 // declares one object event per possible placement and the engine takes the
 // COUNT from ROM, so every rock is a slot whether or not a floor uses it.
-// The floor already declares 16 against an OBJECT_EVENTS_COUNT of 16 that
-// includes the player and now a follower, so these three take it to 19 and
-// spawning degrades the way the game corner's 28 do: proximity decides, and
-// something furthest away silently does not appear. The per-map ceiling is
-// 64, so this is legal; it is the live sprite limit that is tight.
+// These three take the floor's declarations to 19. THAT WAS OVER THE LIVE
+// CEILING while OBJECT_EVENTS_COUNT was vanilla's 16 and the player and a
+// follower came out of the same budget, and the symptom was the documented one:
+// proximity decides, and something furthest away silently does not appear.
+// OBJECT_EVENTS_COUNT is 24 now and the whole floor fits. The per-map TEMPLATE
+// ceiling is a separate 64 and was never the tight one.
 #define DUNGEON_MAX_ROCKS 3
+// SET EQUAL TO MAX, as the berries are. The scaling was added when the floor was
+// over the live sprite ceiling and something had to give; OBJECT_EVENTS_COUNT is
+// 24 now, so 21 declared objects plus the player and a follower all fit and the
+// density does not have to be bought back. To re-enable scaling, drop below MAX.
+#define DUNGEON_ROCK_MIN  3
+// Inert while MIN == MAX. Kept so the shape is still there to turn back on.
+#define DUNGEON_ROCK_FLOORS_PER_EXTRA 50
 
 #define DUNGEON_ROCK_FIRST_LOCAL_ID \
     (DUNGEON_MAX_TRAINERS + DUNGEON_MAX_ITEMS + DUNGEON_MAX_BERRIES + 1)
@@ -160,11 +211,11 @@
 // ONE SLOT, AND THE NUMBER IS THE DESIGN. Everything else on a floor is a
 // quantity - more trainers deeper, more item balls deeper - and an event is not
 // that. It is a thing that happens, so a floor has at most one and most floors
-// have none. It also keeps the template cost to exactly one: the floor already
-// declares 19 against an OBJECT_EVENTS_COUNT of 16 that includes the player and
-// a follower, so this takes it to 20 and spawning degrades the documented way,
-// by proximity, with something furthest away silently not appearing. The per-map
-// ceiling is 64.
+// have none. It also keeps the template cost low: with the prop below, the two
+// take the floor's declarations to 21, against an OBJECT_EVENTS_COUNT that is 24
+// now. Player and follower come out of the same budget, so that is 23 of 24 -
+// which is the reason this event was the thing most likely to lose its slot back
+// when the ceiling was 16, being frequently the furthest object from the player.
 //
 // ONE FLOOR IN FOUR, which is ~29 events across a 115-floor run. That is a lot
 // of draws for a small table, which is why the table is BANDED by depth rather
@@ -277,7 +328,13 @@
 // One rather than zero. A tree that gives NOTHING is a dud, not a gamble - there
 // is no decision in walking up to it - and reducing the yield keeps the tree
 // worth picking while making the good ones feel like the good ones.
-#define DUNGEON_BERRY_ROTTEN_ODDS  4
+// EIGHT, NOT FOUR. These odds were set before the guarantee below existed and
+// were never revisited against it. The two stack - a tree is rotten if it is the
+// floor's chosen dud OR its own roll comes up - so the real per-tree rate was
+// 1/4 + 3/4 x 1/4 = 43.75%, measured at 43.1-43.9% over all 65536 seeds by
+// check_berry_rot.py. Nearly half of every tree in the game was a dud, which is
+// not what "one in four" reads as to anyone setting this number.
+#define DUNGEON_BERRY_ROTTEN_ODDS  8
 
 // EVERY FLOOR WITH TREES HAS AT LEAST ONE ROTTEN ONE, chosen by hash from the
 // floor seed, and the remaining trees still roll independently at the odds
@@ -286,6 +343,16 @@
 // berries, with no message and no visual, a player could pick a dozen rotten
 // trees and never learn the mechanic existed.
 #define DUNGEON_BERRY_ROTTEN_GUARANTEED TRUE
+
+// BUT NOT ON A FLOOR WITH FEWER TREES THAN THIS, and the guard is not cosmetic.
+// The guarantee picks its victim with `DecorHash(...) % sBerryCount == tree`, so
+// on a ONE tree floor the modulo is always 0 and that floor's only tree is
+// always a dud - a berry theme that hands the player a single tree and
+// guarantees it is worthless. Nothing caught this while the count was pinned at
+// four; it became reachable the moment the count started scaling with depth, and
+// it is the kind of thing that would have shipped as "berries are pointless
+// early" rather than as a bug.
+#define DUNGEON_BERRY_ROTTEN_MIN_TREES 2
 
 // A DUD, not a small harvest. Zero, plus its own message - see
 // RogueDungeonFloor_EventScript_BerryTree. A yield of 1 against 6 is invisible

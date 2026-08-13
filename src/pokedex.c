@@ -18,6 +18,7 @@
 #include "pokedex_area_screen.h"
 #include "pokedex_cry_screen.h"
 #include "pokedex_plus_hgss.h"
+#include "rogue_bw_anim.h"
 #include "rtc.h"
 #include "scanline_effect.h"
 #include "sound.h"
@@ -4025,8 +4026,25 @@ u8 DisplayCaughtMonDexPage(enum Species species, bool32 isShiny, u32 personality
 
 static void LoadDexMonPalette(u32 taskId, bool32 isShiny)
 {
-    const u16 *paletteData = GetMonSpritePalFromSpeciesAndPersonality(gTasks[taskId].tSpecies, isShiny, GetWordTaskArg(taskId, tPersonalityLo));
+    // THIS SPRITE'S PIXELS ARE THE BATTLER'S, not a fresh decode -- see
+    // Pokedex_CreateCaughtMonSprite just below, which reuses the battle sprite
+    // GFX because there is not enough heap to build a new one. When the caught
+    // species has a BW animation, that buffer holds ANIMATION frames, and the
+    // stock palette does not go with them: not one container in the set shares
+    // the stock sprite's slot order, so loading it here scrambled the mon on
+    // the one screen that introduces it. Ask for the palette that was published
+    // with those pixels first, and fall back to the stock getter for a species
+    // with no container, which is the path this always took.
+    //
+    // It answers for isShiny and the colour variant on its own, having been
+    // recorded after both were applied, so the isShiny argument is deliberately
+    // not consulted on this branch.
+    const u16 *paletteData = RogueBwAnim_GetPublishedPalette(GetCatchingBattler(), gTasks[taskId].tSpecies);
     u32 paletteNum = gSprites[gTasks[taskId].tMonSpriteId].oam.paletteNum;
+
+    if (paletteData == NULL)
+        paletteData = GetMonSpritePalFromSpeciesAndPersonality(gTasks[taskId].tSpecies, isShiny, GetWordTaskArg(taskId, tPersonalityLo));
+
     LoadPalette(paletteData, OBJ_PLTT_ID(paletteNum), PLTT_SIZE_4BPP);
 }
 

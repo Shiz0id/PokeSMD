@@ -2440,6 +2440,72 @@ static u16 DungeonRandom(void)
     return sDungeonRngState >> 16;
 }
 
+// How many things each room already holds, this floor. Reset in PrepareFloor.
+EWRAM_DATA static u8 sRoomUse[DUNGEON_MAX_ROOMS] = {0};
+
+// Picks a room to put something in, PREFERRING ONE THAT IS STILL EMPTY.
+//
+// Placement used to be a flat `DungeonRandom() % sRoomCount`, which is uniform
+// WITH REPLACEMENT - so objects landed on rooms that already had one and the
+// floor saturated long before it was full. Ten rooms and thirteen objects still
+// left 2.5 rooms holding nothing at all, and 5.3 holding nothing a player would
+// cross a room for. Reported from play as rooms feeling sparse "besides rocks
+// and berries", and tools/rogue/room_density.py prints the arithmetic.
+//
+// EXACTLY ONE DRAW, like the modulo it replaces. That matters more than it
+// looks: every placer shares the seeded stream, so a helper that sometimes drew
+// twice - the obvious retry loop - would make the number of draws depend on how
+// full the floor happened to be, and everything placed afterwards would move
+// with it. Choosing uniformly among the least-used rooms gets the same effect
+// with a fixed cost and stays reproducible.
+//
+// ONE COUNTER FOR EVERY KIND of object, deliberately. A room holding only a rock
+// still reads as empty to a player, but it is a worse place to put the next
+// thing than a room holding nothing, and shared counting is what expresses that.
+// Placement order then does the rest: trainers and item balls run first, so they
+// take empty rooms, and the scenery fills what is left.
+// firstRoom exists for the TRAINERS, which have always skipped room 0 - that is
+// the room the player spawns in, and a trainer there fights them before they can
+// move. Everything else passes 0.
+static u32 PickRoomLeastUsedFrom(u32 firstRoom)
+{
+    u32 i, fewest = 0xFF, candidates = 0, pick;
+
+    if (sRoomCount <= firstRoom)
+        return firstRoom < sRoomCount ? firstRoom : 0;
+
+    for (i = firstRoom; i < sRoomCount; i++)
+    {
+        if (sRoomUse[i] < fewest)
+            fewest = sRoomUse[i];
+    }
+
+    for (i = firstRoom; i < sRoomCount; i++)
+    {
+        if (sRoomUse[i] == fewest)
+            candidates++;
+    }
+
+    pick = DungeonRandom() % candidates;
+
+    for (i = firstRoom; i < sRoomCount; i++)
+    {
+        if (sRoomUse[i] == fewest && pick-- == 0)
+            return i;
+    }
+
+    return firstRoom;
+}
+
+// Called when a placement actually lands. NOT called when one is skipped for
+// landing on the stairs or on another object, so a room does not get credit for
+// something that was never put in it.
+static void NoteRoomUsed(u32 room)
+{
+    if (room < DUNGEON_MAX_ROOMS && sRoomUse[room] != 0xFF)
+        sRoomUse[room]++;
+}
+
 static const u8 sText_DungeonFloorPrefix[] = _("DUNGEON B");
 static const u8 sText_DungeonFloorSuffix[] = _("F");
 
@@ -2453,6 +2519,145 @@ void RogueDungeon_GetFloorName(u8 *dest)
                                      STR_CONV_MODE_LEFT_ALIGN, 4);
     StringCopy(ptr, sText_DungeonFloorSuffix);
 }
+
+#if ROGUE_DEBUG_OBJECT_CENSUS
+
+// Peaks rather than instantaneous values - see ROGUE_DEBUG_OBJECT_CENSUS.
+EWRAM_DATA static u8 sCensusLivePeak = 0;
+EWRAM_DATA static u8 sCensusWantedPeak = 0;
+EWRAM_DATA static u16 sCensusRefusals = 0;
+
+void RogueDungeon_Debug_ResetObjectCensus(void)
+{
+    sCensusLivePeak = 0;
+    sCensusWantedPeak = 0;
+    sCensusRefusals = 0;
+}
+
+// Called where the engine declined to spawn a template. Counts it ONLY if the
+// object is not already live.
+//
+// THE FIRST VERSION OF THIS COUNTED EVERY DECLINE AND WAS USELESS, reporting
+// refusals in the hundreds on floors that had dropped nothing at all.
+// GetAvailableObjectEventId returns the same value for "no slot free" and for
+// "already loaded", and since TrySpawnObjectEvents re-attempts every in-range
+// template on every camera update, the second case fires once per already-live
+// object per pass. The number it produced was a measure of how long the player
+// had been walking.
+//
+// Re-deriving the answer here rather than trusting the sentinel is the fix: if
+// this template already owns a slot, nothing was dropped.
+void RogueDungeon_Debug_NoteObjectSpawnOutcome(u16 localId, u8 mapNum, u8 mapGroup)
+{
+    u32 i;
+
+    for (i = 0; i < OBJECT_EVENTS_COUNT; i++)
+    {
+        if (gObjectEvents[i].active
+         && gObjectEvents[i].localId == localId
+         && gObjectEvents[i].mapNum == mapNum
+         && gObjectEvents[i].mapGroup == mapGroup)
+            return;
+    }
+
+    if (sCensusRefusals != 0xFFFF)
+        sCensusRefusals++;
+}
+
+// The other way an object silently does not appear: the SPRITE table is full
+// rather than the object event table. Distinct from the above and worth its own
+// count - it is the one that bites on maps that are not caves, where
+// OW_OBJECT_VANILLA_SHADOWS gives every object a second sprite.
+void RogueDungeon_Debug_NoteSpriteExhausted(void)
+{
+    if (sCensusRefusals != 0xFFFF)
+        sCensusRefusals++;
+}
+
+// Called once per spawn pass, with the number of templates the engine WANTED to
+// have live. Counting live objects here rather than on a timer means the sample
+// lands at the moment the count changes, which is the moment worth catching.
+void RogueDungeon_Debug_NoteSpawnPass(u32 wanted)
+{
+    u32 i, live = 0;
+
+    for (i = 0; i < OBJECT_EVENTS_COUNT; i++)
+    {
+        if (gObjectEvents[i].active)
+            live++;
+    }
+
+    if (live > sCensusLivePeak)
+        sCensusLivePeak = live;
+    if (wanted > sCensusWantedPeak)
+        sCensusWantedPeak = wanted;
+}
+
+static const u8 sText_CensusPlaced[]  = _("placed T{STR_VAR_1}");
+static const u8 sText_CensusItems[]   = _(" I");
+static const u8 sText_CensusBerries[] = _(" B");
+static const u8 sText_CensusRocks[]   = _(" R");
+static const u8 sText_CensusEvents[]  = _(" E");
+static const u8 sText_CensusHidden[]  = _(" h");
+static const u8 sText_CensusPeak[]    = _("\npeak live ");
+static const u8 sText_CensusOf[]      = _(" / ");
+static const u8 sText_CensusWanted[]  = _("  wanted ");
+static const u8 sText_CensusRefused[] = _("\nREFUSED ");
+static const u8 sText_CensusOk[]      = _("\nrefused 0 - nothing was dropped");
+
+void RogueDungeon_GetDebugObjectCensus(u8 *dest)
+{
+    u8 *ptr;
+
+    ptr = StringCopy(dest, sText_CensusPlaced);
+    ptr = ConvertIntToDecimalStringN(ptr, sTrainerCount, STR_CONV_MODE_LEFT_ALIGN, 2);
+    ptr = StringCopy(ptr, sText_CensusItems);
+    ptr = ConvertIntToDecimalStringN(ptr, sItemCount, STR_CONV_MODE_LEFT_ALIGN, 2);
+    ptr = StringCopy(ptr, sText_CensusBerries);
+    ptr = ConvertIntToDecimalStringN(ptr, sBerryCount, STR_CONV_MODE_LEFT_ALIGN, 2);
+    ptr = StringCopy(ptr, sText_CensusRocks);
+    ptr = ConvertIntToDecimalStringN(ptr, sRockCount, STR_CONV_MODE_LEFT_ALIGN, 2);
+    ptr = StringCopy(ptr, sText_CensusEvents);
+    ptr = ConvertIntToDecimalStringN(ptr, sEventCount, STR_CONV_MODE_LEFT_ALIGN, 2);
+    ptr = StringCopy(ptr, sText_CensusHidden);
+    ptr = ConvertIntToDecimalStringN(ptr, sHiddenCount, STR_CONV_MODE_LEFT_ALIGN, 2);
+
+    // Against OBJECT_EVENTS_COUNT, so the headroom is on screen rather than
+    // being something the reader has to remember.
+    ptr = StringCopy(ptr, sText_CensusPeak);
+    ptr = ConvertIntToDecimalStringN(ptr, sCensusLivePeak, STR_CONV_MODE_LEFT_ALIGN, 2);
+    ptr = StringCopy(ptr, sText_CensusOf);
+    ptr = ConvertIntToDecimalStringN(ptr, OBJECT_EVENTS_COUNT, STR_CONV_MODE_LEFT_ALIGN, 2);
+    ptr = StringCopy(ptr, sText_CensusWanted);
+    ptr = ConvertIntToDecimalStringN(ptr, sCensusWantedPeak, STR_CONV_MODE_LEFT_ALIGN, 2);
+
+    // THE LINE TO READ. A refusal is an object that silently did not appear.
+    if (sCensusRefusals != 0)
+    {
+        ptr = StringCopy(ptr, sText_CensusRefused);
+        ConvertIntToDecimalStringN(ptr, sCensusRefusals, STR_CONV_MODE_LEFT_ALIGN, 5);
+    }
+    else
+    {
+        StringCopy(ptr, sText_CensusOk);
+    }
+}
+
+#else
+
+void RogueDungeon_Debug_ResetObjectCensus(void) {}
+void RogueDungeon_Debug_NoteObjectSpawnOutcome(u16 localId, u8 mapNum, u8 mapGroup) {}
+void RogueDungeon_Debug_NoteSpriteExhausted(void) {}
+void RogueDungeon_Debug_NoteSpawnPass(u32 wanted) {}
+
+static const u8 sText_CensusOff[] = _("ROGUE_DEBUG_OBJECT_CENSUS is FALSE");
+
+void RogueDungeon_GetDebugObjectCensus(u8 *dest)
+{
+    StringCopy(dest, sText_CensusOff);
+}
+
+#endif // ROGUE_DEBUG_OBJECT_CENSUS
 
 static const u8 sText_DebugDungeon[] = _("D");
 static const u8 sText_DebugFloorIn[] = _("F");
@@ -5664,17 +5869,23 @@ static void PlaceHiddenItems(u16 floor)
 static void PlaceBerryTrees(u16 floor)
 {
     const struct RogueDungeonTheme *theme = ThemeForFloor(floor);
+    // Depth-scaled, the same shape PlaceItems and PlaceTrainers use. This loop
+    // ran to DUNGEON_MAX_BERRIES flat, which made a constant named MAX into the
+    // count and stood four trees on floor one.
+    u32 count = DUNGEON_BERRY_MIN + floor / DUNGEON_BERRY_FLOORS_PER_EXTRA;
     u32 i, j;
 
     sBerryCount = 0;
 
     if (sRoomCount == 0 || !theme->berries)
         return;
+    if (count > DUNGEON_MAX_BERRIES)
+        count = DUNGEON_MAX_BERRIES;
 
-    for (i = 0; i < DUNGEON_MAX_BERRIES; i++)
+    for (i = 0; i < count; i++)
     {
         u8 quantity;
-        u32 room = DungeonRandom() % sRoomCount;
+        u32 room = PickRoomLeastUsedFrom(0);
         u8 x = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
         u8 y = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
 
@@ -5707,6 +5918,7 @@ static void PlaceBerryTrees(u16 floor)
         if (j != sBerryCount)
             continue;
 
+        NoteRoomUsed(room);
         sBerryX[sBerryCount] = x;
         sBerryY[sBerryCount] = y;
         RollFromTable(sLootBerries, ARRAY_COUNT(sLootBerries), floor,
@@ -6005,7 +6217,7 @@ static void PlaceEvents(u16 floor)
         sEventSpecies = RogueDungeon_DevolveForLevel(sEventSpecies,
                                                      FloorTargetLevel(floor));
 
-    room = DungeonRandom() % sRoomCount;
+    room = PickRoomLeastUsedFrom(0);
     x = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
     y = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
 
@@ -6016,6 +6228,7 @@ static void PlaceEvents(u16 floor)
     if (!EventTileFree(x, y))
         return;
 
+    NoteRoomUsed(room);
     sEventX = x;
     sEventY = y;
     sEventCount = 1;
@@ -7015,16 +7228,21 @@ void RogueDungeon_EventTotemSneak(void)
 
 static void PlaceRocks(u16 floor)
 {
+    // Depth-scaled, as the berries and item balls are. This ran to
+    // DUNGEON_MAX_ROCKS flat on every floor in the game.
+    u32 count = DUNGEON_ROCK_MIN + floor / DUNGEON_ROCK_FLOORS_PER_EXTRA;
     u32 i, j;
 
     sRockCount = 0;
 
     if (sRoomCount == 0)
         return;
+    if (count > DUNGEON_MAX_ROCKS)
+        count = DUNGEON_MAX_ROCKS;
 
-    for (i = 0; i < DUNGEON_MAX_ROCKS; i++)
+    for (i = 0; i < count; i++)
     {
-        u32 room = DungeonRandom() % sRoomCount;
+        u32 room = PickRoomLeastUsedFrom(0);
         u8 x = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
         u8 y = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
 
@@ -7055,6 +7273,7 @@ static void PlaceRocks(u16 floor)
         if (j != sRockCount)
             continue;
 
+        NoteRoomUsed(room);
         sRockX[sRockCount] = x;
         sRockY[sRockCount] = y;
         sRockCount++;
@@ -7105,7 +7324,10 @@ bool8 RogueDungeon_IsBerryRotten(u32 tree)
 {
     u16 seed = VarGet(VAR_ROGUE_DUNGEON_SEED);
 
-    if (DUNGEON_BERRY_ROTTEN_GUARANTEED && sBerryCount != 0
+    // sBerryCount >= MIN_TREES, not != 0: the modulo below is what picks the
+    // victim, so on a one tree floor it always picks that tree and the floor's
+    // only berry is always a dud. See DUNGEON_BERRY_ROTTEN_MIN_TREES.
+    if (DUNGEON_BERRY_ROTTEN_GUARANTEED && sBerryCount >= DUNGEON_BERRY_ROTTEN_MIN_TREES
         && DecorHash(seed, DUNGEON_BERRY_ROTTEN_SALT, 0) % sBerryCount == tree)
         return TRUE;
 
@@ -7196,7 +7418,7 @@ static void PlaceItems(u16 floor)
 
     for (i = 0; i < count; i++)
     {
-        u32 room = DungeonRandom() % sRoomCount;
+        u32 room = PickRoomLeastUsedFrom(0);
         u8 x = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
         u8 y = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
 
@@ -7224,6 +7446,7 @@ static void PlaceItems(u16 floor)
         if (j != sItemCount)
             continue;
 
+        NoteRoomUsed(room);
         sItemX[sItemCount] = x;
         sItemY[sItemCount] = y;
         RollFromTable(sLootConsumables, ARRAY_COUNT(sLootConsumables), floor,
@@ -7236,7 +7459,7 @@ static void PlaceTrainers(u16 floor)
 {
     const struct RogueDungeonTheme *theme = ThemeForFloor(floor);
     u32 target = FloorTargetLevel(floor);
-    u32 count = 1 + floor / DUNGEON_TRAINER_FLOORS_PER_EXTRA;
+    u32 count = DUNGEON_TRAINER_MIN + floor / DUNGEON_TRAINER_FLOORS_PER_EXTRA;
     u16 trainerId, gfx, themedGfx;
     u32 j;
     u32 i;
@@ -7250,7 +7473,9 @@ static void PlaceTrainers(u16 floor)
 
     for (i = 0; i < count; i++)
     {
-        u32 room = 1 + (DungeonRandom() % (sRoomCount - 1));
+        // From room 1: room 0 is the spawn, and a trainer there fights the player
+        // before they can move.
+        u32 room = PickRoomLeastUsedFrom(1);
         u8 x = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
         u8 y = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
 
@@ -7258,6 +7483,7 @@ static void PlaceTrainers(u16 floor)
         if (x == sStairsX && y == sStairsY)
             continue;
 
+        NoteRoomUsed(room);
         sTrainerX[sTrainerCount] = x;
         sTrainerY[sTrainerCount] = y;
         // Distinct ids only. The defeat flag is derived from the trainer id, so
@@ -8324,6 +8550,16 @@ static void PrepareFloor(u16 seed)
             }
         }
     }
+
+    // Peaks are per floor, so they have to be dropped as one is built or the
+    // worst moment of the whole run would be reported for every floor in it.
+    RogueDungeon_Debug_ResetObjectCensus();
+
+    // Room occupancy is per floor too, and it drives WHERE everything below
+    // goes - carrying last floor's counts over would push this floor's objects
+    // away from rooms that are empty on it.
+    for (i = 0; i < DUNGEON_MAX_ROOMS; i++)
+        sRoomUse[i] = 0;
 
     BuildWildEncounterTable(floor);
     PlaceTrainers(floor);

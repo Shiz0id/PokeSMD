@@ -179,6 +179,19 @@ static EWRAM_DATA const struct BwAnim *sBwAnim[MAX_BATTLERS_COUNT] = {NULL};
 // See IsBattlerMonSprite.
 static EWRAM_DATA u8 sBwSpriteId[MAX_BATTLERS_COUNT] = {0};
 
+// The palette that went with the pixels last published for this battler, and the
+// species it belongs to. 136 bytes of EWRAM.
+//
+// THIS IS A LIFETIME FIX, NOT A CACHE. The published PIXELS live in
+// gMonSpritesGfxPtr, which outlives the battle screen, and at least one screen -
+// the caught-mon dex page - draws from that buffer after CloseMainBattleScreen
+// has run. Anything holding those pixels needs the palette that matches them, so
+// the palette has to have the same lifetime as the pixels rather than the
+// shorter lifetime of the animation state. See RogueBwAnim_GetPublishedPalette
+// in the header for why keying on species makes that safe.
+static EWRAM_DATA u16 sBwPublishedPal[MAX_BATTLERS_COUNT][16] = {0};
+static EWRAM_DATA u16 sBwPublishedSpecies[MAX_BATTLERS_COUNT] = {SPECIES_NONE};
+
 #define BW_NO_CHUNK 0xFF
 
 static void ClearBwState(u32 battler)
@@ -187,6 +200,12 @@ static void ClearBwState(u32 battler)
 
     sBwAnim[battler] = NULL;
     sBwSpriteId[battler] = SPRITE_NONE;
+    // Invalidated HERE rather than in RogueBwAnim_Free, and that placement is
+    // the safety argument for a value that deliberately survives teardown. This
+    // runs at the top of every OnLoadSprite, so a battler that loads a mon with
+    // no animation clears the previous mon's claim on the same pass that
+    // overwrites its pixels with the stock pic.
+    sBwPublishedSpecies[battler] = SPECIES_NONE;
     info->bwStep = 0;
     info->bwHold = 0;
     info->bwChunk = BW_NO_CHUNK;
@@ -399,6 +418,24 @@ void RogueBwAnim_OnLoadSprite(u32 battler, u16 species, bool32 isShiny, u32 pers
     ApplyMonSpritePalVariantTo(pal, base, species, isShiny, personality);
     LoadPalette(pal, OBJ_PLTT_ID(battler), PLTT_SIZE_4BPP);
     LoadPalette(pal, BG_PLTT_ID(8) + BG_PLTT_ID(battler), PLTT_SIZE_4BPP);
+
+    // Kept for whoever draws these pixels next. Recorded AFTER the variant and
+    // the shiny rebuild, so what is stored is exactly what went to the hardware
+    // rather than the container's raw palette - a screen reusing the pixels
+    // wants the mon it just saw, freckles and all.
+    CpuCopy16(pal, sBwPublishedPal[battler], 16 * sizeof(u16));
+    sBwPublishedSpecies[battler] = species;
+}
+
+const u16 *RogueBwAnim_GetPublishedPalette(u32 battler, u16 species)
+{
+    if (battler >= MAX_BATTLERS_COUNT || species == SPECIES_NONE)
+        return NULL;
+
+    if (sBwPublishedSpecies[battler] != species)
+        return NULL;
+
+    return sBwPublishedPal[battler];
 }
 
 static void TickBattler(u32 battler, bool32 *decodedThisFrame)
@@ -488,6 +525,14 @@ void RogueBwAnim_Free(void)
         }
         sBwAnim[battler] = NULL;
         sBwSpriteId[battler] = SPRITE_NONE;
+
+        // DO NOT CLEAR sBwPublishedSpecies HERE. It looks like the obvious
+        // omission and it is the point: CloseMainBattleScreen calls this
+        // function and THEN shows the caught-mon dex page, which draws the
+        // pixels this palette belongs to. Clearing here returns NULL at the one
+        // moment the answer is needed, and the mon is scrambled again.
+        // ClearBwState is what invalidates it, on the next load into this
+        // battler - which is also when the pixels stop being ours.
     }
 }
 

@@ -93,7 +93,23 @@ enum Language
 // capacities of various saveblock objects
 #define DAYCARE_MON_COUNT 2
 #define POKEBLOCKS_COUNT 40
-#define OBJECT_EVENTS_COUNT 16
+// 24, UP FROM VANILLA'S 16. The dungeon floor declares 21 object events and had
+// been over the live ceiling since the mining rocks landed, so the furthest
+// object from the player silently did not spawn - including, sometimes, the one
+// thing on a floor that asks the player a question.
+//
+// This sizes SaveBlock1.objectEvents (36 bytes each) and gObjectEvents, so it
+// costs 288 bytes of each. SaveBlock1 is capped by its save sectors and had 124
+// bytes spare, which is why four FREE_* switches in config/save.h are on to pay
+// for it - see the note there. Overflow is a BUILD ERROR, not a corrupt save:
+// src/save.c asserts sizeof(struct SaveBlock1) against the sector budget.
+//
+// Cheap because sprite VRAM and OW palettes are keyed on GRAPHICS, not on object
+// count - LoadSheetGraphicsInfo shares one sheet across every object with the
+// same graphicsId, so eight item balls cost one allocation. The dungeon is
+// MAP_TYPE_UNDERGROUND, so CurrentMapHasShadows() is false there and an object
+// costs ONE sprite rather than two against MAX_SPRITES 64.
+#define OBJECT_EVENTS_COUNT 24
 #define MAIL_COUNT (10 + PARTY_SIZE)
 #define SECRET_BASES_COUNT 20
 #define POKE_NEWS_COUNT 16

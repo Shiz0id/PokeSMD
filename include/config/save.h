@@ -5,15 +5,29 @@
 #define SKIP_SAVE_CONFIRMATION              FALSE   // If TRUE, skips the "There is already a saved file" confirmation when overwriting a save.
 
 // SaveBlock1 configs
+//
+// FOUR OF THESE ARE ON, TO PAY FOR OBJECT_EVENTS_COUNT 24. Every extra object
+// event is 36 bytes of SaveBlock1, which is capped by its save SECTORS
+// (SECTOR_DATA_SIZE x 4 = 15872) rather than by RAM - the stock build sat at
+// 15748, so it could afford exactly three more before src/save.c's
+// SaveBlock1FreeSpace assert stops the build.
+//
+// ALL FOUR ARE LINK, E-READER OR MYSTERY GIFT DATA, none of which a
+// single-player roguelike can reach. Taken together they give back 2280 bytes,
+// which buys the eight extra object events with room for ~58 more later.
+//
+// TAKEN IN ONE GO ON PURPOSE. Changing OBJECT_EVENTS_COUNT shifts every
+// SaveBlock1 field after 0xA30 and invalidates existing saves; so does flipping
+// any switch here. Doing them together spends that break once instead of twice.
 #define FREE_EXTRA_SEEN_FLAGS_SAVEBLOCK1    FALSE   // Free up unused Pokédex seen flags (52 bytes).
 #define FREE_TRAINER_HILL                   FALSE   // Frees up Trainer Hill data (28 bytes).
 #define FREE_TRAINER_TOWER                  FALSE   // Frees up Trainer Tower data (x bytes).
-#define FREE_MYSTERY_EVENT_BUFFERS          FALSE   // Frees up ramScript (1104 bytes).
+#define FREE_MYSTERY_EVENT_BUFFERS          TRUE    // Frees up ramScript (1104 bytes).
 #define FREE_MATCH_CALL                     FALSE   // Frees up match call and rematch / VS Seeker data. (104 bytes).
-#define FREE_UNION_ROOM_CHAT                FALSE   // Frees up union room chat (212 bytes).
+#define FREE_UNION_ROOM_CHAT                TRUE    // Frees up union room chat (212 bytes).
 #define FREE_ENIGMA_BERRY                   FALSE   // Frees up E-Reader Enigma Berry data (52 bytes).
-#define FREE_LINK_BATTLE_RECORDS            FALSE   // Frees up link battle record data (88 bytes).
-#define FREE_MYSTERY_GIFT                   FALSE   // Frees up Mystery Gift data (876 bytes).
+#define FREE_LINK_BATTLE_RECORDS            TRUE    // Frees up link battle record data (88 bytes).
+#define FREE_MYSTERY_GIFT                   TRUE    // Frees up Mystery Gift data (876 bytes).
                                             // SaveBlock1 total: 2516 bytes
 // SaveBlock2 configs
 #define FREE_BATTLE_TOWER_E_READER          FALSE   // Frees up Battle Tower E-Reader data (188 bytes).
