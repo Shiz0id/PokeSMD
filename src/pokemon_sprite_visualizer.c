@@ -26,6 +26,7 @@
 #include "pokemon_sprite_visualizer.h"
 #include "pokemon_icon.h"
 #include "reset_rtc_screen.h"
+#include "rogue_bw_anim.h"
 #include "scanline_effect.h"
 #include "script.h"
 #include "script_pokemon_util.h"
@@ -35,6 +36,7 @@
 #include "task.h"
 #include "text_window.h"
 #include "trainer_pokemon_sprites.h"
+#include "variant_colours.h"
 
 #include "constants/global.h"
 #include "constants/battle_anim.h"
@@ -792,6 +794,191 @@ static void BattleLoadOpponentMonSpriteGfxCustom(enum Species species, bool8 isF
     LoadPalette(palette, BG_PLTT_ID(8) + BG_PLTT_ID(battler), PLTT_SIZE_4BPP);
 }
 
+// Moved up from just above CB2_Pokemon_Sprite_Visualizer, where they used to
+// sit: the BW palette path below needs them, and a #define is only in scope
+// from the line it appears on.
+#define MALE_PERSONALITY 0xFE
+#define FEMALE_PERSONALITY 0X0
+
+// ---------------------------------------------------------------------------
+// BW animated sprites on the front sprite.
+//
+// A LOCAL PLAYER, NOT A CALL INTO THE BATTLE RUNTIME, and that is deliberate.
+// Every runtime entry point in rogue_bw_anim.c is battler keyed: the step, hold
+// and chunk cursors live in gBattleSpritesDataPtr->battlerData[battler], and the
+// guards read gBattleMons[battler].hp, gBattlerSpriteIds[battler],
+// GetBattlerPosition and IsOnPlayerSide. None of those exist on this screen -
+// gBattleSpritesDataPtr is NULL here - so RogueBwAnim_OnLoadSprite would fault
+// on its first line. What IS reusable is the data layer, which is pure: the
+// container lookup, the shiny permutation, and the smol chunk helpers.
+//
+// The sprite identity machinery the battle runtime carries is not reproduced
+// because none of it applies. There is exactly one front sprite, this file
+// created it, and nothing re-points an id at a trainer pic - so the whole
+// stamp-and-latch argument in IsBattlerMonSprite has nothing to defend against
+// here.
+//
+// This screen therefore proves the CONTAINER and the PALETTE, and proves
+// nothing about the battle bindings. A sprite that looks right here can still
+// freeze or land in someone else's tiles in a battle.
+
+// The front sprite is built from gMonSpritesGfxPtr->templates[1] and forced to
+// OBJ palette slot 1, so it reads spritesGfx[1]/frameImages[1] exactly as an
+// opponent battler does. One constant, so the three of them cannot drift apart.
+#define BW_VIS_POSITION 1
+
+#define BW_VIS_NO_CHUNK 0xFF
+
+static void BwVis_Free(struct PokemonSpriteVisualizer *data)
+{
+    if (data->bwBuf != NULL)
+    {
+        Free(data->bwBuf);
+        data->bwBuf = NULL;
+    }
+
+    data->bwAnim = NULL;
+    data->bwStep = 0;
+    data->bwHold = 0;
+    data->bwChunk = BW_VIS_NO_CHUNK;
+}
+
+// Put a decoded frame where the engine will draw it.
+//
+// BOTH resident slots, for the reason PublishBwFrame gives: a species with two
+// stock frames cycles image frames 0 and 1, and pressing R here really does
+// call StartSpriteAnim(Frontsprite, 1). Filling both means it does not matter
+// which one the anim system asks VRAM for.
+static void BwVis_Publish(struct PokemonSpriteVisualizer *data, u32 frame)
+{
+    const struct BwAnim *anim = data->bwAnim;
+    u8 *dest;
+    const u8 *src;
+    u32 size;
+
+    if (gMonSpritesGfxPtr == NULL)
+        return;
+
+    dest = gMonSpritesGfxPtr->spritesGfx[BW_VIS_POSITION];
+    if (dest == NULL)
+        return;
+
+    src = data->bwBuf + GetSmolFrameOffsetInChunk(anim->frames, frame);
+    size = GetSmolFrameSize(anim->frames);
+
+    CpuFastCopy(src, dest, size);
+    CpuFastCopy(src, dest + MON_PIC_SIZE, size);
+
+    // VBlankCB on this screen already calls ProcessSpriteCopyRequests, so this
+    // reaches VRAM the same way the stock two frame animation does.
+    if (data->frontspriteId < MAX_SPRITES && gSprites[data->frontspriteId].inUse)
+        RequestSpriteFrameImageCopy(0, gSprites[data->frontspriteId].oam.tileNum,
+                                    gMonSpritesGfxPtr->frameImages[BW_VIS_POSITION]);
+}
+
+// Start this species animating, or leave the stock pic alone.
+//
+// CALLED AFTER THE SPRITE IS CREATED, unlike the battle hook which runs before.
+// There the sprite is created immediately afterwards and picks the buffer up;
+// here frontspriteId would still hold the previous species' id - or, on the
+// first pass, the zero AllocZeroed left, which is a perfectly valid index to
+// somebody else's sprite. Publishing after creation means the id is ours.
+static void BwVis_Load(struct PokemonSpriteVisualizer *data, enum Species species)
+{
+    const struct BwAnim *anim;
+    u16 pal[16];
+    u16 shinyPal[16];
+    const u16 *base;
+    u32 frame, chunk;
+
+    BwVis_Free(data);
+
+    // FALSE, always. The flag picks the table, and only the front sprite is
+    // hooked - with ROGUE_BW_ANIM_BACK off the back containers are not compiled
+    // into the build at all, so there is nothing to hook on the back sprite yet.
+    anim = GetBwAnim(species, FALSE);
+    if (anim == NULL)
+        return;
+
+    // FREED AND REALLOCATED PER SPECIES, where the battle path allocates once
+    // per battler and reuses across switch-ins. Reuse is only sound because
+    // every container's chunk is the same size, which holds by construction -
+    // emit_bw_anim.py pads every frame to the full 64x64, so frameSize is 2048
+    // for all 772 - but the size is read out of each container's OWN header,
+    // and this screen walks the whole roster rather than the six mons in a
+    // party. Re-reading it per species costs one same-size Free/Alloc pair on
+    // a d-pad press and does not depend on that invariant holding.
+    data->bwBuf = AllocUnchecked(GetSmolChunkSize(anim->frames));
+
+    // AllocUnchecked, so out of heap is a stock sprite rather than a crash -
+    // the same fallback a species with no container gets.
+    if (data->bwBuf == NULL)
+        return;
+
+    data->bwAnim = anim;
+    data->bwStep = 0;
+    data->bwHold = anim->seq[0].hold - 1;
+
+    frame = anim->seq[0].frame;
+    chunk = GetSmolFrameChunk(anim->frames, frame);
+    DecompressSmolChunk(anim->frames, data->bwBuf, chunk);
+    data->bwChunk = chunk;
+
+    BwVis_Publish(data, frame);
+
+    // The same order as RogueBwAnim_OnLoadSprite, and the order is the point:
+    // the shiny permutation replaces the container's palette BEFORE the variant
+    // shift sees it. Getting this wrong here would show a colour this screen
+    // agrees with and a battle does not, which is worse than not hooking it.
+    base = anim->palette;
+
+    if (data->isShiny && RogueBwAnim_BuildShinyPalette(shinyPal, species, FALSE))
+        base = shinyPal;
+
+    ApplyMonSpritePalVariantTo(pal, base, species, data->isShiny,
+                               data->isFemale ? FEMALE_PERSONALITY : MALE_PERSONALITY);
+
+    // Overwrites what BattleLoadOpponentMonSpriteGfxCustom just loaded, into the
+    // same two places it loaded it.
+    LoadPalette(pal, OBJ_PLTT_ID(BW_VIS_POSITION), PLTT_SIZE_4BPP);
+    LoadPalette(pal, BG_PLTT_ID(8) + BG_PLTT_ID(BW_VIS_POSITION), PLTT_SIZE_4BPP);
+}
+
+// One video frame. No cap on decodes per frame, unlike the battle tick: there
+// is one sprite here, so the case that cap exists for - four battlers wanting a
+// ~48,000 cycle decode on the same frame - cannot arise.
+static void BwVis_Tick(struct PokemonSpriteVisualizer *data)
+{
+    const struct BwAnim *anim = data->bwAnim;
+    u32 nextStep, frame, chunk;
+
+    if (anim == NULL || data->bwBuf == NULL)
+        return;
+
+    if (data->bwHold > 0)
+    {
+        data->bwHold--;
+        return;
+    }
+
+    nextStep = data->bwStep + 1;
+    if (nextStep >= anim->seqLength)
+        nextStep = 0;
+
+    frame = anim->seq[nextStep].frame;
+    chunk = GetSmolFrameChunk(anim->frames, frame);
+
+    if (chunk != data->bwChunk)
+    {
+        DecompressSmolChunk(anim->frames, data->bwBuf, chunk);
+        data->bwChunk = chunk;
+    }
+
+    data->bwStep = nextStep;
+    data->bwHold = anim->seq[nextStep].hold - 1;
+    BwVis_Publish(data, frame);
+}
+
 static void SetConstSpriteValues(struct PokemonSpriteVisualizer *data)
 {
     enum Species species = IsSpeciesEnabled(data->currentmonId) ? SanitizeSpeciesId(data->currentmonId) : SPECIES_NONE;
@@ -1204,9 +1391,6 @@ static void ResetPokemonSpriteVisualizerWindows(void)
     }
 }
 
-#define MALE_PERSONALITY 0xFE
-#define FEMALE_PERSONALITY 0X0
-
 void CB2_Pokemon_Sprite_Visualizer(void)
 {
     u8 taskId;
@@ -1287,6 +1471,8 @@ void CB2_Pokemon_Sprite_Visualizer(void)
         gSprites[data->frontspriteId].oam.paletteNum = 1;
         gSprites[data->frontspriteId].callback = SpriteCallbackDummy;
         gSprites[data->frontspriteId].oam.priority = 0;
+        //BW animation, if this species has one
+        BwVis_Load(data, species);
         //Front Shadow
         LoadAndCreateEnemyShadowSpriteCustom(data);
 
@@ -1708,6 +1894,12 @@ static void HandleInput_PokemonSpriteVisualizer(u8 taskId)
     struct Sprite *Frontsprite = &gSprites[data->frontspriteId];
     struct Sprite *Backsprite = &gSprites[data->backspriteId];
 
+    // Ticked from the input task rather than from
+    // CB2_PokemonSpriteVisualizerRunner because the runner has no taskId and so
+    // cannot reach `data`. This task runs unconditionally once a video frame,
+    // which is the cadence the hold counts are expressed in.
+    BwVis_Tick(data);
+
     if (JOY_NEW(L_BUTTON)  && (Backsprite->callback == SpriteCallbackDummy))
     {
         PlayCryInternal(species, 0, 120, 10, CRY_MODE_NORMAL);
@@ -2030,6 +2222,8 @@ static void ReloadPokemonSprites(struct PokemonSpriteVisualizer *data)
     gSprites[data->frontspriteId].oam.paletteNum = 1;
     gSprites[data->frontspriteId].callback = SpriteCallbackDummy;
     gSprites[data->frontspriteId].oam.priority = 0;
+    //BW animation, if this species has one
+    BwVis_Load(data, species);
     //Front Shadow
     LoadAndCreateEnemyShadowSpriteCustom(data);
 
@@ -2079,6 +2273,9 @@ static void Exit_PokemonSpriteVisualizer(u8 taskId)
     if (!gPaletteFade.active)
     {
         struct PokemonSpriteVisualizer *data = GetStructPtr(taskId);
+        // Before Free(data), or the chunk buffer is leaked - and this screen is
+        // re-entered from the summary screen as often as you like.
+        BwVis_Free(data);
         Free(data);
         FreeMonSpritesGfx();
         DestroyTask(taskId);

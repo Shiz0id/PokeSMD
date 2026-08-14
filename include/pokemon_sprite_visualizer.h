@@ -4,6 +4,10 @@
 #include "constants/global.h"
 #include "constants/pokemon_sprite_visualizer.h"
 
+// Only ever held as a pointer here, so a forward declaration keeps
+// rogue_bw_anim.h out of every file that includes this one.
+struct BwAnim;
+
 //Structs
 struct PokemonSpriteVisualizerModifyArrows
 {
@@ -84,6 +88,21 @@ struct PokemonSpriteVisualizer
     u8 moveBackground;
     u8 currentSubmenu;
     u8 submenuYpos[3];
+
+    // BW animated sprite playback for the FRONT sprite. See BwVis_Load in
+    // pokemon_sprite_visualizer.c for why this is a local player rather than a
+    // call into the battle runtime.
+    //
+    // It lives in this struct rather than in a static because the struct is
+    // heap allocated - a static would land in IWRAM, which is the segment with
+    // no headroom (limits-and-ram.md) - and because it has to die with the
+    // screen. bwAnim NULL means "this species has no container", which is the
+    // ordinary case and leaves the stock pic the visualizer already loaded.
+    const struct BwAnim *bwAnim;
+    u8 *bwBuf;
+    u8 bwStep;
+    u8 bwHold;
+    u8 bwChunk;
 };
 
 struct SubmenuText
