@@ -1,4 +1,5 @@
-# Gen 5 Black/White Battle UI
+# Shattered Mystery Dungeon
+
 
 This branch replaces the battle interface with the one
 from Pokémon Black and White. It contains the battle UI and nothing else, so it can be
