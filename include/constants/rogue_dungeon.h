@@ -53,14 +53,18 @@
 // events: the engine reads templates from the save block but takes the count
 // from ROM. check_dungeon_objects.py enforces that, because the two live in
 // different files and nothing else would notice them drifting apart.
-#define DUNGEON_MAX_TRAINERS            4
-// TWO, NOT ONE, and the ramp is slower to match. A floor has ten rooms and
-// placement picks one uniformly WITH REPLACEMENT, so what matters is not the
-// object count but how many rooms end up holding nothing a player would cross a
-// room for. At one trainer and two item balls that was 7.3 rooms of ten - most
-// of the floor was a tree, a rock, or bare ground. tools/rogue/room_density.py
-// prints the table.
-#define DUNGEON_TRAINER_MIN             2
+// SEVEN, so the FIVE below has somewhere to climb to. A floor has ten rooms,
+// and what matters is not the object count but how many rooms hold nothing a
+// player would cross a room for - tools/rogue/room_density.py prints the table.
+// This started at one trainer and two item balls, which left 7.3 rooms of ten
+// with only a tree, a rock or bare ground in them.
+#define DUNGEON_MAX_TRAINERS            7
+// FIVE FROM THE FIRST FLOOR. Trainers are the densest content a floor has - a
+// battle is the thing a room is FOR - so the floor of this number does more for
+// how a floor reads than any other constant here.
+#define DUNGEON_TRAINER_MIN             5
+// 5 to floor 39, 6 to 79, 7 after. Mirrors the item ramp: the ceiling lands
+// inside a 115-floor run rather than just outside it.
 #define DUNGEON_TRAINER_FLOORS_PER_EXTRA 40
 #define DUNGEON_TRAINER_SIGHT_RANGE      4
 
@@ -315,6 +319,85 @@
 // same outcome. Rolling on interaction would let a player reload until it joins.
 #define DUNGEON_INJURED_AMBUSH_ODDS  3
 #define DUNGEON_INJURED_AMBUSH_BONUS 5
+
+// THE SUDOWOODO IN THE GROVE. One floor in this many that has berry trees hides
+// a Sudowoodo among them, wearing the berry tree's own graphics, movement type
+// and a planted berry so it is INDISTINGUISHABLE from the real ones until it is
+// touched.
+//
+// It costs no object event slot and no event slot. The generator already
+// rewrites templates[slot].script per slot, so the disguise is one pointer: the
+// imposter is a berry tree in every other respect. That is also why it has to be
+// a berry tree rather than a floor event wearing tree graphics - a real tree is
+// drawn from its BERRY STAGE, and an object event with no planted berry behind
+// it renders as nothing.
+//
+// It is the answer to a floor reading as trees and rocks. Scenery the player has
+// learned to walk past becomes a thing worth a second look for the rest of the
+// run, and nothing else on the floor had to change to buy that.
+//
+// HASHED, NOT DRAWN, for exactly the reason the rot below is: this is decided in
+// the template loader, which runs on every load of a floor including from a
+// save, so it must reproduce without touching the generation stream. Rolling on
+// interaction instead would let a player reload until the tree was real.
+// THE PHANTOM. A floor event with NO OBJECT EVENT AT ALL - it is a step count
+// and a script, which makes it the only thing in the pool that cannot be walked
+// past, ignored, or seen coming.
+//
+// One floor in this many is haunted. On arrival the player is told the floor
+// feels wrong; some number of steps later it takes them.
+//
+// THE THRESHOLD IS HASHED, NOT FIXED, and that is the whole tension. A constant
+// 120 steps is a timer the player learns to count, after which the warning means
+// "you have 120 steps"; a threshold drawn from the floor seed between MIN and
+// MAX means the warning only ever means "soon". Same argument as the berry rot
+// guarantee: the mechanic has to be legible without being schedulable.
+//
+// Counted in VAR_ROGUE_PHANTOM_STEPS rather than an EWRAM static because temp
+// vars are SAVED but cleared on map change - which is exactly a floor's
+// lifetime, and survives a save and reload mid-floor without granting fresh
+// grace. The var pool proper is exhausted; every VAR_UNUSED_0x40F* is claimed.
+#define DUNGEON_PHANTOM_ODDS       7
+#define DUNGEON_PHANTOM_STEPS_MIN  90
+#define DUNGEON_PHANTOM_STEPS_MAX 160
+#define DUNGEON_PHANTOM_SALT   0x5E0
+// It hunted the player down, so it is above the floor - the same argument and
+// the same size of bonus as the Sudowoodo and the injured ambush.
+#define DUNGEON_PHANTOM_LEVEL_BONUS 3
+// What it costs to send it away with an offering instead of fighting it. A third
+// of the run's money, matching the gambler's stake - the two are the only events
+// that price anything in money, and pricing them differently would be noise.
+#define DUNGEON_PHANTOM_TOLL_DIVISOR 3
+
+// The step counter for the above. VAR_TEMP rather than a claimed var: temps are
+// saved but cleared on map change, and a floor IS a map change.
+#define VAR_ROGUE_PHANTOM_STEPS VAR_TEMP_2
+
+// How far a wandering event may stray from where it was placed, in tiles. ONE,
+// deliberately: object events are destroyed off-screen and respawn at their
+// TEMPLATE position, so a wanderer that drifts out of view snaps back rather
+// than carrying on. At a range of 1 that is almost never visible, and the point
+// is only that the thing does not read as furniture. Widen it and the snap
+// becomes the thing the player notices.
+#define DUNGEON_EVENT_WANDER_RANGE 1
+
+// The nest: three waves, each one level above the last, all below the floor's
+// own level. The difficulty is that there is no heal between them, not that any
+// single wave is hard - a wave at floor level would make this a wall, and the
+// whole point is a question about the party's DEPTH rather than its best mon.
+#define DUNGEON_NEST_WAVES        3
+#define DUNGEON_NEST_LEVEL_MALUS  4
+#define DUNGEON_NEST_REWARD_MONEY 5000
+
+// What the transposer charges in money, for a player who would rather not carry
+// Brittle for the rest of the run.
+#define DUNGEON_TRANSPOSER_COST 3000
+
+#define DUNGEON_SUDOWOODO_ODDS       6
+#define DUNGEON_SUDOWOODO_SALT   0x5D0
+// It ambushed you, so it is above the floor rather than level with it - the same
+// argument as the injured Pokemon's ambush, and the same size of bonus.
+#define DUNGEON_SUDOWOODO_LEVEL_BONUS 3
 
 // Rotten berries. One tree in four yields this instead of DUNGEON_BERRY_YIELD.
 //

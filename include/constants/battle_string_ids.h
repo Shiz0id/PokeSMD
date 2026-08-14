@@ -723,6 +723,11 @@ enum StringID
     STRINGID_ROGUECHARM_REJUVENATING,
     STRINGID_ROGUECHARM_FRAIL,
     STRINGID_ROGUECHARM_HEXED,
+    // The orb's pair. Two charms rather than one because a charm has exactly one
+    // effect - see the note on ROGUE_CHARM_ORB_AWAKENED.
+    STRINGID_ROGUECHARM_ORB_AWAKENED,
+    STRINGID_ROGUECHARM_ORB_BURDENED,
+    STRINGID_ROGUECHARM_BRITTLE,
     STRINGID_COUNT
 };
 

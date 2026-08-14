@@ -1193,9 +1193,32 @@ static const struct MenuAction MultichoiceList_RogueHerbalist[] =
     {gText_Exit},
 };
 
+// NO EXIT ROW, unlike every other Rogue menu here. The phantom is not an NPC the
+// player walked up to and may decline to answer - it is already happening, and
+// an Exit row would make "nothing" a choice the menu offers. B is mapped to RUN
+// explicitly in the script instead, so backing out is a decision with a cost
+// rather than a way out of deciding.
+static const struct MenuAction MultichoiceList_RoguePhantom[] =
+{
+    {COMPOUND_STRING("FACE IT")},
+    {COMPOUND_STRING("OFFERING")},
+    {COMPOUND_STRING("RUN")},
+};
+
+// The transposer's two prices, and an Exit - unlike the phantom, this IS an NPC
+// the player walked up to and may walk away from.
+static const struct MenuAction MultichoiceList_RogueTransposer[] =
+{
+    {COMPOUND_STRING("PAY CASH")},
+    {COMPOUND_STRING("PAY IN FLESH")},
+    {gText_Exit},
+};
+
 static const struct MultichoiceListStruct sMultichoiceLists[] =
 {
     [MULTI_BRINEY_ON_DEWFORD]          = MULTICHOICE(MultichoiceList_BrineyOnDewford),
+    [MULTI_ROGUE_PHANTOM]              = MULTICHOICE(MultichoiceList_RoguePhantom),
+    [MULTI_ROGUE_TRANSPOSER]           = MULTICHOICE(MultichoiceList_RogueTransposer),
     [MULTI_ROGUE_FOSSIL]               = MULTICHOICE(MultichoiceList_RogueFossil),
     [MULTI_ROGUE_TOTEM]                = MULTICHOICE(MultichoiceList_RogueTotem),
     [MULTI_ROGUE_SHRINE]               = MULTICHOICE(MultichoiceList_RogueShrine),

@@ -789,6 +789,22 @@ static bool8 TryStartStepCountScript(u16 metatileBehavior)
             ScriptContext_SetupScript(EventScript_EggHatch);
             return TRUE;
         }
+        // The dungeon's phantom. Here rather than on an object event because it
+        // HAS none - it is a step count and a script, which is what makes it the
+        // one thing on a floor that cannot be walked past or seen coming. Same
+        // shape as the Regice puzzle further down: a condition that fires a
+        // script on a step. Cheap off a dungeon floor - the first thing it does
+        // is fail a hash on the floor seed.
+        if (RogueDungeon_PhantomShouldWarn() == TRUE)
+        {
+            ScriptContext_SetupScript(RogueDungeonFloor_EventScript_PhantomWarn);
+            return TRUE;
+        }
+        if (RogueDungeon_PhantomShouldStrike() == TRUE)
+        {
+            ScriptContext_SetupScript(RogueDungeonFloor_EventScript_Phantom);
+            return TRUE;
+        }
         if (AbnormalWeatherHasExpired() == TRUE)
         {
             ScriptContext_SetupScript(AbnormalWeather_EventScript_EndEventAndCleanup_1);

@@ -33,6 +33,12 @@ static const u8 sText_CharmRejuvenating[] = _("Rejuvenating");
 static const u8 sText_CharmRejuvenatingDesc[] = _("A gentle warmth lingers. Recovers a\nlittle health each battle.");
 static const u8 sText_CharmFrail[]       = _("Frail");
 static const u8 sText_CharmFrailDesc[]   = _("Forbidden training left scars. Its\nmaximum HP is reduced.");
+static const u8 sText_CharmBrittle[]         = _("Brittle");
+static const u8 sText_CharmBrittleDesc[]     = _("Something was traded away for power.\nDefense falls each battle this run.");
+static const u8 sText_CharmOrbAwakened[]     = _("Orb-Awakened");
+static const u8 sText_CharmOrbAwakenedDesc[] = _("The orb lends its strength. Attack and\nSp. Atk rise each battle this dungeon.");
+static const u8 sText_CharmOrbBurdened[]     = _("Orb-Burdened");
+static const u8 sText_CharmOrbBurdenedDesc[] = _("The orb takes its due. The party loses\nHP each battle this dungeon.");
 static const u8 sText_CharmHexed[]       = _("Hexed");
 static const u8 sText_CharmHexedDesc[]   = _("An ancient hex clings on. Takes more\ndamage from super-effective hits.");
 
@@ -190,6 +196,60 @@ static const struct RogueCharmInfo sCharms[ROGUE_CHARM_COUNT] =
         .partyWide = TRUE,
         .battleStringId = STRINGID_ROGUECHARM_HEXED,
     },
+
+    // THE ORB AT THE SUMMIT, both halves of it. Mt Pyre's orbs are not gifts -
+    // they wake something, and whoever holds one is along for the ride.
+    //
+    // +1 to both attacking stats, party-wide, for the dungeon. Larger in reach
+    // than Emboldened's per-mon boost because the price below is paid every
+    // battle rather than once, and because a party-wide charm the player CHOSE
+    // should feel like the run turned a corner.
+    [ROGUE_CHARM_ORB_AWAKENED] =
+    {
+        .name = sText_CharmOrbAwakened,
+        .description = sText_CharmOrbAwakenedDesc,
+        .effect = ROGUE_CHARM_EFFECT_STAT_BOOST,
+        .magnitude = 1,
+        .param = ROGUE_CHARM_STAT_ATK | ROGUE_CHARM_STAT_SPATK,
+        .defaultDuration = ROGUE_CHARM_DURATION_ACT,
+        .partyWide = TRUE,
+        .battleStringId = STRINGID_ROGUECHARM_ORB_AWAKENED,
+    },
+
+    // The cut. 6% a battle, party-wide, and deliberately BELOW Overexerted's 8%
+    // per-mon: this lands on everything that fights, for a whole dungeon, so the
+    // same number would be a far larger tax than it looks. Small enough to push
+    // one more floor with, large enough that a long dungeon on the orb is a
+    // different run from a short one.
+    [ROGUE_CHARM_ORB_BURDENED] =
+    {
+        .name = sText_CharmOrbBurdened,
+        .description = sText_CharmOrbBurdenedDesc,
+        .effect = ROGUE_CHARM_EFFECT_RECOIL,
+        .magnitude = 6,
+        .defaultDuration = ROGUE_CHARM_DURATION_ACT,
+        .partyWide = TRUE,
+        .battleStringId = STRINGID_ROGUECHARM_ORB_BURDENED,
+    },
+
+    // The Ability Transposer's alternative price. A permanent -1 Defense on the
+    // one Pokemon that got the new ability, for the whole run.
+    //
+    // DEFENSE ONLY, not both defences like Cursed. The transposer's reward is a
+    // build-defining upgrade on one mon, so the cost has to be legible on that
+    // mon rather than smeared across the party - and a single stage on one stat
+    // is something a player can decide is worth it, which is the whole event.
+    [ROGUE_CHARM_BRITTLE] =
+    {
+        .name = sText_CharmBrittle,
+        .description = sText_CharmBrittleDesc,
+        .effect = ROGUE_CHARM_EFFECT_STAT_DROP,
+        .magnitude = 1,
+        .param = ROGUE_CHARM_STAT_DEF,
+        .defaultDuration = ROGUE_CHARM_DURATION_RUN,
+        .partyWide = FALSE,
+        .battleStringId = STRINGID_ROGUECHARM_BRITTLE,
+    },
 };
 
 // printfromtable in RogueBattleScript_CharmAnnounce indexes this by charm id,
@@ -206,7 +266,32 @@ const u16 gRogueCharmStringIds[ROGUE_CHARM_COUNT] =
     [ROGUE_CHARM_REJUVENATING] = STRINGID_ROGUECHARM_REJUVENATING,
     [ROGUE_CHARM_FRAIL]       = STRINGID_ROGUECHARM_FRAIL,
     [ROGUE_CHARM_HEXED]       = STRINGID_ROGUECHARM_HEXED,
+    [ROGUE_CHARM_ORB_AWAKENED] = STRINGID_ROGUECHARM_ORB_AWAKENED,
+    [ROGUE_CHARM_ORB_BURDENED] = STRINGID_ROGUECHARM_ORB_BURDENED,
+    [ROGUE_CHARM_BRITTLE]      = STRINGID_ROGUECHARM_BRITTLE,
 };
+
+bool32 RogueCharm_IsAffliction(u32 id)
+{
+    if (id == ROGUE_CHARM_NONE || id >= ROGUE_CHARM_COUNT)
+        return FALSE;
+
+    switch (sCharms[id].effect)
+    {
+    case ROGUE_CHARM_EFFECT_RECOIL:
+    case ROGUE_CHARM_EFFECT_STAT_DROP:
+    case ROGUE_CHARM_EFFECT_MAX_HP:
+    case ROGUE_CHARM_EFFECT_DAMAGE_TAKEN:
+        return TRUE;
+    default:
+        // STAT_BOOST, HEAL and NONE. Written as a default rather than as a
+        // second list so a new EFFECT added later is a blessing until someone
+        // decides otherwise - the safe direction, because the Shuppet eating a
+        // boon is a broken event and the Shuppet ignoring a new curse is only a
+        // missed one.
+        return FALSE;
+    }
+}
 
 // Which charms have already had their line printed this battle. A bit per charm
 // id, so a curse held by four party members announces ONCE - the player needs to

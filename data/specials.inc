@@ -670,6 +670,17 @@ gSpecials::
 	def_special RogueDungeon_EventInjuredJoin
 	def_special RogueDungeon_EventInjuredAmbush
 	def_special RogueDungeon_EventBerryIsRotten
+	def_special RogueDungeon_EventSudowoodoAmbush
+	def_special RogueDungeon_EventOrbTake
+	def_special RogueDungeon_EventShuppetEat
+	def_special RogueDungeon_EventClefairyStone
+	def_special RogueDungeon_EventClefairyDance
+	def_special RogueDungeon_EventTransposerCheck
+	def_special RogueDungeon_EventTransposerApply
+	def_special RogueDungeon_EventPokerusInject
+	def_special RogueDungeon_EventNestWave
+	def_special RogueDungeon_PhantomBattle
+	def_special RogueDungeon_PhantomToll
 	def_special RogueDungeon_EventScoutApproach
 	def_special RogueDungeon_EventScoutBattle
 	def_special RogueDungeon_EventShrineCanRevive

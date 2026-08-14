@@ -23,7 +23,28 @@
 #define ROGUE_CHARM_REJUVENATING 6
 #define ROGUE_CHARM_FRAIL        7   // the DRAFTED Shady Move Tutor cost
 #define ROGUE_CHARM_HEXED        8   // the DRAFTED Fossil curse
-#define ROGUE_CHARM_COUNT        9
+// The orb at the summit. TWO CHARMS FOR ONE EVENT, because a charm carries
+// exactly one effect and the orb is a bargain: it makes the party stronger AND
+// it takes its cut at the start of every battle. Splitting them is not a
+// workaround - each is announced on its own line, so the player watches the boon
+// and the price land separately and learns that the orb is doing both.
+//
+// PARTY-WIDE AND DURATION_ACT, unlike anything before them. Act length is what
+// makes this a decision rather than a permanent upgrade: the orb is worth taking
+// into the dungeon you are standing in, and you choose again next time. It is
+// also the first use of DURATION_ACT for a boon rather than for an affliction.
+//
+// APPENDED, NEVER RENUMBERED. Charm ids are stored per Pokemon in SaveBlock3, so
+// inserting one in the middle would silently reinterpret every charm an existing
+// save is holding. Adding at the end leaves ids 0-8 meaning what they meant.
+#define ROGUE_CHARM_ORB_AWAKENED 9
+#define ROGUE_CHARM_ORB_BURDENED 10
+// The Ability Transposer's price, for a player who would rather pay in flesh
+// than in money. PER-MON and DURATION_RUN, which no existing charm was: Cursed
+// is party-wide and lasts three battles, Sluggish is per-mon but act-scoped and
+// hits Speed. The mon that got the new ability is the one that carries the cost.
+#define ROGUE_CHARM_BRITTLE      11
+#define ROGUE_CHARM_COUNT        12
 
 // Effect kinds. Every one of these must be applyable at battle start and
 // nowhere else - that is the invariant the whole scope rests on, and

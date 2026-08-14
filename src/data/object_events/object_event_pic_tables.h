@@ -394,6 +394,10 @@ static const struct SpriteFrameImage sPicTable_RogueGrave[] = {
     overworld_ascending_frames(gObjectEventPic_RogueGrave, 2, 2),
 };
 
+static const struct SpriteFrameImage sPicTable_RoguePc[] = {
+    overworld_ascending_frames(gObjectEventPic_RoguePc, 2, 2),
+};
+
 static const struct SpriteFrameImage sPicTable_BreakableRock[] = {
     overworld_ascending_frames(gObjectEventPic_BreakableRock, 2, 2),
 };

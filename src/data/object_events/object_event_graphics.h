@@ -34,6 +34,11 @@ const u32 gObjectEventPic_MayDecorating[] = INCGFX_U32("graphics/object_events/p
 // underwater player has no walk cycle and neither do these.
 const u32 gObjectEventPic_RogueGrave[] = INCGFX_U32("graphics/object_events/pics/misc/rogue_grave.png", ".4bpp", "-mwidth 2 -mheight 2");
 const u16 gObjectEventPal_RogueGrave[] = INCGFX_U16("graphics/object_events/palettes/rogue_grave.pal", ".gbapal");
+// The Pokemon Center's PC, lifted out of gTileset_Building by
+// tools/rogue/make_pc_sprite.py. Regenerate rather than hand-edit: the tool
+// asserts the metatile still carries no wall or floor in its border ring.
+const u32 gObjectEventPic_RoguePc[] = INCGFX_U32("graphics/object_events/pics/misc/rogue_pc.png", ".4bpp", "-mwidth 2 -mheight 2");
+const u16 gObjectEventPal_RoguePc[] = INCGFX_U16("graphics/object_events/palettes/rogue_pc.pal", ".gbapal");
 const u16 gObjectEventPal_RogueCrystal[] = INCGFX_U16("graphics/object_events/palettes/rogue_crystal.pal", ".gbapal");
 const u32 gObjectEventPic_RogueDiverM[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_diver_m.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u32 gObjectEventPic_RogueDiverF[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_diver_f.png", ".4bpp", "-mwidth 4 -mheight 4");

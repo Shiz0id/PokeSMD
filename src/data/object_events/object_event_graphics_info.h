@@ -1566,6 +1566,29 @@ const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueGrave = {
     .images = sPicTable_RogueGrave,
 };
 
+// The dungeon's PC terminal, for the Pokerus injector - a machine rather than a
+// second scientist standing in a cave.
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RoguePc = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_PC,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_NONE,
+    .size = 128,
+    .width = 16,
+    .height = 16,
+    .paletteSlot = PALSLOT_NPC_1,
+    .shadowSize = SHADOW_SIZE_S,
+    .inanimate = TRUE,
+    .compressed = FALSE,
+    .tracks = TRACKS_NONE,
+    .oam = &gObjectEventBaseOam_16x16,
+    .subspriteTables = sOamTables_16x16,
+    // Inanimate for the grave's reason, and NOT the breakable rock table: that
+    // one carries ANIM_REMOVE_OBSTACLE and a terminal should not crumble when
+    // it is used.
+    .anims = sAnimTable_Inanimate,
+    .images = sPicTable_RoguePc,
+};
+
 const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueCrystal = {
     .tileTag = TAG_NONE,
     .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_CRYSTAL,

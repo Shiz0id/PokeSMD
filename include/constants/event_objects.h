@@ -424,6 +424,7 @@ enum
     // metatile because a metatile id means a different thing under every
     // tileset pair, and the shrine has to work in all fourteen themes.
     OBJ_EVENT_GFX_ROGUE_GRAVE,
+    OBJ_EVENT_GFX_ROGUE_PC,
     NUM_OBJ_EVENT_GFX,
 };
 
@@ -624,6 +625,11 @@ enum
 #define OBJ_EVENT_PAL_TAG_ROGUE_CRYSTAL           0x116E
 #define OBJ_EVENT_PAL_TAG_ROGUE_GRAVE             0x116F
 #define OBJ_EVENT_PAL_TAG_ROGUE_DIVER_JUAN        0x116C
+// 0x116D was the one gap left in this block, so the PC fills it rather than
+// extending past the grave. check_ow_palette_tags.py holds every tag here
+// against sObjectEventSpritePalettes, so a tag added without its table row
+// fails a check rather than drawing in whatever colours its slot last held.
+#define OBJ_EVENT_PAL_TAG_ROGUE_PC                0x116D
 
 #define OBJ_EVENT_PAL_TAG_SUBSTITUTE              0x7611
 #define OBJ_EVENT_PAL_TAG_LIGHT                   0x8001

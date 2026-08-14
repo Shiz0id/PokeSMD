@@ -512,6 +512,7 @@ static const struct SpritePalette sObjectEventSpritePalettes[] = {
     {gObjectEventPal_RogueDiver,            OBJ_EVENT_PAL_TAG_ROGUE_DIVER},
     {gObjectEventPal_RogueCrystal,          OBJ_EVENT_PAL_TAG_ROGUE_CRYSTAL},
     {gObjectEventPal_RogueGrave,            OBJ_EVENT_PAL_TAG_ROGUE_GRAVE},
+    {gObjectEventPal_RoguePc,               OBJ_EVENT_PAL_TAG_ROGUE_PC},
     {gObjectEventPal_RogueDiverJuan,        OBJ_EVENT_PAL_TAG_ROGUE_DIVER_JUAN},
     {gObjectEventPal_QuintyPlump,           OBJ_EVENT_PAL_TAG_QUINTY_PLUMP},
     {gObjectEventPal_QuintyPlumpReflection, OBJ_EVENT_PAL_TAG_QUINTY_PLUMP_REFLECTION},

@@ -402,6 +402,432 @@ RogueDungeonFloor_EventScript_EventDone::
 	release
 	end
 
+@ THE ORB AT THE SUMMIT.
+@
+@ NO NPC. The orb is the object the player walks up to - an attendant offering it
+@ would make this a shop, and the whole beat is that there is nobody here and it
+@ is still obviously a bad idea.
+@
+@ THE PRICE IS STATED BEFORE THE YES/NO, not after. Every other event in the pool
+@ is a blind offer, and one that tells you exactly what it costs is a different
+@ kind of decision - the player is not being tricked, they are being tempted. The
+@ charm descriptions repeat both halves in the menu afterwards.
+RogueDungeonFloor_EventScript_EventOrb::
+	lock
+	faceplayer
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
+	msgbox RogueDungeonFloor_Text_OrbIntro, MSGBOX_DEFAULT
+	msgbox RogueDungeonFloor_Text_OrbOffer, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventOrbRefused
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	special RogueDungeon_EventOrbTake
+	playfanfare MUS_OBTAIN_TMHM
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_OrbTaken, MSGBOX_DEFAULT
+@ The orb goes with the player - or rather, what was in it does. Leaving it
+@ sitting there after it has emptied itself into the party reads as an event that
+@ did not happen.
+	removeobject VAR_LAST_TALKED
+	goto RogueDungeonFloor_EventScript_EventDone
+
+@ Deliberately left standing. The player can walk back to it, which is the point
+@ of an offer they were allowed to refuse.
+RogueDungeonFloor_EventScript_EventOrbRefused::
+	msgbox RogueDungeonFloor_Text_OrbRefused, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_Text_OrbIntro:
+	.string "An orb rests on the stone, lit from\n"
+	.string "somewhere inside it.\p"
+	.string "The air around it is too warm, and it\n"
+	.string "is beating like something asleep.$"
+
+RogueDungeonFloor_Text_OrbOffer:
+	.string "It will lend its strength to the whole\n"
+	.string "party for as long as this dungeon lasts.\p"
+	.string "It will take a little back at the start\n"
+	.string "of every battle.\p"
+	.string "Take it?$"
+
+RogueDungeonFloor_Text_OrbTaken:
+	.string "The light goes out of the stone and\n"
+	.string "into your party.\p"
+	.string "Something on the other side of it has\n"
+	.string "noticed you.$"
+
+RogueDungeonFloor_Text_OrbRefused:
+	.string "The orb goes on beating, patiently.$"
+
+@ THE SHUPPET THAT EATS CURSES.
+@
+@ The only event that TAKES A CHARM AWAY. Everything else in the table adds one,
+@ and RogueCharm_ScriptCleanseOne had been sitting unused since the shrine.
+@
+@ It eats an AFFLICTION and only an affliction - see RogueCharm_IsAffliction,
+@ which derives that from the effect rather than from a second hand-kept list.
+@ A grief-eater that swallowed a blessing would be a trap the player cannot steer
+@ away from.
+RogueDungeonFloor_EventScript_EventShuppet::
+	lock
+	faceplayer
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
+	msgbox RogueDungeonFloor_Text_ShuppetIntro, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	special RogueDungeon_EventShuppetEat
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventShuppetNothing
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	playfanfare MUS_OBTAIN_ITEM
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_ShuppetAte, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+@ NOT spent. There was nothing to eat, so nothing happened - and a player who
+@ picks up a curse later on this floor should be able to come back.
+RogueDungeonFloor_EventScript_EventShuppetNothing::
+	msgbox RogueDungeonFloor_Text_ShuppetNothing, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_Text_ShuppetIntro:
+	.string "The SHUPPET drifts closer, then stops.\p"
+	.string "It is not interested in you. It is\n"
+	.string "interested in what you are carrying.\p"
+	.string "Let it feed?$"
+
+RogueDungeonFloor_Text_ShuppetAte:
+	.string "The SHUPPET swallows the {STR_VAR_1}.\p"
+	.string "It looks briefly, horribly content, and\n"
+	.string "drifts away.$"
+
+RogueDungeonFloor_Text_ShuppetNothing:
+	.string "The SHUPPET circles once and loses\n"
+	.string "interest.\p"
+	.string "There is nothing on you worth eating.$"
+
+@ THE MOONLIT CLEFAIRY.
+@
+@ The prop is the METEORITE, because that is what a Moon Stone is.
+@
+@ TWO WAYS TO TAKE IT AND THEY ARE NOT THE SAME SHAPE. Dancing costs nothing and
+@ gives a blessing; taking the stone gives the item Clefairy runs are stuck
+@ without, and they do not forgive it. The event exists because DUNGEON_STONE_ODDS
+@ is otherwise the only source and a stone-locked line can go a whole run without
+@ one - so the greedy option has to be genuinely worth taking.
+RogueDungeonFloor_EventScript_EventClefairy::
+	lock
+	faceplayer
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
+	msgbox RogueDungeonFloor_Text_ClefairyIntro, MSGBOX_DEFAULT
+	msgbox RogueDungeonFloor_Text_ClefairyOffer, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventClefairyDance
+	special RogueDungeon_EventClefairyStone
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventClefairyFull
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	playfanfare MUS_OBTAIN_ITEM
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_ClefairyTook, MSGBOX_DEFAULT
+	msgbox RogueDungeonFloor_Text_ClefairyScatter, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventClefairyDance::
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	special RogueDungeon_EventClefairyDance
+	playfanfare MUS_HEAL
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_ClefairyDanced, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+@ Left unspent: the stone is still on the ground and the dance is still going.
+RogueDungeonFloor_EventScript_EventClefairyFull::
+	msgbox RogueDungeonFloor_Text_ClefairyFull, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_Text_ClefairyIntro:
+	.string "A ring of CLEFAIRY step around a stone\n"
+	.string "that fell from somewhere very high up.\p"
+	.string "They have not noticed you, or they do\n"
+	.string "not mind.$"
+
+RogueDungeonFloor_Text_ClefairyOffer:
+	.string "Take the stone?$"
+
+RogueDungeonFloor_Text_ClefairyTook:
+	.string "You lift the MOON STONE out of the\n"
+	.string "circle.$"
+
+RogueDungeonFloor_Text_ClefairyScatter:
+	.string "The dancing stops.\p"
+	.string "Every one of them is looking at you now,\n"
+	.string "and the air has gone cold.$"
+
+RogueDungeonFloor_Text_ClefairyDanced:
+	.string "You step into the ring and keep their\n"
+	.string "time until the song ends.\p"
+	.string "They see you off with their blessing.$"
+
+RogueDungeonFloor_Text_ClefairyFull:
+	.string "There is no room in your bag for it.$"
+
+@ THE ABILITY TRANSPOSER.
+@
+@ ASKS BEFORE IT OFFERS. Plenty of species have no hidden ability, or have one
+@ identical to what they already carry, and an event that takes the money and
+@ then does nothing is a con rather than a gamble. RogueDungeon_EventTransposerCheck
+@ answers that first and the offer never appears if it cannot be honoured.
+@
+@ TWO PRICES FOR ONE THING, which is the shape worth keeping: money is cheap for
+@ a player who has been hoarding and expensive for one who has not, and Brittle
+@ is the reverse. Neither is strictly better, so it is a real read of your own run.
+RogueDungeonFloor_EventScript_EventTransposer::
+	lock
+	faceplayer
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
+	special RogueDungeon_EventTransposerCheck
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventTransposerCannot
+	msgbox RogueDungeonFloor_Text_TransposerIntro, MSGBOX_DEFAULT
+	multichoice 0, 0, MULTI_ROGUE_TRANSPOSER, FALSE
+	switch VAR_RESULT
+	case 0, RogueDungeonFloor_EventScript_EventTransposerPay
+	case 1, RogueDungeonFloor_EventScript_EventTransposerCurse
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventTransposerPay::
+	checkmoney DUNGEON_TRANSPOSER_COST
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventTransposerBroke
+	removemoney DUNGEON_TRANSPOSER_COST
+	setvar VAR_0x8004, 0
+	goto RogueDungeonFloor_EventScript_EventTransposerDo
+
+RogueDungeonFloor_EventScript_EventTransposerCurse::
+	setvar VAR_0x8004, 1
+	goto RogueDungeonFloor_EventScript_EventTransposerDo
+
+RogueDungeonFloor_EventScript_EventTransposerDo::
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	special RogueDungeon_EventTransposerApply
+	playfanfare MUS_OBTAIN_TMHM
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_TransposerDone, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventTransposerBroke::
+	msgbox RogueDungeonFloor_Text_TransposerBroke, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+@ Not spent. The player may reorder the party and come back with a lead that
+@ CAN take a hidden ability, which is a better puzzle than a closed door.
+RogueDungeonFloor_EventScript_EventTransposerCannot::
+	msgbox RogueDungeonFloor_Text_TransposerCannot, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_Text_TransposerIntro:
+	.string "The machine hums, and the scientist\n"
+	.string "looks at your {STR_VAR_1} the way you\l"
+	.string "would look at a locked door.\p"
+	.string "There is a {STR_VAR_2} in there.\n"
+	.string "It can be brought out.$"
+
+RogueDungeonFloor_Text_TransposerDone:
+	.string "Something shifts behind your\n"
+	.string "{STR_VAR_1}'s eyes.\p"
+	.string "It knows a thing it did not know a\n"
+	.string "moment ago.$"
+
+RogueDungeonFloor_Text_TransposerBroke:
+	.string "You cannot afford it.$"
+
+RogueDungeonFloor_Text_TransposerCannot:
+	.string "The machine reads your lead, thinks\n"
+	.string "about it, and produces nothing.\p"
+	.string "There is nothing locked away in this\n"
+	.string "one.$"
+
+@ THE POKERUS INJECTOR.
+@
+@ Pokerus has never once been handed out in a run, so the doubled EV gain is a
+@ reward the game owns and has never used - and the EV allocator that makes it
+@ matter was merged separately.
+@
+@ THE PRICE IS PAID IMMEDIATELY AND IN FULL: 1 HP and poisoned, right now, on a
+@ floor the player still has to walk across. That is the point. A cost that
+@ arrives later would let the player take this for free by resting first.
+RogueDungeonFloor_EventScript_EventPokerus::
+	lock
+	faceplayer
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
+	msgbox RogueDungeonFloor_Text_PokerusIntro, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	special RogueDungeon_EventPokerusInject
+	playse SE_FIELD_POISON
+	msgbox RogueDungeonFloor_Text_PokerusDone, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_Text_PokerusIntro:
+	.string "The vial is warm and moving very\n"
+	.string "slightly.\p"
+	.string "It will make your lead learn faster\n"
+	.string "than anything has a right to.\p"
+	.string "It will also nearly kill it.\n"
+	.string "Inject it?$"
+
+RogueDungeonFloor_Text_PokerusDone:
+	.string "{STR_VAR_1} goes down on one knee and\n"
+	.string "stays there, breathing badly.\p"
+	.string "Something in it is learning.$"
+
+@ THE NEST. Three waves, no heal between them.
+@
+@ THE ONLY EVENT THAT ASKS ABOUT THE WHOLE PARTY. Everything else in the pool is
+@ answered by one strong Pokemon; this one is answered by having a second and a
+@ third. Each wave is BELOW the floor's level and climbs by one - the difficulty
+@ is attrition, not any single fight.
+@
+@ dowildbattle returns control to this script, which is what makes chaining work
+@ at all - the injured ambush proved that path. There is a frame of overworld
+@ between waves and nothing can be done about that from a script.
+RogueDungeonFloor_EventScript_EventNest::
+	lock
+	faceplayer
+	compare VAR_ROGUE_EVENT_SPENT, 1
+	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
+	msgbox RogueDungeonFloor_Text_NestIntro, MSGBOX_YESNO
+	compare VAR_RESULT, NO
+	goto_if_eq RogueDungeonFloor_EventScript_EventDone
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	msgbox RogueDungeonFloor_Text_NestDisturb, MSGBOX_DEFAULT
+	setvar VAR_0x8004, 0
+	special RogueDungeon_EventNestWave
+	dowildbattle
+	setvar VAR_0x8004, 1
+	special RogueDungeon_EventNestWave
+	dowildbattle
+	setvar VAR_0x8004, 2
+	special RogueDungeon_EventNestWave
+	dowildbattle
+@ Reached only by surviving all three - a whiteout never comes back here.
+	playfanfare MUS_OBTAIN_ITEM
+	waitfanfare
+	msgbox RogueDungeonFloor_Text_NestCleared, MSGBOX_DEFAULT
+	addmoney DUNGEON_NEST_REWARD_MONEY
+	removeobject VAR_LAST_TALKED
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_Text_NestIntro:
+	.string "The floor here is thickly webbed, and\n"
+	.string "it is moving.\p"
+	.string "Whatever is under it has not noticed\n"
+	.string "you yet.\p"
+	.string "Disturb the nest?$"
+
+RogueDungeonFloor_Text_NestDisturb:
+	.string "The whole floor comes awake at once.$"
+
+RogueDungeonFloor_Text_NestCleared:
+	.string "The last of them stops moving.\p"
+	.string "Whatever they were guarding is still\n"
+	.string "warm.$"
+
+@ THE PHANTOM.
+@
+@ NO OBJECT EVENT AT ALL. This script is fired from TryStartStepCountScript, one
+@ step in DUNGEON_PHANTOM_STEPS_MIN..MAX after arriving on a haunted floor - the
+@ same hook vanilla hangs egg hatching and the Regice puzzle on. That is what
+@ makes it the only thing on a floor that cannot be walked past, ignored, or seen
+@ coming, and why the arrival warning matters: without it the ambush is a random
+@ encounter with extra words.
+@
+@ THREE ANSWERS. Fight it blind, buy it off, or run - and running is real, not a
+@ courtesy option, because the phantom is not guarding anything the player needs.
+@ The arrival warning. Fires on the first step of a haunted floor and never
+@ again - RogueDungeon_PhantomShouldWarn starts the clock in the same move it
+@ returns TRUE, so this cannot repeat.
+RogueDungeonFloor_EventScript_PhantomWarn::
+	lockall
+	msgbox RogueDungeonFloor_Text_PhantomWarn, MSGBOX_DEFAULT
+	releaseall
+	end
+
+RogueDungeonFloor_Text_PhantomWarn:
+	.string "Something feels off about this floor.$"
+
+RogueDungeonFloor_EventScript_Phantom::
+	lockall
+	playse SE_LOW_HEALTH
+	msgbox RogueDungeonFloor_Text_PhantomStrike, MSGBOX_DEFAULT
+	multichoice 0, 0, MULTI_ROGUE_PHANTOM, FALSE
+	switch VAR_RESULT
+	case 0, RogueDungeonFloor_EventScript_PhantomFight
+	case 1, RogueDungeonFloor_EventScript_PhantomToll
+	case 2, RogueDungeonFloor_EventScript_PhantomFlee
+	case MULTI_B_PRESSED, RogueDungeonFloor_EventScript_PhantomFlee
+	end
+
+RogueDungeonFloor_EventScript_PhantomFight::
+	msgbox RogueDungeonFloor_Text_PhantomFight, MSGBOX_DEFAULT
+	special RogueDungeon_PhantomBattle
+	dowildbattle
+	releaseall
+	end
+
+RogueDungeonFloor_EventScript_PhantomToll::
+	special RogueDungeon_PhantomToll
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_PhantomBroke
+	msgbox RogueDungeonFloor_Text_PhantomPaid, MSGBOX_DEFAULT
+	releaseall
+	end
+
+@ It does not take an IOU. Falling through to the fight rather than letting the
+@ player back out is the point of offering a price they might not be able to meet.
+RogueDungeonFloor_EventScript_PhantomBroke::
+	msgbox RogueDungeonFloor_Text_PhantomBroke, MSGBOX_DEFAULT
+	goto RogueDungeonFloor_EventScript_PhantomFight
+
+@ Running works, and costs the floor's event. Whatever else was down here, the
+@ player is not going to find it now.
+RogueDungeonFloor_EventScript_PhantomFlee::
+	setvar VAR_ROGUE_EVENT_SPENT, 1
+	msgbox RogueDungeonFloor_Text_PhantomFled, MSGBOX_DEFAULT
+	releaseall
+	end
+
+RogueDungeonFloor_Text_PhantomStrike:
+	.string "The hair on the back of your neck stands\n"
+	.string "up all at once.\p"
+	.string "Something that has been following you\n"
+	.string "since you arrived stops pretending not\l"
+	.string "to be there.$"
+
+RogueDungeonFloor_Text_PhantomFight:
+	.string "You turn to face it.$"
+
+RogueDungeonFloor_Text_PhantomPaid:
+	.string "You set down ¥{STR_VAR_1} and step back.\p"
+	.string "The cold goes out of the air, slowly,\n"
+	.string "like something losing interest.$"
+
+RogueDungeonFloor_Text_PhantomBroke:
+	.string "You have nothing it wants.$"
+
+RogueDungeonFloor_Text_PhantomFled:
+	.string "You run, and do not look back, and the\n"
+	.string "floor is quiet again.\p"
+	.string "You are fairly sure you did not imagine\n"
+	.string "any of it.$"
+
 @ Reached when the floor's event has already been taken. Deliberately NOT silent:
 @ an NPC who stops responding reads as broken, where one who says the moment has
 @ passed reads as an event that happened.
@@ -1468,6 +1894,40 @@ RogueDungeonFloor_EventScript_BerryTreeRotten::
 	msgbox RogueDungeonFloor_Text_BerryRotten, MSGBOX_DEFAULT
 	release
 	end
+
+@ THE SUDOWOODO IN THE GROVE.
+@
+@ This object is a berry tree in every respect the player can see - same
+@ graphics, same movement type, a real planted berry behind it - and reaches this
+@ script rather than the one above only because the template loader pointed it
+@ here. See DUNGEON_SUDOWOODO_ODDS in constants/rogue_dungeon.h.
+@
+@ TWO MESSAGES BEFORE THE BATTLE, and the pause between them is the event. The
+@ first is what a player expects from a tree they have picked forty of; the
+@ second is the tree looking back. Going straight to dowildbattle would be a
+@ random encounter that happened to be standing in a grove.
+RogueDungeonFloor_EventScript_Sudowoodo::
+	lock
+	faceplayer
+	msgbox RogueDungeonFloor_Text_SudowoodoLook, MSGBOX_DEFAULT
+	msgbox RogueDungeonFloor_Text_SudowoodoReveal, MSGBOX_DEFAULT
+	special RogueDungeon_EventSudowoodoAmbush
+	dowildbattle
+@ Beaten, caught or fled, the grove is one tree lighter. A wild Pokemon left
+@ standing where it was reads as broken, and this one would still be wearing its
+@ disguise. Same reasoning as the injured ambush: removeobject rather than a
+@ flag, because a floor is never revisited.
+	removeobject VAR_LAST_TALKED
+	release
+	end
+
+RogueDungeonFloor_Text_SudowoodoLook:
+	.string "A berry tree, heavy with fruit.\p"
+	.string "Something about it is wrong.\n"
+	.string "The bark has no grain.$"
+
+RogueDungeonFloor_Text_SudowoodoReveal:
+	.string "The tree turns to face you.$"
 
 RogueDungeonFloor_Text_BerryRotten:
 	.string "The berries on this tree are black\n"

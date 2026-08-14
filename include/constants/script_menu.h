@@ -15,6 +15,8 @@ enum
     MULTI_ROGUE_TOTEM,
     MULTI_ROGUE_SHRINE,
     MULTI_ROGUE_HERBALIST,
+    MULTI_ROGUE_PHANTOM,
+    MULTI_ROGUE_TRANSPOSER,
     MULTI_PC,                           // Exit only, populated by CreatePCMultichoice
     MULTI_ENTERINFO,
     MULTI_CONTEST_INFO,

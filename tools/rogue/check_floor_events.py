@@ -57,9 +57,10 @@ def total_floors(repo):
 def events(repo, floors):
     """Parse sFloorEvents.
 
-    Rows are positional and the last three fields are OPTIONAL - weight, theme
-    mask and prop, all default-safe - so a row may carry four to seven fields.
-    A parser that demanded seven would reject the six rows that predate them.
+    Rows are positional and the last four fields are OPTIONAL - weight, theme
+    mask, prop and movement type, all default-safe - so a row may carry four to
+    EIGHT fields. A parser that demanded eight would reject the six rows that
+    predate every one of them.
     """
     text = (repo / 'src/rogue_dungeon.c').read_text(errors='replace')
     m = re.search(r'sFloorEvents\[\]\s*=\s*\{(.*?)\n\};', text, re.S)
@@ -70,14 +71,16 @@ def events(repo, floors):
     out = []
     for entry in re.finditer(r'\{([^{}]*)\}', body):
         parts = [p.strip() for p in entry.group(1).split(',') if p.strip()]
-        if not 4 <= len(parts) <= 7:
-            sys.exit('sFloorEvents entry has %d fields, want 4 to 7: %r'
+        if not 4 <= len(parts) <= 8:
+            sys.exit('sFloorEvents entry has %d fields, want 4 to 8: %r'
                      % (len(parts), entry.group(1).strip()))
         gfx, script, lo, hi = parts[:4]
         weight = parts[4] if len(parts) > 4 else '0'
         mask = parts[5] if len(parts) > 5 else 'DUNGEON_EVENT_ANY_THEME'
         prop = parts[6] if len(parts) > 6 else 'DUNGEON_EVENT_NO_PROP'
+        move = parts[7] if len(parts) > 7 else '0'
         out.append({
+            'move': move,
             'script': script,
             'lo': resolve_floor(lo, floors),
             'hi': resolve_floor(hi, floors),

@@ -110,6 +110,7 @@ extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RivalMayFie
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Cameraman;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueCrystal;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueGrave;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RoguePc;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueDiverM;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueDiverF;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueDiverJuan;
@@ -520,6 +521,7 @@ const struct ObjectEventGraphicsInfo *const gObjectEventGraphicsInfoPointers[NUM
     [OBJ_EVENT_GFX_CAMERAMAN] =                &gObjectEventGraphicsInfo_Cameraman,
     [OBJ_EVENT_GFX_ROGUE_CRYSTAL] = &gObjectEventGraphicsInfo_RogueCrystal,
     [OBJ_EVENT_GFX_ROGUE_GRAVE] = &gObjectEventGraphicsInfo_RogueGrave,
+    [OBJ_EVENT_GFX_ROGUE_PC] = &gObjectEventGraphicsInfo_RoguePc,
     [OBJ_EVENT_GFX_ROGUE_DIVER_M] = &gObjectEventGraphicsInfo_RogueDiverM,
     [OBJ_EVENT_GFX_ROGUE_DIVER_F] = &gObjectEventGraphicsInfo_RogueDiverF,
     [OBJ_EVENT_GFX_ROGUE_DIVER_JUAN] = &gObjectEventGraphicsInfo_RogueDiverJuan,

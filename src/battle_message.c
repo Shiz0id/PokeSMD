@@ -903,6 +903,9 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ROGUECHARM_REJUVENATING]              = COMPOUND_STRING("A gentle warmth flowed through your party!"),
     [STRINGID_ROGUECHARM_FRAIL]                     = COMPOUND_STRING("The forbidden training has left scars!"),
     [STRINGID_ROGUECHARM_HEXED]                     = COMPOUND_STRING("An ancient hex leaves your party exposed!"),
+    [STRINGID_ROGUECHARM_ORB_AWAKENED]              = COMPOUND_STRING("The orb's power surges through your party!"),
+    [STRINGID_ROGUECHARM_ORB_BURDENED]              = COMPOUND_STRING("The orb drinks its due!"),
+    [STRINGID_ROGUECHARM_BRITTLE]                   = COMPOUND_STRING("The traded-away flesh aches!"),
 };
 
 const u16 gTrainerUsedItemStringIds[] =

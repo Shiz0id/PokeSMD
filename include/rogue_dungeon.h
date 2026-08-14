@@ -1695,6 +1695,18 @@ struct RogueFloorEvent
     u8 weight;      // 0 = DUNGEON_EVENT_WEIGHT_DEFAULT; lower is rarer
     u16 themeMask;  // 0 = any theme; else DUNGEON_EVENT_THEME(t) bits
     u16 propGfxId;  // 0 = none; else an object placed on an adjacent tile
+    // 0 = MOVEMENT_TYPE_FACE_DOWN, which is what every event was before this
+    // field existed and what a fixture the player walks up to should be. Set it
+    // to a WANDER type for something that should not read as furniture.
+    //
+    // A WANDERER NEEDS A RANGE OR IT ROAMS THE WHOLE FLOOR, onto the stairs and
+    // into corridors the player needs; DUNGEON_EVENT_WANDER_RANGE is applied to
+    // any event whose movement type is not the default. And note the engine
+    // trap it walks into: object events are DESTROYED off-screen and respawn at
+    // their TEMPLATE position, so a wanderer that drifts out of view snaps back
+    // rather than continuing from where it got to. A tight range keeps that
+    // mostly invisible; a large one makes it obvious.
+    u8 movementType;
 };
 
 // Half-resolution grid for DUNGEON_GEN_WOODS, so a cell is one 2x2 stamp.
@@ -1969,6 +1981,40 @@ void RogueDungeon_EventEggTake(void);         // Result: 1 taken, 0 party full
 void RogueDungeon_EventInjuredApproach(void); // Result: 1 joins, 0 it was feigning
 void RogueDungeon_EventInjuredJoin(void);     // Result: 1 joined, 0 party full
 void RogueDungeon_EventInjuredAmbush(void);   // sets up the script's dowildbattle
+
+// The Sudowoodo in the grove. IsSudowoodoTree is called from the template loader
+// to pick which berry tree is the imposter; the ambush sets up its battle.
+// See DUNGEON_SUDOWOODO_ODDS in constants/rogue_dungeon.h.
+bool8 RogueDungeon_IsSudowoodoTree(u32 tree);
+void RogueDungeon_EventSudowoodoAmbush(void);
+
+// The Shuppet eats one affliction; the Clefairy hand over a Moon Stone.
+void RogueDungeon_EventShuppetEat(void);      // RESULT = charm eaten, or NONE
+void RogueDungeon_EventClefairyStone(void);   // RESULT = 0 when the bag is full
+void RogueDungeon_EventClefairyDance(void);
+
+// The ability transposer. Check BEFORE offering: a species may have no hidden
+// ability, or the same one it already has, and charging for either is a con.
+void RogueDungeon_EventTransposerCheck(void);  // RESULT = 0 when it cannot
+void RogueDungeon_EventTransposerApply(void);  // VAR_0x8004: 0 money, 1 charm
+
+void RogueDungeon_EventPokerusInject(void);
+
+// One wave of the nest. VAR_0x8004 is the wave index.
+void RogueDungeon_EventNestWave(void);
+
+// The phantom. NO OBJECT EVENT - PhantomShouldStrike is called once per step
+// from TryStartStepCountScript, beside egg hatching and the Regice puzzle, and
+// is the only floor event that cannot be walked past.
+bool8 RogueDungeon_PhantomShouldWarn(void);   // TRUE on the first step of a haunted floor
+bool8 RogueDungeon_PhantomShouldStrike(void); // TRUE on the step it takes you
+void RogueDungeon_PhantomBattle(void);
+void RogueDungeon_PhantomToll(void);          // RESULT = 0 when it cannot be paid
+
+// The scripts the step hook fires. Declared here so field_control_avatar.c can
+// name them without reaching into the map's own header.
+extern const u8 RogueDungeonFloor_EventScript_PhantomWarn[];
+extern const u8 RogueDungeonFloor_EventScript_Phantom[];
 
 // Debug menu support. Describes a floor in one short line; see the debug warp
 // tool in src/debug.c.

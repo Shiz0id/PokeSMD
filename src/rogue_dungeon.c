@@ -48,6 +48,9 @@ extern const u8 RogueDungeonFloor_EventScript_TrainerDone[];
 extern const u8 RogueDungeonFloor_EventScript_ItemBall[];
 extern const u8 RogueDungeonFloor_EventScript_MiningRock[];
 extern const u8 RogueDungeonFloor_EventScript_BerryTree[];
+// The imposter among them. Not a floor event - it is a berry tree wearing a
+// different script. See DUNGEON_SUDOWOODO_ODDS.
+extern const u8 RogueDungeonFloor_EventScript_Sudowoodo[];
 extern const u8 RogueDungeonFloor_EventScript_BossDone[];
 // Floor events, one per entry in sFloorEvents.
 extern const u8 RogueDungeonFloor_EventScript_EventSpring[];
@@ -64,6 +67,12 @@ extern const u8 RogueDungeonFloor_EventScript_EventTutor[];
 extern const u8 RogueDungeonFloor_EventScript_EventCrystal[];
 extern const u8 RogueDungeonFloor_EventScript_EventDittoBall[];
 extern const u8 RogueDungeonFloor_EventScript_EventTotem[];
+extern const u8 RogueDungeonFloor_EventScript_EventOrb[];
+extern const u8 RogueDungeonFloor_EventScript_EventShuppet[];
+extern const u8 RogueDungeonFloor_EventScript_EventClefairy[];
+extern const u8 RogueDungeonFloor_EventScript_EventTransposer[];
+extern const u8 RogueDungeonFloor_EventScript_EventPokerus[];
+extern const u8 RogueDungeonFloor_EventScript_EventNest[];
 extern const u8 RogueDungeonFloor_Text_TrainerIntro[];
 extern const u8 RogueDungeonFloor_Text_TrainerDefeat[];
 extern const u8 RogueDungeonFloor_Text_BossIntro[];
@@ -6060,6 +6069,72 @@ static const struct RogueFloorEvent sFloorEvents[] =
     // made the sentinel worth having.
     { DUNGEON_EVENT_GFX_ROLLED,  RogueDungeonFloor_EventScript_EventTotem,
       20, DUNGEON_TOTAL_FLOORS },
+
+    // The orb at the summit. NO PROP AND NO NPC - the orb IS the object, wearing
+    // OBJ_EVENT_GFX_METEORITE, which is a sphere sitting on the ground and was
+    // already compiled in with the FRLG overworld sprites while nothing selected
+    // it. An attendant standing next to it would make it a shop.
+    //
+    // From floor 1, because it is a decision rather than a reward and the first
+    // dungeon is exactly where a player has the least to lose by taking it.
+    { OBJ_EVENT_GFX_METEORITE,   RogueDungeonFloor_EventScript_EventOrb,
+      0,  DUNGEON_TOTAL_FLOORS },
+
+    // The Shuppet that eats curses. IT WANDERS - the only event that does, and
+    // the reason the movementType field exists. A grief-eater that stands
+    // politely facing you is furniture; one that drifts around its own patch is
+    // waiting for something. Range 1, for the off-screen respawn reason in the
+    // struct note.
+    //
+    // THE FIRST EVENT THAT TAKES A CHARM AWAY. Everything else in this table
+    // only ever adds one, and RogueCharm_ScriptCleanseOne has been sitting
+    // unused since the shrine was built.
+    { OBJ_EVENT_MON + SPECIES_SHUPPET, RogueDungeonFloor_EventScript_EventShuppet,
+      0,  DUNGEON_TOTAL_FLOORS, DUNGEON_EVENT_WEIGHT_DEFAULT,
+      DUNGEON_EVENT_ANY_THEME, DUNGEON_EVENT_NO_PROP,
+      MOVEMENT_TYPE_WANDER_AROUND },
+
+    // The moonlit Clefairy, and the stone they dance around. The prop is the
+    // METEORITE, which is what a Moon Stone is - Mt Moon's fell out of the sky,
+    // and the sprite is a rock on the ground either way.
+    //
+    // It answers a problem the project already wrote down: DUNGEON_STONE_ODDS
+    // exists because Clefairy and Pikachu evolve by stone and by nothing else,
+    // and a Clefairy run that never digs one up is stuck at a stage-1 statline
+    // for 115 floors. This makes a stone something you can be OFFERED rather
+    // than only something you can be lucky about.
+    { OBJ_EVENT_MON + SPECIES_CLEFAIRY, RogueDungeonFloor_EventScript_EventClefairy,
+      0,  DUNGEON_TOTAL_FLOORS, DUNGEON_EVENT_WEIGHT_DEFAULT,
+      DUNGEON_EVENT_ANY_THEME, OBJ_EVENT_GFX_METEORITE },
+
+    // The ability transposer. From floor 11 rather than 1: a hidden ability is a
+    // build decision, and on floor 1 the player has had two Pokemon for ten
+    // minutes and no idea which of them the run is going to be about.
+    { OBJ_EVENT_GFX_SCIENTIST_1, RogueDungeonFloor_EventScript_EventTransposer,
+      10, DUNGEON_TOTAL_FLOORS },
+
+    // The Pokerus injector. A TERMINAL, NOT A SECOND SCIENTIST - the transposer
+    // above already is one, and two events wearing the same sprite read as the
+    // same event until the player has talked to both. The PC is lifted out of
+    // the Pokemon Center by tools/rogue/make_pc_sprite.py.
+    //
+    // Also floor 11: doubled EV gain is worth most when there is a run left to
+    // earn EVs in, and 1 HP is a death sentence on floor 1 with two starters.
+    { OBJ_EVENT_GFX_ROGUE_PC, RogueDungeonFloor_EventScript_EventPokerus,
+      10, DUNGEON_TOTAL_FLOORS },
+
+    // The nest. THREE WILD BATTLES BACK TO BACK with no heal between, which is
+    // the only thing in the pool that asks about the whole party rather than the
+    // lead - everything else is answered by one strong Pokemon.
+    //
+    // GFX_ROLLED, THE SAME SENTINEL THE INJURED POKEMON USES, and that shared
+    // sprite is the point rather than a saving. A lone Pokemon standing on a
+    // floor is now genuinely ambiguous: it might be hurt and want to join, or it
+    // might be the visible corner of a nest. The player cannot tell until they
+    // talk to it, and both events already existed - the ambiguity costs nothing
+    // and did not have to be built.
+    { DUNGEON_EVENT_GFX_ROLLED, RogueDungeonFloor_EventScript_EventNest,
+      10, DUNGEON_TOTAL_FLOORS },
 };
 
 // THE ROLL AND THE DEVOLVE HAPPEN AT DIFFERENT TIMES, and they have to.
@@ -6727,6 +6802,296 @@ void RogueDungeon_EventShrineGhost(void)
 // drafted "fully revive all fainted Pokemon" is one existing special. The price
 // is the charm, and Sluggish is act-scoped in the charm table exactly because
 // the draft asked for "the remainder of the act".
+// THE ORB AT THE SUMMIT. Mt Pyre's orbs are not gifts - they wake something, and
+// whoever picks one up is along for the ride.
+//
+// TWO CHARMS, GRANTED TOGETHER, because a charm carries exactly one effect and
+// this is a bargain rather than a boon. They are announced on separate lines at
+// the start of the next battle, which is the point: the player watches the power
+// arrive and the price arrive, and learns that the orb is doing both.
+//
+// BOTH ARE DURATION_ACT, so what the orb is worth depends on WHERE IN A DUNGEON
+// it is found. Taken on the first floor of one it carries a whole act; taken on
+// the last it is nearly nothing. That is a real decision rather than an
+// oversight, and it is legible - the description says "this dungeon".
+//
+// Nothing is refused and nothing can fail: the orb is a choice the player makes
+// at the yes/no, not a transaction that can come up short. That is why this
+// returns nothing for the script to branch on.
+void RogueDungeon_EventOrbTake(void)
+{
+    gSpecialVar_0x8000 = ROGUE_CHARM_ORB_AWAKENED;
+    gSpecialVar_0x8001 = 0xFFFF;   // the table's own duration
+    RogueCharm_ScriptGrantParty();
+
+    gSpecialVar_0x8000 = ROGUE_CHARM_ORB_BURDENED;
+    gSpecialVar_0x8001 = 0xFFFF;
+    RogueCharm_ScriptGrantParty();
+}
+
+// The Shuppet eats one affliction. RESULT is the charm it took, or
+// ROGUE_CHARM_NONE if the party was carrying nothing worth eating.
+//
+// AFFLICTIONS ONLY, and the loop below is what enforces it - a grief-eater that
+// happily swallowed Emboldened would be a trap rather than a bargain, and the
+// player has no way to steer it. Scanning in table order means it takes the
+// first affliction it finds rather than the worst one; that is deliberate, since
+// choosing for the player would need a menu this event does not want.
+void RogueDungeon_EventShuppetEat(void)
+{
+    u32 id;
+
+    for (id = ROGUE_CHARM_NONE + 1; id < ROGUE_CHARM_COUNT; id++)
+    {
+        if (!RogueCharm_IsAffliction(id))
+            continue;
+
+        gSpecialVar_0x8000 = id;
+        RogueCharm_ScriptCleanseOne();
+
+        if (gSpecialVar_Result != 0)
+        {
+            RogueCharm_ScriptBufferName();   // gStringVar1 = what it took
+            gSpecialVar_Result = id;
+            return;
+        }
+    }
+
+    gSpecialVar_Result = ROGUE_CHARM_NONE;
+}
+
+// ---------------------------------------------------------------- the phantom
+//
+// Is this floor haunted, and after how many steps? Both hashed from the floor
+// seed, so they reproduce on reload and cost nothing to store. See
+// DUNGEON_PHANTOM_ODDS.
+static bool8 FloorIsHaunted(u16 floor)
+{
+    u16 seed = VarGet(VAR_ROGUE_DUNGEON_SEED);
+
+    // Never on a boss floor. An arena is a fight the player walked into
+    // deliberately, and an ambush on top of it is not tension, it is a mugging.
+    if (IsDungeonBossFloor(floor) || IsMiniBossFloor(floor))
+        return FALSE;
+
+    return DecorHash(seed, DUNGEON_PHANTOM_SALT, 0) % DUNGEON_PHANTOM_ODDS == 0;
+}
+
+static u32 PhantomStepThreshold(void)
+{
+    u16 seed = VarGet(VAR_ROGUE_DUNGEON_SEED);
+    u32 span = DUNGEON_PHANTOM_STEPS_MAX - DUNGEON_PHANTOM_STEPS_MIN + 1;
+
+    return DUNGEON_PHANTOM_STEPS_MIN
+         + DecorHash(seed, DUNGEON_PHANTOM_SALT, 1) % span;
+}
+
+// The arrival warning, fired on the FIRST step of a haunted floor rather than on
+// load. The map's frame table keys on a var and every var is claimed, so hanging
+// it off the step hook costs nothing new - and a warning that lands on the first
+// step reads better anyway: the player has taken one step into the room before
+// the floor tells them something is wrong.
+bool8 RogueDungeon_PhantomShouldWarn(void)
+{
+    if (!FloorIsHaunted(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
+        return FALSE;
+
+    if (VarGet(VAR_ROGUE_PHANTOM_STEPS) != 0)
+        return FALSE;
+
+    // This step counts. Setting it here is what stops the warning repeating and
+    // starts the clock in the same move.
+    VarSet(VAR_ROGUE_PHANTOM_STEPS, 1);
+    return TRUE;
+}
+
+// Called once per step from TryStartStepCountScript, which is where vanilla
+// hangs egg hatching, poison and the Regice puzzle. Returns TRUE on the step the
+// phantom strikes, and only once - the counter is left above the threshold.
+bool8 RogueDungeon_PhantomShouldStrike(void)
+{
+    u32 steps;
+
+    if (!FloorIsHaunted(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
+        return FALSE;
+
+    steps = VarGet(VAR_ROGUE_PHANTOM_STEPS);
+
+    // Already struck on this floor. The counter is the guard as well as the
+    // clock, so nothing else has to remember.
+    if (steps == 0xFFFF)
+        return FALSE;
+
+    steps++;
+    if (steps < PhantomStepThreshold())
+    {
+        VarSet(VAR_ROGUE_PHANTOM_STEPS, steps);
+        return FALSE;
+    }
+
+    VarSet(VAR_ROGUE_PHANTOM_STEPS, 0xFFFF);
+    return TRUE;
+}
+
+void RogueDungeon_PhantomBattle(void)
+{
+    u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+    u32 level = FloorTargetLevel(floor) + DUNGEON_PHANTOM_LEVEL_BONUS;
+
+    if (level > MAX_LEVEL)
+        level = MAX_LEVEL;
+
+    CreateScriptedWildMon(SPECIES_GASTLY, level, ITEM_NONE);
+}
+
+// The offering. RESULT is 0 when the player cannot pay, 1 when they have.
+void RogueDungeon_PhantomToll(void)
+{
+    u32 cost = GetMoney(&gSaveBlock1Ptr->money) / DUNGEON_PHANTOM_TOLL_DIVISOR;
+
+    if (cost == 0 || !IsEnoughMoney(&gSaveBlock1Ptr->money, cost))
+    {
+        gSpecialVar_Result = 0;
+        return;
+    }
+
+    RemoveMoney(&gSaveBlock1Ptr->money, cost);
+    ConvertIntToDecimalStringN(gStringVar1, cost, STR_CONV_MODE_LEFT_ALIGN, 6);
+    gSpecialVar_Result = 1;
+}
+
+// The Clefairy's stone. RESULT is 0 if the bag had no room, 1 otherwise.
+//
+// A MOON STONE SPECIFICALLY, not a rolled one. The event exists because Clefairy
+// and Pikachu are stone-locked and DUNGEON_STONE_ODDS is the only other source;
+// handing out a Fire Stone here would be a different event that happens to have
+// Clefairy in it.
+//
+// THE CURSE IS GRANTED HERE, NOT IN THE SCRIPT, because the charm interface is a
+// C one - RogueCharm_ScriptGrant* read the special vars and are not registered
+// as script specials. Every other event that grants a charm does it this way;
+// see RogueDungeon_EventHerbBrew.
+//
+// And only on SUCCESS. A bag with no room means the player never got the stone,
+// and cursing them for an offer that failed would be punishing them for their
+// inventory.
+void RogueDungeon_EventClefairyStone(void)
+{
+    if (!AddBagItem(ITEM_MOON_STONE, 1))
+    {
+        gSpecialVar_Result = 0;
+        return;
+    }
+
+    gSpecialVar_0x8000 = ROGUE_CHARM_CURSED;
+    gSpecialVar_0x8001 = 0xFFFF;   // the table's own duration
+    RogueCharm_ScriptGrantParty();
+
+    gSpecialVar_Result = 1;
+}
+
+// ------------------------------------------------------ the ability transposer
+//
+// Can the lead actually take a hidden ability? RESULT is 0 when it cannot, and
+// the event has to ask BEFORE it offers, because charging for nothing is worse
+// than not being offered anything.
+//
+// TWO WAYS TO FAIL AND BOTH ARE COMMON. A species may have no hidden ability at
+// all (abilities[2] is ABILITY_NONE), or its hidden ability may be the SAME one
+// it already has - which happens across whole families and would make the offer
+// a con. Checking only the first is the mistake that ships.
+static bool32 LeadCanTranspose(struct Pokemon *mon)
+{
+    u32 species = GetMonData(mon, MON_DATA_SPECIES);
+    u32 hidden = gSpeciesInfo[species].abilities[NUM_NORMAL_ABILITY_SLOTS];
+    u32 current = GetMonAbility(mon);
+
+    if (hidden == ABILITY_NONE)
+        return FALSE;
+
+    return hidden != current;
+}
+
+void RogueDungeon_EventTransposerCheck(void)
+{
+    struct Pokemon *mon = &gPlayerParty[0];
+
+    if (!LeadCanTranspose(mon))
+    {
+        gSpecialVar_Result = 0;
+        return;
+    }
+
+    StringCopy(gStringVar1, GetSpeciesName(GetMonData(mon, MON_DATA_SPECIES)));
+    StringCopy(gStringVar2, gAbilitiesInfo[
+        gSpeciesInfo[GetMonData(mon, MON_DATA_SPECIES)]
+            .abilities[NUM_NORMAL_ABILITY_SLOTS]].name);
+    gSpecialVar_Result = 1;
+}
+
+// Does the switch. The PRICE is chosen by the script and applied there or here:
+// VAR_0x8004 is 0 for the money price and 1 for the charm.
+void RogueDungeon_EventTransposerApply(void)
+{
+    struct Pokemon *mon = &gPlayerParty[0];
+
+    if (!LeadCanTranspose(mon))
+    {
+        gSpecialVar_Result = 0;
+        return;
+    }
+
+    // The hidden slot index, not a magic 2 - NUM_NORMAL_ABILITY_SLOTS is what
+    // says where the normal ones stop.
+    SetMonData(mon, MON_DATA_ABILITY_NUM, &(u8){NUM_NORMAL_ABILITY_SLOTS});
+
+    if (gSpecialVar_0x8004 != 0)
+    {
+        gSpecialVar_0x8000 = ROGUE_CHARM_BRITTLE;
+        gSpecialVar_0x8001 = 0xFFFF;   // the table's own duration
+        gSpecialVar_0x8002 = 0;        // the lead, which is the mon that changed
+        RogueCharm_ScriptGrantMon();
+    }
+
+    gSpecialVar_Result = 1;
+}
+
+// --------------------------------------------------------- the pokerus injector
+//
+// Grants Pokerus, then takes the lead to 1 HP and poisons it.
+//
+// POKERUS IS OTHERWISE INVISIBLE IN A RUN. Nothing grants it, nothing sells it,
+// and the EV allocator that makes it worth having was merged separately - so the
+// doubled EV gain is a real reward that the game has never once handed out.
+//
+// The price is deliberately front-loaded and survivable-but-not-safe: 1 HP with
+// poison means the next battle is a decision and the walk to it is a risk.
+void RogueDungeon_EventPokerusInject(void)
+{
+    struct Pokemon *mon = &gPlayerParty[0];
+    u32 hp = 1;
+    u32 status = STATUS1_POISON;
+    // The strain value, not a boolean. The low nibble is the strain and the high
+    // nibble the days remaining; anything non-zero in the low nibble reads as
+    // infected, and CheckPartyPokerus looks at exactly that.
+    u8 pokerus = 0x40 | 0x1;
+
+    SetMonData(mon, MON_DATA_POKERUS, &pokerus);
+    SetMonData(mon, MON_DATA_HP, &hp);
+    SetMonData(mon, MON_DATA_STATUS, &status);
+
+    StringCopy(gStringVar1, GetSpeciesName(GetMonData(mon, MON_DATA_SPECIES)));
+}
+
+// Dancing with them instead. Costs nothing and cannot fail, which is the whole
+// contrast with the stone.
+void RogueDungeon_EventClefairyDance(void)
+{
+    gSpecialVar_0x8000 = ROGUE_CHARM_EMBOLDENED;
+    gSpecialVar_0x8001 = 0xFFFF;
+    RogueCharm_ScriptGrantParty();
+}
+
 void RogueDungeon_EventHerbBrew(void)
 {
     HealPlayerParty();
@@ -7332,6 +7697,76 @@ bool8 RogueDungeon_IsBerryRotten(u32 tree)
         return TRUE;
 
     return DecorHash(seed, tree, 0) % DUNGEON_BERRY_ROTTEN_ODDS == 0;
+}
+
+// Is this tree the imposter? See DUNGEON_SUDOWOODO_ODDS.
+//
+// TWO HASHES, NOT ONE, and the second is what keeps it fair. The first decides
+// whether this FLOOR hides one at all; only then does the second pick which
+// tree. Folding them into a single roll per tree would make the number of
+// Sudowoodos on a floor binomial - a floor with three of them is a joke rather
+// than an ambush, and a run would eventually produce one.
+//
+// Its own salt, distinct from the rot salt, for the reason that one has a salt:
+// a tree index can never collide with it, so the two questions cannot answer
+// each other.
+bool8 RogueDungeon_IsSudowoodoTree(u32 tree)
+{
+    u16 seed = VarGet(VAR_ROGUE_DUNGEON_SEED);
+
+    if (sBerryCount == 0)
+        return FALSE;
+
+    if (DecorHash(seed, DUNGEON_SUDOWOODO_SALT, 0) % DUNGEON_SUDOWOODO_ODDS != 0)
+        return FALSE;
+
+    return DecorHash(seed, DUNGEON_SUDOWOODO_SALT, 1) % sBerryCount == tree;
+}
+
+// The imposter, at the floor's level plus the ambush bonus.
+//
+// NOT ROUTED THROUGH EventSpeciesForLevel: this is Sudowoodo or it is nothing.
+// The species IS the joke, and a rolled species standing in a grove pretending
+// to be a tree would be a different and much worse event.
+void RogueDungeon_EventSudowoodoAmbush(void)
+{
+    u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+    u32 level = FloorTargetLevel(floor) + DUNGEON_SUDOWOODO_LEVEL_BONUS;
+
+    if (level > MAX_LEVEL)
+        level = MAX_LEVEL;
+
+    CreateScriptedWildMon(SPECIES_SUDOWOODO, level, ITEM_NONE);
+}
+
+// One wave of the nest. VAR_0x8004 is which wave, 0-based, and the level climbs
+// with it - the third is the one that decides whether the player should have
+// walked away, so it cannot be the same fight as the first.
+//
+// BELOW the floor's level rather than above it. Three fights with no heal
+// between is the difficulty; making each one individually hard as well would
+// make this a wall rather than a gamble on the party's depth.
+void RogueDungeon_EventNestWave(void)
+{
+    u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+    u32 level = FloorTargetLevel(floor);
+    u32 wave = gSpecialVar_0x8004;
+
+    if (level > DUNGEON_NEST_LEVEL_MALUS)
+        level -= DUNGEON_NEST_LEVEL_MALUS;
+    else
+        level = 1;
+
+    level += wave;
+    if (level > MAX_LEVEL)
+        level = MAX_LEVEL;
+
+    // EVERY WAVE IS THE SPECIES ON THE FLOOR, which is what makes it a nest
+    // rather than three unrelated encounters - and what makes the shared sprite
+    // honest. The thing the player walked up to is the thing that attacks, three
+    // times. EventSpeciesForLevel devolves the raw roll for the level, so a
+    // shallow floor gets the first stage rather than something it cannot beat.
+    CreateScriptedWildMon(EventSpeciesForLevel(level), level, ITEM_NONE);
 }
 
 static void PlantFloorBerryTrees(void)
@@ -9016,7 +9451,15 @@ void RogueDungeon_LoadObjectEventTemplates(void)
             templates[slot].movementType = MOVEMENT_TYPE_BERRY_TREE_GROWTH;
             templates[slot].trainerRange_berryTreeId =
                 DUNGEON_BERRY_FIRST_TREE_ID + i;
-            templates[slot].script = RogueDungeonFloor_EventScript_BerryTree;
+            // THE SCRIPT IS THE ONLY THING THAT DIFFERS about the imposter.
+            // Graphics, movement type and the planted berry behind it are
+            // identical, because the disguise has to survive being looked at -
+            // a tree that renders differently is not hiding. See
+            // DUNGEON_SUDOWOODO_ODDS.
+            if (RogueDungeon_IsSudowoodoTree(i))
+                templates[slot].script = RogueDungeonFloor_EventScript_Sudowoodo;
+            else
+                templates[slot].script = RogueDungeonFloor_EventScript_BerryTree;
             templates[slot].flagId = 0;
         }
         else
@@ -9093,10 +9536,19 @@ void RogueDungeon_LoadObjectEventTemplates(void)
             templates[slot].y = sEventY;
             // FACE_DOWN rather than LOOK_AROUND: an event NPC is a fixture the
             // player walks up to and talks to, and TRAINER_TYPE_NONE keeps it
-            // from ever initiating anything itself.
-            templates[slot].movementType = MOVEMENT_TYPE_FACE_DOWN;
+            // from ever initiating anything itself. A row may override it - see
+            // the movementType note on struct RogueFloorEvent.
+            templates[slot].movementType = event->movementType != 0
+                                         ? event->movementType
+                                         : MOVEMENT_TYPE_FACE_DOWN;
             templates[slot].trainerType = TRAINER_TYPE_NONE;
-            templates[slot].trainerRange_berryTreeId = 0;
+            // The wander range rides the SAME FIELD as a trainer's sight range,
+            // which is why it can only be set once trainerType is NONE - the
+            // engine reads it as one or the other depending on that. Left at 0
+            // for a fixture, because a range on something that never moves is
+            // meaningless rather than harmless.
+            templates[slot].trainerRange_berryTreeId =
+                event->movementType != 0 ? DUNGEON_EVENT_WANDER_RANGE : 0;
             templates[slot].script = event->script;
             templates[slot].flagId = 0;
         }

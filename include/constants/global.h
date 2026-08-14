@@ -93,10 +93,11 @@ enum Language
 // capacities of various saveblock objects
 #define DAYCARE_MON_COUNT 2
 #define POKEBLOCKS_COUNT 40
-// 24, UP FROM VANILLA'S 16. The dungeon floor declares 21 object events and had
-// been over the live ceiling since the mining rocks landed, so the furthest
-// object from the player silently did not spawn - including, sometimes, the one
-// thing on a floor that asks the player a question.
+// 28, UP FROM VANILLA'S 16. The dungeon floor declares 24 object events and was
+// over the live ceiling for a long time, so the furthest object from the player
+// silently did not spawn - including, sometimes, the one thing on a floor that
+// asks the player a question. 24 declared plus the player and a follower is 26,
+// so this leaves two spare rather than sitting exactly on the line.
 //
 // This sizes SaveBlock1.objectEvents (36 bytes each) and gObjectEvents, so it
 // costs 288 bytes of each. SaveBlock1 is capped by its save sectors and had 124
@@ -109,7 +110,7 @@ enum Language
 // same graphicsId, so eight item balls cost one allocation. The dungeon is
 // MAP_TYPE_UNDERGROUND, so CurrentMapHasShadows() is false there and an object
 // costs ONE sprite rather than two against MAX_SPRITES 64.
-#define OBJECT_EVENTS_COUNT 24
+#define OBJECT_EVENTS_COUNT 28
 #define MAIL_COUNT (10 + PARTY_SIZE)
 #define SECRET_BASES_COUNT 20
 #define POKE_NEWS_COUNT 16

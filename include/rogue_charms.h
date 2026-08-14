@@ -100,6 +100,16 @@ void RogueCharm_GetDebugTargetName(u8 target, u8 *dest);
 void RogueCharm_DebugGrant(u8 id, u8 target);   // target 0 = party-wide, else slot
 const u8 *RogueCharm_GetName(u8 id);            // never NULL
 
+// Is this charm a punishment rather than a blessing?
+//
+// DERIVED FROM THE EFFECT, NOT FROM A LIST. A second hand-kept list of "the bad
+// ones" is how a charm added later ends up on the wrong side of it - the same
+// argument gRogueCharmStringIds is generated from sCharms for. RECOIL,
+// STAT_DROP, MAX_HP and DAMAGE_TAKEN take something away; STAT_BOOST and HEAL
+// give. Added for the Shuppet, which eats afflictions and must not be able to
+// eat a blessing.
+bool32 RogueCharm_IsAffliction(u32 id);
+
 // The two engine-facing lookups. Both are READ-ONLY and match on personality
 // alone - they are called from CalculateMonStats and the damage calculation,
 // which run constantly and know nothing about parties or migrations. See the
