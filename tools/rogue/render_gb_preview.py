@@ -38,19 +38,92 @@ WAVE_REL = 'sound/programmable_wave_samples/06.pcm'
 # voicegroup slot the MIDI track selects.
 #   kind: square1 | square2 | wave | noise | drop
 #   duty/attack/decay/sustain/release read off the voicegroup entries.
-VOICES = {
-    73: dict(kind='square1', duty=2, a=0, d=0,  s=15, r=1,  name='flute -> MELODY'),
-    80: dict(kind='square2', duty=0, a=0, d=1,  s=7,  r=1,  name='harmony'),
-    81: dict(kind='wave',    duty=0, a=0, d=7,  s=15, r=2,  name='BASS'),
-    127: dict(kind='noise',  duty=0, a=0, d=1,  s=0,  r=3,  name='percussion'),
-    0:  dict(kind='noise',   duty=0, a=0, d=1,  s=0,  r=1,  name='drums'),
-    1:  dict(kind='drop',    duty=0, a=0, d=0,  s=0,  r=0,  name='piano (dropped)'),
-    45: dict(kind='drop',    duty=0, a=0, d=0,  s=0,  r=0,  name='pizzicato (dropped)'),
-    48: dict(kind='drop',    duty=0, a=0, d=0,  s=0,  r=0,  name='strings (dropped)'),
-    82: dict(kind='drop',    duty=0, a=0, d=0,  s=0,  r=0,  name='counter (dropped)'),
+#
+# TWO SLOTS MAY NAME THE SAME KIND. That is not a mistake -- m4a assigns PSG
+# hardware by voice TYPE, so both then want the same physical channel and
+# contend. The renderer models that (see resolve_channel) rather than quietly
+# playing them on top of each other, because a preview that is fuller than the
+# ROM is worse than no preview.
+VARIANTS = {
+    # The first cut. Four parts, and it was judged too empty.
+    'lean': {
+        73: dict(kind='square1', duty=2, a=0, d=0, s=15, r=1, name='flute -> MELODY'),
+        80: dict(kind='square2', duty=0, a=0, d=1, s=7,  r=1, name='harmony'),
+        81: dict(kind='wave',    duty=0, a=0, d=7, s=15, r=2, name='BASS'),
+        127: dict(kind='noise',  duty=0, a=0, d=1, s=0,  r=3, name='percussion'),
+        0:  dict(kind='noise',   duty=0, a=0, d=1, s=0,  r=1, name='drums'),
+        1:  dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='piano (dropped)'),
+        45: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='pizzicato (dropped)'),
+        48: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='strings (dropped)'),
+        82: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='counter (dropped)'),
+    },
+    # Counter line back, SHARING square 2 with the harmony. Both parts sound
+    # wherever they do not collide; where they do, the later note takes the
+    # channel. Worth it only if they are mostly not simultaneous.
+    'share': {
+        73: dict(kind='square1', duty=2, a=0, d=0, s=15, r=1, name='flute -> MELODY'),
+        80: dict(kind='square2', duty=0, a=0, d=1, s=7,  r=1, name='harmony'),
+        82: dict(kind='square2', duty=1, a=0, d=1, s=9,  r=1, name='COUNTER (shared)'),
+        81: dict(kind='wave',    duty=0, a=0, d=7, s=15, r=2, name='BASS'),
+        127: dict(kind='noise',  duty=0, a=0, d=1, s=0,  r=3, name='percussion'),
+        0:  dict(kind='noise',   duty=0, a=0, d=1, s=0,  r=1, name='drums'),
+        1:  dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='piano (dropped)'),
+        45: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='pizzicato (dropped)'),
+        48: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='strings (dropped)'),
+    },
+    # Counter line takes square 2 outright and the harmony goes. A straight
+    # swap: no contention at all, but no harmony either.
+    'swap': {
+        73: dict(kind='square1', duty=2, a=0, d=0, s=15, r=1, name='flute -> MELODY'),
+        82: dict(kind='square2', duty=1, a=0, d=1, s=9,  r=1, name='COUNTER'),
+        81: dict(kind='wave',    duty=0, a=0, d=7, s=15, r=2, name='BASS'),
+        127: dict(kind='noise',  duty=0, a=0, d=1, s=0,  r=3, name='percussion'),
+        0:  dict(kind='noise',   duty=0, a=0, d=1, s=0,  r=1, name='drums'),
+        1:  dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='piano (dropped)'),
+        45: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='pizzicato (dropped)'),
+        48: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='strings (dropped)'),
+        80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='harmony (dropped)'),
+    },
+    # Counter line back AND the hole filled. Measured overlaps drive this:
+    # harmony/counter collide 68% of the time so they cannot share, but
+    # counter/bass collide only 33%, which is tolerable stealing. That frees
+    # the wave channel for the strings pad -- which sounds for 20.4 s of 42.2,
+    # against 8.7 s for the harmony it replaces. Sustained coverage is what was
+    # missing; the counter and harmony have identical sounding time, so trading
+    # one for the other was never going to fix emptiness.
+    'fuller': {
+        73: dict(kind='square1', duty=2, a=0, d=0, s=15, r=1, name='flute -> MELODY'),
+        82: dict(kind='square2', duty=1, a=0, d=1, s=9,  r=1, name='COUNTER'),
+        81: dict(kind='square2', duty=3, a=0, d=2, s=11, r=1, name='bass (shares sq2)'),
+        48: dict(kind='wave',    duty=0, a=1, d=6, s=14, r=4, name='STRINGS pad'),
+        127: dict(kind='noise',  duty=0, a=0, d=1, s=0,  r=3, name='percussion'),
+        0:  dict(kind='noise',   duty=0, a=0, d=1, s=0,  r=1, name='drums'),
+        80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='harmony (dropped)'),
+        1:  dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='piano (dropped)'),
+        45: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='pizzicato (dropped)'),
+    },
+    # 'fuller', but with the melody voice tamed. 255 of the melody's 271 notes
+    # are above 1200 Hz and every other part tops out below that, so it sits
+    # alone and exposed at the top -- on a 50% duty square at full sustain,
+    # which is the loudest, most blaring voice on the chip. Narrowing the duty
+    # to 25% thins it, and a real decay to sustain 11 stops long high notes
+    # sitting at maximum. Both are plain voicegroup parameters, so this is a
+    # change that carries to the ROM rather than only to the preview.
+    'softer': {
+        73: dict(kind='square1', duty=1, a=0, d=3, s=11, r=2, name='MELODY (tamed)'),
+        82: dict(kind='square2', duty=1, a=0, d=1, s=9,  r=1, name='COUNTER'),
+        81: dict(kind='square2', duty=3, a=0, d=2, s=11, r=1, name='bass (shares sq2)'),
+        48: dict(kind='wave',    duty=0, a=1, d=6, s=14, r=4, name='STRINGS pad'),
+        127: dict(kind='noise',  duty=0, a=0, d=1, s=0,  r=3, name='percussion'),
+        0:  dict(kind='noise',   duty=0, a=0, d=1, s=0,  r=1, name='drums'),
+        80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='harmony (dropped)'),
+        1:  dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='piano (dropped)'),
+        45: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='pizzicato (dropped)'),
+    },
 }
 # For the *_full.wav render, the dropped parts need something audible.
-FULL_SUBSTITUTE = {1: 'square2', 45: 'square1', 48: 'wave', 82: 'square1'}
+FULL_SUBSTITUTE = {1: 'square2', 45: 'square1', 48: 'wave', 82: 'square1',
+                   80: 'square2'}
 
 DUTY = {0: 0.125, 1: 0.25, 2: 0.5, 3: 0.75}
 
@@ -163,7 +236,12 @@ def read_wave_table(path):
 
 def envelope(t, dur, v):
     """Crude AD-S-R. Musical, not cycle-accurate."""
-    atk = (v['a'] / 15.0) * 0.04
+    # FLOOR THE ATTACK. With a=0 this jumped straight to full amplitude, and a
+    # square reset to phase 0 at the same instant -- a step discontinuity, i.e.
+    # a click, on every note onset. The melody has 271 of them, most in the top
+    # octave, which is a large part of what read as "harsh" in the first render.
+    # 1.5 ms is short enough to still sound instant.
+    atk = max((v['a'] / 15.0) * 0.04, 0.0015)
     dec = (v['d'] / 15.0) * 0.45
     sus = v['s'] / 15.0
     rel = max((v['r'] / 15.0) * 0.35, 0.01)
@@ -181,11 +259,40 @@ def envelope(t, dur, v):
     return max(0.0, sus * (1.0 - k)) if k < 1.0 else 0.0
 
 
-def render(tracks, wave_table, total, psg_only):
-    buf = [0.0] * int(total * RATE + RATE)
+def resolve_channel(notes):
+    """Make one channel's notes monophonic, the way the hardware is.
 
+    m4a assigns PSG hardware by voice TYPE, so two tracks holding the same kind
+    of voice want the same physical channel. Later note takes it; whatever was
+    sounding is cut off there. Returns (notes, stolen_count).
+    """
+    notes = sorted(notes, key=lambda n: n[0])
+    out, stolen, silenced = [], 0, 0
+    for i, (on, off, pitch, v) in enumerate(notes):
+        if i + 1 < len(notes):
+            on2 = notes[i + 1][0]
+            # A LATER-OR-SIMULTANEOUS onset takes the channel. Simultaneous is
+            # the worst case, not a special case: one of the two is simply never
+            # heard. An earlier version skipped equal onsets and so reported
+            # "no contention" for a pairing that overlaps 33% of the time.
+            if on2 <= on:
+                silenced += 1
+                continue
+            if on2 < off:
+                off = on2
+                stolen += 1
+        if off - on > 0.001:
+            out.append((on, off, pitch, v))
+    return out, stolen, silenced
+
+
+def render(tracks, voices, wave_table, total, psg_only, analyze_only=False):
+    buf = [0.0] * (1 if analyze_only else int(total * RATE + RATE))
+
+    # Group by the hardware channel each voice kind lands on.
+    channels = {}
     for slot, notes in tracks:
-        v = VOICES.get(slot)
+        v = voices.get(slot)
         if v is None:
             continue
         kind = v['kind']
@@ -193,15 +300,29 @@ def render(tracks, wave_table, total, psg_only):
             if psg_only:
                 continue
             kind = FULL_SUBSTITUTE.get(slot, 'square1')
+        channels.setdefault(kind, []).extend(
+            (on, off, pitch, v) for (on, off, pitch) in notes)
 
+    report = []
+    for kind, notes in sorted(channels.items()):
+        if psg_only:
+            total_in = len(notes)
+            notes, stolen, silenced = resolve_channel(notes)
+            if stolen or silenced:
+                report.append('    %-8s %d of %d notes cut short, %d never heard'
+                              % (kind, stolen, total_in, silenced))
+        if analyze_only:
+            continue
         lfsr = 0x7FFF
-        for (on, off, pitch) in notes:
+        phase = 0.0     # carried ACROSS notes on a channel: the hardware
+                        # oscillator is not reset per note, and restarting it
+                        # at zero every time is another source of onset clicks.
+        for (on, off, pitch, v) in notes:
             freq = 440.0 * (2.0 ** ((pitch - 69) / 12.0))
             dur = off - on
             tail = (v['r'] / 15.0) * 0.35 + 0.02
             i0 = int(on * RATE)
             n = int((dur + tail) * RATE)
-            phase = 0.0
             step = freq / RATE
             for k in range(n):
                 idx = i0 + k
@@ -223,7 +344,19 @@ def render(tracks, wave_table, total, psg_only):
                         lfsr = (lfsr >> 1) | (bit << 14)
                     smp = 1.0 if (lfsr & 1) else -1.0
                 buf[idx] += env * smp * 0.16
-    return buf
+
+    if not analyze_only:
+        # A naive square has odd harmonics forever; at 44.1 kHz the ones past
+        # Nyquist fold back as inharmonic grit, and the melody sits at 1.2-2.5
+        # kHz where that bites. Real hardware output is bandlimited by its
+        # analog stage, so an unfiltered render is harsher than the ROM by
+        # construction. One-pole lowpass, ~7 kHz, applied once at the end.
+        k = math.exp(-2.0 * math.pi * 7000.0 / RATE)
+        prev = 0.0
+        for i in range(len(buf)):
+            prev = buf[i] * (1.0 - k) + prev * k
+            buf[i] = prev
+    return buf, report
 
 
 def write_wav(path, buf):
@@ -242,25 +375,48 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--repo', default='.', type=Path)
     ap.add_argument('--out', required=True, type=Path)
+    ap.add_argument('--variants', default='lean,share,swap',
+                    help='comma-separated names from VARIANTS')
+    ap.add_argument('--analyze', action='store_true',
+                    help='report channel contention only, write no audio')
     args = ap.parse_args()
 
     tracks = parse_midi(args.repo / MIDI_REL)
     wave_table = read_wave_table(args.repo / WAVE_REL)
     total = max(off for _, notes in tracks for (_, off, _) in notes)
 
-    print('parsed %d note-carrying tracks, %.1f s' % (len(tracks), total))
-    for slot, notes in tracks:
-        v = VOICES.get(slot)
-        label = v['name'] if v else 'unmapped'
-        kind = v['kind'] if v else '?'
-        print('  slot %3d  %-22s %-8s %3d notes' % (slot, label, kind, len(notes)))
-
+    print('parsed %d note-carrying tracks, %.1f s\n' % (len(tracks), total))
     args.out.mkdir(parents=True, exist_ok=True)
-    for tag, psg in (('psg', True), ('full', False)):
-        buf = render(tracks, wave_table, total, psg)
-        p = args.out / ('woods_%s.wav' % tag)
+
+    for name in [v.strip() for v in args.variants.split(',') if v.strip()]:
+        voices = VARIANTS.get(name)
+        if voices is None:
+            sys.exit('unknown variant %r -- have %s'
+                     % (name, ', '.join(sorted(VARIANTS))))
+        print('variant %r:' % name)
+        for slot, notes in tracks:
+            v = voices.get(slot)
+            if v and v['kind'] != 'drop':
+                print('    slot %3d  %-20s %-8s %3d notes'
+                      % (slot, v['name'], v['kind'], len(notes)))
+        buf, report = render(tracks, voices, wave_table, total, True, args.analyze)
+        for line in report:
+            print(line)
+        if not report:
+            print('    no channel contention')
+        if not args.analyze:
+            p = args.out / ('woods_%s.wav' % name)
+            write_wav(p, buf)
+            print('    wrote %s' % p)
+        print()
+
+    if not args.analyze:
+        # Reference: every part, no channel limit, same synth -- so a comparison
+        # isolates the arrangement from the timbre.
+        buf, _ = render(tracks, VARIANTS['lean'], wave_table, total, False)
+        p = args.out / 'woods_full.wav'
         write_wav(p, buf)
-        print('wrote %s' % p)
+        print('wrote %s (all parts, reference)' % p)
     return 0
 
 

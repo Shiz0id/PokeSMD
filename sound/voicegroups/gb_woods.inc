@@ -6,11 +6,12 @@
 
 voice_group gb_woods
 	@ slot 0: track 9, drumset keysplit -> a short noise hit. Shares the noise
-	@ channel with track 8, but both are percussive and brief.
+	@ channel with track 8; 8 of their 61 notes collide and are lost, which is
+	@ acceptable for percussion.
 	voice_noise_alt 60, 0, 0, 0, 1, 0, 1
-	@ slot 1: track 2, piano keysplit, range 38-86, 42 notes. DROPPED - it
-	@ doubles harmony the square parts already carry, and there is no channel
-	@ free.
+	@ slot 1: track 2, piano keysplit, 42 notes but sounding 27.6 s - the most
+	@ CONTINUOUS part in the track. DROPPED only because there is no channel
+	@ left; it is the first thing to try if this still feels thin.
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -55,14 +56,15 @@ voice_group gb_woods
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 45: track 1, pizzicato strings, 56 notes. DROPPED for the same
-	@ reason.
+	@ slot 45: track 1, pizzicato strings, 56 notes, sounding 6.5 s. DROPPED -
+	@ sparse punctuation, the least costly thing to lose.
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 48: track 7, strings keysplit, 42 notes. DROPPED - a sustained pad
-	@ would want the wave channel, which the bass on track 6 is already using.
-	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	@ slot 48: track 7, strings keysplit, sounding 20.4 s. PROMOTED to the wave
+	@ channel - a sustained pad is what the wave channel is for, and this is the
+	@ part that fills the space the lean cut was missing.
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_6, 1, 6, 14, 4
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -89,7 +91,9 @@ voice_group gb_woods
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	@ slot 73: track 3, flute, range 74-99, 271 notes - FOUR TIMES any other
 	@ part. This is the melody, so it takes square 1 at 50% duty with full
-	@ sustain, the standard GB lead voice.
+	@ sustain, the standard GB lead voice. NOTE: 255 of its notes are above 1200
+	@ Hz and no other part goes there, so if it ever reads as harsh this voice
+	@ is the place to look - narrow the duty and add a decay.
 	voice_square_1_alt 60, 0, 0, 2, 0, 0, 15, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -97,13 +101,18 @@ voice_group gb_woods
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_2_alt 60, 0, 2, 0, 1, 7, 1
-	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_6, 0, 7, 15, 2
-	@ slot 82: track 5, square_1_alt, range 50-82, 57 notes. DROPPED, and this
-	@ is the non-obvious one: it was ALREADY a PSG part, but it holds square 1 -
-	@ the channel the melody now needs. Keeping both would make the two steal
-	@ the channel from each other.
+	@ slot 80: track 4, harmony, sounding 8.7 s. DROPPED in favour of the
+	@ counter line, which occupies the same time for more notes. The two overlap
+	@ 68% of the time so they could not both have square 2.
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	@ slot 81: track 6, was programmable_wave_alt, the BASS. Moved off the wave
+	@ channel to square 2 at 75% duty so the strings pad can have the wave. A
+	@ pulse bass is completely ordinary for GB music.
+	voice_square_2_alt 60, 0, 3, 0, 2, 11, 1
+	@ slot 82: track 5, the COUNTER line, sounding 8.7 s. Was already a PSG part
+	@ but held square 1, the channel the melody needs, so it moves to square 2
+	@ at 25% duty and shares with the bass above.
+	voice_square_2_alt 60, 0, 1, 0, 1, 9, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0

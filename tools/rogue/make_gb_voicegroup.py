@@ -32,33 +32,58 @@ NAME = 'gb_woods'
 SILENT = 'voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0'
 
 # Slot -> replacement, derived from a census of mus_petalburg_woods.mid
-# (track/slot/range/notes). Slots not listed are left exactly as they were --
-# most of the group is unused filler, and four slots are already CGB voices
-# doing the right thing.
+# (track/slot/range/notes) plus a measured overlap matrix. Slots not listed are
+# left exactly as they were -- most of the group is unused filler.
+#
+# THIS IS THE "fuller" ARRANGEMENT, and it replaced a leaner first cut that kept
+# the harmony and the bass-on-wave and was judged too empty on a listen. What
+# the measurement showed: the counter line and the harmony sound for exactly the
+# same 8.7 s of 42.2, so trading one for the other changes colour and not
+# density. The space was missing because the two SUSTAINED parts -- piano at
+# 27.6 s and strings at 20.4 s -- had both been dropped. So the strings pad
+# takes the wave channel and the bass moves onto square 2 beside the counter
+# line, which is idiomatic for GB music and collides far less than the harmony
+# would have.
+#
+# Cost, measured rather than assumed: 20 of the 117 notes on square 2 start at
+# the same instant as another and are never heard. Keep that in mind before
+# adding anything else to that channel.
 MAPPING = {
     # slot: (replacement, why)
     0:  ('voice_noise_alt 60, 0, 0, 0, 1, 0, 1',
          'track 9, drumset keysplit -> a short noise hit. Shares the noise '
-         'channel with track 8, but both are percussive and brief.'),
+         'channel with track 8; 8 of their 61 notes collide and are lost, '
+         'which is acceptable for percussion.'),
     1:  (SILENT,
-         'track 2, piano keysplit, range 38-86, 42 notes. DROPPED - it doubles '
-         'harmony the square parts already carry, and there is no channel free.'),
+         'track 2, piano keysplit, 42 notes but sounding 27.6 s - the most '
+         'CONTINUOUS part in the track. DROPPED only because there is no '
+         'channel left; it is the first thing to try if this still feels thin.'),
     45: (SILENT,
-         'track 1, pizzicato strings, 56 notes. DROPPED for the same reason.'),
-    48: (SILENT,
-         'track 7, strings keysplit, 42 notes. DROPPED - a sustained pad would '
-         'want the wave channel, which the bass on track 6 is already using.'),
+         'track 1, pizzicato strings, 56 notes, sounding 6.5 s. DROPPED - '
+         'sparse punctuation, the least costly thing to lose.'),
+    48: ('voice_programmable_wave_alt 60, 0, ProgrammableWaveData_6, 1, 6, 14, 4',
+         'track 7, strings keysplit, sounding 20.4 s. PROMOTED to the wave '
+         'channel - a sustained pad is what the wave channel is for, and this '
+         'is the part that fills the space the lean cut was missing.'),
     73: ('voice_square_1_alt 60, 0, 0, 2, 0, 0, 15, 1',
          'track 3, flute, range 74-99, 271 notes - FOUR TIMES any other part. '
          'This is the melody, so it takes square 1 at 50% duty with full '
-         'sustain, the standard GB lead voice.'),
-    82: (SILENT,
-         'track 5, square_1_alt, range 50-82, 57 notes. DROPPED, and this is '
-         'the non-obvious one: it was ALREADY a PSG part, but it holds square 1 '
-         '- the channel the melody now needs. Keeping both would make the two '
-         'steal the channel from each other.'),
-    # 80 (track 4, square_2_alt) and 81 (track 6, programmable_wave_alt, the
-    # bass) and 127 (track 8, noise_alt) are already correct and untouched.
+         'sustain, the standard GB lead voice. NOTE: 255 of its notes are above '
+         '1200 Hz and no other part goes there, so if it ever reads as harsh '
+         'this voice is the place to look - narrow the duty and add a decay.'),
+    81: ('voice_square_2_alt 60, 0, 3, 0, 2, 11, 1',
+         'track 6, was programmable_wave_alt, the BASS. Moved off the wave '
+         'channel to square 2 at 75% duty so the strings pad can have the wave. '
+         'A pulse bass is completely ordinary for GB music.'),
+    82: ('voice_square_2_alt 60, 0, 1, 0, 1, 9, 1',
+         'track 5, the COUNTER line, sounding 8.7 s. Was already a PSG part but '
+         'held square 1, the channel the melody needs, so it moves to square 2 '
+         'at 25% duty and shares with the bass above.'),
+    80: (SILENT,
+         'track 4, harmony, sounding 8.7 s. DROPPED in favour of the counter '
+         'line, which occupies the same time for more notes. The two overlap '
+         '68% of the time so they could not both have square 2.'),
+    # 127 (track 8, noise_alt) is already correct and untouched.
 }
 
 
