@@ -16,8 +16,13 @@ enum Usm_Icons {
     // STORED, in Usm_SavedItems.items[] in SaveBlock3, so inserting one
     // would silently renumber every icon a player has already arranged.
     USM_ICO_CHARMS,
+    USM_ICO_SOUND,
     USM_ICO_COUNT
 };
+
+// Bump whenever the icon enum grows or the default order changes, so a save
+// carrying the previous arrangement is rebuilt instead of being reinterpreted.
+#define USM_SAVED_VERSION 1
 
 
 #endif /* end of include guard: GUARD_CONSTANTS_UNBOUND_START_MENU_H */

@@ -1,4 +1,5 @@
 #include "gba/m4a_internal.h"
+#include "gbs.h"
 
 // Some of these functions have different signatures, so we need to make this
 // an array of void pointers or a struct. It's simpler to just make it an array
@@ -10,7 +11,9 @@ void *const gMPlayJumpTableTemplate[] =
     ply_patt,
     ply_pend,
     ply_rept,
-    ply_fine,
+    // Command 0xB6, unused by m4a (it was a duplicate ply_fine). GBS claims it
+    // as its channel-switch command.
+    ply_gbs_switch,
     ply_fine,
     ply_fine,
     ply_fine,

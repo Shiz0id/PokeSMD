@@ -72,6 +72,7 @@ enum Usm_IconTiletags {
     USM_TILETAG_RETIRE,
     USM_TILETAG_DEBUG,
     USM_TILETAG_CHARMS,
+    USM_TILETAG_SOUND,
     USM_TILETAG_HAND,
 };
 
@@ -139,6 +140,13 @@ static const u32 sRetireIconGfx[] = INCBIN_U32("graphics/unbound_start_menu/spri
 // source - so it sits grey in the inactive frame and lights up in the
 // selected one without a second drawing.
 static const u32 sCharmsIconGfx[] = INCBIN_U32("graphics/unbound_start_menu/sprites/charms.4bpp.smol");
+
+// An eighth note, drawn by tools/rogue/make_sound_icon.py. Nothing in the repo
+// reads as "sound" the way the Volcano Badge reads as a status condition, so it
+// is drawn rather than lifted - which also means every pixel is a known index in
+// the shared palette. The note body is the swapping index, so it sits grey in
+// the inactive frame and turns blue in the selected one.
+static const u32 sSoundIconGfx[] = INCBIN_U32("graphics/unbound_start_menu/sprites/sound.4bpp.smol");
 
 static const u32 sUsmHandGfx[] = INCBIN_U32("graphics/unbound_start_menu/sprites/hand.4bpp.smol");
 
@@ -239,6 +247,7 @@ ICON_TEMPLATE(OPTIONS, Options)
 ICON_TEMPLATE(DEBUG, Debug)
 ICON_TEMPLATE(RETIRE, Retire)
 ICON_TEMPLATE(CHARMS, Charms)
+ICON_TEMPLATE(SOUND, Sound)
 
 static const struct SpritePalette sSpritePalette_Icons = {.data = sIconPal, .tag = USM_PALTAG_ICON};
 
@@ -293,6 +302,8 @@ static bool32 IsPlayerInBattlePyramid(void);
 static bool8 StartMenuPokedexCallback(void);
 static bool8 Usm_RogueCharmsCallback(void);
 extern const u8 RogueCharms_EventScript_ShowList[];
+static bool8 Usm_RogueGbSoundsCallback(void);
+extern const u8 RogueGbSounds_EventScript_Toggle[];
 static bool8 StartMenuPokemonCallback(void);
 static bool8 StartMenuBagCallback(void);
 static bool8 StartMenuPokeNavCallback(void);
@@ -380,6 +391,15 @@ static const struct Usm_MenuItem sUsmMenuItems[USM_ICO_COUNT] = {
             .shouldFade = TRUE,
             .callback = Usm_RogueCharmsCallback,
         },
+    [USM_ICO_SOUND] =
+        {
+            .iconId = USM_ICO_SOUND,
+            .template = &sSpriteTemplate_Sound,
+            .sheet = &sSpriteSheet_Sound,
+            .label = COMPOUND_STRING("Sound"),
+            .shouldFade = TRUE,
+            .callback = Usm_RogueGbSoundsCallback,
+        },
     [USM_ICO_DEBUG] =
         {
             .iconId = USM_ICO_DEBUG,
@@ -415,6 +435,16 @@ static const struct Usm_MenuItem sUsmMenuItems[USM_ICO_COUNT] = {
 static bool8 Usm_RogueCharmsCallback(void)
 {
     ScriptContext_SetupScript(RogueCharms_EventScript_ShowList);
+    return TRUE;
+}
+
+// Today this only toggles GB Sounds. It hands off to a script for the same
+// reason the charm listing does: a msgbox is vanilla machinery, and the two
+// screens that would otherwise host it are both upstream forks. When this grows
+// into a music player it replaces the script, not this callback's shape.
+static bool8 Usm_RogueGbSoundsCallback(void)
+{
+    ScriptContext_SetupScript(RogueGbSounds_EventScript_Toggle);
     return TRUE;
 }
 
@@ -778,7 +808,12 @@ static void Usm_BuildMenuItems(void)
 
     sUsmState->itemCount = 0;
 
-    if (!saved->count)
+    // A count above USM_ICO_COUNT is not merely wrong, it reads past items[] --
+    // see the note on struct Usm_SavedItems. Treat it, and a stale version, the
+    // same way as a fresh save.
+    if (!saved->count
+     || saved->count > USM_ICO_COUNT
+     || saved->version != USM_SAVED_VERSION)
     {
         Usm_BuildDefaultMenuItems();
         return;
@@ -838,12 +873,27 @@ static void Usm_BuildDefaultMenuItems(void)
     if (FlagGet(FLAG_SYS_POKENAV_GET))
         Usm_AddMenuItem(USM_ICO_POKENAV);
 
-    // Beside the trainer card, where someone asking "what is wrong with my
-    // team" is already heading.
-    Usm_AddMenuItem(USM_ICO_CHARMS);
     Usm_AddMenuItem(USM_ICO_TRAINER);
     Usm_AddMenuItem(USM_ICO_SAVE);
+
+    // THE VANILLA SET COMES FIRST, AND THE ADDITIONS GO AFTER IT.
+    //
+    // A page holds USM_MAX_ICON_COUNT (6) icons. The six above are exactly one
+    // page, so everything below lands on page 2 and nothing a player already
+    // knows where to find moves. Charms used to sit between PokeNav and Trainer,
+    // which pushed Save onto page 2 -- an entry added for this hack displacing
+    // the one the player needs most.
+    //
+    // Options was on page 2 before Charms existed too (the vanilla set is seven
+    // entries, not six), so it stays where it has always been.
+    //
+    // Anything appended to the icon enum later also lands here by default, and
+    // Usm_BuildMenuItems appends unknown-but-available icons at the END of a
+    // stored arrangement, so a new entry never displaces a player's own layout
+    // either. The R-button reorder still moves any of them anywhere.
     Usm_AddMenuItem(USM_ICO_OPTIONS);
+    Usm_AddMenuItem(USM_ICO_CHARMS);
+    Usm_AddMenuItem(USM_ICO_SOUND);
 
     if (DEBUG_OVERWORLD_MENU && DEBUG_OVERWORLD_IN_MENU)
         Usm_AddMenuItem(USM_ICO_DEBUG);
@@ -1002,6 +1052,7 @@ static void Usm_SaveItems(void)
         count = USM_ICO_COUNT;
 
     saved->count = count;
+    saved->version = USM_SAVED_VERSION;
 
     for (u8 i = 0; i < count; i++)
         saved->items[i] = sUsmState->items[i];

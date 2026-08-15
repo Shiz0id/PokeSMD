@@ -113,6 +113,10 @@ SECTIONS {
     ALIGN(4)
     {
         sound/songs/*.o(.rodata);
+        /* Spelled out rather than relying on the line above: ld wildcards are
+           not guaranteed to cross a '/', and a missed GBS song links as a
+           silently absent track rather than an error. */
+        sound/songs/gbs/*.o(.rodata);
     } > ROM =0
 
     lib_rodata :

@@ -1,6 +1,7 @@
 #include "global.h"
 #include "gba/m4a_internal.h"
 #include "global.h"
+#include "gbs.h"
 
 extern const u8 gCgb3Vol[];
 
@@ -104,8 +105,7 @@ void m4aSoundMain(void)
 void m4aSongNumStart(u16 n)
 {
     const struct MusicPlayer *mplayTable = gMPlayTable;
-    const struct Song *songTable = gSongTable;
-    const struct Song *song = &songTable[n];
+    const struct Song *song = GetSong(n);
     const struct MusicPlayer *mplay = &mplayTable[song->ms];
 
     MPlayStart(mplay->info, song->header);
@@ -114,8 +114,7 @@ void m4aSongNumStart(u16 n)
 void m4aSongNumStartOrChange(u16 n)
 {
     const struct MusicPlayer *mplayTable = gMPlayTable;
-    const struct Song *songTable = gSongTable;
-    const struct Song *song = &songTable[n];
+    const struct Song *song = GetSong(n);
     const struct MusicPlayer *mplay = &mplayTable[song->ms];
 
     if (mplay->info->songHeader != song->header)
@@ -150,8 +149,7 @@ static void UNUSED m4aSongNumStartOrContinue(u16 n)
 void m4aSongNumStop(u16 n)
 {
     const struct MusicPlayer *mplayTable = gMPlayTable;
-    const struct Song *songTable = gSongTable;
-    const struct Song *song = &songTable[n];
+    const struct Song *song = GetSong(n);
     const struct MusicPlayer *mplay = &mplayTable[song->ms];
 
     if (mplay->info->songHeader == song->header)
@@ -632,7 +630,11 @@ void MPlayStart(struct MusicPlayerInfo *mplayInfo, struct SongHeader *songHeader
         mplayInfo->tempoI = 150;
         mplayInfo->tempoU = 0x100;
         mplayInfo->tempoC = 0;
+        mplayInfo->gbsTempo = 0x100;
         mplayInfo->fadeOI = 0;
+
+        // Restore the master volume of the GB channels in case GBS changed it.
+        REG_NR50 = 0x77;
 
         i = 0;
         track = mplayInfo->tracks;
@@ -935,6 +937,8 @@ void CgbSound(void)
     // Most comparision operations that cast to s8 perform 'and' by 0xFF.
     int mask = 0xff;
 
+    gUsedCGBChannels = 0;
+
     if (soundInfo->c15)
         soundInfo->c15--;
     else
@@ -944,6 +948,8 @@ void CgbSound(void)
     {
         if (!(channels->statusFlags & SOUND_CHANNEL_SF_ON))
             continue;
+
+        gUsedCGBChannels |= 1 << (ch - 1);
 
         /* 1. determine hardware channel registers */
         switch (ch)

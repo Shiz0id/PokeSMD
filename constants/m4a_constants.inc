@@ -180,7 +180,8 @@
 	struct_field o_MusicPlayerTrack_ToneData_decay, 1
 	struct_field o_MusicPlayerTrack_ToneData_sustain, 1
 	struct_field o_MusicPlayerTrack_ToneData_release, 1
-	struct_field o_MusicPlayerTrack_gap, 10
+	struct_field o_MusicPlayerTrack_gbsChannel, 1
+	struct_field o_MusicPlayerTrack_gap, 9
 	struct_field o_MusicPlayerTrack_timer, 2
 	struct_field o_MusicPlayerTrack_unk_3C, 4
 	struct_field o_MusicPlayerTrack_cmdPtr, 4
@@ -206,7 +207,7 @@
 	struct_field o_MusicPlayerInfo_fadeOI, 2
 	struct_field o_MusicPlayerInfo_fadeOC, 2
 	struct_field o_MusicPlayerInfo_fadeOV, 2
-	struct_field o_MusicPlayerInfo_padding, 2
+	struct_field o_MusicPlayerInfo_gbsTempo, 2
 	struct_field o_MusicPlayerInfo_tracks, 4
 	struct_field o_MusicPlayerInfo_tone, 4
 	struct_field o_MusicPlayerInfo_ident, 4

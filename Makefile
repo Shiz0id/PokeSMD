@@ -141,12 +141,14 @@ ASM_SUBDIR = asm
 DATA_SRC_SUBDIR = src/data
 DATA_ASM_SUBDIR = data
 MID_SUBDIR = sound/songs/midi
+GBS_SUBDIR = sound/songs/gbs
 TEST_SUBDIR = test
 
 C_BUILDDIR = $(OBJ_DIR)/$(C_SUBDIR)
 ASM_BUILDDIR = $(OBJ_DIR)/$(ASM_SUBDIR)
 DATA_ASM_BUILDDIR = $(OBJ_DIR)/$(DATA_ASM_SUBDIR)
 MID_BUILDDIR = $(OBJ_DIR)/$(MID_SUBDIR)
+GBS_BUILDDIR = $(OBJ_DIR)/$(GBS_SUBDIR)
 TEST_BUILDDIR = $(OBJ_DIR)/$(TEST_SUBDIR)
 
 SHELL := bash -o pipefail
@@ -331,7 +333,13 @@ DATA_ASM_OBJS := $(patsubst $(DATA_ASM_SUBDIR)/%.s,$(DATA_ASM_BUILDDIR)/%.o,$(DA
 MID_SRCS := $(wildcard $(MID_SUBDIR)/*.mid)
 MID_OBJS := $(patsubst $(MID_SUBDIR)/%.mid,$(MID_BUILDDIR)/%.o,$(MID_SRCS))
 
-OBJS     := $(C_OBJS) $(C_ASM_OBJS) $(ASM_OBJS) $(DATA_ASM_OBJS) $(MID_OBJS)
+# GB Sounds tracks. Only sound/songs/gbs is globbed; converted_songs/ holds
+# staged conversions that are deliberately NOT compiled until they are wired
+# into gbs_song_table.c and the linker script.
+GBS_SRCS := $(wildcard $(GBS_SUBDIR)/*.s)
+GBS_OBJS := $(patsubst $(GBS_SUBDIR)/%.s,$(GBS_BUILDDIR)/%.o,$(GBS_SRCS))
+
+OBJS     := $(C_OBJS) $(C_ASM_OBJS) $(ASM_OBJS) $(DATA_ASM_OBJS) $(MID_OBJS) $(GBS_OBJS)
 OBJS_REL := $(patsubst $(OBJ_DIR)/%,%,$(OBJS))
 
 SUBDIRS  := $(sort $(dir $(OBJS) $(dir $(TEST_OBJS))))
@@ -530,6 +538,16 @@ $(ASM_BUILDDIR)/%.d: $(ASM_SUBDIR)/%.s
 
 ifneq ($(NODEP),1)
 -include $(addprefix $(OBJ_DIR)/,$(ASM_SRCS:.s=.d))
+endif
+
+$(GBS_BUILDDIR)/%.o: $(GBS_SUBDIR)/%.s
+	$(AS) $(ASFLAGS) -o $@ $<
+
+$(GBS_BUILDDIR)/%.d: $(GBS_SUBDIR)/%.s
+	$(SCANINC) -M $@ -g $(ASSETS_DIR_NAME) $(INCLUDE_SCANINC_ARGS) -I "" $<
+
+ifneq ($(NODEP),1)
+-include $(addprefix $(OBJ_DIR)/,$(GBS_SRCS:.s=.d))
 endif
 
 $(C_BUILDDIR)/%.o: $(C_SUBDIR)/%.s

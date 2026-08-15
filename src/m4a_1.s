@@ -1232,6 +1232,20 @@ _081DD8BA:
 	strb r0, [r1, o_MusicPlayerTrack_ToneData_type - 0x6]
 	b _081DD938
 _081DD8E0:
+	ldr r2, [r5, o_MusicPlayerTrack_gbsChannel]
+	cmp r2, 0
+	beq normalM4
+GBSUpdate:
+	adds r0, r7, 0
+	adds r1, r5, 0
+	bl GBSMain
+	cmp r0, 0
+	bne _081DD994
+	adds r0, r7, 0
+	adds r1, r5, 0
+	bl ply_fine
+	b _081DD994
+normalM4:
 	ldr r2, [r5, o_MusicPlayerTrack_cmdPtr]
 	ldrb r1, [r2]
 	cmp r1, 0x80
@@ -1268,6 +1282,11 @@ _081DD90C:
 	adds r0, r7, 0
 	adds r1, r5, 0
 	bl call_r3
+	ldr r0, [r5, o_MusicPlayerTrack_gbsChannel]
+	cmp r0, 0
+	beq normalM4_2
+	b GBSUpdate
+normalM4_2:
 	ldrb r0, [r5, o_MusicPlayerTrack_flags]
 	cmp r0, 0
 	beq _081DD994
@@ -1279,6 +1298,11 @@ _081DD92E:
 	ldrb r0, [r1]
 	strb r0, [r5, o_MusicPlayerTrack_wait]
 _081DD938:
+	ldr r0, [r5, o_MusicPlayerTrack_gbsChannel]
+	cmp r0, 0
+	beq normalM4_3
+	b GBSUpdate
+normalM4_3:
 	ldrb r0, [r5, o_MusicPlayerTrack_wait]
 	cmp r0, 0
 	beq _081DD8E0
@@ -1475,6 +1499,9 @@ TrackStop:
 	movs r0, MPT_FLG_EXIST
 	tst r0, r1
 	beq TrackStop_Done
+	ldr r4, [r5, o_MusicPlayerTrack_gbsChannel]
+	cmp r4, 0
+	bne TrackStop_GBSReset
 	ldr r4, [r5, o_MusicPlayerTrack_chan]
 	cmp r4, 0
 	beq TrackStop_3
@@ -1500,6 +1527,10 @@ TrackStop_2:
 	bne TrackStop_Loop
 TrackStop_3:
 	str r4, [r5, o_MusicPlayerTrack_chan]
+	b TrackStop_Done
+TrackStop_GBSReset:
+	movs r0, r5
+	bl GBSTrack_Stop
 TrackStop_Done:
 	pop {r4-r6}
 	pop {r0}

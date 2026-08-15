@@ -10,11 +10,17 @@
 #include "constants/songs.h"
 #include "task.h"
 #include "test_runner.h"
+#include "event_data.h"
+#include "constants/flags.h"
 
 struct Fanfare
 {
     u16 songNum;
     u16 duration;
+    // The GBS arrangement of a fanfare is not the same length as the m4a one,
+    // so the counter that holds the field locked has to differ too. Rows with
+    // no GBS mapping just repeat duration.
+    u16 durationGBS;
 };
 
 extern u8 gDisableMapMusicChangeOnMapLoad;
@@ -39,24 +45,24 @@ static void RestoreBGMVolumeAfterPokemonCry(void);
 
 // The 1st argument in the table is the length of the fanfare, measured in frames. This is calculated by taking the duration of the midi file, multiplying by 59.72750056960583, and rounding up to the next nearest integer.
 static const struct Fanfare sFanfares[] = {
-    [FANFARE_LEVEL_UP]            = { MUS_LEVEL_UP,             80 },
-    [FANFARE_OBTAIN_ITEM]         = { MUS_OBTAIN_ITEM,         160 },
-    [FANFARE_EVOLVED]             = { MUS_EVOLVED,             220 },
-    [FANFARE_OBTAIN_TMHM]         = { MUS_OBTAIN_TMHM,         220 },
-    [FANFARE_HEAL]                = { MUS_HEAL,                160 },
-    [FANFARE_OBTAIN_BADGE]        = { MUS_OBTAIN_BADGE,        340 },
-    [FANFARE_MOVE_DELETED]        = { MUS_MOVE_DELETED,        180 },
-    [FANFARE_OBTAIN_BERRY]        = { MUS_OBTAIN_BERRY,        120 },
-    [FANFARE_AWAKEN_LEGEND]       = { MUS_AWAKEN_LEGEND,       710 },
-    [FANFARE_SLOTS_JACKPOT]       = { MUS_SLOTS_JACKPOT,       250 },
-    [FANFARE_SLOTS_WIN]           = { MUS_SLOTS_WIN,           150 },
-    [FANFARE_TOO_BAD]             = { MUS_TOO_BAD,             160 },
-    [FANFARE_RG_POKE_FLUTE]       = { MUS_RG_POKE_FLUTE,       450 },
-    [FANFARE_RG_OBTAIN_KEY_ITEM]  = { MUS_RG_OBTAIN_KEY_ITEM,  170 },
-    [FANFARE_RG_DEX_RATING]       = { MUS_RG_DEX_RATING,       196 },
-    [FANFARE_OBTAIN_B_POINTS]     = { MUS_OBTAIN_B_POINTS,     313 },
-    [FANFARE_OBTAIN_SYMBOL]       = { MUS_OBTAIN_SYMBOL,       318 },
-    [FANFARE_REGISTER_MATCH_CALL] = { MUS_REGISTER_MATCH_CALL, 135 },
+    [FANFARE_LEVEL_UP]            = { MUS_LEVEL_UP,             80,  70 },
+    [FANFARE_OBTAIN_ITEM]         = { MUS_OBTAIN_ITEM,         160, 140 },
+    [FANFARE_EVOLVED]             = { MUS_EVOLVED,             220, 220 },
+    [FANFARE_OBTAIN_TMHM]         = { MUS_OBTAIN_TMHM,         220, 180 },
+    [FANFARE_HEAL]                = { MUS_HEAL,                160, 160 },
+    [FANFARE_OBTAIN_BADGE]        = { MUS_OBTAIN_BADGE,        340, 250 },
+    [FANFARE_MOVE_DELETED]        = { MUS_MOVE_DELETED,        180, 180 },
+    [FANFARE_OBTAIN_BERRY]        = { MUS_OBTAIN_BERRY,        120, 120 },
+    [FANFARE_AWAKEN_LEGEND]       = { MUS_AWAKEN_LEGEND,       710, 710 },
+    [FANFARE_SLOTS_JACKPOT]       = { MUS_SLOTS_JACKPOT,       250, 250 },
+    [FANFARE_SLOTS_WIN]           = { MUS_SLOTS_WIN,           150, 150 },
+    [FANFARE_TOO_BAD]             = { MUS_TOO_BAD,             160, 160 },
+    [FANFARE_RG_POKE_FLUTE]       = { MUS_RG_POKE_FLUTE,       450, 450 },
+    [FANFARE_RG_OBTAIN_KEY_ITEM]  = { MUS_RG_OBTAIN_KEY_ITEM,  170, 170 },
+    [FANFARE_RG_DEX_RATING]       = { MUS_RG_DEX_RATING,       196, 196 },
+    [FANFARE_OBTAIN_B_POINTS]     = { MUS_OBTAIN_B_POINTS,     313, 313 },
+    [FANFARE_OBTAIN_SYMBOL]       = { MUS_OBTAIN_SYMBOL,       318, 318 },
+    [FANFARE_REGISTER_MATCH_CALL] = { MUS_REGISTER_MATCH_CALL, 135, 135 },
 };
 
 void InitMapMusic(void)
@@ -186,7 +192,10 @@ void PlayFanfareByFanfareNum(u8 fanfareNum)
     u16 songNum;
     m4aMPlayStop(&gMPlayInfo_BGM);
     songNum = sFanfares[fanfareNum].songNum;
-    sFanfareCounter = sFanfares[fanfareNum].duration;
+    if (FlagGet(FLAG_SYS_GBS_ENABLED))
+        sFanfareCounter = sFanfares[fanfareNum].durationGBS;
+    else
+        sFanfareCounter = sFanfares[fanfareNum].duration;
     m4aSongNumStart(songNum);
 }
 

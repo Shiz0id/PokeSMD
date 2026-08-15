@@ -263,6 +263,12 @@ struct NPCFollower
 struct PACKED Usm_SavedItems {
     u8 items[USM_ICO_COUNT];
     u8 count;
+    // items[] is sized by USM_ICO_COUNT and sits BEFORE count, so adding an icon
+    // moves count -- an old save would read it from whatever byte followed, and
+    // a garbage count indexes past items[] into rogueCharms. This byte makes that
+    // detectable: on mismatch the stored arrangement is discarded and rebuilt
+    // from the default. Same guard the charm block uses, for the same reason.
+    u8 version;
 };
 
 #include "constants/rogue_charms.h"

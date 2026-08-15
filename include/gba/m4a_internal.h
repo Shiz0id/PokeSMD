@@ -305,7 +305,12 @@ struct MusicPlayerTrack
     u8 pseudoEchoLength;
     struct SoundChannel *chan;
     struct ToneData tone;
-    u8 gap[10];
+    // Non-zero when this track is driven by the GBS sequencer rather than m4a.
+    // Takes a byte of the existing padding, so the struct does not grow and no
+    // offset in m4a_constants.inc shifts. m4a_1.s reads it with a word load,
+    // which is why it must stay word-aligned here.
+    u8 gbsChannel;
+    u8 gap[9];
     u16 timer;
     u32 unk_3C;
     u8 *cmdPtr;
@@ -342,6 +347,9 @@ struct MusicPlayerInfo
     u16 fadeOI;
     u16 fadeOC;
     u16 fadeOV;
+    // Fills the alignment padding that was already here, so the struct does not
+    // grow. Mirrored as o_MusicPlayerInfo_gbsTempo in m4a_constants.inc.
+    u16 gbsTempo;
     struct MusicPlayerTrack *tracks;
     struct ToneData *tone;
     u32 ident;
