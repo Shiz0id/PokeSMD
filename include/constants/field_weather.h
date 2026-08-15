@@ -53,6 +53,18 @@ enum ColorMapType
 // the same dungeon and a player who cannot tell them apart has been told
 // nothing. Density is half of that; the other half is the streak.
 #define NUM_BLIZZARD_SPRITES         30
+// FEWER THAN ANY OTHER, and the only one whose limit is VRAM rather than taste.
+// A leaf is 16x16, so its frame is 128 bytes against the 8x8 petal's 32, and
+// weather sprites use SpriteFrameImage rather than a shared sheet - every
+// sprite gets its own OBJ VRAM allocation. Fourteen leaves is 1792 bytes where
+// twenty-four petals is 768.
+//
+// Fourteen is also the right number for the look. The petals were raised from
+// 10 to 24 because blossom IS Ever Grande's character and wanted to be plainly
+// there; the woods opens the run and wants the opposite, so the leaves are
+// sparse enough that the player notices one at a time. A 16x16 sprite covers
+// four times a petal's area, so this is denser on screen than the count says.
+#define NUM_LEAF_SPRITES             14
 
 // Controls how the weather should be changing the screen palettes.
 #define WEATHER_PAL_STATE_CHANGING_WEATHER   0

@@ -9,9 +9,9 @@ This composes a proper one: three earth steps in vanilla's stair rhythm - tread,
 bright front edge, riser in shadow - inside a rounded opening whose corners are
 grass, so it seats into the turf instead of butting against it.
 
-Everything is drawn in palette 2, the grass palette, which already carries both
-the mint greens and a full earth ramp. That means the art needs no new palette
-and no new palette slot.
+Everything is drawn in ONE palette that carries both the greens and a full
+earth ramp, so the art needs no palette slot of its own. That palette used to be
+General's 2; it is now Rustboro's 12, the autumn grass - see PALETTE below.
 
 The grass is baked into the tiles rather than left to a bottom layer showing
 through a transparent top layer. A top layer would be drawn OVER the player
@@ -35,7 +35,16 @@ GENERAL = REPO / 'data/tilesets/primary/general'
 NUM_TILES_IN_PRIMARY = 512
 RUSTBORO_BASE_METATILES = 350        # vanilla count, ids 0x200-0x35D
 GRASS_METATILE = 0x001               # the woods floor, in the primary tileset
-PALETTE = 2
+# PALETTE 12, THE AUTUMN ONE, NOT GENERAL'S 2. The stairs are drawn ONTO the
+# woods floor - the '.' cells in ART below keep the grass pixel underneath - so
+# while this pointed at palette 2 the four corners of the stairs stayed mint
+# after the floor around them went autumn. Found on hardware.
+#
+# NO ART CHANGE WAS NEEDED, and that is not luck. make_woods_grass rotates only
+# indices 12-15, the mint family; every index this drawing uses for the stairs
+# themselves (3, 4, 5, 8, 9) is in the untouched set and comes through
+# identical. Only the grass pixels move, which is exactly the intent.
+PALETTE = 12
 
 # The last four tiles of the Rustboro sheet: blank, and referenced by no
 # metatile in any pair that uses this tileset.

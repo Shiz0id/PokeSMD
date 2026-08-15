@@ -135,6 +135,11 @@
 // still FLDEFF_LONG_GRASS that runs, and FldEff_LongGrass picks between this
 // and FLDEFFOBJ_LONG_GRASS so the jungle keeps the blades.
 #define FLDEFFOBJ_ROGUE_FLOWERS         46
+// The woods' tall-grass rustle. A whole object rather than a recolour of
+// FLDEFFOBJ_TALL_GRASS because that template's palette tag is shared by
+// SIXTEEN field effects; repainting it would tint grass rustle, jump grass
+// and ripples on every map in Hoenn.
+#define FLDEFFOBJ_ROGUE_WOODS_GRASS     47
 
 #define FLDEFF_PAL_TAG_CUT_GRASS          0x1000
 #define FLDEFF_PAL_TAG_SECRET_POWER_TREE  0x1003
@@ -153,6 +158,7 @@
 #define FLDEFF_PAL_TAG_ORAS_DOWSE         0x1014
 // 0x1001, 0x1002, 0x1006 and 0x100A-0x100C are also free.
 #define FLDEFF_PAL_TAG_ROGUE_FLOWERS      0x1015
+#define FLDEFF_PAL_TAG_ROGUE_WOODS_GRASS  0x1016
 #define FLDEFF_PAL_TAG_FIELD_MOVE_MON     0x8400
 
 // tile tags, for field effects that may have many copies on screen at once

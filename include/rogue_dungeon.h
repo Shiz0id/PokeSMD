@@ -91,8 +91,17 @@
 // Trees are 2x2 blocks on even coordinates - 95% x-aligned and 99% y-aligned in
 // vanilla - which is why the woods generator works on a half-resolution grid
 // and needs no autotiling at all.
-#define WOODS_METATILE_GRASS      0x001  // plain, no encounters
-#define WOODS_METATILE_TALL_GRASS 0x00D  // MB_TALL_GRASS
+// AUTUMN GRASS, in the Rustboro secondary on palette 12, written by
+// tools/rogue/append_rustboro.py. Not a recolour of 0x001: that lives in
+// gTileset_General, which most of Hoenn shares, so repainting it there would
+// repaint Route 101. Same tile art, rotated palette - see make_woods_grass.py
+// for why -65 degrees and what it does to the tree-against-floor reading.
+#define WOODS_METATILE_GRASS      0x383  // plain, no encounters
+#define WOODS_METATILE_GRASS_OLD  0x001  // the primary mint grass, unused here
+// Its attribute is copied from 0x00D and CARRIES MB_TALL_GRASS, which is what
+// makes wild encounters fire at all. A synthesised attribute here is silent
+// until nothing spawns on the whole dungeon.
+#define WOODS_METATILE_TALL_GRASS 0x384  // MB_TALL_GRASS
 
 // The woods has no long grass. It once did, ended with 0x016/0x017 - but those
 // are SOLID in all 691 of their vanilla placements across every General+Rustboro
@@ -108,10 +117,25 @@
 // MB_LONG_GRASS_SOUTH_EDGE metatile at all. The one that exists, 0x208, is in
 // gTileset_Fortree, so long grass belongs to the jungle - which is also where
 // vanilla puts it, Petalburg Woods having none.
-#define WOODS_METATILE_TREE_TL    0x1D4
-#define WOODS_METATILE_TREE_TR    0x1D5
-#define WOODS_METATILE_TREE_BL    0x1DC
-#define WOODS_METATILE_TREE_BR    0x1DD
+// THE AUTUMN TREES, in the Rustboro secondary, written by
+// tools/rogue/append_rustboro.py. Nine metatiles each, row-major from the top
+// left, and FOUR VARIANTS AT A STRIDE OF NINE - 0x35F, 0x368, 0x371, 0x37A - so
+// only the first is named here and the generator adds the stride. See
+// DUNGEON_STAMP_METATILES.
+//
+// The vanilla 2x2 tree these replace was 0x1D4/0x1D5/0x1DC/0x1DD in the PRIMARY
+// tileset, which is why it could never be changed: gTileset_General is shared
+// with most of Hoenn.
+#define WOODS_METATILE_TREE_R0C0  0x35F
+#define WOODS_METATILE_TREE_R0C1  0x360
+#define WOODS_METATILE_TREE_R0C2  0x361
+#define WOODS_METATILE_TREE_R1C0  0x362
+#define WOODS_METATILE_TREE_R1C1  0x363
+#define WOODS_METATILE_TREE_R1C2  0x364
+#define WOODS_METATILE_TREE_R2C0  0x365
+#define WOODS_METATILE_TREE_R2C1  0x366
+#define WOODS_METATILE_TREE_R2C2  0x367
+#define WOODS_METATILE_TREE_VARIANTS 4
 
 // A tree is really 2 wide by 3 tall. The third row is the ground contact, used
 // only where a tree mass ends and open ground begins - across nine vanilla
@@ -161,7 +185,13 @@
 //
 // Same lesson as the long grass above, in its third costume: what a metatile
 // looks like alone is not what it is. Ask what vanilla puts next to it.
-#define WOODS_METATILE_FLOWER_BUSH 0x004
+// The autumn copy, in Rustboro on palette 12 beside the grass. Its own greens
+// needed nothing: they are General palette 2's indices 2,3,4, which were
+// ALREADY yellow-olive and are the entries the rotation deliberately leaves
+// alone. Its flowers keep their peach and red for the same reason. So this
+// metatile exists only so the bush sits on the AUTUMN grass rather than on a
+// square of the old mint - the same trap the trees had.
+#define WOODS_METATILE_FLOWER_BUSH 0x385
 
 // New Mauville, under gTileset_General + gTileset_BikeShop. Mined from
 // NewMauville_Inside_Layout with tools/rogue/derive_wall_table.py and read off
@@ -1184,17 +1214,37 @@ enum DungeonWallSlot
     WALL_SLOT_COUNT,
 };
 
-// A 2x2 stamp, plus the ground-contact row used where a mass ends and open
-// ground begins. Vanilla never leaves a trunk row exposed, so the bottom pair
-// is swapped for the base pair whenever the cell below is open. These live in
-// the table rather than in the generator because a metatile id means something
-// else under every other tileset pair.
+// A 3x3 stamp, plus the ground-contact row used where a mass ends and open
+// ground begins. These live in the table rather than in the generator because a
+// metatile id means something else under every other tileset pair.
+//
+// THREE WIDE SINCE THE AUTUMN TREES, WAS 2x2. The art this theme now uses is
+// 48px across, which is three metatiles, so the cell the whole woods generator
+// works in went with it - DUNGEON_WOODS_CELL below is the one place that says
+// so, and PrepareFloor's `unit` reads it.
+//
+// The base row is still here but the woods now points it at the SAME metatiles
+// as row 2. Vanilla swaps that row because its trees tile into an
+// undifferentiated mass and an exposed trunk would look wrong; these are whole
+// individual trees that each have a trunk, so one below another should still
+// show it.
 enum DungeonStampCorner
 {
-    STAMP_TL, STAMP_TR, STAMP_BL, STAMP_BR,
-    STAMP_BASE_L, STAMP_BASE_R,
+    STAMP_R0C0, STAMP_R0C1, STAMP_R0C2,
+    STAMP_R1C0, STAMP_R1C1, STAMP_R1C2,
+    STAMP_R2C0, STAMP_R2C1, STAMP_R2C2,
+    STAMP_BASE_0, STAMP_BASE_1, STAMP_BASE_2,
     STAMP_COUNT,
 };
+
+// How many metatiles one tree variant occupies, and so the stride between
+// variants: the generator adds variant * this to every id in the stamp.
+//
+// THAT ONLY WORKS BECAUSE make_woods_trees.py EMITS THE VARIANTS CONSECUTIVELY
+// - four trees at 0x35F, 0x368, 0x371, 0x37A. It is a contract between that
+// tool and this constant, and breaking it does not fail to build: it draws four
+// trees sliced out of each other.
+#define DUNGEON_STAMP_METATILES 9
 
 // A soft region lying ON the floor - Mirage Tower's sand drifts, and the same
 // sand in the cave, where vanilla uses it for Shoal Cave's beach and the Desert
@@ -1507,7 +1557,10 @@ struct RogueDungeonTheme
     u16 stairsUp;
 
     u16 wall[WALL_SLOT_COUNT];  // DUNGEON_GEN_CAVE only
-    u16 stamp[STAMP_COUNT];     // DUNGEON_GEN_WOODS only
+    u16 stamp[STAMP_COUNT];     // DUNGEON_GEN_WOODS only, variant 0
+    // How many consecutive tree variants follow stamp[]. 0 and 1 both mean
+    // "just the one", so a theme that never set this keeps working.
+    u8 stampVariants;           // DUNGEON_GEN_WOODS only
 
     // Wall skirts: the wall's own bottom or side edge, spilling into the floor
     // tile next to it. Keyed to the SPECIFIC wall metatile, and deterministic -
@@ -1710,8 +1763,18 @@ struct RogueFloorEvent
 };
 
 // Half-resolution grid for DUNGEON_GEN_WOODS, so a cell is one 2x2 stamp.
-#define DUNGEON_CELLS_W (DUNGEON_WIDTH / 2)
-#define DUNGEON_CELLS_H (DUNGEON_HEIGHT / 2)
+// The woods generator works in CELLS, not metatiles, and this is how big one
+// is. 3 since the autumn trees; it was 2 and the number was written out in
+// seven places rather than named once, which is why changing it was a spike
+// rather than an edit.
+//
+// 48 is divisible by 3, so the grid stays exact at 16x16 cells. Anything that
+// aligns to a cell must use a MODULO and not a bitmask - `x &= ~1` was correct
+// at 2 and is silently wrong at 3.
+#define DUNGEON_WOODS_CELL 3
+
+#define DUNGEON_CELLS_W (DUNGEON_WIDTH / DUNGEON_WOODS_CELL)
+#define DUNGEON_CELLS_H (DUNGEON_HEIGHT / DUNGEON_WOODS_CELL)
 
 // Each floor has exactly one exit, placed at a seed-derived position. Because
 // generation is deterministic the stairs position needs no save data at all -
@@ -1878,6 +1941,7 @@ bool8 RogueDungeon_TryStartStairsScript(struct MapPosition *position);
 // FLDEFF_LONG_GRASS either way; only the graphic differs, so the flower dungeon
 // gets blossoms and the jungle keeps its blades.
 u8 RogueDungeon_LongGrassFieldEffectObj(void);
+u8 RogueDungeon_TallGrassFieldEffectObj(void);
 const struct WildPokemonInfo *RogueDungeon_GetWildMonInfo(enum WildPokemonArea area);
 
 // Walks a species DOWN its evolution chain until `level` could have produced

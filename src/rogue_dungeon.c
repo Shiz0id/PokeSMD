@@ -1139,7 +1139,18 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     [DUNGEON_THEME_WOODS] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_WOODS,
-        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        // Leaves blowing across on a breeze. This is DUNGEON 1, so for most
+        // runs it is the first weather - and the first anything - the player
+        // sees, which is why the effect is tuned calm rather than showy.
+        //
+        // MAP_ROGUE_DUNGEON_LEAVES carries MUS_PETALBURG_WOODS, not the other
+        // weather maps' MUS_ABNORMAL_WEATHER, because this theme used to be on
+        // MAP_ROGUE_DUNGEON_FLOOR and that is the track it had. Moving a theme
+        // onto a weather map moves its WHOLE header, music included, and taking
+        // the woods' music away as a side effect of adding weather to it would
+        // have been a silent regression - the same shape of mistake as a new
+        // weather dropping out of battle_util.c's switch.
+        .mapId = MAP_ROGUE_DUNGEON_LEAVES,
         .mapSecId = MAPSEC_ROGUE_WOODS,
         .berries = TRUE,   // open sky and soil
         .generator = DUNGEON_GEN_WOODS,
@@ -1152,19 +1163,38 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         // at all, so under Rustboro there is nothing correct to end a patch
         // with. It belongs to the jungle, which has 0x208.
         .longGrass = 0,
-        .aboveTreeFloorL = WOODS_METATILE_ABOVE_TREE_L,
-        .aboveTreeFloorR = WOODS_METATILE_ABOVE_TREE_R,
-        .aboveTreeGrassL = WOODS_METATILE_ABOVE_TREE_TALL_L,
-        .aboveTreeGrassR = WOODS_METATILE_ABOVE_TREE_TALL_R,
+        // NO CROWN ROW, deliberately, and this is a loss taken on purpose.
+        // Vanilla pokes a tree's crown up into the cell above so a mass reads
+        // as overlapping canopy; doing that for the autumn trees needs a
+        // crown-over-grass AND a crown-over-tall-grass composite for every
+        // variant - eight more metatiles of art - to buy a flourish. Left at 0,
+        // which StampCell's `leftTop != 0` guard already treats as "skip".
+        .aboveTreeFloorL = 0,
+        .aboveTreeFloorR = 0,
+        .aboveTreeGrassL = 0,
+        .aboveTreeGrassR = 0,
         .stairsDown = WOODS_METATILE_STAIRS,
         .stairsUp = WOODS_METATILE_STAIRS,
         .stamp =
         {
-            [STAMP_TL] = WOODS_METATILE_TREE_TL, [STAMP_TR] = WOODS_METATILE_TREE_TR,
-            [STAMP_BL] = WOODS_METATILE_TREE_BL, [STAMP_BR] = WOODS_METATILE_TREE_BR,
-            [STAMP_BASE_L] = WOODS_METATILE_TREE_BASE_L,
-            [STAMP_BASE_R] = WOODS_METATILE_TREE_BASE_R,
+            [STAMP_R0C0] = WOODS_METATILE_TREE_R0C0,
+            [STAMP_R0C1] = WOODS_METATILE_TREE_R0C1,
+            [STAMP_R0C2] = WOODS_METATILE_TREE_R0C2,
+            [STAMP_R1C0] = WOODS_METATILE_TREE_R1C0,
+            [STAMP_R1C1] = WOODS_METATILE_TREE_R1C1,
+            [STAMP_R1C2] = WOODS_METATILE_TREE_R1C2,
+            [STAMP_R2C0] = WOODS_METATILE_TREE_R2C0,
+            [STAMP_R2C1] = WOODS_METATILE_TREE_R2C1,
+            [STAMP_R2C2] = WOODS_METATILE_TREE_R2C2,
+            // THE SAME METATILES AS ROW 2, not a separate ground-contact row.
+            // These trees each draw their own trunk and shadow, so one standing
+            // below another should still show it; vanilla swaps the row only
+            // because its trees tile into a featureless mass.
+            [STAMP_BASE_0] = WOODS_METATILE_TREE_R2C0,
+            [STAMP_BASE_1] = WOODS_METATILE_TREE_R2C1,
+            [STAMP_BASE_2] = WOODS_METATILE_TREE_R2C2,
         },
+        .stampVariants = WOODS_METATILE_TREE_VARIANTS,
 
         // Sparser than any other theme's - one variant against the cave's two
         // or three, and a woods floor is far more open than a cave's, so the
@@ -5132,16 +5162,20 @@ static void PrepareArenaFloor(u16 floor)
     // sized and even aligned or every stamp lands half off the room.
     if (theme->generator == DUNGEON_GEN_WOODS)
     {
-        w &= ~1;
-        h &= ~1;
+        // MODULO, NOT `&= ~1`. That mask only rounds down to a multiple of a
+        // POWER OF TWO. At a 3-cell unit it still compiles, still runs, and
+        // silently leaves every arena misaligned so each stamp lands a third of
+        // a tree off its room.
+        w -= w % DUNGEON_WOODS_CELL;
+        h -= h % DUNGEON_WOODS_CELL;
     }
 
     x0 = (DUNGEON_WIDTH - w) / 2;
     y0 = (DUNGEON_HEIGHT - h) / 2;
     if (theme->generator == DUNGEON_GEN_WOODS)
     {
-        x0 &= ~1;
-        y0 &= ~1;
+        x0 -= x0 % DUNGEON_WOODS_CELL;
+        y0 -= y0 % DUNGEON_WOODS_CELL;
     }
 
     sRoomCount = 1;
@@ -8819,11 +8853,20 @@ static void PrepareFloor(u16 seed)
 {
     u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
     const struct RogueDungeonTheme *theme = ThemeForFloor(floor);
-    u32 unit = (theme->generator == DUNGEON_GEN_WOODS) ? 2 : 1;
+    u32 unit = (theme->generator == DUNGEON_GEN_WOODS) ? DUNGEON_WOODS_CELL : 1;
     u32 gridW = DUNGEON_WIDTH / unit;
     u32 gridH = DUNGEON_HEIGHT / unit;
-    u32 rmin = (unit == 2) ? 3 : DUNGEON_ROOM_MIN;
-    u32 rmax = (unit == 2) ? 5 : DUNGEON_ROOM_MAX;
+    // RETUNED WITH THE CELL, and not cosmetically. These are in CELLS, so at
+    // a 3-cell unit the old 3-5 means 9-15 metatiles - 2.25x the area on a
+    // floor the same size. Measured over 400 floors: room count fell from a
+    // solid 10 to 7.1 and swung 4-10, and the room-and-corridor structure
+    // collapsed into one blob. 2-3 puts it back at 10 every time, with 35.4%
+    // walkable against the 35.5% this shipped with.
+    //
+    // `unit != 1` rather than `unit == 2`, so the test asks whether the theme
+    // is stamped rather than what its cell size happens to be.
+    u32 rmin = (unit != 1) ? 2 : DUNGEON_ROOM_MIN;
+    u32 rmax = (unit != 1) ? 3 : DUNGEON_ROOM_MAX;
     u32 roomCap = theme->roomCount ? theme->roomCount : DUNGEON_ROOMS_DEFAULT;
     u32 attempts;
     s32 i, attempt;
@@ -9009,17 +9052,33 @@ static void PrepareFloor(u16 seed)
     sFloorPrepared = TRUE;
 }
 
-// Stamps one 2x2 cell. Woods trees are 2x2 blocks on even coordinates, so the
-// generator works in whole cells and never needs an autotile pass.
+// Stamps one cell. Woods trees are whole DUNGEON_WOODS_CELL blocks on aligned
+// coordinates, so the generator works in whole cells and never needs an
+// autotile pass.
 static void StampCell(u16 *map, s32 cx, s32 cy, const struct RogueDungeonTheme *theme,
                       bool8 open, u16 floorMetatile, bool8 openBelow,
                       bool8 treeBelow)
 {
-    s32 x = cx * 2, y = cy * 2;
+    s32 x = cx * DUNGEON_WOODS_CELL, y = cy * DUNGEON_WOODS_CELL;
 
     if (open)
     {
         u16 lower = floorMetatile;
+        s32 r, c;
+
+        // THE WHOLE CELL, FIRST. The two special cases below are 2-wide - they
+        // predate the cell being 3 - and would leave the third column of every
+        // cell they touched unwritten, which is a hole in the map rather than a
+        // cosmetic slip. Painting plain floor across the cell up front means the
+        // worst either can now do is fail to decorate.
+        //
+        // Neither fires today: both are guarded on theme fields the only
+        // stamped theme sets to 0 (aboveTree* and longGrass). Widen them to
+        // DUNGEON_WOODS_CELL before giving a stamped theme either.
+        for (r = 0; r < DUNGEON_WOODS_CELL; r++)
+            for (c = 0; c < DUNGEON_WOODS_CELL; c++)
+                SetBlock(map, x + c, y + r,
+                         MakeBlock(floorMetatile, 0, theme->elevationFloor));
 
         // A tree's crown pokes up into the block above its canopy. Which
         // variant depends on what that block already is, and long grass has no
@@ -9060,22 +9119,42 @@ static void StampCell(u16 *map, s32 cx, s32 cy, const struct RogueDungeonTheme *
             return;
         }
 
-        SetBlock(map, x,     y,     MakeBlock(floorMetatile, 0, theme->elevationFloor));
-        SetBlock(map, x + 1, y,     MakeBlock(floorMetatile, 0, theme->elevationFloor));
-        SetBlock(map, x,     y + 1, MakeBlock(lower, 0, theme->elevationFloor));
-        SetBlock(map, x + 1, y + 1, MakeBlock(lower, 0, theme->elevationFloor));
+        // `lower` differs from floorMetatile only for the cases handled above,
+        // so the up-front fill has already painted this; kept as the explicit
+        // bottom row so the intent survives if those cases change.
+        for (c = 0; c < DUNGEON_WOODS_CELL; c++)
+            SetBlock(map, x + c, y + DUNGEON_WOODS_CELL - 1,
+                     MakeBlock(lower, 0, theme->elevationFloor));
     }
     else
     {
-        // Where a tree mass ends, its bottom row becomes the ground-contact row
-        // instead of the trunk row, which is what vanilla does everywhere.
-        u16 bl = openBelow ? theme->stamp[STAMP_BASE_L] : theme->stamp[STAMP_BL];
-        u16 br = openBelow ? theme->stamp[STAMP_BASE_R] : theme->stamp[STAMP_BR];
+        // WHICH TREE. Drawn from DungeonRandom rather than from cx/cy, so the
+        // scatter is part of the floor's seed and a reload reproduces it - the
+        // same reason every other placement here uses it. A hash of the
+        // coordinates would also be deterministic but would tile: the same
+        // variant would land on the same cell of every floor.
+        u32 variants = theme->stampVariants ? theme->stampVariants : 1;
+        u32 pick = (variants > 1 ? DungeonRandom() % variants : 0)
+                   * DUNGEON_STAMP_METATILES;
+        s32 r, c;
 
-        SetBlock(map, x,     y,     MakeBlock(theme->stamp[STAMP_TL], 1, theme->elevationWall));
-        SetBlock(map, x + 1, y,     MakeBlock(theme->stamp[STAMP_TR], 1, theme->elevationWall));
-        SetBlock(map, x,     y + 1, MakeBlock(bl, 1, theme->elevationWall));
-        SetBlock(map, x + 1, y + 1, MakeBlock(br, 1, theme->elevationWall));
+        for (r = 0; r < DUNGEON_WOODS_CELL; r++)
+        {
+            for (c = 0; c < DUNGEON_WOODS_CELL; c++)
+            {
+                // Where a tree mass ends, the bottom row becomes the
+                // ground-contact row instead of the trunk row. The woods now
+                // points both at the same metatiles - see the stamp enum - but
+                // the branch stays, because it is the theme's choice to make
+                // and a later stamped theme may want vanilla's behaviour.
+                u32 slot = (openBelow && r == DUNGEON_WOODS_CELL - 1)
+                           ? STAMP_BASE_0 + c
+                           : STAMP_R0C0 + r * DUNGEON_WOODS_CELL + c;
+
+                SetBlock(map, x + c, y + r,
+                         MakeBlock(theme->stamp[slot] + pick, 1, theme->elevationWall));
+            }
+        }
     }
 }
 
@@ -9119,18 +9198,21 @@ static void WriteWoodsBlocks(u16 *map, const struct RogueDungeonTheme *theme)
             sWoodsOpen[cy][cx] = FALSE;
 
     for (i = 0; i < sRoomCount; i++)
-        for (cy = 0; cy < sRooms[i].h / 2; cy++)
-            for (cx = 0; cx < sRooms[i].w / 2; cx++)
-                OpenCell(sRooms[i].x / 2 + cx, sRooms[i].y / 2 + cy);
+        for (cy = 0; cy < sRooms[i].h / DUNGEON_WOODS_CELL; cy++)
+            for (cx = 0; cx < sRooms[i].w / DUNGEON_WOODS_CELL; cx++)
+                OpenCell(sRooms[i].x / DUNGEON_WOODS_CELL + cx,
+                         sRooms[i].y / DUNGEON_WOODS_CELL + cy);
 
     // Corridors, walked in cell space so they stay a whole stamp wide. Same
     // centre-to-centre chaining as the cave, which keeps every room connected.
     for (i = 1; i < sRoomCount; i++)
     {
-        s32 x0 = (sRooms[i - 1].x + sRooms[i - 1].w / 2) / 2;
-        s32 y0 = (sRooms[i - 1].y + sRooms[i - 1].h / 2) / 2;
-        s32 x1 = (sRooms[i].x + sRooms[i].w / 2) / 2;
-        s32 y1 = (sRooms[i].y + sRooms[i].h / 2) / 2;
+        // The inner /2 is a room CENTRE and stays. The outer one converted
+        // metatiles to cells and is the one that had to follow the cell size.
+        s32 x0 = (sRooms[i - 1].x + sRooms[i - 1].w / 2) / DUNGEON_WOODS_CELL;
+        s32 y0 = (sRooms[i - 1].y + sRooms[i - 1].h / 2) / DUNGEON_WOODS_CELL;
+        s32 x1 = (sRooms[i].x + sRooms[i].w / 2) / DUNGEON_WOODS_CELL;
+        s32 y1 = (sRooms[i].y + sRooms[i].h / 2) / DUNGEON_WOODS_CELL;
 
         while (x0 != x1)
         {
@@ -9851,6 +9933,28 @@ u8 RogueDungeon_LongGrassFieldEffectObj(void)
         return FLDEFFOBJ_ROGUE_FLOWERS;
 
     return FLDEFFOBJ_LONG_GRASS;
+}
+
+// The same trick one effect over, for the TALL grass rustle - the sprite drawn
+// on whatever tile the player is standing in.
+//
+// It needed its own object for a duller reason than the flowers did: the art is
+// identical and only the PALETTE differs. FLDEFFOBJ_TALL_GRASS resolves
+// FLDEFF_PAL_TAG_GENERAL_1, which sixteen field effects share, so the woods
+// could not be recoloured without tinting grass rustle, jump grass and ripples
+// on every map in the game. With the floor autumn and this still mint, the one
+// square of old colour left on the map was the one under the player, and it
+// followed them around.
+u8 RogueDungeon_TallGrassFieldEffectObj(void)
+{
+    if (gMapHeader.mapLayoutId != LAYOUT_ROGUE_DUNGEON_FLOOR)
+        return FLDEFFOBJ_TALL_GRASS;
+
+    if (ThemeForFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR))
+        == &sDungeonThemes[DUNGEON_THEME_WOODS])
+        return FLDEFFOBJ_ROGUE_WOODS_GRASS;
+
+    return FLDEFFOBJ_TALL_GRASS;
 }
 
 // Hooked into TryStartStepBasedScript. Returning TRUE means we consumed the

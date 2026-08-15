@@ -734,6 +734,30 @@ static const struct SpriteFrameImage sPicTable_RogueFlowers[] = {
 const struct SpritePalette gSpritePalette_RogueFlowers = {
     gFieldEffectObjectPal_RogueFlowers, FLDEFF_PAL_TAG_ROGUE_FLOWERS};
 
+// The woods' tall grass, which is the SAME ART as FLDEFFOBJ_TALL_GRASS - same
+// pic table, same anims, same callback - and differs only in the palette it
+// resolves. The rustle is drawn over the tile the player occupies, so while it
+// kept the shared FLDEFF_PAL_TAG_GENERAL_1 it stayed mint after the floor went
+// autumn: the one square of old colour left on the map, and it followed you
+// around. Found on hardware.
+//
+// THE TAG MUST APPEAR IN A PALETTE TABLE OR IT SILENTLY DRAWS THROUGH A STALE
+// ONE - nothing connects tag to palette at build time. See
+// tools/rogue/check_ow_palette_tags.py, which is about that exact failure.
+extern const u16 gFieldEffectObjectPal_RogueWoodsGrass[];
+
+const struct SpritePalette gSpritePalette_RogueWoodsGrass = {
+    gFieldEffectObjectPal_RogueWoodsGrass, FLDEFF_PAL_TAG_ROGUE_WOODS_GRASS};
+
+const struct SpriteTemplate gFieldEffectObjectTemplate_RogueWoodsGrass = {
+    .tileTag = TAG_NONE,
+    .paletteTag = FLDEFF_PAL_TAG_ROGUE_WOODS_GRASS,
+    .oam = &gObjectEventBaseOam_16x16,
+    .anims = sAnimTable_TallGrass,
+    .images = sPicTable_TallGrass,
+    .callback = UpdateTallGrassFieldEffect,
+};
+
 const struct SpriteTemplate gFieldEffectObjectTemplate_RogueFlowers = {
     .tileTag = TAG_NONE,
     .paletteTag = FLDEFF_PAL_TAG_ROGUE_FLOWERS,

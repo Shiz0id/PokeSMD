@@ -12,6 +12,7 @@
 #include "graphics.h"
 #include "random.h"
 #include "rogue_bw_anim.h"
+#include "rogue_bw_trainer_anim.h"
 #include "util.h"
 #include "pokemon.h"
 #include "constants/moves.h"
@@ -708,6 +709,14 @@ void DecompressTrainerFrontPic(enum TrainerPicID trainerPicId, enum BattlerId ba
     enum BattlerPosition position = GetBattlerPosition(battler);
     DecompressDataWithHeaderWram(GetTrainerFrontPicData(trainerPicId), gMonSpritesGfxPtr->spritesGfx[position]);
     LoadSpritePaletteWithTag(GetTrainerFrontPicPalette(trainerPicId), GetTrainerPicTag(trainerPicId, TRUE));
+
+    // Takes over the pic and the palette when this trainer is animated, and
+    // stops any previous animation when it is not. AFTER the palette load, not
+    // before: the override writes into the slot LoadSpritePaletteWithTag just
+    // allocated, and IndexOfSpritePaletteTag cannot resolve the tag until it
+    // has. This is the hook for every appearance - the intro, a mid-battle
+    // slide-in message and the defeat speech all reach it.
+    RogueBwTrainerAnim_OnLoadPic(battler, trainerPicId);
 }
 
 void FreeTrainerFrontPicPalette(enum TrainerPicID trainerPicId)
@@ -1446,6 +1455,7 @@ void FreeMonSpritesGfx(void)
     // separately from gMonSpritesGfxPtr and would otherwise leak a battle at a
     // time on any path that reaches here with it already cleared.
     RogueBwAnim_Free();
+    RogueBwTrainerAnim_Free();
 
     if (gMonSpritesGfxPtr == NULL)
         return;

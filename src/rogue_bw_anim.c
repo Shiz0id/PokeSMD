@@ -1,5 +1,6 @@
 #include "global.h"
 #include "rogue_bw_anim.h"
+#include "rogue_bw_trainer_anim.h"
 #include "battle.h"
 #include "decompress.h"
 #include "malloc.h"
@@ -307,6 +308,19 @@ void RogueBwAnim_OnSpriteFreed(u32 battler)
         sBwSpriteId[battler] = SPRITE_NONE;
 }
 
+// Stop animating this battler's mon without freeing the chunk buffer.
+//
+// Called from RogueBwTrainerAnim_OnLoadPic, for the one-buffer-per-position
+// rule described there. DELIBERATELY NOT RogueBwAnim_OnSpriteFreed: that one
+// only drops the sprite latch and leaves sBwAnim set, so the tick would carry
+// on publishing this mon's frames into the buffer the trainer is drawn from.
+void RogueBwAnim_StopForBattler(u32 battler)
+{
+    if (battler < MAX_BATTLERS_COUNT && gBattleSpritesDataPtr != NULL
+     && gBattleSpritesDataPtr->battlerData != NULL)
+        ClearBwState(battler);
+}
+
 // Put a frame where the engine will draw it.
 //
 // It goes into BOTH resident slots, and that is not redundancy. A species'
@@ -346,6 +360,15 @@ void RogueBwAnim_OnLoadSprite(u32 battler, u16 species, bool32 isShiny, u32 pers
     const u16 *base;
 
     ClearBwState(battler);
+
+    // A POSITION HAS ONE PIXEL BUFFER AND THEREFORE ONE ANIMATION. Both
+    // features publish into gMonSpritesGfxPtr->spritesGfx[position], so a mon
+    // loading into this battler must evict the trainer that was standing there
+    // - which is the same moment the engine reuses the trainer's sprite slot
+    // for the mon it just threw. Unconditional, before the GetBwAnim miss
+    // below, because a mon with no animation of its own still overwrites the
+    // buffer with its stock pic.
+    RogueBwTrainerAnim_Stop(battler);
 
     // Which side the battler is on decides which table to read, because it
     // decides which sprite the engine will draw. A species with a front entry
@@ -503,6 +526,19 @@ static void TickBattler(u32 battler, bool32 *decodedThisFrame)
 void RogueBwAnim_Tick(void)
 {
     bool32 decodedThisFrame = FALSE;
+
+    // TRAINERS FIRST, and the order is a real decision rather than an
+    // arrangement. The two features share one chunk decode per video frame, and
+    // the only moment they compete is the defeat speech: the trainer has just
+    // slid in to talk while the player's own mon is still standing there
+    // animating. Whoever is skipped waits a frame, which is invisible against
+    // holds of 4 to 8 - but the trainer is the thing the player was just shown,
+    // so it gets the token.
+    //
+    // Outside the guard below because it needs neither gBattleSpritesDataPtr
+    // nor battlerData: it keeps its own cursors, precisely so it can run at
+    // moments the battler data is not meaningful.
+    RogueBwTrainerAnim_Tick(&decodedThisFrame);
 
     // Runs from BattleMainCB2, which is the steady state callback - setup goes
     // through CB2_InitBattleInternal, where these pointers are not valid yet.

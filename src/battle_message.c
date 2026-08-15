@@ -1315,15 +1315,16 @@ const u16 gWeatherStartsStringIds[WEATHER_COUNT] =
     [WEATHER_DOWNPOUR]           = STRINGID_ITISRAINING,
     [WEATHER_UNDERWATER_BUBBLES] = STRINGID_ITISRAINING,
     [WEATHER_ABNORMAL]           = STRINGID_ITISRAINING,
-    // This project's three. Blizzard mirrors snow and monsoon mirrors rain,
+    // This project's four. Blizzard mirrors snow and monsoon mirrors rain,
     // because that is exactly what each converts to in the switch that leads
-    // here. Petals never reach this table -- they are deliberately absent from
-    // that switch and so never set effect -- but the entry is here anyway, so
-    // that making them mechanical later is a one-line change rather than a
-    // silent wrong string.
+    // here. Petals and leaves never reach this table -- both are deliberately
+    // absent from that switch and so never set effect -- but the entries are
+    // here anyway, so that making either mechanical later is a one-line change
+    // rather than a silent wrong string.
     [WEATHER_PETALS]             = STRINGID_ITISRAINING,
     [WEATHER_MONSOON]            = STRINGID_ITISRAINING,
     [WEATHER_BLIZZARD]           = (B_OVERWORLD_SNOW >= GEN_9 ? STRINGID_ITISSNOWING : STRINGID_ITISHAILING),
+    [WEATHER_LEAVES]             = STRINGID_ITISRAINING,
 };
 
 const u16 gTerrainStartsStringIds[] =

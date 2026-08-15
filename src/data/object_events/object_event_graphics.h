@@ -324,6 +324,7 @@ const u32 gFieldEffectObjectPic_Ash[] = INCGFX_U32("graphics/field_effects/pics/
 const u32 gFieldEffectObjectPic_Arrow[] = INCGFX_U32("graphics/field_effects/pics/arrow.png", ".4bpp", "-mwidth 2 -mheight 2");
 const u16 gFieldEffectObjectPalette0[] = INCGFX_U16("graphics/field_effects/palettes/general_0.pal", ".gbapal");
 const u16 gFieldEffectObjectPalette1[] = INCGFX_U16("graphics/field_effects/palettes/general_1.pal", ".gbapal");
+const u16 gFieldEffectObjectPal_RogueWoodsGrass[] = INCGFX_U16("graphics/field_effects/palettes/rogue_woods_grass.pal", ".gbapal");
 const u32 gFieldEffectObjectPic_GroundImpactDust[] = INCGFX_U32("graphics/field_effects/pics/ground_impact_dust.png", ".4bpp", "-mwidth 2 -mheight 1");
 const u32 gFieldEffectObjectPic_JumpTallGrass[] = INCGFX_U32("graphics/field_effects/pics/jump_tall_grass.png", ".4bpp", "-mwidth 2 -mheight 1");
 const u32 gUnusedGrass3[] = INCGFX_U32("graphics/field_effects/pics/unused_grass_3.png", ".4bpp", "-mwidth 2 -mheight 2");

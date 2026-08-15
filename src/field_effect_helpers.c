@@ -15,6 +15,7 @@
 #include "wild_encounter_ow.h"
 #include "constants/event_objects.h"
 #include "constants/field_effects.h"
+extern const struct SpritePalette gSpritePalette_RogueWoodsGrass;
 #include "constants/rgb.h"
 #include "constants/songs.h"
 #include "constants/species.h"
@@ -435,13 +436,38 @@ void UpdateShadowFieldEffect(struct Sprite *sprite)
 u32 FldEff_TallGrass(void)
 {
     u8 spriteId;
+    // Per theme, because a SpriteTemplate is const and cannot decide. Straight
+    // from FldEff_LongGrass below, including the fallback: the palette is
+    // loaded BEFORE the sprite exists so a failure can still change its mind.
+    // IndexOfSpritePaletteTag returns 0xFF when it cannot load, and 0xFF
+    // truncates to slot 15 in a four-bit OAM field, so an unloadable palette
+    // does not draw plain - it draws in whatever happens to live there.
+    u8 fldEffObj = RogueDungeon_TallGrassFieldEffectObj();
+    u8 paletteNum = 0xFF;
     s16 x = gFieldEffectArguments[0];
     s16 y = gFieldEffectArguments[1];
+
+    if (fldEffObj != FLDEFFOBJ_TALL_GRASS)
+    {
+        paletteNum = LoadSpritePalette(&gSpritePalette_RogueWoodsGrass);
+        if (paletteNum == 0xFF)
+            fldEffObj = FLDEFFOBJ_TALL_GRASS;
+    }
+
     SetSpritePosToOffsetMapCoords(&x, &y, 8, 8);
-    spriteId = CreateSpriteAtEnd(gFieldEffectObjectTemplatePointers[FLDEFFOBJ_TALL_GRASS], x, y, 0);
+    spriteId = CreateSpriteAtEnd(gFieldEffectObjectTemplatePointers[fldEffObj], x, y, 0);
     if (spriteId != MAX_SPRITES)
     {
         struct Sprite *sprite = &gSprites[spriteId];
+
+        if (fldEffObj != FLDEFFOBJ_TALL_GRASS)
+        {
+            sprite->oam.paletteNum = paletteNum;
+            // Or the rustle stays bright through fog, snow and every darkened
+            // map - the same hand-application FldEff_LongGrass has to do.
+            UpdateSpritePaletteWithWeather(paletteNum, FALSE);
+        }
+
         sprite->coordOffsetEnabled = TRUE;
         sprite->oam.priority = gFieldEffectArguments[3];
         sprite->sElevation = gFieldEffectArguments[2];

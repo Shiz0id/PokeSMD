@@ -2,10 +2,10 @@
 # Run every check_*.py AND every verify_*.py, passing the repo the way each one
 # actually wants it.
 #
-# FIVE of them take the repo POSITIONALLY and the rest take --repo. Passing
-# --repo uniformly reports those five as failures that are not real, which has
+# SIX of them take the repo POSITIONALLY and the rest take --repo. Passing
+# --repo uniformly reports those six as failures that are not real, which has
 # already wasted time once. Keep this list in step with the checks.
-POSITIONAL="check_safari_pool.py check_species_in_rom.py check_craft_recipes.py check_variant_colours.py check_pool_evolutions.py"
+POSITIONAL="check_safari_pool.py check_species_in_rom.py check_craft_recipes.py check_variant_colours.py check_pool_evolutions.py check_bw_trainer_anim.py"
 
 # THE FOUR verify_*.py WERE NOT RUN BY THIS SCRIPT AT ALL until the dungeon order
 # shuffle needed one of them, and that is exactly how a check rots: it passes on

@@ -136,6 +136,13 @@ void RogueBwAnim_Tick(void);
 // end of a battle. Without this the latch keeps naming a slot it no longer owns.
 void RogueBwAnim_OnSpriteFreed(u32 battler);
 
+// Stop animating this battler's mon without freeing the chunk buffer.
+//
+// Called from RogueBwTrainerAnim_OnLoadPic. A position has ONE pixel buffer in
+// gMonSpritesGfxPtr->spritesGfx[position] and therefore one animation, so a
+// trainer drawn into this battler's slot must evict the mon that was there.
+void RogueBwAnim_StopForBattler(u32 battler);
+
 // Called from FreeMonSpritesGfx. Releases the chunk buffers.
 void RogueBwAnim_Free(void);
 

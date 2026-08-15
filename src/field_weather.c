@@ -150,6 +150,10 @@ static const struct WeatherCallbacks sWeatherFuncs[] =
     // Its own Main, unlike the monsoon: driving snow is not a snow with
     // different numbers in it, it is a different motion. See UpdateBlizzardSprite.
     [WEATHER_BLIZZARD]           = {Blizzard_InitVars,      Blizzard_Main,      Blizzard_InitAll,      Blizzard_Finish},
+    // Its own Main only because the palette is named inside it - the motion is
+    // the petals' with slower numbers, and if PALTAG_WEATHER_2 took its
+    // contents as an argument this row could have been Petals_Main.
+    [WEATHER_LEAVES]             = {Leaves_InitVars,        Leaves_Main,        Leaves_InitAll,        Leaves_Finish},
 };
 
 // Every rain, asked in one place. Vanilla asks it in nine and answers by
@@ -1249,6 +1253,7 @@ static const u8 sWeatherNames[WEATHER_COUNT][24] = {
     [WEATHER_PETALS]             = _("PETALS"),
     [WEATHER_MONSOON]            = _("MONSOON"),
     [WEATHER_BLIZZARD]           = _("BLIZZARD"),
+    [WEATHER_LEAVES]             = _("LEAVES"),
     [WEATHER_ABNORMAL]           = _("ABNORMAL(NOT WORKING)"),
     [WEATHER_ROUTE119_CYCLE]     = _("ROUTE119 CYCLE"),
     [WEATHER_ROUTE123_CYCLE]     = _("ROUTE123 CYCLE"),

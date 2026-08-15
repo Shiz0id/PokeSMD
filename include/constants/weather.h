@@ -48,6 +48,25 @@
 // weather being cosmetic by default is the trap; here the default is also a
 // regression.
 #define WEATHER_BLIZZARD                18
+// Falling leaves for the woods, which is dungeon 1 - so for most runs this is
+// the first weather the player ever sees, and it is meant to be calm. Purely
+// cosmetic, like the petals and for the same reason: nothing about the opening
+// ten floors should be mechanically sharpened.
+//
+// THE ART IS VANILLA'S, UNMODIFIED. graphics/battle_anims/sprites/leaf.png is a
+// nine-frame 16x16 tumbling rotation already in the ROM as ANIM_TAG_LEAF, and
+// field_weather_effect.c INCGFXes that same PNG a second time as plain .4bpp
+// while the battle anim keeps its compressed .smol copy. The recolour from
+// vanilla's green to amber is entirely in graphics/weather/leaves.pal, 32 bytes
+// - green was measured against a real woods floor and disappears over tall
+// grass and canopy, which is most of one. See tools/rogue/make_leaf_weather.py.
+//
+// THIS TAKES THE LAST FREE ID IN THE 16-19 GAP. 20-23 are real values, not
+// padding. A sixth project weather has to raise WEATHER_COUNT and append at 24,
+// which is safe - nothing range-tests the aggregates, and the only tables sized
+// by WEATHER_COUNT are sWeatherNames and gWeatherStartsStringIds - but it is no
+// longer free, so read this before assuming a number is available.
+#define WEATHER_LEAVES                  19
 #define WEATHER_ROUTE119_CYCLE          20
 #define WEATHER_ROUTE123_CYCLE          21
 #define WEATHER_FOG                     22  // Aggregate of WEATHER_FOG_HORIZONTAL and WEATHER_FOG_DIAGONAL

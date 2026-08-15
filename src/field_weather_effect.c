@@ -31,6 +31,19 @@ const u8 gWeatherPetal2Tiles[] = INCGFX_U8("graphics/weather/petal1.png", ".4bpp
 // Loaded into PALTAG_WEATHER_2 by Petals_Main, the way clouds and sandstorm
 // load theirs. PALTAG_WEATHER is shared by rain, snow, ash and the fog.
 const u16 gPetalsWeatherPalette[] = INCGFX_U16("graphics/weather/petals.pal", ".gbapal");
+// VANILLA'S BATTLE-ANIM SHEET, READ A SECOND TIME. This is the same PNG that
+// ANIM_TAG_LEAF draws Razor Leaf with; the anim table takes it as .4bpp.smol
+// and this takes it as plain .4bpp, so there are two encodings of one source
+// and no copied art. 16x144 is nine 16x16 frames of a leaf rotating, and the
+// conversion puts them at 128-byte strides in OBJ 1D order (TL,TR,BL,BR) -
+// verified host-side, because a wrong stride there is a scrambled sprite and
+// not a build error. sLeafSpriteImages is what depends on it.
+const u8 gWeatherLeafTiles[] = INCGFX_U8("graphics/battle_anims/sprites/leaf.png", ".4bpp");
+// The whole recolour, in 32 bytes. Vanilla's ramp lives at palette indices 2-7
+// and is green; this is the same indices in amber, so not a pixel of the art
+// changes. See tools/rogue/make_leaf_weather.py for what was measured to land
+// on it, and why green and a green/amber mix were both rejected.
+const u16 gLeavesWeatherPalette[] = INCGFX_U16("graphics/weather/leaves.pal", ".gbapal");
 const u8 gWeatherBubbleTiles[] = INCGFX_U8("graphics/weather/bubble.png", ".4bpp");
 const u8 gWeatherAshTiles[] = INCGFX_U8("graphics/weather/ash.png", ".4bpp");
 const u8 gWeatherRainTiles[] = INCGFX_U8("graphics/weather/rain.png", ".4bpp");
@@ -1280,6 +1293,532 @@ static void UpdatePetalSprite(struct Sprite *sprite)
 #undef tRestCount
 #undef tRestUntil
 #undef tFallDeltaY
+
+//------------------------------------------------------------------------------
+// WEATHER_LEAVES
+//------------------------------------------------------------------------------
+//
+// The woods dungeon's, and the first weather most runs ever show: a calm breezy
+// day, leaves blowing lazily ACROSS the screen on a shallow diagonal.
+//
+// IT TRAVELS, AND THAT IS WHY IT IS NOT THE PETALS WITH SLOWER NUMBERS. This
+// was written that way first and it was wrong. Every falling weather in vanilla
+// moves sideways by writing sprite->x2 from gSineTable, and an oscillation has
+// NO NET TRAVEL however wide it is made - a petal at /16 sways sixteen pixels
+// and arrives directly below where it started. Leaves that blow across the
+// screen have to move sprite->x itself, which is the blizzard's mechanism, so
+// this borrows that and not the petals'.
+//
+// SO IT IS BOTH, AND THAT COMBINATION IS THE WEATHER. The blizzard has travel
+// and no sway; the petals have sway and no travel; a leaf on a breeze has a net
+// direction AND bobs on the way. Between 1.36 and 6.09 parts sideways to one
+// part down, plus a +/-10 pixel sine on top. Simulated before it was built: a
+// leaf is on screen for 11 to 25 seconds and crosses it three times on average,
+// and the field stays spread over all four vertical quarters after five minutes
+// rather than silting into the bottom band.
+//
+// SLOWED ~30% AGAINST POKEMON BLACK, whose falling leaves are the reference.
+// All four speeds were cut together - fall, travel, rotation, gust peak - and
+// the measurements say why that mattered: the sideways-to-down ratio came out
+// unchanged at 1.36-6.09:1, and a gust is still exactly x3.0 the slowest leaf
+// and x2.0 the fastest. Scaling one number alone would have tilted the angle or
+// left the leaf spinning at a rate its travel no longer earns. The field drifts
+// at 42 px/s now against 60 before.
+//
+// The sway rides on x2 and the travel on x, ON PURPOSE - see UpdateLeafSprite
+// for why the wrap test must keep reading x alone.
+//
+// The other half of "lazy" is the stall the petals introduced, reused here with
+// one change: a resting leaf slows VERTICALLY but keeps its sideways speed, so
+// it planes off on the breeze instead of stopping dead. That is the moment the
+// effect is built around.
+//
+// AND THEN THE WIND ITSELF GUSTS. Six seconds of calm, then a four-second swell
+// that takes the field from 42 px/s to 82 px/s, eased in and out off a half
+// sine so it never starts or stops abruptly. See UpdateLeafGust. This is what
+// makes it a breezy DAY rather than a constant sideways rate, and it is worth
+// noting how little it cost: four bytes of EWRAM and one addition in the sprite
+// update, with no art, no palette entry, no extra sprite and no VRAM. The
+// alternative considered was drawing wind streaks with vanilla's
+// whirlwind_lines.png; the leaves reacting turned out to be the effect, and the
+// streaks only the decoration on it.
+//
+// THE ROTATION IS WHY THIS IS 16x16 AND NOT 8x8. The petals fake turning over
+// with a sine drift because at 8x8 there is no room to draw an orientation; the
+// vanilla leaf sheet has nine real ones. A leaf also simply IS bigger than a
+// blossom, and reading larger is most of what distinguishes the two on sight.
+//
+// It shares snowflakeSprites[] and its counters with the snow, the petals and
+// the blizzard, exactly as those three share it with each other - one weather
+// runs at a time, so the array is free whenever leaves are up.
+
+static void UpdateLeafSprite(struct Sprite *);
+static bool8 UpdateVisibleLeafSprites(void);
+static bool8 CreateLeafSprite(void);
+static bool8 DestroyLeafSprite(void);
+static void InitLeafSpriteMovement(struct Sprite *);
+static void UpdateLeafGust(void);
+
+// THE GUST, AND IT IS SHARED RATHER THAN PER-SPRITE. A gust is one event
+// crossing the whole screen, so every leaf reads the same extra speed out of
+// one variable that Leaves_Main updates once a frame - not fourteen sprites
+// each rolling their own, which would be turbulence again.
+//
+// Four bytes of EWRAM for the entire feature. There is no art, no palette
+// entry, no sprite and no VRAM in it: the leaves already travel, and a gust is
+// just that speed going up and coming back down.
+EWRAM_DATA static u16 sLeafGustTimer = 0;
+EWRAM_DATA static s16 sLeafGust = 0;
+
+void Leaves_InitVars(void)
+{
+    gWeatherPtr->initStep = 0;
+    gWeatherPtr->weatherGfxLoaded = FALSE;
+    gWeatherPtr->targetColorMapIndex = 0;
+    // Slower than the petals' 20. Nothing about this floor should arrive
+    // briskly - it is the calm the rest of the run is measured against.
+    gWeatherPtr->colorMapStepDelay = 24;
+    gWeatherPtr->targetSnowflakeSpriteCount = NUM_LEAF_SPRITES;
+    gWeatherPtr->snowflakeVisibleCounter = 0;
+    // A floor OPENS CALM. The gust clock starts here and, because Leaves_Main
+    // only ticks it after the field is up, InitAll's spin cannot burn through
+    // it - so the player always arrives in the quiet part of the cycle and the
+    // first gust is something that happens to them rather than something they
+    // walked into.
+    sLeafGustTimer = 0;
+    sLeafGust = 0;
+    Weather_SetBlendCoeffs(8, BASE_SHADOW_INTENSITY); // preserve shadow darkness
+    gWeatherPtr->noShadows = FALSE;
+}
+
+void Leaves_InitAll(void)
+{
+    u16 i;
+
+    Leaves_InitVars();
+    while (gWeatherPtr->weatherGfxLoaded == FALSE)
+    {
+        Leaves_Main();
+        for (i = 0; i < gWeatherPtr->snowflakeSpriteCount; i++)
+            UpdateLeafSprite(gWeatherPtr->sprites.s1.snowflakeSprites[i]);
+    }
+}
+
+// Frames from one gust to the next, and how long the swell lasts. The
+// difference between them is the calm - 360 frames, six seconds - and the calm
+// is the point: a gust only reads as a gust against stillness.
+#define LEAF_GUST_PERIOD 600
+#define LEAF_GUST_LENGTH 240
+// Extra Q7 horizontal speed at the top of the swell, on top of a leaf's own
+// 68-134. So the field roughly triples to 202-268, which is still well under
+// the blizzard's 384-576 base - a push, not a gale. Cut from 192 by the same
+// ~30% as everything else, so a gust stays the same MULTIPLE of the calm as it
+// was before the slowdown rather than becoming a relatively bigger event.
+#define LEAF_GUST_PEAK   134
+
+void Leaves_Main(void)
+{
+    if (gWeatherPtr->initStep == 0)
+    {
+        // Its own Main rather than Petals_Main purely because the palette is
+        // named here. PALTAG_WEATHER_2 has ONE slot, which is fine - petals and
+        // leaves never run together - but it does mean the two cannot share a
+        // Main the way the monsoon shares the rain's.
+        LoadCustomWeatherSpritePalette(gLeavesWeatherPalette);
+        if (!UpdateVisibleLeafSprites())
+        {
+            gWeatherPtr->weatherGfxLoaded = TRUE;
+            gWeatherPtr->initStep++;
+        }
+        // RETURN, so the gust clock does not run during setup. Leaves_InitAll
+        // spins this function about five hundred times to spread the field
+        // before the floor is drawn, and a clock ticking through that would put
+        // the player on the floor at an arbitrary point in the cycle - usually
+        // mid-gust, since the swell is 40% of it.
+        return;
+    }
+
+    UpdateLeafGust();
+}
+
+// One frame of the gust cycle. Called once per frame from Leaves_Main, and its
+// whole output is sLeafGust, which every leaf adds to its own speed.
+static void UpdateLeafGust(void)
+{
+    u32 phase;
+
+    if (++sLeafGustTimer >= LEAF_GUST_PERIOD)
+        sLeafGustTimer = 0;
+
+    if (sLeafGustTimer >= LEAF_GUST_LENGTH)
+    {
+        sLeafGust = 0;
+        return;
+    }
+
+    // HALF A SINE, not a linear ramp: index 0 to 128 of gSineTable runs 0 to
+    // 256 and back to 0, so one expression gives a swell that eases in, peaks,
+    // and eases out. A linear ramp starts and stops the wind abruptly at both
+    // ends, which is exactly the thing that would stop reading as a breeze.
+    phase = (u32)sLeafGustTimer * 128 / LEAF_GUST_LENGTH;
+    sLeafGust = (LEAF_GUST_PEAK * gSineTable[phase]) >> 8;
+}
+
+bool8 Leaves_Finish(void)
+{
+    switch (gWeatherPtr->finishStep)
+    {
+    case 0:
+        gWeatherPtr->targetSnowflakeSpriteCount = 0;
+        gWeatherPtr->snowflakeVisibleCounter = 0;
+        gWeatherPtr->finishStep++;
+        // fall through
+    case 1:
+        if (!UpdateVisibleLeafSprites())
+        {
+            gWeatherPtr->finishStep++;
+            return FALSE;
+        }
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static bool8 UpdateVisibleLeafSprites(void)
+{
+    if (gWeatherPtr->snowflakeSpriteCount == gWeatherPtr->targetSnowflakeSpriteCount)
+        return FALSE;
+
+    if (++gWeatherPtr->snowflakeVisibleCounter > 36)
+    {
+        gWeatherPtr->snowflakeVisibleCounter = 0;
+        if (gWeatherPtr->snowflakeSpriteCount < gWeatherPtr->targetSnowflakeSpriteCount)
+            CreateLeafSprite();
+        else
+            DestroyLeafSprite();
+    }
+
+    return gWeatherPtr->snowflakeSpriteCount != gWeatherPtr->targetSnowflakeSpriteCount;
+}
+
+static const struct OamData sLeafSpriteOamData =
+{
+    .y = 0,
+    .affineMode = ST_OAM_AFFINE_OFF,
+    .objMode = ST_OAM_OBJ_NORMAL,
+    .mosaic = FALSE,
+    .bpp = ST_OAM_4BPP,
+    .shape = SPRITE_SHAPE(16x16),
+    .x = 0,
+    .matrixNum = 0,
+    .size = SPRITE_SIZE(16x16),
+    .tileNum = 0,
+    .priority = 1,
+    .paletteNum = 0,
+    .affineParam = 0,
+};
+
+// ONE ENTRY FOR NINE FRAMES, because the engine already does this. A
+// SpriteFrameImage whose images[0].relativeFrames is set makes
+// RequestSpriteFrameImageCopy compute `images[0].data + images[0].size * index`
+// itself instead of indexing the array, which is exactly the base-plus-stride
+// this needs - and overworld_ascending_frames is the macro for it, taking the
+// frame size in 8x8 tiles (2x2 here, so 128 bytes).
+//
+// Written out as nine hand-computed offsets first. This is the same thing with
+// the arithmetic in the engine rather than in a table that has to stay in step
+// with the PNG, and it is the only form under which images[] is read solely at
+// [0] - so the one-element array is not a latent out-of-bounds.
+//
+// It still depends on the nine frames being CONTIGUOUS and in OBJ order in the
+// converted .4bpp, which was verified host-side; a wrong stride is a scrambled
+// leaf, not a build error. The macro's name says overworld, but it is generic
+// and lives in sprite.h; nothing about it is overworld-specific.
+static const struct SpriteFrameImage sLeafSpriteImages[] =
+{
+    overworld_ascending_frames(gWeatherLeafTiles, 2, 2),
+};
+
+// How many frames the vanilla sheet holds. It CANNOT be ARRAY_COUNT of the
+// array above any more - that is 1 now, by design - and the anim list below is
+// the only other place the number appears. Getting it wrong is silent: too low
+// and part of the rotation is never drawn, too high and the sprite reads past
+// the end of the sheet into gLeavesWeatherPalette.
+#define LEAF_FRAME_COUNT 9
+
+// 17 ticks a frame is a full turn in 153, about two and a half seconds. Fast
+// enough to be motion rather than a flicker between stills, slow enough that
+// the leaf looks heavy.
+//
+// SCALED WITH THE TRAVEL, not chosen independently. It was 12 when the leaf
+// moved 30% faster; a sprite that keeps spinning at the old rate while drifting
+// slower stops looking like a leaf turning over as it goes and starts looking
+// like a leaf being spun. Rotation has to stay tied to travel.
+#define LEAF_ANIM_DELAY 17
+
+static const union AnimCmd sLeafAnimCmd[] =
+{
+    ANIMCMD_FRAME(0, LEAF_ANIM_DELAY),
+    ANIMCMD_FRAME(1, LEAF_ANIM_DELAY),
+    ANIMCMD_FRAME(2, LEAF_ANIM_DELAY),
+    ANIMCMD_FRAME(3, LEAF_ANIM_DELAY),
+    ANIMCMD_FRAME(4, LEAF_ANIM_DELAY),
+    ANIMCMD_FRAME(5, LEAF_ANIM_DELAY),
+    ANIMCMD_FRAME(6, LEAF_ANIM_DELAY),
+    ANIMCMD_FRAME(7, LEAF_ANIM_DELAY),
+    ANIMCMD_FRAME(8, LEAF_ANIM_DELAY),
+    ANIMCMD_JUMP(0),
+};
+
+static const union AnimCmd *const sLeafAnimCmds[] =
+{
+    sLeafAnimCmd,
+};
+
+static const struct SpriteTemplate sLeafSpriteTemplate =
+{
+    .tileTag = TAG_NONE,
+    .paletteTag = PALTAG_WEATHER_2,
+    .oam = &sLeafSpriteOamData,
+    .anims = sLeafAnimCmds,
+    .images = sLeafSpriteImages,
+    .callback = UpdateLeafSprite,
+};
+
+// EXACTLY EIGHT, WHICH IS ALL THERE IS - struct Sprite has s16 data[8] and the
+// petals already used every one. Travel needs two more fields than sway does
+// (tDeltaX and its sub-pixel remainder), so two of the petals' had to go:
+//
+//   tPetalId, the 30-pixel entry lane, is gone because it existed to stop
+//   sprites clustering in columns and horizontal travel already prevents that -
+//   the field spreads itself within a second. Entry x is just random now.
+//
+//   tRestUntil, the per-sprite stall threshold, is now the constant
+//   LEAF_REST_AFTER, with tRestCount SEEDED randomly instead. Same variety in
+//   when a leaf stalls, one field instead of two.
+#define tPosY       data[0]
+#define tDeltaY     data[1]
+#define tFallDeltaY data[2]
+#define tSubX       data[3]
+#define tDeltaX     data[4]
+#define tWaveIndex  data[5]
+#define tWaveDelta  data[6]
+#define tRestCount  data[7]
+
+// Frames of falling before a leaf catches the air, and how long it planes for.
+// Per-sprite variety comes from seeding tRestCount, not from varying these.
+#define LEAF_REST_AFTER 70
+#define LEAF_REST_FOR   60
+
+static bool8 CreateLeafSprite(void)
+{
+    u8 spriteId = CreateSpriteAtEnd(&sLeafSpriteTemplate, 0, 0, 78);
+    if (spriteId == MAX_SPRITES)
+        return FALSE;
+
+    InitLeafSpriteMovement(&gSprites[spriteId]);
+    // ONE ANIM, ENTERED AT A RANDOM POINT, rather than nine anims that each
+    // start on a different frame. Fourteen leaves all beginning at frame 0
+    // would turn over in lockstep, which reads as a mechanism rather than as
+    // weather - the petals get their phase variety from tWaveIndex and this is
+    // the same problem one axis over.
+    //
+    // Safe to do at creation despite animBeginning being set by CreateSprite,
+    // because SeekSpriteAnim clears that flag itself; otherwise the first
+    // AnimateSprite would call BeginAnim and put every leaf back to frame 0.
+    SeekSpriteAnim(&gSprites[spriteId], Random() % LEAF_FRAME_COUNT);
+    gSprites[spriteId].coordOffsetEnabled = TRUE;
+    gWeatherPtr->sprites.s1.snowflakeSprites[gWeatherPtr->snowflakeSpriteCount++] = &gSprites[spriteId];
+    return TRUE;
+}
+
+static bool8 DestroyLeafSprite(void)
+{
+    if (gWeatherPtr->snowflakeSpriteCount)
+    {
+        DestroySprite(gWeatherPtr->sprites.s1.snowflakeSprites[--gWeatherPtr->snowflakeSpriteCount]);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static void InitLeafSpriteMovement(struct Sprite *sprite)
+{
+    u16 rand = Random();
+
+    sprite->y = -3 - (gSpriteCoordOffsetY + sprite->centerToCornerVecY);
+    // Anywhere along the top. The petals and the blizzard both pick a 30-pixel
+    // entry lane to stop sprites stacking in columns; leaves need no such thing
+    // because they immediately start moving sideways at different speeds.
+    sprite->x = (Random() % 240) - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
+    // A FRACTION, NOT A POSITION - zero, not y * 128. See UpdateLeafSprite.
+    sprite->tPosY = 0;
+    // The BOB, and it is the only thing x2 carries. Travel is on x below.
+    sprite->x2 = 0;
+
+    // 22 to 50 in Q7, so a sixth to a bit under half a pixel a frame. The
+    // slowest fall in the game by a wide margin - the petals are 28-56 and
+    // vanilla snow is 64-79, so this is under HALF the speed of vanilla snow.
+    //
+    // Was 32-74, cut by ~30% against Pokemon Black's falling leaves as the
+    // reference. Every other speed here was cut with it - see tDeltaX below,
+    // LEAF_ANIM_DELAY and LEAF_GUST_PEAK - because scaling one in isolation
+    // changes the ANGLE or leaves the leaf spinning at a rate its travel no
+    // longer justifies. The ratios are what read; the absolute numbers are what
+    // was asked for.
+    sprite->tDeltaY = (rand & 7) * 4 + 22;
+    sprite->tFallDeltaY = sprite->tDeltaY;
+
+    // 68 to 134, about half to one pixel a frame, against the blizzard's
+    // 384-576. THIS IS THE NUMBER THAT MAKES IT A BREEZE RATHER THAN A GALE,
+    // and the first one to reach for if it reads wrong.
+    //
+    // Against tDeltaY above that is 1.36:1 to 6.09:1 sideways to down -
+    // measured by porting this function to Python and running it, not
+    // estimated. Cut from 96-192 by the same ~30% as the fall, which is why the
+    // angle is unchanged: scaling both by the same factor slows the leaf
+    // without tilting it, and the angle is the thing that says "blowing
+    // across" rather than "dropping".
+    //
+    // The floor matters more than the ceiling. It was 64 originally, which put
+    // the slowest-blowing fastest-falling corner at 0.86:1 - a leaf coming down
+    // at 45 degrees. Keeping the floor high enough is what guarantees EVERY
+    // leaf reads as crossing.
+    //
+    // Both speeds are rolled from the same u16 but off different bits, so a
+    // fast-falling leaf is not also a fast-blowing one and the field crosses at
+    // a spread of angles instead of as parallel lines.
+    //
+    // ALL ONE DIRECTION, never negative: a breeze has a direction, and leaves
+    // blowing both ways at once reads as turbulence.
+    sprite->tDeltaX = ((rand >> 3) & 3) * 22 + 68;
+    sprite->tSubX = 0;
+
+    sprite->tWaveIndex = Random() & 0xFF;
+    sprite->tWaveDelta = ((rand >> 5) & 3) + 2;
+    // SEEDED, NOT ZEROED. With the stall threshold now a shared constant this
+    // is the only thing keeping fourteen leaves from all catching the air on
+    // the same frame, which would read as one gust rather than as weather.
+    sprite->tRestCount = Random() % LEAF_REST_AFTER;
+}
+
+static void UpdateLeafSprite(struct Sprite *sprite)
+{
+    s16 x;
+
+    // The petals' stall, with the one change that matters here: only tDeltaY is
+    // cut. A resting petal slows in the only axis it has and hangs; a resting
+    // leaf keeps every bit of its sideways speed and PLANES OFF on the breeze,
+    // which is what a leaf actually does when it catches air, and is the moment
+    // this whole effect exists to produce.
+    if (++sprite->tRestCount > LEAF_REST_AFTER)
+    {
+        sprite->tDeltaY = sprite->tFallDeltaY / 4;
+        if (sprite->tRestCount > LEAF_REST_AFTER + LEAF_REST_FOR)
+        {
+            sprite->tDeltaY = sprite->tFallDeltaY;
+            sprite->tRestCount = 0;
+        }
+    }
+
+    // WHOLE PIXELS INTO y, FRACTION KEPT IN tPosY - the same shape as tSubX
+    // below, and NOT what vanilla's snow, the petals or the blizzard do. Those
+    // all seed tPosY with sprite->y * 128 and carry the POSITION in it.
+    //
+    // THAT OVERFLOWS, AND THIS IS THE BUG THE LEAVES SURFACED. sprite->y is
+    // stored relative to gSpriteCoordOffsetY, which on a 48x48 dungeon reaches
+    // about 600, so near the bottom of a floor y is around 613 - and 613 * 128
+    // is 78464, which wraps a signed 16-bit data[] slot to 12928. sprite->y
+    // comes back as 101, about -515 in screen terms: far above the top. The
+    // respawn test at the end of this function then never fires, because it is
+    // reading the wrapped value, so the sprite is not recycled - it creeps down
+    // from off-screen at its fall speed and looks stuck at the top.
+    //
+    // LATENT IN ALL FOUR WEATHERS, not just this one. Time stranded is roughly
+    // 65536 / tDeltaY frames, so the blizzard rides it out in about 9 seconds
+    // and the petals in 27, which is why neither obviously misbehaves. The
+    // leaves were deliberately made the slowest weather in the game and take
+    // nearly 50, which is long enough to read as broken.
+    //
+    // The tSubX comment below had already worked this out for the x axis and
+    // says in as many words that the y axis does it the other way. Nobody
+    // carried it across.
+    sprite->tPosY += sprite->tDeltaY;
+    sprite->y += sprite->tPosY >> 7;
+    sprite->tPosY &= 0x7F;
+
+    // WHOLE PIXELS INTO x, FRACTION KEPT IN tSubX - the blizzard's accumulator,
+    // and deliberately not the Q7 one the y axis uses. sprite->x is stored
+    // relative to gSpriteCoordOffsetX, which grows without bound as the camera
+    // scrolls, so an x * 128 accumulator in an s16 would overflow on a large
+    // map. Keeping only the remainder bounds tSubX to 0..127 forever and leaves
+    // sprite->x as the single authority the wrap below can rewrite.
+    // tDeltaX is this leaf's own speed; sLeafGust is what the wind is doing to
+    // everything at once. ADDED, not scaled, and that is the better read: an
+    // absolute push is a larger PROPORTIONAL change to a slow leaf than a fast
+    // one, so a gust gathers the stragglers up and the field briefly moves
+    // together before spreading out again as it dies.
+    sprite->tSubX += sprite->tDeltaX + sLeafGust;
+    sprite->x += sprite->tSubX >> 7;
+    sprite->tSubX &= 0x7F;
+
+    // The bob, riding on top of the travel. +/-10 pixels, gentler than the
+    // petals' +/-16, because there it was the entire sideways motion and here
+    // it is a decoration on real movement - at the petals' width it stops
+    // looking like a leaf on a breeze and starts looking like a wobble.
+    sprite->tWaveIndex += sprite->tWaveDelta;
+    sprite->tWaveIndex &= 0xFF;
+    sprite->x2 = gSineTable[sprite->tWaveIndex] / 24;
+
+    // x ALONE, WITHOUT x2, and that is not an oversight. x2 is a draw-time
+    // offset; folding it in here would make the wrap point wander by +/-10
+    // pixels with the bob, and worse, a sprite whose stored x is inside the
+    // band could be pushed outside it by the sine and get rewritten mid-flight.
+    // x is the position; x2 is how it is drawn. The blizzard keeps x2 at zero
+    // and so never had to make this distinction; this weather does.
+    x = (sprite->x + sprite->centerToCornerVecX + gSpriteCoordOffsetX) & 0x1FF;
+    if (x & 0x100)
+        x |= -0x100;
+
+    // Blown off the right edge, back on at the left. This is the main event
+    // now, several times per leaf per descent, where for the snow it only ever
+    // fires when the camera moves.
+    if (x < -3)
+        sprite->x = 242 - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
+    else if (x > 242)
+        sprite->x = -3 - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
+
+    // SCREEN SPACE, not sprite space - sprite->y is stored relative to
+    // gSpriteCoordOffsetY and coordOffsetEnabled adds it back at draw time, so
+    // the raw field is only comparable to a screen bound while the camera has
+    // not moved. Getting this wrong is the bug that made both of the weathers
+    // written before this one respawn every sprite the moment the player
+    // walked; see UpdatePetalSprite for the full account.
+    //
+    // Needed for the same reason the blizzard needs it: wrapping sideways keeps
+    // a leaf alive indefinitely, so without this they all silt up in the bottom
+    // band and the top of the screen empties out.
+    if (sprite->y + sprite->centerToCornerVecY + gSpriteCoordOffsetY > 163)
+        InitLeafSpriteMovement(sprite);
+}
+
+#undef tPosY
+#undef tDeltaY
+#undef tFallDeltaY
+#undef tSubX
+#undef tDeltaX
+#undef tWaveIndex
+#undef tWaveDelta
+#undef tRestCount
+#undef LEAF_REST_AFTER
+#undef LEAF_REST_FOR
+#undef LEAF_FRAME_COUNT
+#undef LEAF_ANIM_DELAY
+#undef LEAF_GUST_PERIOD
+#undef LEAF_GUST_LENGTH
+#undef LEAF_GUST_PEAK
 
 //------------------------------------------------------------------------------
 // WEATHER_BLIZZARD
@@ -3252,6 +3791,7 @@ static u8 TranslateWeatherNum(u8 weather)
     case WEATHER_PETALS:             return WEATHER_PETALS;
     case WEATHER_MONSOON:            return WEATHER_MONSOON;
     case WEATHER_BLIZZARD:           return WEATHER_BLIZZARD;
+    case WEATHER_LEAVES:             return WEATHER_LEAVES;
     case WEATHER_ROUTE119_CYCLE:     return sWeatherCycleRoute119[gSaveBlock1Ptr->weatherCycleStage];
     case WEATHER_ROUTE123_CYCLE:     return sWeatherCycleRoute123[gSaveBlock1Ptr->weatherCycleStage];
     case WEATHER_DYNAMIC:            return GetDynamicWeather();

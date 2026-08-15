@@ -8,6 +8,7 @@
 #include "battle_main.h"
 #include "battle_gfx_sfx_util.h"
 #include "rogue_bw_anim.h"
+#include "rogue_bw_trainer_anim.h"
 #include "battle_interface.h"
 #include "battle_message.h"
 #include "battle_setup.h"
@@ -2163,6 +2164,11 @@ static void Controller_HandleTrainerSlideBack(enum BattlerId battler)
 {
     if (gSprites[gBattleStruct->trainerSlideSpriteIds[battler]].callback == SpriteCallbackDummy)
     {
+        // One of three destroy sites, all hooked. A SPRITE ID IS A SLOT NUMBER,
+        // NOT AN IDENTITY: trainerSlideSpriteIds keeps naming this slot after
+        // DestroySprite and the slot is handed straight to something else, so
+        // the animation has to be told here rather than inferred later.
+        RogueBwTrainerAnim_OnSpriteFreed(battler);
         if (!IsOnPlayerSide(battler))
             FreeTrainerFrontPicPalette(gSprites[gBattleStruct->trainerSlideSpriteIds[battler]].oam.affineParam);
         FreeSpriteOamMatrix(&gSprites[gBattleStruct->trainerSlideSpriteIds[battler]]);
@@ -2966,6 +2972,10 @@ static void SpriteCB_FreePlayerSpriteLoadMonSprite(struct Sprite *sprite)
 {
     enum BattlerId battler = sprite->sBattlerId;
 
+    // See Controller_HandleTrainerSlideBack. This site is the sharpest of the
+    // three: the mon sprite is created from the freed slot two lines below.
+    RogueBwTrainerAnim_OnSpriteFreed(battler);
+
     // Free player trainer sprite
     FreeSpriteOamMatrix(sprite);
     FreeSpritePaletteByTag(GetSpritePaletteTagByPaletteNum(sprite->oam.paletteNum));
@@ -2978,6 +2988,11 @@ static void SpriteCB_FreePlayerSpriteLoadMonSprite(struct Sprite *sprite)
 
 static void SpriteCB_FreeOpponentSprite(struct Sprite *sprite)
 {
+    // See Controller_HandleTrainerSlideBack. sBattlerId is set for both sides
+    // in BtlController_HandleIntroTrainerBallThrow, so it is readable here even
+    // though before now only the player's callback read it.
+    RogueBwTrainerAnim_OnSpriteFreed(sprite->sBattlerId);
+
     FreeTrainerFrontPicPalette(sprite->oam.affineParam);
     FreeSpriteOamMatrix(sprite);
     DestroySprite(sprite);
