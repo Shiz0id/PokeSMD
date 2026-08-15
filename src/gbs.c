@@ -751,11 +751,25 @@ void ply_gbs_switch(struct MusicPlayerInfo *mplayInfo, struct MusicPlayerTrack *
     if (gbChannel < 8)
     {
         struct GBSTrack *gbsTrack = (struct GBSTrack *)track;
+
+        // GBS numbers channels 0-3 for music and 4-7 for sound effects, but
+        // BOTH map onto the same four pieces of PSG hardware -- which is what
+        // the % 4 below and in channelId are for.
+        //
+        // THIS MUST BE USED FOR EVERY ARRAY INDEX AND BIT SHIFT IN HERE.
+        // gCgbChans has exactly FOUR elements and statusFlags is its first
+        // byte, so indexing it with a raw gbChannel of 4..7 writes straight
+        // past the end -- and what follows gCgbChans in m4a.c is
+        // gMPlayInfo_SE1 and gMPlayInfo_SE2, whose first member is a pointer.
+        // The GBS sound effects are the only tracks that use 4..7, so this
+        // froze the game the first time one played: obtaining an item.
+        u32 cgbChannel = gbChannel % 4;
+
         // Clear out all m4a data.
         memset(gbsTrack, 0, sizeof(*gbsTrack));
 
         // Set up track with new GBS data (and restore some important info).
-        gbsTrack->channelId = (gbChannel % 4) + 1;
+        gbsTrack->channelId = cgbChannel + 1;
         if (gbChannel >= 4)
             gbsTrack->isSFXChannel = TRUE;
         gbsTrack->nextInstruction = cmdPtrBackup;
@@ -766,10 +780,12 @@ void ply_gbs_switch(struct MusicPlayerInfo *mplayInfo, struct MusicPlayerTrack *
         gbsTrack->noteUnitLength = 1;
 
         // Disable m4a control of CGB channel.
-        soundInfo->cgbChans[gbChannel].statusFlags = 0;
+        soundInfo->cgbChans[cgbChannel].statusFlags = 0;
 
-        // Clear used bit.
-        gUsedCGBChannels &= ~(1 << gbChannel);
+        // Clear used bit. gUsedCGBChannels is a four-bit mask, set as
+        // 1 << (ch - 1) for ch 1..4 in CgbSound, so a raw 4..7 shift cleared a
+        // bit that does not exist and left the real one set.
+        gUsedCGBChannels &= ~(1 << cgbChannel);
         ClearCGBChannel(gbsTrack);
         // TODO: Figure out if this is needed when resetting
         //LoadWavePattern(gbsTrack, 0);
@@ -827,7 +843,11 @@ const struct Song *GetSong(u32 n)
     if (FlagGet(FLAG_SYS_GBS_ENABLED))
     {
         u16 gbsSongId = song->me;
-        if (gbsSongId != GBS_MUSIC_NONE)
+        // Bounds-checked, not just tested against NONE: this id comes from the
+        // third column of sound/song_table.inc, which is hand-editable and 610
+        // rows long. An out-of-range id would return garbage as a song header
+        // and lock the game, whereas falling through just plays the m4a track.
+        if (gbsSongId != GBS_MUSIC_NONE && gbsSongId < GBS_MUSIC_COUNT)
             song = &gGBSSongTable[gbsSongId];
     }
     return song;
@@ -839,7 +859,8 @@ const struct Song *GetSong(u32 n, bool32 enableGBS)
     if (enableGBS)
     {
         u16 gbsSongId = song->me;
-        if (gbsSongId != GBS_MUSIC_NONE)
+        // Same bound as the branch above -- see the note there.
+        if (gbsSongId != GBS_MUSIC_NONE && gbsSongId < GBS_MUSIC_COUNT)
             song = &gGBSSongTable[gbsSongId];
     }
     return song;
