@@ -30,4 +30,9 @@ extern const struct SongHeader gbs_Music_AbandonedShipRSE;
 extern const struct SongHeader gbs_Music_OceanicMuseumRSE;
 extern const struct SongHeader gbs_Music_MewBattle;
 
+// An m4a song, not a GBS one -- built against voicegroup_gb_woods so every voice
+// is a PSG voice. mid2agb emits it with the same struct SongHeader layout, which
+// is what lets it sit in the GBS table beside real GBS tracks.
+extern const struct SongHeader mus_petalburg_woods_gb;
+
 #endif // GUARD_GBS_SONG_TABLE_H

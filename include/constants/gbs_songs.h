@@ -29,6 +29,12 @@
 #define GBS_MUSIC_OCEANIC_MUSEUM_RSE 21
 #define GBS_MUSIC_MEW_BATTLE_RSE 22
 
-#define GBS_MUSIC_COUNT 23
+// NOT a GBS-format track. This one is the ordinary m4a song built against a
+// PSG-only voicegroup, so it plays through the Game Boy channels without being
+// transcribed. gGBSSongTable only needs a song header, and an m4a header is one
+// -- see the entry in gbs_song_table.c.
+#define GBS_MUSIC_WOODS_M4A_PSG 23
+
+#define GBS_MUSIC_COUNT 24
 
 #endif  // GUARD_CONSTANTS_GBS_SONGS_H

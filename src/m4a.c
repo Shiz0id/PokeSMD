@@ -642,6 +642,16 @@ void MPlayStart(struct MusicPlayerInfo *mplayInfo, struct SongHeader *songHeader
         while (i < songHeader->trackCount && i < mplayInfo->trackCount)
         {
             TrackStop(mplayInfo, track);
+            // gbsChannel is set by ply_gbs_switch and NEVER cleared anywhere --
+            // not by TrackStop (which only silences the hardware via
+            // GBSTrack_Stop), not by ply_fine, and not by MPlayOpen, which runs
+            // once at boot. Left alone, every m4a song starting after a GBS song
+            // on this player finds its tracks still flagged as GBS and gets
+            // routed into GBSMain, which walks the previous GBS song's data.
+            // Clearing it here is safe in both directions: every GBS channel
+            // opens with a gbs_switch command, so a GBS song re-establishes it
+            // on its first tick.
+            track->gbsChannel = 0;
             track->flags = MPT_FLG_EXIST | MPT_FLG_START;
             track->chan = 0;
             track->cmdPtr = songHeader->part[i];
@@ -652,6 +662,9 @@ void MPlayStart(struct MusicPlayerInfo *mplayInfo, struct SongHeader *songHeader
         while (i < mplayInfo->trackCount)
         {
             TrackStop(mplayInfo, track);
+            // Same reason as above -- an unused track that last ran GBS would
+            // still be flagged as GBS if the next song happens to use it.
+            track->gbsChannel = 0;
             track->flags = 0;
             i++;
             track++;

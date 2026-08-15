@@ -373,7 +373,7 @@ gSongTable::
 	song mus_oldale, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_gym, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_surf, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_petalburg_woods, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_petalburg_woods, MUSIC_PLAYER_BGM, GBS_MUSIC_WOODS_M4A_PSG
 	song mus_level_up, MUSIC_PLAYER_SE2, GBS_SFX_LEVEL_UP
 	song mus_heal, MUSIC_PLAYER_SE2, GBS_MUSIC_NONE
 	song mus_obtain_badge, MUSIC_PLAYER_SE2, GBS_SFX_GET_BADGE

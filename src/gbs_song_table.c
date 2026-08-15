@@ -34,4 +34,10 @@ const struct Song gGBSSongTable[GBS_MUSIC_COUNT] = {
     [GBS_MUSIC_ABANDONED_SHIP_RSE] = SONG(gbs_Music_AbandonedShipRSE, 0),
     [GBS_MUSIC_OCEANIC_MUSEUM_RSE] = SONG(gbs_Music_OceanicMuseumRSE, 0),
     [GBS_MUSIC_MEW_BATTLE_RSE]     = SONG(gbs_Music_MewBattle, 0),
+
+    // The experiment: same MIDI as mus_petalburg_woods, built against a
+    // PSG-only voicegroup instead of being transcribed. Dungeon 1's music, so
+    // the Sound menu entry A/Bs sampled against Game Boy on the first floor
+    // the player ever sees.
+    [GBS_MUSIC_WOODS_M4A_PSG]      = SONG(mus_petalburg_woods_gb, 0),
 };
