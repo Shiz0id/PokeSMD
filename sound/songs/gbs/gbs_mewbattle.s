@@ -1,7 +1,11 @@
 	.include "asm/macros.inc"
 
 	.section .rodata
-	.global gbs_MewBattle
+	@ Upstream declared gbs_MewBattle here, which is not the label below. That
+	@ leaves the real symbol local to the object, so referencing it from
+	@ gbs_song_table.c is an undefined reference at link time -- which is part
+	@ of why this track sat unwired in converted_songs/.
+	.global gbs_Music_MewBattle
 	.align 2
 
 @ Pokémon Emerald - Battle! Vs. Mew
@@ -619,7 +623,9 @@ Music_MewBattle_branch_23225:
 	note F_, 8
 	sound_loop 0, Music_MewBattle_branch_23225
  
-gbs_MewBattle_Ch3:
+@ Same dropped "Music_" as the .global above: the channel macro emits a
+@ reference to gbs_Music_MewBattle_Ch3, so this label has to match it.
+gbs_Music_MewBattle_Ch3:
 	gbs_switch 2
 Music_MewBattle_Ch3:
 	vibrato 0, 2, 0

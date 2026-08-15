@@ -479,7 +479,7 @@ gSongTable::
 	song mus_b_factory, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_rayquaza, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_frontier_brain, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_vs_mew, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_vs_mew, MUSIC_PLAYER_BGM, GBS_MUSIC_MEW_BATTLE_RSE
 	song mus_b_dome_lobby, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_wild, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_aqua_magma, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE

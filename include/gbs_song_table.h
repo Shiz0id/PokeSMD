@@ -28,5 +28,6 @@ extern const struct SongHeader gbs_Music_PokemonTower;
 extern const struct SongHeader gbs_Music_Route101RSE;
 extern const struct SongHeader gbs_Music_AbandonedShipRSE;
 extern const struct SongHeader gbs_Music_OceanicMuseumRSE;
+extern const struct SongHeader gbs_Music_MewBattle;
 
 #endif // GUARD_GBS_SONG_TABLE_H

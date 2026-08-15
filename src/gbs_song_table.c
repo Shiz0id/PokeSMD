@@ -33,4 +33,5 @@ const struct Song gGBSSongTable[GBS_MUSIC_COUNT] = {
     [GBS_MUSIC_ROUTE_101_RSE]      = SONG(gbs_Music_Route101RSE, 0),
     [GBS_MUSIC_ABANDONED_SHIP_RSE] = SONG(gbs_Music_AbandonedShipRSE, 0),
     [GBS_MUSIC_OCEANIC_MUSEUM_RSE] = SONG(gbs_Music_OceanicMuseumRSE, 0),
+    [GBS_MUSIC_MEW_BATTLE_RSE]     = SONG(gbs_Music_MewBattle, 0),
 };
