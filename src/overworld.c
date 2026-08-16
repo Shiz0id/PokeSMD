@@ -3384,10 +3384,11 @@ bool32 IsSendingKeysOverCable(void)
 
 static u32 GetLinkSendQueueLength(void)
 {
-    if (gWirelessCommType != 0)
-        return gRfu.sendQueue.count;
-    else
-        return gLink.sendQueue.count;
+    // The gWirelessCommType branch read gRfu.sendQueue.count. The wireless
+    // stack is gone from this build, so that path is unreachable -- and this
+    // was the last reference to gRfu anywhere, which is what lets the
+    // 3316-byte RfuManager go rather than merely move between regions.
+    return gLink.sendQueue.count;
 }
 
 static void ZeroLinkPlayerObjectEvent(struct LinkPlayerObjectEvent *linkPlayerObjEvent)
