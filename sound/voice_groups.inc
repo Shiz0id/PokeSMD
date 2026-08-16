@@ -219,3 +219,7 @@
 .include "sound/voicegroups/gb_encounter_brendan.inc"
 .include "sound/voicegroups/gb_encounter_champion.inc"
 .include "sound/voicegroups/gb_encounter_hiker.inc"
+.include "sound/voicegroups/gb_vs_champion.inc"
+.include "sound/voicegroups/gb_vs_elite_four.inc"
+.include "sound/voicegroups/gb_vs_frontier_brain.inc"
+.include "sound/voicegroups/gb_vs_gym_leader.inc"

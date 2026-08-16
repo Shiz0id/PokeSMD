@@ -55,4 +55,8 @@ const struct Song gGBSSongTable[GBS_MUSIC_COUNT] = {
     [GBS_MUSIC_ENCOUNTER_BRENDAN_PSG] = SONG(mus_encounter_brendan_gb, 0),
     [GBS_MUSIC_ENCOUNTER_CHAMPION_PSG] = SONG(mus_encounter_champion_gb, 0),
     [GBS_MUSIC_ENCOUNTER_HIKER_PSG] = SONG(mus_encounter_hiker_gb, 0),
+    [GBS_MUSIC_VS_CHAMPION_PSG] = SONG(mus_vs_champion_gb, 0),
+    [GBS_MUSIC_VS_ELITE_FOUR_PSG] = SONG(mus_vs_elite_four_gb, 0),
+    [GBS_MUSIC_VS_FRONTIER_BRAIN_PSG] = SONG(mus_vs_frontier_brain_gb, 0),
+    [GBS_MUSIC_VS_GYM_LEADER_PSG] = SONG(mus_vs_gym_leader_gb, 0),
 };

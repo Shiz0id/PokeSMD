@@ -478,18 +478,18 @@ gSongTable::
 	song mus_b_pike, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_b_factory, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_rayquaza, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_vs_frontier_brain, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_vs_frontier_brain, MUSIC_PLAYER_BGM, GBS_MUSIC_VS_FRONTIER_BRAIN_PSG
 	song mus_vs_mew, MUSIC_PLAYER_BGM, GBS_MUSIC_MEW_BATTLE_RSE
 	song mus_b_dome_lobby, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_wild, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_aqua_magma, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_trainer, MUSIC_PLAYER_BGM, GBS_MUSIC_VS_TRAINER_PSG
-	song mus_vs_gym_leader, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_vs_champion, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_vs_gym_leader, MUSIC_PLAYER_BGM, GBS_MUSIC_VS_GYM_LEADER_PSG
+	song mus_vs_champion, MUSIC_PLAYER_BGM, GBS_MUSIC_VS_CHAMPION_PSG
 	song mus_vs_regi, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_kyogre_groudon, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_rival, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_vs_elite_four, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_vs_elite_four, MUSIC_PLAYER_BGM, GBS_MUSIC_VS_ELITE_FOUR_PSG
 	song mus_vs_aqua_magma_leader, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_rg_follow_me, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_rg_game_corner, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE

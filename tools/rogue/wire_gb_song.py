@@ -115,36 +115,63 @@ def midi_transpose_slot(path, slot, semitones):
 GB_FLOOR_KEY = 36   # C2, 65.4 Hz. Below this f = 131072/(2048-x) has no answer.
 
 
-def midi_floor_lift_slot(path, slot):
-    """Raise only the notes a square channel cannot represent, by octaves.
+STRADDLE_FRACTION = 0.08
 
-    Different from a whole-part transpose, and the choice between them is about
-    proportion. mus_encounter_brendan had 30% of its bass under the floor -- the
-    part was in the wrong register and belonged an octave up. mus_vs_trainer has
-    5.5%, all at key 34-35, where clamping lands them just 1-2 semitones sharp;
-    moving the whole line would change far more than the fault does. Lifting
-    only the offending notes keeps the pitch CLASS right and the register
-    otherwise intact, which is what a bass player does with a note below the
-    bottom of the instrument.
+
+def midi_floor_lift_slot(path, slot):
+    """Get a part into the square channel's range, bodily or note by note.
+
+    WHICH OF THE TWO IS A PROPORTION QUESTION, and getting it wrong is audible.
+    Lifting only the sub-floor notes suits a part that dips below occasionally:
+    the note returns at its own pitch class instead of clamping sharp, and the
+    register is otherwise untouched. But for a part sitting ACROSS the boundary
+    it puts consecutive notes of one phrase an octave apart, and the line jumps
+    about -- mus_vs_gym_leader's bass, 13.5% below, did that for eight seconds
+    and was reported as sounding like a glitchy Game Boy.
+
+    So more than a twelfth under the floor means the part is in the wrong
+    register and moves bodily; whatever is still below after that is a real
+    outlier and gets lifted alone. Computed per part rather than kept as a list
+    of songs, which would go stale the first time an arrangement moved.
     """
     b = bytearray(path.read_bytes())
     _, chunks = _chunks(b)
-    lifted = 0
-    for (_, s, e) in chunks:
-        prog, keys = _scan(b, s, e)
-        if prog != slot:
-            continue
-        for k in keys:
-            if b[k] < GB_FLOOR_KEY:
-                v = b[k]
-                while v < GB_FLOOR_KEY:
-                    v += 12
-                b[k] = min(127, v)
-                lifted += 1
-    if not lifted:
-        return None     # nothing under the floor is not an error
+    targets = [(s, e) for (_, s, e) in chunks if _scan(b, s, e)[0] == slot]
+    if not targets:
+        return None
+
+    keys = [k for (s, e) in targets for k in _scan(b, s, e)[1]]
+    if not keys:
+        return None
+
+    shift = 0
+    while shift < 24:
+        below = sum(1 for k in keys if b[k] + shift < GB_FLOOR_KEY)
+        if below <= STRADDLE_FRACTION * len(keys):
+            break
+        shift += 12
+
+    bulk = lifted = 0
+    for k in keys:
+        v = b[k] + shift
+        if shift:
+            bulk += 1
+        if v < GB_FLOOR_KEY:
+            while v < GB_FLOOR_KEY:
+                v += 12
+            lifted += 1
+        b[k] = min(127, v)
+
+    if not shift and not lifted:
+        return None
     path.write_bytes(bytes(b))
-    log('midi: lifted %d sub-floor notes on slot %d into range' % (lifted, slot))
+    if shift:
+        log('midi: slot %d straddled the floor -- whole part up %d semitones '
+            '(%d notes)%s' % (slot, shift, bulk // 2,
+                              ', %d stragglers lifted' % (lifted // 2) if lifted else ''))
+    else:
+        log('midi: lifted %d sub-floor notes on slot %d into range'
+            % (lifted // 2, slot))
     return None
 
 

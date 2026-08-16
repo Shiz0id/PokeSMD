@@ -46,6 +46,8 @@ VARIANT_SONG = {
     'brendan_fix': 'mus_encounter_brendan',
     'brendan_fix2': 'mus_encounter_brendan',
     'hiker_fix': 'mus_encounter_hiker',
+    'surf_fix': 'mus_surf',
+    'underwater_fix': 'mus_underwater',
 }
 
 # Voice assignment, mirroring MAPPING in make_gb_voicegroup.py. Keyed by the
@@ -175,6 +177,46 @@ VARIANTS = {
         126: dict(kind='noise',  duty=0, a=0, d=1, s=0,  r=2, name='perc'),
         127: dict(kind='noise',  duty=0, a=0, d=1, s=0,  r=2, name='perc'),
         56: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='dropped'),
+        80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='dropped'),
+    },
+    # mus_surf. The heuristic called sc88pro_harp the melody because it is the
+    # highest busy part -- but in Surf the harp is the flowing arpeggio figure,
+    # and the TUNE is the strings, which it dropped. Both strings tracks select
+    # slot 48, so they need track-index keys; one leads and the other goes,
+    # since a section cannot be doubled on one mono channel anyway.
+    #
+    # The harp moves to the wave channel, whose smoother waveform suits a
+    # plucked arpeggio far better than a 50% square does.
+    'surf_fix': {
+        '#0': dict(kind='square1', duty=2, a=0, d=3, s=12, r=2, floor_lift=True,
+                   name='STRINGS - the tune'),
+        '#2': dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='strings 2nd'),
+        46: dict(kind='wave', duty=0, a=0, d=4, s=13, r=3, name='harp arpeggio'),
+        58: dict(kind='square2', duty=3, a=0, d=2, s=12, r=1, floor_lift=True,
+                 name='tuba bass'),
+        84: dict(kind='square2', duty=1, a=0, d=1, s=10, r=1, floor_lift=True,
+                 name='counter'),
+        83: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='dropped'),
+    },
+    # mus_underwater. Two tracks select slot 92 and BOTH landed on square 2
+    # beside the bass -- three parts on one channel, and the higher of the two
+    # reaches G8, so top-note let it silence the bass and the counter during
+    # exactly the busy passages that matter. Keyed by track index, the higher
+    # one goes and square 2 carries bass plus one counter.
+    'underwater_fix': {
+        9:  dict(kind='square1', duty=2, a=0, d=2, s=13, r=1,
+                 name='glockenspiel MELODY'),
+        46: dict(kind='wave', duty=0, a=0, d=4, s=14, r=3, name='harp'),
+        35: dict(kind='square2', duty=3, a=0, d=2, s=12, r=1, floor_lift=True,
+                 name='fretless bass'),
+        '#5': dict(kind='square2', duty=1, a=0, d=1, s=10, r=1, floor_lift=True,
+                   name='counter'),
+        '#7': dict(kind='drop', duty=0, a=0, d=0, s=0, r=0,
+                   name='counter (high, dropped)'),
+        0:  dict(kind='noise', duty=0, a=0, d=1, s=0, r=2, name='drums'),
+        126: dict(kind='noise', duty=0, a=0, d=1, s=0, r=2, name='perc'),
+        127: dict(kind='noise', duty=0, a=0, d=1, s=0, r=2, name='perc'),
+        23: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='bubbles sfx'),
         80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='dropped'),
     },
     # mus_encounter_hiker. Reported as tinny against the original's horns.
@@ -410,6 +452,35 @@ def envelope(t, dur, v):
     return max(0.0, sus * (1.0 - k)) if k < 1.0 else 0.0
 
 
+GB_FLOOR_KEY = 36       # C2, 65.4 Hz -- below this a square channel has no note
+STRADDLE_FRACTION = 0.08
+
+
+def floor_bulk_shift(pitches):
+    """Octaves to move a WHOLE part by before lifting any stragglers.
+
+    Raising only the sub-floor notes is right for a part that dips below now and
+    then: the note returns to its own pitch class instead of clamping sharp. It
+    is WRONG for a part sitting across the boundary, because then consecutive
+    notes of one phrase end up an octave apart and the line jumps about --
+    mus_vs_gym_leader's bass did that for eight seconds and was reported as
+    sounding like a glitchy Game Boy.
+
+    So: if more than a twelfth of the part is under the floor it is in the wrong
+    register and moves bodily; anything still below after that is a genuine
+    outlier and gets lifted on its own.
+    """
+    if not pitches:
+        return 0
+    shift = 0
+    while shift < 24:
+        below = sum(1 for p in pitches if p + shift < GB_FLOOR_KEY)
+        if below <= STRADDLE_FRACTION * len(pitches):
+            break
+        shift += 12
+    return shift
+
+
 def resolve_channel(notes):
     """Make one channel's notes monophonic, the way the hardware is.
 
@@ -491,25 +562,26 @@ def render(tracks, voices, wave_table, total, psg_only, analyze_only=False):
         # top-note rule sees the pitches that will actually sound. Its usual job
         # is lifting a bass line off the floor -- see the report below.
         tr = v.get('transpose', 0)
+        bulk = 0
+        if v.get('floor_lift'):
+            bulk = floor_bulk_shift([p + tr for (_, _, p) in notes])
 
         def place(pitch):
-            p = pitch + tr
-            # floor_lift raises ONLY what the channel cannot represent, by
-            # octaves, rather than moving the whole part. See the note in
-            # wire_gb_song.py for when each is right.
-            if v.get('floor_lift'):
-                while p < 36:
-                    p += 12
+            p = pitch + tr + bulk
+            while p < GB_FLOOR_KEY:      # stragglers, individually
+                p += 12
             return p
 
         channels.setdefault(kind, []).extend(
             (on, off, place(pitch), v) for (on, off, pitch) in notes)
 
     report = []
+    resolved = {}
     for kind, notes in sorted(channels.items()):
         if psg_only:
             total_in = len(notes)
             notes, stolen, silenced = resolve_channel(notes)
+            resolved[kind] = notes
             if stolen or silenced:
                 report.append('    %-8s %d of %d notes cut short, %d never heard'
                               % (kind, stolen, total_in, silenced))
@@ -560,6 +632,33 @@ def render(tracks, voices, wave_table, total, psg_only, analyze_only=False):
                         lfsr = (lfsr >> 1) | (bit << 14)
                     smp = 1.0 if (lfsr & 1) else -1.0
                 buf[idx] += env * smp * 0.16
+
+    # THE LOOP SEAM, detected rather than rendered. Every song in the game
+    # loops, and the woods track shipped with a bare melody note held 1.33 s at
+    # full sustain while every other part had stopped, running straight into the
+    # restart -- audible in game, invisible in a one-pass preview. Rendering two
+    # passes of everything to catch that is expensive; the condition itself is
+    # cheap to test. Flag a long note that ends at the track end with nothing
+    # else sounding beside it.
+    # The discriminator is the VOICE, not what else happens to be sounding. A
+    # first cut asked whether the note was alone and missed the very case it was
+    # written for: the woods pad was still blipping underneath, yet the melody
+    # note was the audible problem. What makes it audible is decay 0 with a high
+    # sustain -- the square never falls, so it is still at full volume when the
+    # song restarts.
+    if resolved:
+        end = max((off for ns in resolved.values() for (_, off, _, _) in ns),
+                  default=0.0)
+        for kind, ns in sorted(resolved.items()):
+            for (on, off, _, v) in ns:
+                if off < end - 0.15 or off - on < 0.6:
+                    continue
+                if v.get('d', 0) == 0 and v.get('s', 0) >= 13:
+                    report.append(
+                        '    %-8s holds a %.1f s note at full volume into the '
+                        'loop (decay 0, sustain %d) -- give it a decay'
+                        % (kind, off - on, v.get('s')))
+                    break
 
     if not analyze_only:
         # A naive square has odd harmonics forever; at 44.1 kHz the ones past
