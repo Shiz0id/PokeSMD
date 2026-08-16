@@ -384,11 +384,19 @@ def wire(repo, song, spec, const):
             err = midi_floor_lift_slot(gb_mid, int(slot_s))
             if err:
                 return err
-    for key, v in sorted(voices.items(), key=str):
-        if isinstance(key, str) and key.startswith('#') and v['kind'] == 'drop':
-            err = midi_drop_track(gb_mid, int(key[1:]))
-            if err:
-                return err
+    # DESCENDING, and that is not a tidiness preference. Removing a track
+    # renumbers every track after it, so dropping #0 and then #1 removes what
+    # was originally #2 -- silently, with a well-formed result. Ascending order
+    # only fails loudly when the last index runs off the end, which is how this
+    # was noticed at all: mus_route119 errored while mus_sealed_chamber and
+    # mus_victory_road would have shipped having dropped the wrong parts.
+    drops = sorted((int(k[1:]) for k, v in voices.items()
+                    if isinstance(k, str) and k.startswith('#')
+                    and v['kind'] == 'drop'), reverse=True)
+    for idx in drops:
+        err = midi_drop_track(gb_mid, idx)
+        if err:
+            return err
     cfg = repo / 'sound/songs/midi/midi.cfg'
     if ensure_line(cfg, '%s_gb.mid:' % song,
                    '%s_gb.mid: -E -R50 -G_gb_%s -V080\n' % (song, stem)):
