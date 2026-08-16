@@ -90,7 +90,13 @@ COMMON_DATA u8 gShouldAdvanceLinkState = 0;
 COMMON_DATA u16 gLinkTestBlockChecksums[MAX_LINK_PLAYERS] = {0};
 COMMON_DATA u8 gBlockRequestType = 0;
 COMMON_DATA u8 gLastSendQueueCount = 0;
-COMMON_DATA struct Link gLink = {0};
+// 4032 of src/link.o's 4280 bytes of IWRAM, all of it the send and receive
+// queues. Nothing in librfu ever sees this -- that constraint was on
+// gRfuAPIBuffer, and that whole stack is gone -- and with the link features
+// removed the serial ISR does not run: gLinkVSyncDisabled is TRUE in single
+// player, so LinkVSync skips queue processing entirely. EWRAM is slower per
+// access and this is not on a per-frame path.
+EWRAM_DATA struct Link gLink = {0};
 COMMON_DATA u8 gLastRecvQueueCount = 0;
 COMMON_DATA u16 gLinkSavedIme = 0;
 
