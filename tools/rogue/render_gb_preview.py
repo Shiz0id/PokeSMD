@@ -24,6 +24,7 @@ different questions.
 Usage:  python3 tools/rogue/render_gb_preview.py --repo PATH --out DIR
 """
 import argparse
+import json
 import math
 import struct
 import sys
@@ -31,8 +32,17 @@ import wave
 from pathlib import Path
 
 RATE = 44100
-MIDI_REL = 'sound/songs/midi/mus_petalburg_woods.mid'
+MIDI_REL = 'sound/songs/midi/mus_petalburg_woods.mid'   # default; see --song
 WAVE_REL = 'sound/programmable_wave_samples/06.pcm'
+
+# Which song each variant belongs to. Slot numbers are song-specific, so a
+# variant is only meaningful against its own MIDI.
+VARIANT_SONG = {
+    'lean': 'mus_petalburg_woods', 'share': 'mus_petalburg_woods',
+    'swap': 'mus_petalburg_woods', 'fuller': 'mus_petalburg_woods',
+    'softer': 'mus_petalburg_woods', 'fuller_decay': 'mus_petalburg_woods',
+    'trainer_auto': 'mus_vs_trainer',
+}
 
 # Voice assignment, mirroring MAPPING in make_gb_voicegroup.py. Keyed by the
 # voicegroup slot the MIDI track selects.
@@ -119,6 +129,37 @@ VARIANTS = {
         80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='harmony (dropped)'),
         1:  dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='piano (dropped)'),
         45: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='pizzicato (dropped)'),
+    },
+    # 'fuller' with the loop-seam fix. The track ends on a bare melody note held
+    # 1.33 s with every other part already gone, and at sustain 15 / decay 0 a
+    # square sits at maximum volume for all of it and then the song loops. The
+    # sampled flute it replaces decays naturally, which is why vanilla has no
+    # such artifact. Decay 3 to sustain 11 restores that behaviour; the duty
+    # stays at 50% because the timbre was already approved.
+    'fuller_decay': {
+        73: dict(kind='square1', duty=2, a=0, d=3, s=11, r=1, name='MELODY (decays)'),
+        82: dict(kind='square2', duty=1, a=0, d=1, s=9,  r=1, name='COUNTER'),
+        81: dict(kind='square2', duty=3, a=0, d=2, s=11, r=1, name='bass (shares sq2)'),
+        48: dict(kind='wave',    duty=0, a=1, d=6, s=14, r=4, name='STRINGS pad'),
+        127: dict(kind='noise',  duty=0, a=0, d=1, s=0,  r=3, name='percussion'),
+        0:  dict(kind='noise',   duty=0, a=0, d=1, s=0,  r=1, name='drums'),
+        80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='harmony (dropped)'),
+        1:  dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='piano (dropped)'),
+        45: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='pizzicato (dropped)'),
+    },
+    # mus_vs_trainer, first pass straight from plan_gb_arrangement.py. Square 2
+    # is deliberately NOT shared: the bass sounds for all 89.7 s of the track,
+    # so anything placed beside it would be stolen from constantly rather than
+    # heard. Four parts kept of eight, 70% of the sounding time.
+    'trainer_auto': {
+        1:  dict(kind='square1', duty=2, a=0, d=2, s=13, r=1, name='MELODY'),
+        33: dict(kind='square2', duty=3, a=0, d=2, s=12, r=1, name='bass'),
+        48: dict(kind='wave',    duty=0, a=1, d=5, s=14, r=3, name='PAD'),
+        0:  dict(kind='noise',   duty=0, a=0, d=1, s=0,  r=2, name='percussion'),
+        4:  dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='dropped'),
+        80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='dropped'),
+        47: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='dropped'),
+        81: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='dropped'),
     },
 }
 # For the *_full.wav render, the dropped parts need something audible.
@@ -266,23 +307,33 @@ def resolve_channel(notes):
     of voice want the same physical channel. Later note takes it; whatever was
     sounding is cut off there. Returns (notes, stolen_count).
     """
-    notes = sorted(notes, key=lambda n: n[0])
+    # Sorted by onset, then pitch DESCENDING, so the first note of any
+    # simultaneous group is the highest.
+    #
+    # WHICH NOTE SURVIVES A CHORD IS A MUSICAL CHOICE, not an implementation
+    # detail. A single MIDI track can be polyphonic while a PSG channel cannot,
+    # so a chordal part loses notes even alone on its channel -- half of
+    # mus_encounter_interviewer's melody, for one. Taking whichever note sorted
+    # first meant an inner voice could silence the tune above it. Keeping the
+    # TOP note is the standard reduction and preserves the line a listener is
+    # actually following.
+    notes = sorted(notes, key=lambda n: (n[0], -n[2]))
     out, stolen, silenced = [], 0, 0
-    for i, (on, off, pitch, v) in enumerate(notes):
-        if i + 1 < len(notes):
-            on2 = notes[i + 1][0]
-            # A LATER-OR-SIMULTANEOUS onset takes the channel. Simultaneous is
-            # the worst case, not a special case: one of the two is simply never
-            # heard. An earlier version skipped equal onsets and so reported
-            # "no contention" for a pairing that overlaps 33% of the time.
-            if on2 <= on:
-                silenced += 1
-                continue
+    i = 0
+    while i < len(notes):
+        on, off, pitch, v = notes[i]
+        j = i + 1
+        while j < len(notes) and notes[j][0] - on < 1e-6:
+            silenced += 1      # same onset, lower pitch: never heard
+            j += 1
+        if j < len(notes):
+            on2 = notes[j][0]
             if on2 < off:
-                off = on2
+                off = on2      # a later onset takes the channel
                 stolen += 1
         if off - on > 0.001:
             out.append((on, off, pitch, v))
+        i = j
     return out, stolen, silenced
 
 
@@ -379,21 +430,51 @@ def main():
                     help='comma-separated names from VARIANTS')
     ap.add_argument('--analyze', action='store_true',
                     help='report channel contention only, write no audio')
+    ap.add_argument('--plans', type=Path,
+                    help='JSON from plan_gb_arrangement.py --emit; adds every '
+                         'plan in it as a variant')
+    ap.add_argument('--all', action='store_true',
+                    help='render every variant in --plans')
+    ap.add_argument('--loops', type=int, default=1,
+                    help='render N passes back to back. THE PREVIEW IS BLIND TO '
+                         'LOOP SEAMS AT 1: every track in the game loops, and a '
+                         'bare held note running into the restart is audible in '
+                         'the ROM and absent here. Use 2 to hear the seam.')
     args = ap.parse_args()
 
-    tracks = parse_midi(args.repo / MIDI_REL)
     wave_table = read_wave_table(args.repo / WAVE_REL)
-    total = max(off for _, notes in tracks for (_, off, _) in notes)
-
-    print('parsed %d note-carrying tracks, %.1f s\n' % (len(tracks), total))
     args.out.mkdir(parents=True, exist_ok=True)
+    cache = {}
 
-    for name in [v.strip() for v in args.variants.split(',') if v.strip()]:
+    names = [v.strip() for v in args.variants.split(',') if v.strip()]
+    if args.plans:
+        loaded = json.loads(args.plans.read_text(encoding='utf-8'))
+        for key, spec in loaded.items():
+            VARIANTS[key] = {int(k): v for k, v in spec['voices'].items()}
+            VARIANT_SONG[key] = spec['song']
+        if args.all:
+            names = sorted(loaded)
+
+    for name in names:
         voices = VARIANTS.get(name)
         if voices is None:
             sys.exit('unknown variant %r -- have %s'
                      % (name, ', '.join(sorted(VARIANTS))))
-        print('variant %r:' % name)
+        # Slots are song-specific, so each variant parses its own MIDI.
+        song = VARIANT_SONG.get(name, 'mus_petalburg_woods')
+        if song not in cache:
+            cache[song] = parse_midi(args.repo / 'sound/songs/midi' / (song + '.mid'))
+        tracks = cache[song]
+        total = max(off for _, notes in tracks for (_, off, _) in notes)
+        if args.loops > 1:
+            # Concatenate N passes. Approximates the GOTO the song assembles to:
+            # the whole track is the loop body, which is true of these songs.
+            tracks = [(slot, [(on + i * total, off + i * total, p)
+                              for i in range(args.loops)
+                              for (on, off, p) in notes])
+                      for slot, notes in tracks]
+            total *= args.loops
+        print('variant %r  (%s, %d parts, %.1f s):' % (name, song, len(tracks), total))
         for slot, notes in tracks:
             v = voices.get(slot)
             if v and v['kind'] != 'drop':
@@ -405,18 +486,13 @@ def main():
         if not report:
             print('    no channel contention')
         if not args.analyze:
-            p = args.out / ('woods_%s.wav' % name)
+            # Named for the variant, not the song: the tool used to render only
+            # the woods track and the prefix was hardcoded.
+            p = args.out / ('%s.wav' % name)
             write_wav(p, buf)
             print('    wrote %s' % p)
         print()
 
-    if not args.analyze:
-        # Reference: every part, no channel limit, same synth -- so a comparison
-        # isolates the arrangement from the timbre.
-        buf, _ = render(tracks, VARIANTS['lean'], wave_table, total, False)
-        p = args.out / 'woods_full.wav'
-        write_wav(p, buf)
-        print('wrote %s (all parts, reference)' % p)
     return 0
 
 

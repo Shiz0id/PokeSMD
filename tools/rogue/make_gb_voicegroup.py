@@ -65,12 +65,16 @@ MAPPING = {
          'track 7, strings keysplit, sounding 20.4 s. PROMOTED to the wave '
          'channel - a sustained pad is what the wave channel is for, and this '
          'is the part that fills the space the lean cut was missing.'),
-    73: ('voice_square_1_alt 60, 0, 0, 2, 0, 0, 15, 1',
-         'track 3, flute, range 74-99, 271 notes - FOUR TIMES any other part. '
-         'This is the melody, so it takes square 1 at 50% duty with full '
-         'sustain, the standard GB lead voice. NOTE: 255 of its notes are above '
-         '1200 Hz and no other part goes there, so if it ever reads as harsh '
-         'this voice is the place to look - narrow the duty and add a decay.'),
+    73: ('voice_square_1_alt 60, 0, 0, 2, 0, 3, 11, 1',
+         'track 3, flute, range 74-99, 271 notes - FOUR TIMES any other part, '
+         'so it is the melody and takes square 1 at 50% duty. DECAY 3 TO '
+         'SUSTAIN 11 RATHER THAN A FLAT 15, and that is a fix not a taste: the '
+         'track ends on a bare melody note held 1.33 s with every other part '
+         'already stopped, and at sustain 15 a square sits at maximum for all '
+         'of it and then the song loops. Audible in game as a bare tone at the '
+         'loop seam. The sampled flute this replaces decays naturally, which is '
+         'why vanilla has no such artifact. The duty is deliberately unchanged '
+         'at 50% - the timbre was judged right on hardware.'),
     81: ('voice_square_2_alt 60, 0, 3, 0, 2, 11, 1',
          'track 6, was programmable_wave_alt, the BASS. Moved off the wave '
          'channel to square 2 at 75% duty so the strings pad can have the wave. '

@@ -90,11 +90,15 @@ voice_group gb_woods
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	@ slot 73: track 3, flute, range 74-99, 271 notes - FOUR TIMES any other
-	@ part. This is the melody, so it takes square 1 at 50% duty with full
-	@ sustain, the standard GB lead voice. NOTE: 255 of its notes are above 1200
-	@ Hz and no other part goes there, so if it ever reads as harsh this voice
-	@ is the place to look - narrow the duty and add a decay.
-	voice_square_1_alt 60, 0, 0, 2, 0, 0, 15, 1
+	@ part, so it is the melody and takes square 1 at 50% duty. DECAY 3 TO
+	@ SUSTAIN 11 RATHER THAN A FLAT 15, and that is a fix not a taste: the track
+	@ ends on a bare melody note held 1.33 s with every other part already
+	@ stopped, and at sustain 15 a square sits at maximum for all of it and then
+	@ the song loops. Audible in game as a bare tone at the loop seam. The
+	@ sampled flute this replaces decays naturally, which is why vanilla has no
+	@ such artifact. The duty is deliberately unchanged at 50% - the timbre was
+	@ judged right on hardware.
+	voice_square_1_alt 60, 0, 0, 2, 0, 3, 11, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
