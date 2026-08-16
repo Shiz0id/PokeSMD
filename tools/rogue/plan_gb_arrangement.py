@@ -364,7 +364,11 @@ def main():
             voices = {}
             for idx, (ch, role) in out.items():
                 slot = info[idx]['slot']
-                v = dict(ROLE_VOICE[role])
+                # The redundancy pass names its role 'copy of #N', which is not
+                # a voice -- it is a reason. Every dropped part takes the same
+                # silent voice whatever the reason, and the reason survives as
+                # the name.
+                v = dict(ROLE_VOICE['dropped' if ch == 'drop' else role])
                 v['name'] = role
                 if ch == 'wave':
                     v['wave_sample'] = pick_wave_sample(samples, slot)
