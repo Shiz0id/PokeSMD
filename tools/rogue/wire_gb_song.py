@@ -112,6 +112,42 @@ def midi_transpose_slot(path, slot, semitones):
     return None
 
 
+GB_FLOOR_KEY = 36   # C2, 65.4 Hz. Below this f = 131072/(2048-x) has no answer.
+
+
+def midi_floor_lift_slot(path, slot):
+    """Raise only the notes a square channel cannot represent, by octaves.
+
+    Different from a whole-part transpose, and the choice between them is about
+    proportion. mus_encounter_brendan had 30% of its bass under the floor -- the
+    part was in the wrong register and belonged an octave up. mus_vs_trainer has
+    5.5%, all at key 34-35, where clamping lands them just 1-2 semitones sharp;
+    moving the whole line would change far more than the fault does. Lifting
+    only the offending notes keeps the pitch CLASS right and the register
+    otherwise intact, which is what a bass player does with a note below the
+    bottom of the instrument.
+    """
+    b = bytearray(path.read_bytes())
+    _, chunks = _chunks(b)
+    lifted = 0
+    for (_, s, e) in chunks:
+        prog, keys = _scan(b, s, e)
+        if prog != slot:
+            continue
+        for k in keys:
+            if b[k] < GB_FLOOR_KEY:
+                v = b[k]
+                while v < GB_FLOOR_KEY:
+                    v += 12
+                b[k] = min(127, v)
+                lifted += 1
+    if not lifted:
+        return None     # nothing under the floor is not an error
+    path.write_bytes(bytes(b))
+    log('midi: lifted %d sub-floor notes on slot %d into range' % (lifted, slot))
+    return None
+
+
 def track_slots(path):
     """-> [program per MIDI track], so '#N' keys can be resolved to a slot."""
     b = bytearray(path.read_bytes())
@@ -296,6 +332,10 @@ def wire(repo, song, spec, const):
             continue
         if v.get('transpose'):
             err = midi_transpose_slot(gb_mid, int(slot_s), v['transpose'])
+            if err:
+                return err
+        if v.get('floor_lift'):
+            err = midi_floor_lift_slot(gb_mid, int(slot_s))
             if err:
                 return err
     for key, v in sorted(voices.items(), key=str):

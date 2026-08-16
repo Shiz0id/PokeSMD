@@ -491,8 +491,19 @@ def render(tracks, voices, wave_table, total, psg_only, analyze_only=False):
         # top-note rule sees the pitches that will actually sound. Its usual job
         # is lifting a bass line off the floor -- see the report below.
         tr = v.get('transpose', 0)
+
+        def place(pitch):
+            p = pitch + tr
+            # floor_lift raises ONLY what the channel cannot represent, by
+            # octaves, rather than moving the whole part. See the note in
+            # wire_gb_song.py for when each is right.
+            if v.get('floor_lift'):
+                while p < 36:
+                    p += 12
+            return p
+
         channels.setdefault(kind, []).extend(
-            (on, off, pitch + tr, v) for (on, off, pitch) in notes)
+            (on, off, place(pitch), v) for (on, off, pitch) in notes)
 
     report = []
     for kind, notes in sorted(channels.items()):
@@ -605,7 +616,9 @@ def main():
     if args.plans:
         loaded = json.loads(args.plans.read_text(encoding='utf-8'))
         for key, spec in loaded.items():
-            VARIANTS[key] = {int(k): v for k, v in spec['voices'].items()}
+            # '#N' track-index keys stay strings; only slot keys are ints.
+            VARIANTS[key] = {(k if k.startswith('#') else int(k)): v
+                             for k, v in spec['voices'].items()}
             VARIANT_SONG[key] = spec['song']
         if args.all:
             names = sorted(loaded)
