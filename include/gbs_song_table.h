@@ -34,5 +34,18 @@ extern const struct SongHeader gbs_Music_MewBattle;
 // is a PSG voice. mid2agb emits it with the same struct SongHeader layout, which
 // is what lets it sit in the GBS table beside real GBS tracks.
 extern const struct SongHeader mus_petalburg_woods_gb;
+extern const struct SongHeader mus_encounter_twins_gb;
+extern const struct SongHeader mus_encounter_suspicious_gb;
+extern const struct SongHeader mus_encounter_may_gb;
+extern const struct SongHeader mus_encounter_male_gb;
+extern const struct SongHeader mus_encounter_magma_gb;
+extern const struct SongHeader mus_encounter_intense_gb;
+extern const struct SongHeader mus_encounter_girl_gb;
+extern const struct SongHeader mus_encounter_female_gb;
+extern const struct SongHeader mus_encounter_elite_four_gb;
+extern const struct SongHeader mus_encounter_cool_gb;
+extern const struct SongHeader mus_encounter_aqua_gb;
+extern const struct SongHeader mus_vs_trainer_gb;
+
 
 #endif // GUARD_GBS_SONG_TABLE_H

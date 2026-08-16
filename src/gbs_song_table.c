@@ -40,4 +40,16 @@ const struct Song gGBSSongTable[GBS_MUSIC_COUNT] = {
     // the Sound menu entry A/Bs sampled against Game Boy on the first floor
     // the player ever sees.
     [GBS_MUSIC_WOODS_M4A_PSG]      = SONG(mus_petalburg_woods_gb, 0),
+    [GBS_MUSIC_VS_TRAINER_PSG] = SONG(mus_vs_trainer_gb, 0),
+    [GBS_MUSIC_ENCOUNTER_AQUA_PSG] = SONG(mus_encounter_aqua_gb, 0),
+    [GBS_MUSIC_ENCOUNTER_COOL_PSG] = SONG(mus_encounter_cool_gb, 0),
+    [GBS_MUSIC_ENCOUNTER_ELITE_FOUR_PSG] = SONG(mus_encounter_elite_four_gb, 0),
+    [GBS_MUSIC_ENCOUNTER_FEMALE_PSG] = SONG(mus_encounter_female_gb, 0),
+    [GBS_MUSIC_ENCOUNTER_GIRL_PSG] = SONG(mus_encounter_girl_gb, 0),
+    [GBS_MUSIC_ENCOUNTER_INTENSE_PSG] = SONG(mus_encounter_intense_gb, 0),
+    [GBS_MUSIC_ENCOUNTER_MAGMA_PSG] = SONG(mus_encounter_magma_gb, 0),
+    [GBS_MUSIC_ENCOUNTER_MALE_PSG] = SONG(mus_encounter_male_gb, 0),
+    [GBS_MUSIC_ENCOUNTER_MAY_PSG] = SONG(mus_encounter_may_gb, 0),
+    [GBS_MUSIC_ENCOUNTER_SUSPICIOUS_PSG] = SONG(mus_encounter_suspicious_gb, 0),
+    [GBS_MUSIC_ENCOUNTER_TWINS_PSG] = SONG(mus_encounter_twins_gb, 0),
 };

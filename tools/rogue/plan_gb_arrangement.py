@@ -198,9 +198,12 @@ def main():
                     help='write a plans JSON that render_gb_preview.py --plans reads')
     args = ap.parse_args()
 
-    if args.glob:
-        songs = sorted(p.stem for p in
-                       (args.repo / 'sound/songs/midi').glob(args.glob + '.mid'))
+    if args.glob or (args.song and args.emit):
+        if args.glob:
+            songs = sorted(p.stem for p in
+                           (args.repo / 'sound/songs/midi').glob(args.glob + '.mid'))
+        else:
+            songs = [args.song]
         if not songs:
             sys.exit('no midi matched %r' % args.glob)
         plans = {}
@@ -227,6 +230,12 @@ def main():
                   % (song, sum(1 for s in out if out[s][0] != 'drop'), len(out),
                      '', 100 * kept / allp if allp else 0, ' '.join(used)))
         if args.emit:
+            # Merge rather than overwrite, so families can be accumulated into
+            # one plans file across several runs.
+            if args.emit.exists():
+                old = json.loads(args.emit.read_text(encoding='utf-8'))
+                old.update(plans)
+                plans = old
             args.emit.write_text(json.dumps(plans, indent=2), encoding='utf-8',
                                  newline='\n')
             print('\nwrote %s  (%d plans)' % (args.emit, len(plans)))

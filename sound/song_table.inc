@@ -386,8 +386,8 @@ gSongTable::
 	song mus_evolution_intro, MUSIC_PLAYER_SE2, GBS_MUSIC_NONE
 	song mus_evolution, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_move_deleted, MUSIC_PLAYER_SE2, GBS_MUSIC_NONE
-	song mus_encounter_girl, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_male, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_girl, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_GIRL_PSG
+	song mus_encounter_male, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_MALE_PSG
 	song mus_abandoned_ship, MUSIC_PLAYER_BGM, GBS_MUSIC_ABANDONED_SHIP_RSE
 	song mus_fortree, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_birch_lab, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
@@ -414,7 +414,7 @@ gSongTable::
 	song mus_poke_mart, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_littleroot, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_mt_chimney, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_female, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_female, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_FEMALE_PSG
 	song mus_lilycove, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_route111, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_help, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
@@ -422,15 +422,15 @@ gSongTable::
 	song mus_victory_trainer, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_title, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_intro, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_may, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_intense, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_cool, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_may, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_MAY_PSG
+	song mus_encounter_intense, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_INTENSE_PSG
+	song mus_encounter_cool, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_COOL_PSG
 	song mus_route113, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_aqua, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_aqua, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_AQUA_PSG
 	song mus_follow_me, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_encounter_brendan, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_ever_grande, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_suspicious, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_suspicious, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_SUSPICIOUS_PSG
 	song mus_victory_aqua_magma, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_cable_car, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_game_corner, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
@@ -448,7 +448,7 @@ gSongTable::
 	song mus_sealed_chamber, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_contest_winner, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_contest, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_magma, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_magma, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_MAGMA_PSG
 	song mus_intro_battle, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_abnormal_weather, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_weather_groudon, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
@@ -456,8 +456,8 @@ gSongTable::
 	song mus_contest_results, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_hall_of_fame_room, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_trick_house, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_twins, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_elite_four, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_twins, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_TWINS_PSG
+	song mus_encounter_elite_four, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_ELITE_FOUR_PSG
 	song mus_encounter_hiker, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_contest_lobby, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_encounter_interviewer, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
@@ -483,7 +483,7 @@ gSongTable::
 	song mus_b_dome_lobby, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_wild, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_aqua_magma, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_vs_trainer, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_vs_trainer, MUSIC_PLAYER_BGM, GBS_MUSIC_VS_TRAINER_PSG
 	song mus_vs_gym_leader, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_champion, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_regi, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
