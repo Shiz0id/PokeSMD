@@ -72,19 +72,8 @@ struct RfuDebug
     u8 padding[2];
 };
 
-// MOVED OUT OF IWRAM. These two are 7000 bytes -- gRfuAPIBuffer 3684 and gRfu
-// 3316 -- and COMMON_DATA puts them in IWRAM, which on this branch is the
-// scarce region: it is the wireless adapter holding a quarter of the fastest
-// RAM in the machine for a single player roguelike.
-//
-// WHAT THIS COSTS IF WIRELESS IS EVER USED. gRfuAPIBuffer is handed to
-// Nintendo's RFU library, which services the adapter under SIO interrupts on a
-// tight schedule, and EWRAM is roughly three times slower per access than
-// IWRAM. Nothing here breaks the build or the API; the risk is timing, and it
-// is only a risk at all when the adapter is actually driven. Revert these two
-// lines to COMMON_DATA if wireless is ever wanted back.
-EWRAM_DATA u32 gRfuAPIBuffer[RFU_API_BUFF_SIZE_RAM / 4] = {0};
-EWRAM_DATA struct RfuManager gRfu = {0};
+COMMON_DATA u32 gRfuAPIBuffer[RFU_API_BUFF_SIZE_RAM / 4] = {0};
+COMMON_DATA struct RfuManager gRfu = {0};
 
 static u8 sHeldKeyCount;
 static u8 sResendBlock8[CMD_LENGTH * 2];
