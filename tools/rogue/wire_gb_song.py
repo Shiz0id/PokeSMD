@@ -41,7 +41,9 @@ from pathlib import Path
 #     the same voice no matter what is written there. mus_encounter_champion
 #     has its sweep and a doubling of it both on slot 17.
 #
-# Both are applied to the DUPLICATED _gb.mid, never the original.
+#   pinning each track to ONE program -- see midi_pin_programs.
+#
+# All three are applied to the DUPLICATED _gb.mid, never the original.
 
 def _chunks(b):
     if bytes(b[:4]) != b'MThd':
@@ -102,6 +104,134 @@ def _scan(b, start, end):
         else:
             j += 2
     return progs, keys
+
+
+def _events(b, start, end):
+    """-> [(delta, event bytes)] with running status expanded to explicit.
+
+    Re-emitting a track means re-emitting every event, and running status makes
+    that a trap: deleting one event silently reinterprets the next, because the
+    status it was running on is gone. Expanding on the way in and writing status
+    bytes on the way out costs a few bytes per track and removes the class.
+    """
+    out, j, status = [], start, 0
+    while j < end:
+        dt = 0
+        while b[j] & 0x80:
+            dt = (dt << 7) | (b[j] & 0x7F)
+            j += 1
+        dt = (dt << 7) | b[j]
+        j += 1
+        if b[j] & 0x80:
+            status = b[j]
+            j += 1
+        ev = status & 0xF0
+        if ev in (0x80, 0x90, 0xA0, 0xB0, 0xE0):
+            out.append((dt, bytes([status, b[j], b[j + 1]])))
+            j += 2
+        elif ev in (0xC0, 0xD0):
+            out.append((dt, bytes([status, b[j]])))
+            j += 1
+        elif status in (0xFF, 0xF0, 0xF7):
+            k = j
+            if status == 0xFF:
+                j += 1
+            ln = 0
+            while b[j] & 0x80:
+                ln = (ln << 7) | (b[j] & 0x7F)
+                j += 1
+            ln = (ln << 7) | b[j]
+            j += 1 + ln
+            out.append((dt, bytes([status]) + bytes(b[k:j])))
+        else:
+            raise ValueError('unknown MIDI status %02X' % status)
+    return out
+
+
+def _varlen(n):
+    out = [n & 0x7F]
+    n >>= 7
+    while n:
+        out.append((n & 0x7F) | 0x80)
+        n >>= 7
+    return bytes(reversed(out))
+
+
+def _write_tracks(path, b, bodies):
+    """Rewrite the file with `bodies` (chunk index -> event stream) replaced."""
+    _, chunks = _chunks(b)
+    hdr = struct.unpack('>I', bytes(b[4:8]))[0]
+    out = bytearray(b[:8 + hdr])
+    for ci, (_, s, e) in enumerate(chunks):
+        body = bodies.get(ci, bytes(b[s:e]))
+        out += b'MTrk' + struct.pack('>I', len(body)) + body
+    path.write_bytes(bytes(out))
+
+
+def midi_pin_programs(path, assign):
+    """Force each note-bearing track onto exactly ONE voicegroup slot.
+
+    THE ARRANGEMENT IS A MAP FROM TRACKS TO CHANNELS. The ROM has no such map:
+    m4a picks a voice by the program the track currently has selected, so a
+    track that changes program mid-song changes instrument mid-song. Every one
+    of these MIDIs does it -- mus_vs_gym_leader's first two tracks each walk
+    through slots 48, 56, 60 and 1 in a different order.
+
+    That cannot be repaired in the voicegroup. A slot holds one voice; two
+    tracks passing through the same four slots at different times will trade
+    instruments with each other whatever is written there, which is what
+    Roxanne's theme was doing when it was reported as mushed with the wrong
+    instruments. Naming the slots so none is left on filler -- the previous
+    attempt -- picks which of the two voices both parts get; it does not let
+    them differ.
+
+    So the ambiguity is removed from the MIDI instead. One program per track
+    makes slot and track the same thing, which is the model the plan is written
+    in and the model render_gb_preview.py renders: the ROM can then agree with
+    the preview exactly, rather than approximately.
+
+    Two other things fall out. midi_transpose_slot and midi_floor_lift_slot
+    match tracks with `slot in progs`, so before this a transpose of woods'
+    slot 48 moved three tracks; now it moves the one. And a '#N' drop no longer
+    needs to delete the track, because its slot is no longer shared.
+
+    `assign` is one target program per note-bearing track, in the same order as
+    note_tracks. None leaves a track alone.
+    """
+    b = bytearray(path.read_bytes())
+    _, chunks = _chunks(b)
+    bodies, moved = {}, []
+    for idx, (ci, progs) in enumerate(note_tracks(b)):
+        target = assign[idx] if idx < len(assign) else None
+        if target is None:
+            continue
+        _, s, e = chunks[ci]
+        out, seen, pending = [], False, 0
+        for dt, raw in _events(b, s, e):
+            if raw[0] & 0xF0 == 0xC0:
+                if seen:
+                    pending += dt       # drop the event, keep its time
+                    continue
+                seen = True
+                raw = bytes([raw[0], target])
+            out.append((dt + pending, raw))
+            pending = 0
+        if not seen:
+            # No program change at all: the track is running on slot 0 by
+            # default. Say so explicitly, on the channel it actually plays.
+            ch = next((r[0] & 0x0F for _, r in out if r[0] & 0xF0 == 0x90), 0)
+            out.insert(0, (0, bytes([0xC0 | ch, target])))
+        bodies[ci] = b''.join(_varlen(dt) + raw for dt, raw in out)
+        if progs != [target]:
+            moved.append('#%d %s->%d'
+                         % (idx, '/'.join(str(p) for p in progs) or 'none',
+                            target))
+    if not bodies:
+        return None
+    _write_tracks(path, b, bodies)
+    if moved:
+        log('midi: pinned one slot per track (%s)' % ', '.join(moved))
+    return None
 
 
 def midi_transpose_slot(path, slot, semitones):
@@ -396,35 +526,38 @@ def wire(repo, song, spec, const):
     # with a track being kept and silencing the slot would silence both.
     mid_src = repo / 'sound/songs/midi' / (song + '.mid')
     per_track = note_tracks(bytearray(mid_src.read_bytes()))   # [(chunk, [progs])]
-    slots = [(p[0] if p else None) for _, p in per_track]
+    firsts = [(p[0] if p else 0) for _, p in per_track]
+    slots = list(firsts)
 
-    # A TRACK'S VOICE MUST COVER EVERY SLOT IT EVER SELECTS. Tracks change
-    # program part way through, and a slot no plan named keeps whatever filler
-    # the source voicegroup had -- a full-sustain 50% square that then competes
-    # for square 1 with the melody. Naming only the first program is what made
-    # petalburg_woods, route119 and route111 sound nothing like their previews.
-    #
-    # Kept parts are written first so that where a kept and a dropped track
-    # share a slot, the kept one wins and the part is still heard.
+    # ONE SLOT PER TRACK, decided here and forced into the MIDI below. A track
+    # keeps its own first program unless another track already claimed it, in
+    # which case it takes a slot no track uses -- so the two never collapse into
+    # one voice. See midi_pin_programs for why this is the only thing that works.
+    reserved, taken, assign = set(firsts), set(), []
+    for first in firsts:
+        if first in taken:
+            first = next(n for n in range(128)
+                         if n not in taken and n not in reserved)
+        assign.append(first)
+        taken.add(first)
+
+    # Read the source voicegroup ONCE, to resolve a wave part's waveform from
+    # the slot the composer wrote it on rather than from wherever it lands.
+    _, src_vg = source_voicegroup(repo, song)
+    src_lines = (src_vg.read_text(encoding='utf-8').split('\n')
+                 if src_vg and src_vg.exists() else [])
+
     vg_voices = {}
-    dropped_slots = []
-    for idx, (_, progs) in enumerate(per_track):
-        first = progs[0] if progs else None
-        v = voices.get('#%d' % idx)
-        if v is None and first is not None:
-            v = voices.get(str(first))
+    for idx, first in enumerate(firsts):
+        v = voices.get('#%d' % idx) or voices.get(str(first))
         if v is None:
             continue
-        if v['kind'] == 'drop':
-            dropped_slots.append((idx, progs))
-            continue
-        for slot in progs:
-            vg_voices.setdefault(str(slot), v)
-
-    for idx, progs in dropped_slots:
-        for slot in progs:
-            vg_voices.setdefault(str(slot), dict(voices.get('#%d' % idx)
-                                                 or voices.get(str(progs[0]))))
+        v = dict(v)
+        if v['kind'] == 'wave' and 'wave_sample' not in v and src_lines:
+            v['wave_sample'] = wave_sample_for(src_lines, first)
+            log('slot %d wave sample %d (from the source voicegroup)'
+                % (first, v['wave_sample']))
+        vg_voices[str(assign[idx])] = v
 
     # Any slot named by the plan but selected by no track still gets written,
     # so a hand-tuned variant naming a slot directly is not lost.
@@ -453,15 +586,24 @@ def wire(repo, song, spec, const):
     # has to start clean on every run.
     shutil.copyfile(mid, gb_mid)
 
+    # FIRST, before any edit keyed by slot: those match tracks with
+    # `slot in progs`, so until each track has one program a transpose of
+    # woods' slot 48 moves all three tracks that pass through it.
+    err = midi_pin_programs(gb_mid, assign)
+    if err:
+        return err
+    remap = {f: a for f, a in zip(firsts, assign)}
+
     for slot_s, v in sorted(voices.items()):
         if isinstance(slot_s, str) and slot_s.startswith('#'):
             continue
+        slot = remap.get(int(slot_s), int(slot_s))
         if v.get('transpose'):
-            err = midi_transpose_slot(gb_mid, int(slot_s), v['transpose'])
+            err = midi_transpose_slot(gb_mid, slot, v['transpose'])
             if err:
                 return err
         if v.get('floor_lift'):
-            err = midi_floor_lift_slot(gb_mid, int(slot_s))
+            err = midi_floor_lift_slot(gb_mid, slot)
             if err:
                 return err
     # DESCENDING, and that is not a tidiness preference. Removing a track
@@ -524,6 +666,41 @@ def wire(repo, song, spec, const):
     return None
 
 
+def pin_all(repo):
+    """Pin every already-generated _gb.mid in place, without re-wiring.
+
+    THE ARRANGEMENTS CANNOT BE REGENERATED -- same reason resilence exists. The
+    _gb.mid files carry approved edits (transposes, floor lifts, dropped tracks)
+    that came from variants tuned by ear, and re-running wire() rebuilds them
+    from the original MIDI and whatever plan is passed in. Pinning is a
+    self-contained rewrite of the program changes, so it can be applied to what
+    already shipped and leaves every other approved edit exactly as it is.
+    """
+    repo = Path(repo)
+    cfg = (repo / 'sound/songs/midi/midi.cfg').read_text(encoding='utf-8')
+    changed, collisions = [], []
+    for m in re.finditer(r'^(mus_\S+)_gb\.mid:', cfg, re.M):
+        song = m.group(1)
+        gb = repo / 'sound/songs/midi' / (song + '_gb.mid')
+        if not gb.exists():
+            continue
+        before = gb.read_bytes()
+        firsts = [(p[0] if p else 0)
+                  for _, p in note_tracks(bytearray(before))]
+        dupes = sorted({s for s in firsts if firsts.count(s) > 1})
+        if dupes:
+            # Left alone deliberately: both tracks already share one voice, in
+            # the preview as well as the ROM, so pinning them apart would give
+            # one of them a slot the arrangement never set -- silence.
+            collisions.append((song, dupes))
+        err = midi_pin_programs(gb, firsts)
+        if err:
+            return None, err
+        if gb.read_bytes() != before:
+            changed.append(song)
+    return (changed, collisions), None
+
+
 def resilence(repo):
     """Apply the PSG-only invariant to voicegroups already on disk.
 
@@ -568,9 +745,22 @@ def main():
     ap.add_argument('--plans', type=Path)
     ap.add_argument('--resilence', action='store_true',
                     help='silence non-PSG slots in existing gb_*.inc and exit')
+    ap.add_argument('--pin', action='store_true',
+                    help='pin one program per track in existing _gb.mid and exit')
     ap.add_argument('--songs', help='comma-separated plan names')
     ap.add_argument('--all', action='store_true')
     args = ap.parse_args()
+
+    if args.pin:
+        res, err = pin_all(args.repo)
+        if err:
+            sys.exit(err)
+        changed, collisions = res
+        for song, dupes in collisions:
+            print('note: %s has slot(s) %s on more than one track; left shared'
+                  % (song, dupes))
+        print('\n%d midi(s) pinned to one program per track' % len(changed))
+        return 0
 
     if args.resilence:
         changed = resilence(args.repo)

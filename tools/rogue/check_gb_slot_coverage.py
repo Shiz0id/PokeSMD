@@ -17,10 +17,26 @@ Reported in game as three tracks sounding "nothing like the previews". Nothing
 could see it: the build was clean, the voicegroup was well formed, every check
 passed, and the preview was correct. Only the ROM was wrong.
 
-WHAT IS ASSERTED. For every song wired into GB Sounds, the set of programs its
-_gb.mid selects is a subset of the slots its generated voicegroup explicitly
-set. The generator marks those with an "@ slot N:" comment, so the file records
-its own coverage.
+COVERING THE SLOTS DID NOT FIX IT, which is the more useful half of this note.
+A slot holds one voice. mus_vs_gym_leader's first two tracks each pass through
+slots 48, 56, 60 and 1 in a different order, so whatever is written in those
+four slots, the two parts trade instruments with each other as they go --
+reported in game as Roxanne's theme being "mushed, with wrong instruments"
+after every slot had been named. Naming the slots chooses which voice both
+parts get; it cannot make them differ.
+
+The fix is upstream: wire_gb_song.midi_pin_programs rewrites the _gb.mid so
+each track holds ONE program for its whole length. Slot and track then mean the
+same thing -- which is the model the plan is written in and the model the
+preview renders, so the ROM can agree with the preview exactly.
+
+WHAT IS ASSERTED, for every song wired into GB Sounds:
+  1. each note-bearing track of its _gb.mid selects exactly one program;
+  2. every program so selected is a slot the generated voicegroup explicitly
+     set -- the generator marks those "@ slot N:", so the file records its own
+     coverage.
+(1) is what makes (2) sufficient: without it a track's later slots are invisible
+to any per-track reasoning, and with it the two models cannot drift.
 
 Usage:  python3 tools/rogue/check_gb_slot_coverage.py [REPO | --repo PATH]
         python3 tools/rogue/check_gb_slot_coverage.py --selftest
@@ -62,13 +78,24 @@ def check(repo):
         if not vg.exists():
             bad.append((song, 'no %s' % vg.name))
             continue
-        used = set()
-        for _, progs in wire.note_tracks(bytearray(mid.read_bytes())):
-            used |= set(progs)
+        tracks = wire.note_tracks(bytearray(mid.read_bytes()))
+        wandering = ['#%d %s' % (i, '->'.join(str(p) for p in progs))
+                     for i, (_, progs) in enumerate(tracks) if len(progs) != 1]
+        if wandering:
+            bad.append((song, 'track(s) do not hold one program: %s'
+                              % ', '.join(wandering)))
+            continue
+        # NOT ASSERTED: that no two tracks share a slot. Eleven songs do, and
+        # it is faithful rather than broken -- both parts get one voice on one
+        # channel in the ROM, and render_gb_preview models exactly that, so
+        # what was approved by ear is what plays. Sharing only became a defect
+        # in mus_encounter_champion because the two parts were a sweep and a
+        # doubling of it, and that is an arrangement judgement no check makes.
+        used = {progs[0] for _, progs in tracks}
         text = vg.read_text(encoding='utf-8')
-        managed = {int(x) for x in re.findall(r'@ slot (\d+):', text)}
         body = [l.strip() for l in text.split('\n')
                 if l.strip() and not l.strip().startswith('@')][1:]
+        managed = {int(x) for x in re.findall(r'@ slot (\d+):', text)}
         uncovered = sorted(s for s in used if s not in managed and s < len(body))
         if uncovered:
             bad.append((song, 'slots %s are selected by the midi but left on '
@@ -76,8 +103,8 @@ def check(repo):
         checked += 1
 
     if bad:
-        print('FAIL  check_gb_slot_coverage.py: a track changes program onto a '
-              'slot the arrangement never set')
+        print('FAIL  check_gb_slot_coverage.py: track and voicegroup slot are '
+              'not one to one, so the ROM cannot play the arrangement')
         for song, why in bad:
             print('        %-28s %s' % (song, why))
         return False
@@ -86,8 +113,8 @@ def check(repo):
         print('FAIL  check_gb_slot_coverage.py: no GB songs found to check')
         return False
 
-    print('PASS  check_gb_slot_coverage.py  (%d songs, every selected slot set)'
-          % checked)
+    print('PASS  check_gb_slot_coverage.py  (%d songs, one slot per track and '
+          'every one set)' % checked)
     return True
 
 

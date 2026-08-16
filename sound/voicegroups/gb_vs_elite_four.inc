@@ -11,8 +11,7 @@ voice_group gb_vs_elite_four
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 4: dropped
-	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	voice_square_2 60, 0, 2, 0, 2, 3, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -58,8 +57,8 @@ voice_group gb_vs_elite_four
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	@ slot 47: percussion -> noise
 	voice_noise_alt 60, 0, 1, 0, 1, 0, 2
-	@ slot 48: counter (shares) -> square2
-	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
+	@ slot 48: PAD -> wave
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_3, 1, 5, 14, 3
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -67,8 +66,8 @@ voice_group gb_vs_elite_four
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 56: counter (shares) -> square2
-	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
+	@ slot 56: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -93,11 +92,9 @@ voice_group gb_vs_elite_four
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 80: MELODY -> square1
-	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
-	@ slot 81: dropped
+	@ slot 80: dropped
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_3, 0, 7, 15, 2
 	@ slot 82: MELODY -> square1
 	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
-	@ slot 83: MELODY -> square1
-	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
+	voice_square_1 60, 0, 0, 3, 0, 0, 7, 1

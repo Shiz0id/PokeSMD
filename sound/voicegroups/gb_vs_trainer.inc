@@ -14,23 +14,20 @@ voice_group gb_vs_trainer
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	@ slot 4: dropped
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	@ slot 5: dropped
+	voice_square_1 60, 0, 0, 0, 0, 2, 4, 1
+	voice_square_2 60, 0, 3, 0, 1, 7, 1
+	voice_square_1 60, 0, 0, 3, 0, 1, 7, 1
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	@ slot 17: not in the arrangement and not a PSG voice -- silenced
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	@ slot 6: dropped
-	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	@ slot 7: dropped
-	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 17: MELODY -> square1
-	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -60,26 +57,26 @@ voice_group gb_vs_trainer
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 46: dropped
+	@ slot 46: not in the arrangement and not a PSG voice -- silenced
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	@ slot 47: MELODY -> square1
-	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
-	@ slot 48: MELODY -> square1
-	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 56: PAD -> wave
+	@ slot 47: dropped
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	@ slot 48: PAD -> wave
 	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_5, 1, 5, 14, 3
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 60: MELODY -> square1
-	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	@ slot 56: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	@ slot 60: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -103,16 +100,12 @@ voice_group gb_vs_trainer
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	@ slot 81: dropped
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	@ slot 82: dropped
-	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	@ slot 83: dropped
-	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 85: dropped
-	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	voice_square_1 60, 0, 0, 2, 0, 1, 7, 1
+	voice_square_2 60, 0, 1, 0, 1, 9, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 90: dropped
-	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_7, 0, 7, 15, 2

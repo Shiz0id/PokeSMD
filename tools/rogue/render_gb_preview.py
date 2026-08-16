@@ -854,6 +854,86 @@ def gb_voicegroup_slots(repo, song):
     return out
 
 
+SHIPPED = set()          # variant names rendered from the built artefacts
+
+
+def voices_from_inc(path):
+    """-> {slot: voice} read back OUT of a shipped gb_*.inc.
+
+    THE PREVIEW HAS ONLY EVER RENDERED MY INTENT. It reads the original .mid
+    and a plan dict, so it shows what the arrangement was meant to be. The ROM
+    plays the _gb.mid against the gb_*.inc, and every fault reported in game so
+    far has lived in the gap between those two pairs: mid-track program changes
+    (invisible, the plan names one slot per track), slot 127 unnamed and
+    inheriting whatever the source held, wave samples defaulted, a hand-written
+    mapping nothing regenerated. Each time the preview was faithful to the plan
+    and the plan was not what shipped.
+
+    Reading the shipped files back closes that. It cannot confirm the
+    arrangement is good -- only ears do that -- but it can confirm the thing
+    being listened to is the thing in the ROM.
+    """
+    body, seen = [], False
+    for line in path.read_text(encoding='utf-8').split('\n'):
+        m = re.match(r'\s*(voice_\w+)\s*(.*)', line)
+        if not m:
+            continue
+        if m.group(1) == 'voice_group':
+            seen = True
+            continue
+        if seen:
+            body.append((m.group(1), [a.strip() for a in m.group(2).split(',')]))
+
+    out = {}
+    for slot, (macro, args) in enumerate(body):
+        base = macro[:-4] if macro.endswith('_alt') else macro
+        v = dict(duty=0, a=0, d=0, s=0, r=0, name='slot %d' % slot)
+        if base == 'voice_square_1' and len(args) >= 8:
+            v.update(kind='square1', duty=int(args[3]),
+                     a=int(args[4]), d=int(args[5]),
+                     s=int(args[6]), r=int(args[7]))
+            if (v['duty'], v['a'], v['d'], v['s'], v['r']) == (3, 0, 0, 0, 0):
+                v['kind'] = 'drop'      # the generator's SILENT entry
+        elif base == 'voice_square_2' and len(args) >= 7:
+            v.update(kind='square2', duty=int(args[2]), a=int(args[3]),
+                     d=int(args[4]), s=int(args[5]), r=int(args[6]))
+        elif base == 'voice_programmable_wave' and len(args) >= 7:
+            mm = re.search(r'ProgrammableWaveData_(\d+)', args[2])
+            v.update(kind='wave', wave_sample=int(mm.group(1)) if mm else 6,
+                     a=int(args[3]), d=int(args[4]),
+                     s=int(args[5]), r=int(args[6]))
+        elif base == 'voice_noise' and len(args) >= 7:
+            v.update(kind='noise', a=int(args[3]), d=int(args[4]),
+                     s=int(args[5]), r=int(args[6]))
+        else:
+            # Not a PSG voice at all: m4a plays it on the sampled pool, under
+            # the reduction. Rendering it as silence keeps the preview honest
+            # about the PSG mix; check_gb_voicegroup_psg is what fails on it.
+            v['kind'] = 'drop'
+        out[slot] = v
+    return out
+
+
+def add_shipped(repo, song):
+    """Register `song` as a variant taken from its built files. -> name or None."""
+    cfg = (Path(repo) / 'sound/songs/midi/midi.cfg').read_text(encoding='utf-8')
+    m = re.search(r'^%s_gb\.mid:\s*(.*)$' % re.escape(song), cfg, re.M)
+    if not m:
+        return None
+    g = re.search(r'-G(\S+)', m.group(1))
+    if not g:
+        return None
+    inc = Path(repo) / 'sound/voicegroups' / (g.group(1).lstrip('_') + '.inc')
+    gb_mid = Path(repo) / 'sound/songs/midi' / (song + '_gb.mid')
+    if not inc.exists() or not gb_mid.exists():
+        return None
+    name = song.replace('mus_', '') + '_shipped'
+    VARIANTS[name] = voices_from_inc(inc)
+    VARIANT_SONG[name] = song
+    SHIPPED.add(name)
+    return name
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--repo', default='.', type=Path)
@@ -867,6 +947,12 @@ def main():
                          'plan in it as a variant')
     ap.add_argument('--all', action='store_true',
                     help='render every variant in --plans')
+    ap.add_argument('--shipped',
+                    help='comma-separated song names (or "all") rendered from '
+                         'the BUILT files -- the _gb.mid and the gb_*.inc that '
+                         'the ROM plays -- instead of from a plan. This is the '
+                         'only mode that can disagree with the arrangement, '
+                         'which is the point of it.')
     ap.add_argument('--loops', type=int, default=1,
                     help='render N passes back to back. THE PREVIEW IS BLIND TO '
                          'LOOP SEAMS AT 1: every track in the game loops, and a '
@@ -890,17 +976,36 @@ def main():
         if args.all:
             names = sorted(loaded)
 
+    if args.shipped:
+        cfg = (args.repo / 'sound/songs/midi/midi.cfg').read_text(encoding='utf-8')
+        wanted = ([m.group(1) for m in re.finditer(r'^(mus_\S+)_gb\.mid:', cfg, re.M)]
+                  if args.shipped.strip() == 'all'
+                  else [s.strip() for s in args.shipped.split(',') if s.strip()])
+        names = []
+        for song in wanted:
+            song = song if song.startswith('mus_') else 'mus_' + song
+            got = add_shipped(args.repo, song)
+            if got is None:
+                sys.exit('%s has no _gb build to render' % song)
+            names.append(got)
+
     failed = []
     for name in names:
         voices = VARIANTS.get(name)
         if voices is None:
             sys.exit('unknown variant %r -- have %s'
                      % (name, ', '.join(sorted(VARIANTS))))
-        # Slots are song-specific, so each variant parses its own MIDI.
+        # Slots are song-specific, so each variant parses its own MIDI. A
+        # shipped render reads the _gb.mid, which already carries the drops,
+        # transposes and floor lifts -- so it must NOT also apply them from a
+        # plan, and does not, because it has no plan.
         song = VARIANT_SONG.get(name, 'mus_petalburg_woods')
-        if song not in cache:
-            cache[song] = parse_midi(args.repo / 'sound/songs/midi' / (song + '.mid'))
-        tracks = cache[song]
+        key = (song, name in SHIPPED)
+        if key not in cache:
+            suffix = '_gb.mid' if name in SHIPPED else '.mid'
+            cache[key] = parse_midi(args.repo / 'sound/songs/midi'
+                                    / (song + suffix))
+        tracks = cache[key]
         total = max(off for _, notes in tracks for (_, off, _) in notes)
         if args.loops > 1:
             # Concatenate N passes. Approximates the GOTO the song assembles to:
@@ -922,7 +1027,10 @@ def main():
         # the missing part is not in them. An early brendan variant used another
         # song's slot numbers and rendered with no melody and no bass at all.
         present = {s for s, _ in tracks} | {'#%d' % i for i in range(len(tracks))}
-        orphan = [k for k in voices if k not in present]
+        # Meaningless for a shipped render: a voicegroup has an entry for all
+        # 128 slots by definition, and only the ones a track selects mean
+        # anything. A plan naming a slot no track uses is the real defect.
+        orphan = [] if name in SHIPPED else [k for k in voices if k not in present]
         if orphan:
             print('    WARNING: %s named in the variant but NOT IN THIS SONG -- '
                   'those parts are silently absent' % sorted(map(str, orphan)))

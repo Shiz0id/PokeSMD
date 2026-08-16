@@ -11,20 +11,18 @@ voice_group gb_cave_of_origin
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 4: dropped
+	voice_square_2_alt 60, 0, 2, 0, 2, 4, 1
+	voice_square_1_alt 60, 0, 0, 2, 0, 2, 4, 1
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	@ slot 14: not in the arrangement and not a PSG voice -- silenced
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	@ slot 5: dropped
-	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 14: PAD -> wave
-	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_3, 1, 5, 14, 3
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -56,12 +54,12 @@ voice_group gb_cave_of_origin
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 46: PAD -> wave
-	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_3, 1, 5, 14, 3
+	@ slot 46: counter (shares) -> square2
+	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
 	@ slot 47: copy of #5
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	@ slot 48: PAD -> wave
-	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_3, 1, 5, 14, 3
+	@ slot 48: MELODY -> square1
+	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -74,8 +72,8 @@ voice_group gb_cave_of_origin
 	@ slot 58: copy of #7
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 60: counter (shares) -> square2
-	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
+	@ slot 60: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -101,11 +99,9 @@ voice_group gb_cave_of_origin
 	voice_square_2_alt 60, 0, 3, 0, 2, 12, 1
 	@ slot 82: dropped
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	@ slot 83: dropped
-	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	voice_square_1_alt 60, 0, 0, 0, 0, 0, 7, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 88: bass -> square2
-	voice_square_2_alt 60, 0, 3, 0, 2, 12, 1
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_7, 0, 7, 15, 2

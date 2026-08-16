@@ -20,8 +20,8 @@ voice_group gb_encounter_interviewer
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 13: TRUMPET upper -> square1
-	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
+	@ slot 13: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -66,8 +66,8 @@ voice_group gb_encounter_interviewer
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 56: TRUMPET upper -> square1
-	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
+	@ slot 56: TRUMPET lower (the fifth) -> wave
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_5, 0, 3, 14, 2
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -97,10 +97,8 @@ voice_group gb_encounter_interviewer
 	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
 	@ slot 82: bass octave dbl
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	@ slot 83: dropped
-	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	@ slot 84: counter -> square2
-	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
+	voice_square_1_alt 60, 0, 0, 1, 2, 1, 5, 0
+	voice_square_2_alt 60, 0, 1, 2, 1, 5, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0

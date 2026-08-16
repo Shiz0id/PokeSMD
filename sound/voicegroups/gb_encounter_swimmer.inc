@@ -11,10 +11,8 @@ voice_group gb_encounter_swimmer
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 4: counter -> square2
-	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
-	@ slot 5: MELODY (square_1 part) -> square1
-	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
+	voice_square_2_alt 60, 0, 2, 0, 1, 6, 1
+	voice_square_1_alt 60, 0, 0, 2, 0, 1, 6, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -55,12 +53,12 @@ voice_group gb_encounter_swimmer
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 45: harp -> wave
-	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_1, 1, 4, 14, 3
+	@ slot 45: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	@ slot 46: harp -> wave
 	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_1, 1, 4, 14, 3
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 48: harp 2nd
+	@ slot 48: not in the arrangement and not a PSG voice -- silenced
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -73,8 +71,8 @@ voice_group gb_encounter_swimmer
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 60: harp -> wave
-	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_1, 1, 4, 14, 3
+	@ slot 60: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -145,5 +143,4 @@ voice_group gb_encounter_swimmer
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	@ slot 126: perc -> noise
 	voice_noise_alt 60, 0, 1, 0, 1, 0, 2
-	@ slot 127: perc -> noise
-	voice_noise_alt 60, 0, 1, 0, 1, 0, 2
+	voice_noise_alt 60, 0, 0, 0, 1, 0, 2
