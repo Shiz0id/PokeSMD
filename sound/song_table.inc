@@ -392,7 +392,7 @@ gSongTable::
 	song mus_fortree, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_birch_lab, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_b_tower_rs, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_swimmer, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_swimmer, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_SWIMMER_PSG
 	song mus_cave_of_origin, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_obtain_berry, MUSIC_PLAYER_SE2, GBS_MUSIC_NONE
 	song mus_awaken_legend, MUSIC_PLAYER_SE2, GBS_MUSIC_NONE
@@ -460,7 +460,7 @@ gSongTable::
 	song mus_encounter_elite_four, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_ELITE_FOUR_PSG
 	song mus_encounter_hiker, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_HIKER_PSG
 	song mus_contest_lobby, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_interviewer, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_interviewer, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_INTERVIEWER_PSG
 	song mus_encounter_champion, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_CHAMPION_PSG
 	song mus_credits, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_end, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE

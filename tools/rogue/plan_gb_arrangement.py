@@ -88,9 +88,26 @@ def source_voices(repo, song):
         line = line.strip()
         if not line or line.startswith('@'):
             continue
-        out[slot] = line.split()[0]
+        out[slot] = line          # the WHOLE line: the sample name is the signal
         slot += 1
     return out
+
+
+# The voicegroup names its instruments, and that is a far better signal for what
+# a part IS than pitch and note count are. Six arrangements had to be corrected
+# by ear because the pitch rules called an ornament the melody: surf's harp
+# arpeggio, swimmer's 15-note accent, champion's sparkle layer.
+LEAD_WORDS = ('trumpet', 'horn', 'strings', 'flute', 'sax', 'oboe', 'clarinet',
+              'violin', 'brass', 'choir', 'organ', 'accordion', 'whistle',
+              'glockenspiel', 'marimba', 'vibraphone')
+TEXTURE_WORDS = ('harp', 'bubble', 'bell', 'chime', 'pizzicato', 'timpani',
+                 'crystal')
+BASS_WORDS = ('bass', 'tuba')
+
+
+def has_word(line, words):
+    line = (line or '').lower()
+    return any(w in line for w in words)
 
 
 def wave_samples(repo, song):
@@ -138,34 +155,108 @@ def pick_wave_sample(samples, slot):
     return 6
 
 
+def redundant_of(tracks, i, j):
+    """Is track j a duplicate or octave copy of track i?
+
+    THE PLANNER CANNOT SEE REDUNDANCY OTHERWISE. It ranks by pitch, note count
+    and sounding time, and a duplicate scores identically well on every one of
+    them -- so a copy of the bass can win the wave channel and contribute
+    nothing, which is exactly what happened to mus_encounter_rich. Five of the
+    six arrangements corrected by ear were this: rich's bass copy, interviewer's
+    bass octave, swimmer's second harp, champion's sweep doubling, surf's second
+    strings.
+
+    A copy is one that lands on the same pitch, or an exact octave from it, on
+    most of the onsets the two share.
+    """
+    a, b = tracks[i][1], tracks[j][1]
+    ai = {round(o, 3): p for (o, _, p) in a}
+    d = [p - ai[round(o, 3)] for (o, _, p) in b if round(o, 3) in ai]
+    if len(d) < 8 or len(d) < 0.5 * min(len(a), len(b)):
+        return False
+    same = sum(1 for x in d if x in (0, 12, -12, 24, -24))
+    return same > 0.85 * len(d)
+
+
+def drop_redundant(tracks, info, free):
+    """Remove copies from consideration, keeping the fuller of each pair."""
+    dropped = {}
+    for i in sorted(free):
+        if i in dropped:
+            continue
+        for j in sorted(free):
+            if j <= i or j in dropped:
+                continue
+            if redundant_of(tracks, i, j):
+                # keep whichever sounds for longer; a copy adds nothing
+                loser = j if info[i]['snd'] >= info[j]['snd'] else i
+                keeper = i if loser == j else j
+                dropped[loser] = keeper
+                if loser == i:
+                    break
+    return dropped
+
+
 def plan(tracks, voices=None):
-    """tracks: [(slot, notes)] -> {slot: (channel, role)}"""
+    """tracks: [(slot, notes)] -> {track index: (channel, role)}
+
+    KEYED BY TRACK INDEX, NOT SLOT. Two midi tracks may select the same
+    voicegroup slot and not be duplicates at all -- champion's chromatic sweep
+    and a doubling of it, surf's two string parts, underwater's two counters.
+    Keying the census by slot silently discarded one of each pair, so those
+    songs were planned on incomplete data and three of them had to be corrected
+    by ear afterwards.
+    """
     voices = voices or {}
     info = {}
-    for slot, notes in tracks:
+    for idx, (slot, notes) in enumerate(tracks):
         pitches = [p for (_, _, p) in notes]
-        info[slot] = dict(notes=notes, n=len(notes), med=median(pitches),
-                          lo=min(pitches), hi=max(pitches),
-                          snd=sounding(notes), flat=len(set(pitches)) == 1)
+        info[idx] = dict(slot=slot, notes=notes, n=len(notes),
+                         med=median(pitches), lo=min(pitches), hi=max(pitches),
+                         snd=sounding(notes), flat=len(set(pitches)) == 1)
 
     free = set(info)
     out = {}
+
+    # Copies first: they are indistinguishable from the real part on every
+    # metric below, so they must go before anything is ranked.
+    for loser, keeper in drop_redundant(tracks, info, free).items():
+        out[loser] = ('drop', 'copy of #%d' % keeper)
+        free.discard(loser)
 
     # Percussion, from the voicegroup where it says so, falling back on a part
     # whose pitch never varies. Several may qualify; they share the one noise
     # channel.
     perc = [s for s in free
-            if voices.get(s, '').startswith(('voice_keysplit_all', 'voice_noise'))
+            if voices.get(info[s]['slot'], '').split()[0].startswith(
+                ('voice_keysplit_all', 'voice_noise'))
             or info[s]['flat']]
     for s in perc:
         out[s] = ('noise', 'percussion')
         free.discard(s)
 
-    # Melody: most notes among the parts in the upper half of the pitch range.
+    # Melody. Named melodic instruments are preferred over ornaments, and only
+    # if the voicegroup says nothing useful does it fall back to pitch and note
+    # count -- which is the rule that kept picking harps and high accents.
     if free:
-        top = max(info[s]['med'] for s in free)
-        upper = [s for s in free if info[s]['med'] >= top - 12] or list(free)
-        mel = max(upper, key=lambda s: info[s]['n'])
+        # Three tiers, most specific first:
+        #   1. a NAMED melodic instrument -- the voicegroup saying what it is
+        #   2. failing that, a voice_square_1 part: on a song whose chip layer
+        #      is already written, square 1 is where its lead was meant to go
+        #   3. failing that, anything that is not obviously texture
+        named = [s for s in free
+                 if has_word(voices.get(info[s]['slot']), LEAD_WORDS)
+                 and not has_word(voices.get(info[s]['slot']), TEXTURE_WORDS)
+                 and not has_word(voices.get(info[s]['slot']), BASS_WORDS)]
+        sq1 = [s for s in free
+               if (voices.get(info[s]['slot']) or '').startswith('voice_square_1')]
+        pool = (named or sq1
+                or [s for s in free
+                    if not has_word(voices.get(info[s]['slot']), TEXTURE_WORDS)]
+                or list(free))
+        top = max(info[s]['med'] for s in pool)
+        upper = [s for s in pool if info[s]['med'] >= top - 12] or pool
+        mel = max(upper, key=lambda s: (info[s]['n'], info[s]['snd']))
         out[mel] = ('square1', 'MELODY')
         free.discard(mel)
 
@@ -175,7 +266,10 @@ def plan(tracks, voices=None):
     # happens to play low notes) over the actual bass (50-63) and then dropped
     # the real bass entirely. A bass line is defined by its ceiling.
     if free:
-        bass = min(free, key=lambda s: (info[s]['hi'], info[s]['med']))
+        named = [s for s in free
+                 if has_word(voices.get(info[s]['slot']), BASS_WORDS)]
+        pool = named or list(free)
+        bass = min(pool, key=lambda s: (info[s]['hi'], info[s]['med']))
         out[bass] = ('square2', 'bass')
         free.discard(bass)
 
@@ -261,22 +355,35 @@ def main():
                 print('%-28s  (no note data)' % song)
                 continue
             samples = wave_samples(args.repo, song)
+            # A slot that only one track uses can be addressed by slot; a slot
+            # two tracks share must be addressed by track index, or the two get
+            # the same voice and cannot be told apart.
+            counts = {}
+            for slot, _ in tracks:
+                counts[slot] = counts.get(slot, 0) + 1
             voices = {}
-            for slot, (ch, role) in out.items():
+            for idx, (ch, role) in out.items():
+                slot = info[idx]['slot']
                 v = dict(ROLE_VOICE[role])
                 v['name'] = role
                 if ch == 'wave':
                     v['wave_sample'] = pick_wave_sample(samples, slot)
-                voices[str(slot)] = v
+                if ch in ('square1', 'square2'):
+                    v['floor_lift'] = True
+                key = '#%d' % idx if counts[slot] > 1 else str(slot)
+                voices[key] = v
             name = song.replace('mus_', '')
             plans[name] = dict(song=song, voices=voices)
 
             kept = sum(i['snd'] for s, i in info.items() if out[s][0] != 'drop')
             allp = sum(i['snd'] for i in info.values())
             used = sorted({out[s][0] for s in out if out[s][0] != 'drop'})
-            print('%-28s %4d/%-2d %5s %7.0f%%   %s'
+            dupes = sum(1 for c in counts.values() if c > 1)
+            print('%-28s %4d/%-2d %11.0f%%   %s%s'
                   % (song, sum(1 for s in out if out[s][0] != 'drop'), len(out),
-                     '', 100 * kept / allp if allp else 0, ' '.join(used)))
+                     100 * kept / allp if allp else 0, ' '.join(used),
+                     '   (%d shared slot%s)' % (dupes, '' if dupes == 1 else 's')
+                     if dupes else ''))
         if args.emit:
             # Merge rather than overwrite, so families can be accumulated into
             # one plans file across several runs.
@@ -304,15 +411,27 @@ def main():
 
     total = max(off for _, ns in tracks for (_, off, _) in ns)
     print('%s -- %d parts, %.1f s\n' % (args.song, len(tracks), total))
-    print('%-6s %-9s %-18s %6s %7s %8s' %
-          ('slot', 'channel', 'role', 'notes', 'range', 'sounding'))
-    print('-' * 62)
+    # BOTH numbers, always. Track index and slot are different things and a
+    # column showing one under the other's heading has already cost a round:
+    # a comparison script printed one song's slots beside another's tracks and
+    # an arrangement was hand-written against numbers that matched nothing.
+    print('%-5s %-6s %-9s %-18s %6s %7s %8s' %
+          ('trk', 'slot', 'channel', 'role', 'notes', 'range', 'sounding'))
+    print('-' * 68)
     order = {'square1': 0, 'square2': 1, 'wave': 2, 'noise': 3, 'drop': 4}
-    for slot in sorted(out, key=lambda s: (order[out[s][0]], -info[s]['snd'])):
-        ch, role = out[slot]
-        i = info[slot]
-        print('%-6d %-9s %-18s %6d %3d-%-3d %7.1fs'
-              % (slot, ch, role, i['n'], i['lo'], i['hi'], i['snd']))
+    counts = {}
+    for slot, _ in tracks:
+        counts[slot] = counts.get(slot, 0) + 1
+    for idx in sorted(out, key=lambda s: (order[out[s][0]], -info[s]['snd'])):
+        ch, role = out[idx]
+        i = info[idx]
+        shared = '*' if counts[i['slot']] > 1 else ' '
+        print('#%-4d %-5d%s %-9s %-18s %6d %3d-%-3d %7.1fs'
+              % (idx, i['slot'], shared, ch, role, i['n'], i['lo'], i['hi'],
+                 i['snd']))
+    if any(c > 1 for c in counts.values()):
+        print('  * shared slot: addressed by track index, since a voicegroup '
+              'cannot tell two tracks on one slot apart')
 
     kept = sum(i['snd'] for s, i in info.items() if out[s][0] != 'drop')
     allp = sum(i['snd'] for i in info.values())

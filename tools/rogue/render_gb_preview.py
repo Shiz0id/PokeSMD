@@ -48,6 +48,11 @@ VARIANT_SONG = {
     'hiker_fix': 'mus_encounter_hiker',
     'surf_fix': 'mus_surf',
     'underwater_fix': 'mus_underwater',
+    'rich_fix': 'mus_encounter_rich',
+    'rich_fix2': 'mus_encounter_rich',
+    'rich_fix3': 'mus_encounter_rich',
+    'swimmer_fix': 'mus_encounter_swimmer',
+    'interviewer_fix': 'mus_encounter_interviewer',
 }
 
 # Voice assignment, mirroring MAPPING in make_gb_voicegroup.py. Keyed by the
@@ -178,6 +183,93 @@ VARIANTS = {
         127: dict(kind='noise',  duty=0, a=0, d=1, s=0,  r=2, name='perc'),
         56: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='dropped'),
         80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='dropped'),
+    },
+    # mus_encounter_rich. The wave channel was playing the BASS TWICE: slot 80
+    # is +0 semitones from the tuba on all 73 of its notes, an exact chip
+    # reinforcement. So the channel contributed nothing while keysplit_strings
+    # (17.2 s, the longest-sounding part in the track) was dropped. That is why
+    # it sounded wrong with no contention at all -- nothing was competing, the
+    # arrangement was simply discarding the music.
+    'rich_fix': {
+        73: dict(kind='square1', duty=2, a=0, d=2, s=13, r=1, floor_lift=True,
+                 name='flute MELODY'),
+        48: dict(kind='wave', duty=0, a=1, d=4, s=14, r=3, name='STRINGS'),
+        58: dict(kind='square2', duty=3, a=0, d=2, s=12, r=1, floor_lift=True,
+                 name='tuba bass'),
+        80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='bass duplicate'),
+        1:  dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='piano'),
+    },
+    # rich, take two: same parts, refined tone. The melody is a FLUTE and was on
+    # 50% duty, the fattest voice on the chip and the opposite of a flute -- 25%
+    # is thinner and reads as light rather than blunt. The strings move onto
+    # wave sample 20, a descending sawtooth, which is the classic string shape;
+    # rich's own voicegroup has no programmable_wave voice at all, so the
+    # fallback had put them on 6, which is pulse-ish and bright.
+    'rich_fix2': {
+        73: dict(kind='square1', duty=1, a=0, d=3, s=12, r=2, floor_lift=True,
+                 name='flute MELODY (25% duty)'),
+        48: dict(kind='wave', duty=0, a=1, d=4, s=14, r=4, wave_sample=20,
+                 name='STRINGS (sawtooth)'),
+        58: dict(kind='square2', duty=3, a=0, d=2, s=12, r=1, floor_lift=True,
+                 name='tuba bass'),
+        80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='bass duplicate'),
+        1:  dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='piano'),
+    },
+    # rich, take three: the PIANO on the wave channel instead of the strings.
+    # 77 notes over 16.4 s, and it cannot share square 2 -- it collides with the
+    # tuba on 55 of its 77 onsets, 95% of its sounding time -- so it is wave or
+    # nothing. Sample 2 is a clean triangle, softer than a sawtooth and closer
+    # to a struck string. Which of these two carries the track's character is a
+    # listening question, not a measurable one.
+    'rich_fix3': {
+        73: dict(kind='square1', duty=1, a=0, d=3, s=12, r=2, floor_lift=True,
+                 name='flute MELODY (25% duty)'),
+        1:  dict(kind='wave', duty=0, a=0, d=3, s=13, r=3, wave_sample=2,
+                 name='PIANO (triangle)'),
+        58: dict(kind='square2', duty=3, a=0, d=2, s=12, r=1, floor_lift=True,
+                 name='tuba bass'),
+        80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='bass duplicate'),
+        48: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='strings'),
+    },
+    # mus_encounter_swimmer. The 15-note part on square 1 sounded for 3.2 s of
+    # 12.7 and won only for being highest. The source voicegroup names the
+    # intended channels outright: slot 81 is a square_1_alt and slot 80 a
+    # square_2_alt, so those are the chip lead and counter. The harp goes on the
+    # wave channel; its second track and the tiny accent are dropped.
+    'swimmer_fix': {
+        81: dict(kind='square1', duty=2, a=0, d=2, s=13, r=1, floor_lift=True,
+                 name='MELODY (square_1 part)'),
+        80: dict(kind='square2', duty=1, a=0, d=1, s=10, r=1, floor_lift=True,
+                 name='counter'),
+        33: dict(kind='square2', duty=3, a=0, d=2, s=12, r=1, floor_lift=True,
+                 name='fingered bass'),
+        '#0': dict(kind='wave', duty=0, a=1, d=4, s=14, r=3, name='harp'),
+        '#2': dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='harp 2nd'),
+        73: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='15-note accent'),
+        126: dict(kind='noise', duty=0, a=0, d=1, s=0, r=2, name='perc'),
+        0:  dict(kind='noise', duty=0, a=0, d=1, s=0, r=2, name='drums'),
+    },
+    # mus_encounter_interviewer. Tracks #1 and #3 are both keysplit_trumpet and
+    # sit a fifth apart on 60 of 69 aligned notes -- a fanfare in fifths, and
+    # only one half survived. A fanfare missing its harmony is thin in a way
+    # that is hard to name, which is what '50/50, something wrong' sounds like.
+    # The second trumpet takes the wave channel to put the interval back.
+    # Slot 82, the programmable_wave part, is dropped: it is +12 from the slap
+    # bass on all 31 aligned notes, so it only doubles it.
+    'interviewer_fix': {
+        '#1': dict(kind='square1', duty=2, a=0, d=2, s=13, r=1,
+                   name='TRUMPET upper'),
+        '#3': dict(kind='wave', duty=0, a=0, d=3, s=14, r=2,
+                   name='TRUMPET lower (the fifth)'),
+        36: dict(kind='square2', duty=3, a=0, d=2, s=12, r=1, floor_lift=True,
+                 name='slap bass'),
+        81: dict(kind='square2', duty=1, a=0, d=1, s=10, r=1, floor_lift=True,
+                 name='counter'),
+        80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='dropped'),
+        82: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='bass octave dbl'),
+        127: dict(kind='noise', duty=0, a=0, d=1, s=0, r=2, name='perc'),
+        126: dict(kind='noise', duty=0, a=0, d=1, s=0, r=2, name='perc'),
+        0:  dict(kind='noise', duty=0, a=0, d=1, s=0, r=2, name='drums'),
     },
     # mus_surf. The heuristic called sc88pro_harp the melody because it is the
     # highest busy part -- but in Surf the harp is the flowing arpeggio figure,
