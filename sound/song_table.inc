@@ -372,7 +372,7 @@ gSongTable::
 	song mus_petalburg, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_oldale, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_gym, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_surf, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_surf, MUSIC_PLAYER_BGM, GBS_MUSIC_SURF_PSG
 	song mus_petalburg_woods, MUSIC_PLAYER_BGM, GBS_MUSIC_WOODS_M4A_PSG
 	song mus_level_up, MUSIC_PLAYER_SE2, GBS_SFX_LEVEL_UP
 	song mus_heal, MUSIC_PLAYER_SE2, GBS_MUSIC_NONE
@@ -418,7 +418,7 @@ gSongTable::
 	song mus_lilycove, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_route111, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_help, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_underwater, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_underwater, MUSIC_PLAYER_BGM, GBS_MUSIC_UNDERWATER_PSG
 	song mus_victory_trainer, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_title, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_intro, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE

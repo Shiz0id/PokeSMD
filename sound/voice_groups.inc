@@ -223,3 +223,5 @@
 .include "sound/voicegroups/gb_vs_elite_four.inc"
 .include "sound/voicegroups/gb_vs_frontier_brain.inc"
 .include "sound/voicegroups/gb_vs_gym_leader.inc"
+.include "sound/voicegroups/gb_underwater.inc"
+.include "sound/voicegroups/gb_surf.inc"

@@ -175,19 +175,38 @@ def midi_floor_lift_slot(path, slot):
     return None
 
 
-def track_slots(path):
-    """-> [program per MIDI track], so '#N' keys can be resolved to a slot."""
-    b = bytearray(path.read_bytes())
+def note_tracks(b):
+    """-> [(chunk index, program)] for tracks that CARRY NOTES.
+
+    '#N' KEYS COUNT NOTE-BEARING TRACKS, NOT CHUNKS, because that is what
+    render_gb_preview.py's parse_midi returns and the plans are written against
+    its numbering. Every one of these MIDIs opens with a conductor track holding
+    only tempo, so counting chunks shifts every index by one -- which silently
+    wired mus_encounter_champion's melody voice onto its percussion slot and
+    dropped its counter line instead of the intended doubling.
+    """
     _, chunks = _chunks(b)
-    return [_scan(b, s, e)[0] for (_, s, e) in chunks]
+    out = []
+    for ci, (_, s, e) in enumerate(chunks):
+        prog, keys = _scan(b, s, e)
+        if keys:
+            out.append((ci, prog))
+    return out
+
+
+def track_slots(path):
+    """-> [program per note-bearing MIDI track], matching parse_midi."""
+    return [prog for _, prog in note_tracks(bytearray(path.read_bytes()))]
 
 
 def midi_drop_track(path, index):
     b = bytearray(path.read_bytes())
     ntrks, chunks = _chunks(b)
-    if index >= len(chunks):
-        return 'track #%d does not exist' % index
-    cs, _, ce = chunks[index]
+    notes = note_tracks(b)
+    if index >= len(notes):
+        return 'note-bearing track #%d does not exist' % index
+    # index counts note-bearing tracks; map it back to the real chunk.
+    cs, _, ce = chunks[notes[index][0]]
     out = bytearray(b[:cs]) + bytearray(b[ce:])
     struct.pack_into('>H', out, 10, ntrks - 1)
     path.write_bytes(bytes(out))
