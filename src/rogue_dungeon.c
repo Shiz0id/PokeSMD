@@ -1151,6 +1151,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         // have been a silent regression - the same shape of mistake as a new
         // weather dropping out of battle_util.c's switch.
         .mapId = MAP_ROGUE_DUNGEON_LEAVES,
+        // it IS Petalburg Woods, and the only theme this track was ever right for
+        .music = MUS_PETALBURG_WOODS,
         .mapSecId = MAPSEC_ROGUE_WOODS,
         .berries = TRUE,   // open sky and soil
         .generator = DUNGEON_GEN_WOODS,
@@ -1218,6 +1220,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_FLOOR,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        // vanilla uses it for Shoal Cave -- a plain deep cave
+        .music = MUS_MT_PYRE,
         .mapSecId = MAPSEC_ROGUE_CAVE,
         .generator = DUNGEON_GEN_ORGANIC,
         .caveFill = 48,
@@ -1267,6 +1271,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_NEWMAUVILLE,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        // New Mauville is an electrical facility, not a cave; the hideout track is the industrial one
+        .music = MUS_AQUA_MAGMA_HIDEOUT,
         .mapSecId = MAPSEC_ROGUE_NEWMAUVILLE,
         // The room-and-corridor carve, not the facility floorplan.
         //
@@ -1349,6 +1355,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_FIERYPATH,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        // the volcano track, for a lava cave
+        .music = MUS_MT_CHIMNEY,
         .mapSecId = MAPSEC_ROGUE_FIERYPATH,
         .generator = DUNGEON_GEN_ORGANIC,
         .caveFill = 48,
@@ -1404,6 +1412,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_MIRAGETOWER,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        // Mirage Tower stands in the desert and this is the desert track
+        .music = MUS_DESERT,
         .mapSecId = MAPSEC_ROGUE_MIRAGETOWER,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
@@ -1471,6 +1481,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         // weather reaches battle only if it is added to that switch, and
         // WEATHER_PETALS is the one deliberately left out.
         .mapId = MAP_ROGUE_DUNGEON_RAIN,
+        // unchanged -- Route 119 is the jungle route, and it already had it
+        .music = MUS_ROUTE119,
         .mapSecId = MAPSEC_ROGUE_JUNGLE,
 
         .berries = TRUE,   // open sky and soil
@@ -1546,6 +1558,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_OCEAN,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        // vanilla uses it for Faraway and Southern Islands
+        .music = MUS_ABANDONED_SHIP,
         .mapSecId = MAPSEC_ROGUE_OCEAN,
         .generator = DUNGEON_GEN_CAVE,   // the rock nine slice tiles 1x1
         // NOT DUNGEON_ELEVATION_FLOOR. Water is elevation 1 - see the note by
@@ -1636,6 +1650,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         // a map-header property and the header is read out of ROM, so it cannot
         // be faked the way the tileset swap is. See theme->mapId.
         .mapId = MAP_ROGUE_DUNGEON_UNDERWATER,
+        // unchanged, and already correct
+        .music = MUS_UNDERWATER,
         .mapSecId = MAPSEC_ROGUE_UNDERWATER,
 
         .generator = DUNGEON_GEN_CAVE,
@@ -1770,6 +1786,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_VRSIDNEY,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        // it is Victory Road
+        .music = MUS_VICTORY_ROAD,
         .mapSecId = MAPSEC_ROGUE_VR_SIDNEY,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
@@ -1824,6 +1842,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_VRPHOEBE,
         .mapId = MAP_ROGUE_DUNGEON_FOG,
+        // Phoebe is the Mt Pyre ghost trainer; the exterior track keeps her distinct from CAVE
+        .music = MUS_MT_PYRE_EXTERIOR,
         .mapSecId = MAPSEC_ROGUE_VR_PHOEBE,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
@@ -1883,6 +1903,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_LAPIS,
         .mapId = MAP_ROGUE_DUNGEON_SNOW,
+        // unchanged -- it is what the snow map already carried
+        .music = MUS_ABNORMAL_WEATHER,
         .mapSecId = MAPSEC_ROGUE_VR_GLACIA,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
@@ -1939,6 +1961,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_VRDRAKE,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        // vanilla uses it for Meteor Falls, which is the dragon cave
+        .music = MUS_CAVE_OF_ORIGIN,
         .mapSecId = MAPSEC_ROGUE_VR_DRAKE,
         .generator = DUNGEON_GEN_CAVE,
         .elevationFloor = DUNGEON_ELEVATION_FLOOR,
@@ -2019,6 +2043,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         // the fog and the snow do - and like those, the map is named for the
         // WEATHER rather than for this theme, so a later one can point here too.
         .mapId = MAP_ROGUE_DUNGEON_PETALS,
+        // it is Ever Grande
+        .music = MUS_EVER_GRANDE,
         .mapSecId = MAPSEC_ROGUE_EVERGRANDE,
 
         // An overgrown prairie thicket: many small bedded-down clearings joined
@@ -2132,6 +2158,8 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_MURKYCAVE,
         .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        // vanilla uses it for Ancient Tomb, Desert Ruins and Island Cave -- the eerie one
+        .music = MUS_SEALED_CHAMBER,
         .mapSecId = MAPSEC_ROGUE_MURKYCAVE,
         .generator = DUNGEON_GEN_ORGANIC,
         .caveFill = 48,
@@ -3311,6 +3339,34 @@ static u16 MapForFloor(u16 floor)
     }
 
     return theme->mapId;
+}
+
+// Field music for a dungeon floor. Returns 0 for anything that is not one of
+// our floors, which leaves the engine on the map header exactly as before.
+//
+// GUARDED ON THE MAP, NOT THE FLOOR COUNTER, and that is the important part.
+// VAR_ROGUE_DUNGEON_FLOOR keeps its value at the rest stop, through the Safari
+// and in the game room -- the same trap the theme lookup in
+// RogueDungeon_GetBattleEnvironment had to avoid -- so asking "which theme is
+// at this depth" is only meaningful once the map has confirmed we are actually
+// standing on a generated floor. The maps here are used by nothing else.
+//
+// Takes the map being asked about rather than reading the player's location,
+// because GetLocationMusic is called for a warp DESTINATION as well as for the
+// current spot: the music has to be right before the floor is stood on.
+u16 RogueDungeon_GetLocationMusic(u8 mapGroup, u8 mapNum)
+{
+    u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+    // MapForFloor already resolves theme->mapId and every late-floor override,
+    // so this holds no second copy of that routing. Same comparison
+    // IsOnDungeonFloor makes, against the map being ASKED about rather than the
+    // one being stood on.
+    u16 map = MapForFloor(floor);
+
+    if (mapGroup != MAP_GROUP(map) || mapNum != MAP_NUM(map))
+        return 0;
+
+    return ThemeForFloor(floor)->music;   // 0 = the map header decides, as before
 }
 
 static void SetWarpDestinationToFloor(u16 floor)

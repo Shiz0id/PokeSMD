@@ -1697,6 +1697,23 @@ struct RogueDungeonTheme
     // from here - no dungeon theme wants it, since a grass floor already
     // resolves to it through the metatile.
     u8 battleEnvironment;
+
+    // FIELD MUSIC FOR THIS DUNGEON. Zero means "use the map header", which is
+    // the same designated-initialiser default the field above relies on.
+    //
+    // THIS EXISTS BECAUSE THE MAP HEADER CANNOT EXPRESS IT. Music lives in the
+    // header, and eight themes share MAP_ROGUE_DUNGEON_FLOOR, so all eight
+    // played that map's MUS_PETALBURG_WOODS -- nine dungeons of fourteen once
+    // the woods itself is counted, with three more sharing MUS_ABNORMAL_WEATHER
+    // through the snow, blizzard and petals maps. Five distinct tracks across
+    // fourteen dungeons. A theme cannot be given its own music by editing a
+    // map header without also giving it its own map, which is the whole thing
+    // the shared floor map exists to avoid.
+    //
+    // Read through RogueDungeon_GetLocationMusic, hooked into GetLocationMusic
+    // in overworld.c -- the one funnel both the current-location and
+    // warp-destination paths go through.
+    u16 music;
 };
 
 // A map used for the LAST FEW FLOORS of one theme's dungeon, instead of that
@@ -1977,6 +1994,12 @@ u16 RogueDungeon_AbandonBossAce(void);
 // 0 for any trainer that is not one of the fourteen dungeon bosses, which is
 // what leaves every other battle on the engine's own class-derived choice.
 u16 RogueDungeon_GetBossBGM(u16 trainerId);
+
+// Field music for a dungeon floor, or 0 to leave the map header alone. Called
+// from GetLocationMusic in overworld.c for both the current location and a warp
+// destination, so it takes the map being asked about rather than reading the
+// player's own.
+u16 RogueDungeon_GetLocationMusic(u8 mapGroup, u8 mapNum);
 
 // Not a specialvar target - called from BattleMainCB2 in src/battle_main.c.
 // Returns BATTLE_ENVIRONMENT_COUNT for any trainer that is not one of the
