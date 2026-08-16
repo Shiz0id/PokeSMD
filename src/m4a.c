@@ -76,7 +76,22 @@ void m4aSoundInit(void)
     m4aSoundMode(SOUND_MODE_DA_BIT_8
                | SOUND_MODE_FREQ_13379
                | (12 << SOUND_MODE_MASVOL_SHIFT)
-               | (5 << SOUND_MODE_MAXCHN_SHIFT));
+               // Vanilla is 5, and has been since 2019. It costs NO RAM to
+               // raise: SoundInfo.chans[] is already MAX_DIRECTSOUND_CHANNELS
+               // (12) either way, and maxChans only decides how many of them
+               // the mixer will process. At 5, a song wanting a sixth
+               // simultaneous DirectSound note has m4a steal the
+               // lowest-priority channel instead -- audible as instruments
+               // dropping out of dense passages, which is the whole reason
+               // ShinyDragonHunter's branch was flagged for cutting the ARRAY
+               // to 5 rather than raising this.
+               //
+               // The cost is CPU, per frame, roughly linear in active
+               // channels, and that is only affordable because ipatix's mixer
+               // is faster than the one it replaced. If dense music causes
+               // frame drops, step this down (8 is the obvious midpoint)
+               // rather than reverting the mixer.
+               | (MAX_DIRECTSOUND_CHANNELS << SOUND_MODE_MAXCHN_SHIFT));
 
     for (i = 0; i < NUM_MUSIC_PLAYERS; i++)
     {
