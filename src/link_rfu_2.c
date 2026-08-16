@@ -72,8 +72,26 @@ struct RfuDebug
     u8 padding[2];
 };
 
+// gRfuAPIBuffer MUST STAY IN IWRAM. rfu_initializeAPI rejects it outright:
+//
+//     if (((uintptr_t)APIBuffer & 0xF000000) == EWRAM_START && copyInterruptToRam)
+//         return ERR_RFU_API_BUFF_ADR;
+//
+// and we pass copyInterruptToRam = TRUE. The rejection is not loud. Its only
+// caller is InitRFUAPI, which tests `if (!rfu_initializeAPI(...))` and quietly
+// skips its body on error -- leaving gRfuLinkStatus, gRfuStatic and gRfuFixed
+// unassigned, because rfu_initializeAPI is what carves them out of this
+// buffer. InitRFU then calls rfu_REQ_stopMode() regardless, which walks those
+// pointers. Moving this to EWRAM builds clean, links clean, and white-screens
+// after the GBA logo.
 COMMON_DATA u32 gRfuAPIBuffer[RFU_API_BUFF_SIZE_RAM / 4] = {0};
-COMMON_DATA struct RfuManager gRfu = {0};
+
+// gRfu has no such constraint. It is pokeemerald's own manager struct, not the
+// library's, and nothing in librfu ever sees its address -- so it can live in
+// EWRAM and free 3316 bytes of the region that is actually scarce here. IWRAM
+// data grows up from 0x03000000 and the stack grows down from 0x03007F00, so
+// free IWRAM is stack headroom, and that is what the HQ mixer needs.
+EWRAM_DATA struct RfuManager gRfu = {0};
 
 static u8 sHeldKeyCount;
 static u8 sResendBlock8[CMD_LENGTH * 2];
