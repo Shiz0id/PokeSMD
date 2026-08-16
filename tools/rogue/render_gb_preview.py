@@ -51,6 +51,8 @@ VARIANT_SONG = {
     'rich_fix': 'mus_encounter_rich',
     'rich_fix2': 'mus_encounter_rich',
     'rich_fix3': 'mus_encounter_rich',
+    'rich_fix4': 'mus_encounter_rich',
+    'rich_fix5': 'mus_encounter_rich',
     'swimmer_fix': 'mus_encounter_swimmer',
     'interviewer_fix': 'mus_encounter_interviewer',
 }
@@ -230,6 +232,42 @@ VARIANTS = {
                  name='tuba bass'),
         80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='bass duplicate'),
         48: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='strings'),
+    },
+    # rich, take four: fix3's parts, softened. The accompaniment was hammering
+    # rather than accompanying -- the piano fires 19 notes in the first five
+    # seconds with 78 ms between some of them, and at attack 0 / sustain 13 each
+    # one is a hard hit at full volume. On the wave channel the sustain level IS
+    # the channel's volume, so dropping it makes the part quieter as well as
+    # gentler, which is what 'softer than vanilla's accompaniment' asks for.
+    # The tuba comes off 75% duty too: that is the fattest square setting and a
+    # bass does not need it.
+    'rich_fix4': {
+        73: dict(kind='square1', duty=1, a=0, d=4, s=11, r=2, floor_lift=True,
+                 name='flute MELODY'),
+        1:  dict(kind='wave', duty=0, a=2, d=7, s=8, r=4, wave_sample=2,
+                 name='PIANO (soft)'),
+        58: dict(kind='square2', duty=2, a=0, d=3, s=10, r=2, floor_lift=True,
+                 name='tuba bass (50% duty)'),
+        80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='bass duplicate'),
+        48: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='strings'),
+    },
+    # rich, take five: the STRINGS restored, at the cost of the bass. They are
+    # vanilla's soft accompaniment to the flute -- 3.4 notes/s sustained across
+    # 17.2 s, the gentlest part in the track -- and no envelope tuning on the
+    # piano can supply what they do. Four melodic parts, three channels, and
+    # neither the piano nor the strings can share square 2 with the tuba (95%
+    # overlap, 55 of 77 onsets), so something has to go. This drops the tuba on
+    # the bet that rich is light enough to survive without a bass; the piano
+    # reaches down to D#3, so the bottom is not empty.
+    'rich_fix5': {
+        73: dict(kind='square1', duty=1, a=0, d=4, s=11, r=2, floor_lift=True,
+                 name='flute MELODY'),
+        48: dict(kind='square2', duty=1, a=1, d=5, s=9, r=3, floor_lift=True,
+                 name='STRINGS (soft accompaniment)'),
+        1:  dict(kind='wave', duty=0, a=2, d=7, s=9, r=4, wave_sample=2,
+                 name='piano'),
+        58: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='tuba bass'),
+        80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='bass duplicate'),
     },
     # mus_encounter_swimmer. The 15-note part on square 1 sounded for 3.2 s of
     # 12.7 and won only for being highest. The source voicegroup names the

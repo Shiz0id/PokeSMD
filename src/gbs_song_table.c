@@ -63,4 +63,5 @@ const struct Song gGBSSongTable[GBS_MUSIC_COUNT] = {
     [GBS_MUSIC_SURF_PSG] = SONG(mus_surf_gb, 0),
     [GBS_MUSIC_ENCOUNTER_INTERVIEWER_PSG] = SONG(mus_encounter_interviewer_gb, 0),
     [GBS_MUSIC_ENCOUNTER_SWIMMER_PSG] = SONG(mus_encounter_swimmer_gb, 0),
+    [GBS_MUSIC_ENCOUNTER_RICH_PSG] = SONG(mus_encounter_rich_gb, 0),
 };

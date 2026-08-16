@@ -227,3 +227,4 @@
 .include "sound/voicegroups/gb_surf.inc"
 .include "sound/voicegroups/gb_encounter_interviewer.inc"
 .include "sound/voicegroups/gb_encounter_swimmer.inc"
+.include "sound/voicegroups/gb_encounter_rich.inc"

@@ -404,7 +404,7 @@ gSongTable::
 	song mus_link_contest_p2, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_link_contest_p3, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_link_contest_p4, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_rich, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_rich, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_RICH_PSG
 	song mus_verdanturf, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_rustboro, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_poke_center, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
