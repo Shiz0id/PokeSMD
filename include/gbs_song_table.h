@@ -17,6 +17,10 @@ extern const struct SongHeader gbs_Sfx_LevelUp;
 extern const struct SongHeader gbs_Sfx_GetTm;
 extern const struct SongHeader gbs_Sfx_GetBadge;
 
+// Transcribed from Emerald by tools/rogue/midi_to_gbs.py, unlike everything
+// above it, which came with the GameboySounds branch.
+extern const struct SongHeader gbs_Music_PetalburgWoods;
+
 extern const struct SongHeader gbs_Music_Lavender;
 extern const struct SongHeader gbs_Music_TrainerBattle;
 extern const struct SongHeader gbs_Music_BikeRiding;

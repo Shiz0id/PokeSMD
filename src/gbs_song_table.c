@@ -75,4 +75,7 @@ const struct Song gGBSSongTable[GBS_MUSIC_COUNT] = {
     [GBS_MUSIC_SEALED_CHAMBER_PSG] = SONG(mus_sealed_chamber_gb, 0),
     [GBS_MUSIC_VICTORY_ROAD_PSG] = SONG(mus_victory_road_gb, 0),
     [GBS_MUSIC_ROUTE119_PSG] = SONG(mus_route119_gb, 0),
+
+    // Real GBS song data -- see the note in constants/gbs_songs.h.
+    [GBS_MUSIC_PETALBURG_WOODS_GBS] = SONG(gbs_Music_PetalburgWoods, 0),
 };

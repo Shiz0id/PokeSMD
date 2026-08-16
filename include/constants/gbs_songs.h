@@ -105,6 +105,13 @@
 
 #define GBS_MUSIC_ROUTE119_PSG 58
 
-#define GBS_MUSIC_COUNT 59
+// A REAL GBS transcription, not an m4a song with a PSG voicegroup. Everything
+// suffixed _PSG above is the latter: mid2agb output sequenced by m4a, with no
+// gbs_switch byte in it and no path into GBSMain. This one is GBS song data
+// walked by GBSTrack_Update, so duty patterns, vibrato and the noise drum kits
+// are available to it and are not to them.
+#define GBS_MUSIC_PETALBURG_WOODS_GBS 59
+
+#define GBS_MUSIC_COUNT 60
 
 #endif  // GUARD_CONSTANTS_GBS_SONGS_H

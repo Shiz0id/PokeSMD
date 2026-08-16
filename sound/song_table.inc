@@ -372,8 +372,8 @@ gSongTable::
 	song mus_petalburg, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_oldale, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_gym, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_surf, MUSIC_PLAYER_BGM, GBS_MUSIC_SURF_PSG
-	song mus_petalburg_woods, MUSIC_PLAYER_BGM, GBS_MUSIC_WOODS_M4A_PSG
+	song mus_surf, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_petalburg_woods, MUSIC_PLAYER_BGM, GBS_MUSIC_PETALBURG_WOODS_GBS
 	song mus_level_up, MUSIC_PLAYER_SE2, GBS_SFX_LEVEL_UP
 	song mus_heal, MUSIC_PLAYER_SE2, GBS_MUSIC_NONE
 	song mus_obtain_badge, MUSIC_PLAYER_SE2, GBS_SFX_GET_BADGE
@@ -386,14 +386,14 @@ gSongTable::
 	song mus_evolution_intro, MUSIC_PLAYER_SE2, GBS_MUSIC_NONE
 	song mus_evolution, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_move_deleted, MUSIC_PLAYER_SE2, GBS_MUSIC_NONE
-	song mus_encounter_girl, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_GIRL_PSG
-	song mus_encounter_male, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_MALE_PSG
+	song mus_encounter_girl, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_male, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_abandoned_ship, MUSIC_PLAYER_BGM, GBS_MUSIC_ABANDONED_SHIP_RSE
 	song mus_fortree, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_birch_lab, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_b_tower_rs, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_swimmer, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_SWIMMER_PSG
-	song mus_cave_of_origin, MUSIC_PLAYER_BGM, GBS_MUSIC_CAVE_OF_ORIGIN_PSG
+	song mus_encounter_swimmer, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_cave_of_origin, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_obtain_berry, MUSIC_PLAYER_SE2, GBS_MUSIC_NONE
 	song mus_awaken_legend, MUSIC_PLAYER_SE2, GBS_MUSIC_NONE
 	song mus_slots_jackpot, MUSIC_PLAYER_SE2, GBS_MUSIC_NONE
@@ -404,64 +404,64 @@ gSongTable::
 	song mus_link_contest_p2, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_link_contest_p3, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_link_contest_p4, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_rich, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_RICH_PSG
+	song mus_encounter_rich, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_verdanturf, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_rustboro, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_poke_center, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_route104, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_route119, MUSIC_PLAYER_BGM, GBS_MUSIC_ROUTE119_PSG
+	song mus_route119, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_cycling, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_poke_mart, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_littleroot, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_mt_chimney, MUSIC_PLAYER_BGM, GBS_MUSIC_MT_CHIMNEY_PSG
-	song mus_encounter_female, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_FEMALE_PSG
+	song mus_mt_chimney, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_female, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_lilycove, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_route111, MUSIC_PLAYER_BGM, GBS_MUSIC_ROUTE111_PSG
+	song mus_route111, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_help, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_underwater, MUSIC_PLAYER_BGM, GBS_MUSIC_UNDERWATER_PSG
+	song mus_underwater, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_victory_trainer, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_title, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_intro, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_may, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_MAY_PSG
-	song mus_encounter_intense, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_INTENSE_PSG
-	song mus_encounter_cool, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_COOL_PSG
+	song mus_encounter_may, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_intense, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_cool, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_route113, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_aqua, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_AQUA_PSG
+	song mus_encounter_aqua, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_follow_me, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_brendan, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_BRENDAN_PSG
-	song mus_ever_grande, MUSIC_PLAYER_BGM, GBS_MUSIC_EVER_GRANDE_PSG
-	song mus_encounter_suspicious, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_SUSPICIOUS_PSG
+	song mus_encounter_brendan, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_ever_grande, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_suspicious, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_victory_aqua_magma, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_cable_car, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_game_corner, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_dewford, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_safari_zone, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_victory_road, MUSIC_PLAYER_BGM, GBS_MUSIC_VICTORY_ROAD_PSG
-	song mus_aqua_magma_hideout, MUSIC_PLAYER_BGM, GBS_MUSIC_AQUA_MAGMA_HIDEOUT_PSG
+	song mus_victory_road, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_aqua_magma_hideout, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_sailing, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_mt_pyre, MUSIC_PLAYER_BGM, GBS_MUSIC_MT_PYRE_PSG
+	song mus_mt_pyre, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_slateport, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_mt_pyre_exterior, MUSIC_PLAYER_BGM, GBS_MUSIC_MT_PYRE_EXTERIOR_PSG
+	song mus_mt_pyre_exterior, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_school, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_hall_of_fame, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_fallarbor, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_sealed_chamber, MUSIC_PLAYER_BGM, GBS_MUSIC_SEALED_CHAMBER_PSG
+	song mus_sealed_chamber, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_contest_winner, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_contest, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_magma, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_MAGMA_PSG
+	song mus_encounter_magma, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_intro_battle, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_abnormal_weather, MUSIC_PLAYER_BGM, GBS_MUSIC_ABNORMAL_WEATHER_PSG
+	song mus_abnormal_weather, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_weather_groudon, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_sootopolis, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_contest_results, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_hall_of_fame_room, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_trick_house, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_twins, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_TWINS_PSG
-	song mus_encounter_elite_four, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_ELITE_FOUR_PSG
-	song mus_encounter_hiker, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_HIKER_PSG
+	song mus_encounter_twins, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_elite_four, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_hiker, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_contest_lobby, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_interviewer, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_INTERVIEWER_PSG
-	song mus_encounter_champion, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_CHAMPION_PSG
+	song mus_encounter_interviewer, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_champion, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_credits, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_end, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_b_frontier, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
@@ -478,18 +478,18 @@ gSongTable::
 	song mus_b_pike, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_b_factory, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_rayquaza, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_vs_frontier_brain, MUSIC_PLAYER_BGM, GBS_MUSIC_VS_FRONTIER_BRAIN_PSG
+	song mus_vs_frontier_brain, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_mew, MUSIC_PLAYER_BGM, GBS_MUSIC_MEW_BATTLE_RSE
 	song mus_b_dome_lobby, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_wild, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_aqua_magma, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_vs_trainer, MUSIC_PLAYER_BGM, GBS_MUSIC_VS_TRAINER_PSG
-	song mus_vs_gym_leader, MUSIC_PLAYER_BGM, GBS_MUSIC_VS_GYM_LEADER_PSG
-	song mus_vs_champion, MUSIC_PLAYER_BGM, GBS_MUSIC_VS_CHAMPION_PSG
+	song mus_vs_trainer, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_vs_gym_leader, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_vs_champion, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_regi, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_kyogre_groudon, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_rival, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_vs_elite_four, MUSIC_PLAYER_BGM, GBS_MUSIC_VS_ELITE_FOUR_PSG
+	song mus_vs_elite_four, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_vs_aqua_magma_leader, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_rg_follow_me, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_rg_game_corner, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
