@@ -60,7 +60,7 @@ voice_group gb_vs_trainer
 	@ slot 47: dropped
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	@ slot 48: PAD -> wave
-	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_6, 1, 5, 14, 3
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_5, 1, 5, 14, 3
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0

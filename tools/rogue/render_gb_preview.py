@@ -42,6 +42,10 @@ VARIANT_SONG = {
     'swap': 'mus_petalburg_woods', 'fuller': 'mus_petalburg_woods',
     'softer': 'mus_petalburg_woods', 'fuller_decay': 'mus_petalburg_woods',
     'trainer_auto': 'mus_vs_trainer',
+    'champion_fix': 'mus_encounter_champion',
+    'brendan_fix': 'mus_encounter_brendan',
+    'brendan_fix2': 'mus_encounter_brendan',
+    'hiker_fix': 'mus_encounter_hiker',
 }
 
 # Voice assignment, mirroring MAPPING in make_gb_voicegroup.py. Keyed by the
@@ -146,6 +150,103 @@ VARIANTS = {
         80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='harmony (dropped)'),
         1:  dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='piano (dropped)'),
         45: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='pizzicato (dropped)'),
+    },
+    # mus_encounter_brendan. Its PLAN is identical to mus_encounter_may's, which
+    # passed -- same tracks, same roles, same channels. The difference is purely
+    # register: Brendan is the same arrangement written about 16 semitones
+    # lower, which puts 49 of its 163 bass notes UNDER the 64 Hz floor, where
+    # they clamp and the line flattens. May has 4.
+    #
+    # So the bass goes up an octave. That is what a GB arranger does with a bass
+    # written for sampled instruments, and it lands Brendan's bass in the same
+    # register as May's, which is known to work.
+    # SLOT NUMBERS ARE PER SONG. Brendan's melody is slot 1 and its bass slot
+    # 38; May's are 17 and 36. An early cut of this variant used May's numbers,
+    # which matched nothing here, so the render came out with no melody and no
+    # bass at all -- and the floor check reported "clean" because the bass was
+    # not in it. Always read the slots off the song being arranged.
+    'brendan_fix': {
+        1:  dict(kind='square1', duty=2, a=0, d=2, s=13, r=1, name='MELODY'),
+        38: dict(kind='square2', duty=3, a=0, d=2, s=12, r=1, transpose=12,
+                 name='bass (+1 oct)'),
+        81: dict(kind='square2', duty=1, a=0, d=1, s=10, r=1, name='counter'),
+        83: dict(kind='wave',    duty=0, a=1, d=5, s=14, r=3, name='melody double'),
+        0:  dict(kind='noise',   duty=0, a=0, d=1, s=0,  r=2, name='drums'),
+        126: dict(kind='noise',  duty=0, a=0, d=1, s=0,  r=2, name='perc'),
+        127: dict(kind='noise',  duty=0, a=0, d=1, s=0,  r=2, name='perc'),
+        56: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='dropped'),
+        80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='dropped'),
+    },
+    # mus_encounter_hiker. Reported as tinny against the original's horns.
+    #
+    # The voicegroup names the instruments: slot 60 is voicegroup_french_horn_
+    # keysplit -- literally the horns -- and slot 82 doubles that same line
+    # (both A3-B5) on the wave channel. So the horn tone is carried by those two
+    # together, and the wave half was being rendered with the WRONG WAVEFORM:
+    # the source picks ProgrammableWaveData_5 and the tooling hardcoded 6.
+    # Restoring 5 puts the doubling back to the timbre the track was written
+    # with. Slot 58 is a tuba, which is why the bass sits so low.
+    'hiker_fix': {
+        60: dict(kind='square1', duty=2, a=0, d=2, s=13, r=1, name='HORNS'),
+        82: dict(kind='wave',    duty=0, a=1, d=4, s=14, r=3, wave_sample=5,
+                 name='horn double (wave 5)'),
+        58: dict(kind='square2', duty=3, a=0, d=2, s=12, r=1, transpose=12,
+                 name='tuba bass (+1 oct)'),
+        80: dict(kind='square2', duty=1, a=0, d=1, s=10, r=1, name='counter'),
+        0:  dict(kind='noise',   duty=0, a=0, d=1, s=0,  r=2, name='drums'),
+        81: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='counter harmony'),
+        47: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='timpani'),
+        1:  dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='piano'),
+    },
+    # brendan_fix, plus the melody octave. May's two melody tracks are in exact
+    # unison (+0 st on all 151 notes) so it does not matter which one leads; in
+    # Brendan they diverge, 72 of 151 notes an octave apart, and the heuristic
+    # took the LOWER one for square 1. That put the lead at median F#5 against
+    # May's F6 -- a whole octave below the version that works.
+    #
+    # So slot 83 leads and slot 17 goes to the wave channel. Same two parts,
+    # swapped, no invented pitches. Both this and the bass octave are the same
+    # lesson: when the plan is right and it still sounds wrong, the register is
+    # what is wrong.
+    'brendan_fix2': {
+        83: dict(kind='square1', duty=2, a=0, d=2, s=13, r=1, name='MELODY (upper)'),
+        1:  dict(kind='wave',    duty=0, a=1, d=5, s=14, r=3, name='melody (lower)'),
+        38: dict(kind='square2', duty=3, a=0, d=2, s=12, r=1, transpose=12,
+                 name='bass (+1 oct)'),
+        81: dict(kind='square2', duty=1, a=0, d=1, s=10, r=1, name='counter'),
+        0:  dict(kind='noise',   duty=0, a=0, d=1, s=0,  r=2, name='drums'),
+        126: dict(kind='noise',  duty=0, a=0, d=1, s=0,  r=2, name='perc'),
+        127: dict(kind='noise',  duty=0, a=0, d=1, s=0,  r=2, name='perc'),
+        56: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='dropped'),
+        80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='dropped'),
+    },
+    # mus_encounter_champion, corrected by ear. The heuristic gave square 1 to
+    # slot 80 -- 127 notes ranging 64-105, which is a high repetitive sparkle
+    # layer, not a tune -- and DROPPED slot 17, the sweeping phrase at 7-8 s
+    # that the track is recognisable by. Slot 17 tops out at 82 and every other
+    # part reaches higher, so simply moving it onto a shared channel would have
+    # let top-note silence it again; it is protected instead. Slot 80 keeps the
+    # rest of square 1, filling the 21.5 s the sweep leaves idle.
+    'champion_fix': {
+        # Keyed by TRACK INDEX, not slot: tracks #1 and #9 both select slot 17.
+        # #1 (153 notes, C2-G#6) is the chromatic sweep at 7-8 s; #9 (93 notes)
+        # is a lower doubling of it and is dropped, because on one mono channel
+        # the doubling can only take notes away from the line it doubles.
+        '#1': dict(kind='square1', duty=2, a=0, d=2, s=13, r=1, protect=True,
+                   name='SWEEP - the tune'),
+        '#9': dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='sweep doubling'),
+        # Dropped, not kept as filler. The protected sweep occupies 22.4 s of
+        # 30.4, so only about 17 of this part's 127 notes could survive around
+        # it -- scattered debris rather than a line. This is the part the
+        # heuristic had mistaken for the melody.
+        80: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='high sparkle'),
+        36: dict(kind='square2', duty=3, a=0, d=2, s=12, r=1, name='bass'),
+        29: dict(kind='square2', duty=1, a=0, d=1, s=10, r=1, name='counter'),
+        83: dict(kind='wave',    duty=0, a=1, d=5, s=14, r=3, name='pad'),
+        0:  dict(kind='noise',   duty=0, a=0, d=1, s=0,  r=2, name='drums'),
+        126: dict(kind='noise',  duty=0, a=0, d=1, s=0,  r=2, name='perc'),
+        127: dict(kind='noise',  duty=0, a=0, d=1, s=0,  r=2, name='perc'),
+        73: dict(kind='drop', duty=0, a=0, d=0, s=0, r=0, name='dropped'),
     },
     # mus_vs_trainer, first pass straight from plan_gb_arrangement.py. Square 2
     # is deliberately NOT shared: the bass sounds for all 89.7 s of the track,
@@ -266,7 +367,16 @@ def parse_midi(path):
     return tracks
 
 
-def read_wave_table(path):
+def read_wave_table(repo, n=6):
+    """The GB wave channel's 32 4-bit samples, from sound/programmable_wave_samples.
+
+    WHICH SAMPLE MATTERS AND IS NOT INTERCHANGEABLE. There are 25 of them and
+    they are different waveforms, so the choice is the wave channel's entire
+    timbre. Every song's own voicegroup names the one its composer picked;
+    hardcoding one here (this was ProgrammableWaveData_6) silently retimbres the
+    channel and reads as 'tinny' or just vaguely wrong.
+    """
+    path = repo / 'sound/programmable_wave_samples' / ('%02d.pcm' % n)
     raw = path.read_bytes()
     nib = []
     for byte in raw:
@@ -307,43 +417,69 @@ def resolve_channel(notes):
     of voice want the same physical channel. Later note takes it; whatever was
     sounding is cut off there. Returns (notes, stolen_count).
     """
-    # Sorted by onset, then pitch DESCENDING, so the first note of any
-    # simultaneous group is the highest.
-    #
-    # WHICH NOTE SURVIVES A CHORD IS A MUSICAL CHOICE, not an implementation
+    # WHICH NOTE SURVIVES A COLLISION IS A MUSICAL CHOICE, not an implementation
     # detail. A single MIDI track can be polyphonic while a PSG channel cannot,
     # so a chordal part loses notes even alone on its channel -- half of
-    # mus_encounter_interviewer's melody, for one. Taking whichever note sorted
-    # first meant an inner voice could silence the tune above it. Keeping the
-    # TOP note is the standard reduction and preserves the line a listener is
-    # actually following.
-    notes = sorted(notes, key=lambda n: (n[0], -n[2]))
-    out, stolen, silenced = [], 0, 0
-    i = 0
-    while i < len(notes):
-        on, off, pitch, v = notes[i]
-        j = i + 1
-        while j < len(notes) and notes[j][0] - on < 1e-6:
-            silenced += 1      # same onset, lower pitch: never heard
-            j += 1
-        if j < len(notes):
-            on2 = notes[j][0]
-            if on2 < off:
-                off = on2      # a later onset takes the channel
-                stolen += 1
-        if off - on > 0.001:
-            out.append((on, off, pitch, v))
-        i = j
-    return out, stolen, silenced
+    # mus_encounter_interviewer's melody, for one. Keeping the TOP note is the
+    # standard reduction and preserves the line a listener is following.
+    #
+    # EXCEPT WHEN IT DOES NOT. mus_encounter_champion's tune is a sweeping
+    # phrase topping out at 82 while every other part reaches higher, so
+    # top-note silenced precisely the part the track is recognisable by. A voice
+    # may therefore set protect=True: it is laid down first and keeps its full
+    # duration, and everything else fills the gaps around it. Use it for the
+    # part the track would not be itself without -- not as a general preference,
+    # because every protected note is taken out of some other part.
+    prot = [n for n in notes if n[3].get('protect')]
+    rest = [n for n in notes if not n[3].get('protect')]
+
+    def mono(seq, blockers=()):
+        """One note at a time, truncated against already-placed blockers."""
+        seq = sorted(seq, key=lambda n: (n[0], -n[2]))
+        kept, cut, lost = [], 0, 0
+        i = 0
+        while i < len(seq):
+            on, off, pitch, v = seq[i]
+            j = i + 1
+            while j < len(seq) and seq[j][0] - on < 1e-6:
+                lost += 1          # same onset, lower pitch: never heard
+                j += 1
+            if j < len(seq) and seq[j][0] < off:
+                off = seq[j][0]
+                cut += 1
+            for (bon, boff, _, _) in blockers:
+                if bon <= on < boff:      # starts inside a protected note
+                    off = on
+                    break
+                if on < bon < off:        # runs into one
+                    off = bon
+                    cut += 1
+            if off - on > 0.001:
+                kept.append((on, off, pitch, v))
+            else:
+                lost += 1
+            i = j
+        return kept, cut, lost
+
+    keep_p, cut_p, lost_p = mono(prot)
+    keep_r, cut_r, lost_r = mono(rest, blockers=keep_p)
+    return keep_p + keep_r, cut_p + cut_r, lost_p + lost_r
 
 
 def render(tracks, voices, wave_table, total, psg_only, analyze_only=False):
     buf = [0.0] * (1 if analyze_only else int(total * RATE + RATE))
 
     # Group by the hardware channel each voice kind lands on.
+    #
+    # A voice may be keyed by voicegroup SLOT (an int) or by TRACK INDEX (the
+    # string '#3'). Track index wins. mus_encounter_champion needs it: two of
+    # its midi tracks select slot 17, and they are not duplicates -- one is the
+    # chromatic sweep the track is known by, the other a lower doubling. Keyed
+    # by slot alone there is no way to keep one and drop the other, and anything
+    # that builds a dict keyed on slot silently discards one of them.
     channels = {}
-    for slot, notes in tracks:
-        v = voices.get(slot)
+    for idx, (slot, notes) in enumerate(tracks):
+        v = voices.get('#%d' % idx, voices.get(slot))
         if v is None:
             continue
         kind = v['kind']
@@ -351,8 +487,12 @@ def render(tracks, voices, wave_table, total, psg_only, analyze_only=False):
             if psg_only:
                 continue
             kind = FULL_SUBSTITUTE.get(slot, 'square1')
+        # transpose is in semitones, applied BEFORE channel resolution so the
+        # top-note rule sees the pitches that will actually sound. Its usual job
+        # is lifting a bass line off the floor -- see the report below.
+        tr = v.get('transpose', 0)
         channels.setdefault(kind, []).extend(
-            (on, off, pitch, v) for (on, off, pitch) in notes)
+            (on, off, pitch + tr, v) for (on, off, pitch) in notes)
 
     report = []
     for kind, notes in sorted(channels.items()):
@@ -362,6 +502,19 @@ def render(tracks, voices, wave_table, total, psg_only, analyze_only=False):
             if stolen or silenced:
                 report.append('    %-8s %d of %d notes cut short, %d never heard'
                               % (kind, stolen, total_in, silenced))
+            # THE SQUARE CHANNELS HAVE A HARD FLOOR. The period register is 11
+            # bits and f = 131072/(2048-x), so 64 Hz is the lowest note that
+            # exists; anything under it is clamped and sounds at the wrong
+            # pitch. mus_encounter_brendan's bass had 49 of 163 notes down
+            # there and the line flattened toward a monotone. Reported because
+            # it is inaudible as a cause -- it just sounds vaguely wrong.
+            if kind in ('square1', 'square2'):
+                low = sum(1 for (_, _, p, _) in notes
+                          if 440.0 * 2 ** ((p - 69) / 12.0) < 64.0)
+                if low:
+                    report.append('    %-8s %d of %d notes BELOW THE 64 Hz FLOOR '
+                                  '-- clamped, wrong pitch; transpose the part up'
+                                  % (kind, low, len(notes)))
         if analyze_only:
             continue
         lfsr = 0x7FFF
@@ -388,7 +541,8 @@ def render(tracks, voices, wave_table, total, psg_only, analyze_only=False):
                 if kind in ('square1', 'square2'):
                     smp = 1.0 if p < DUTY[v['duty']] else -1.0
                 elif kind == 'wave':
-                    smp = wave_table[int(p * len(wave_table)) % len(wave_table)]
+                    tbl = wave_table[v.get('wave_sample', 6)]
+                    smp = tbl[int(p * len(tbl)) % len(tbl)]
                 else:  # noise
                     if k % 24 == 0:
                         bit = ((lfsr ^ (lfsr >> 1)) & 1)
@@ -442,7 +596,8 @@ def main():
                          'the ROM and absent here. Use 2 to hear the seam.')
     args = ap.parse_args()
 
-    wave_table = read_wave_table(args.repo / WAVE_REL)
+    # Every sample, keyed by number: a variant may name any of them per part.
+    wave_table = {n: read_wave_table(args.repo, n) for n in range(1, 26)}
     args.out.mkdir(parents=True, exist_ok=True)
     cache = {}
 
@@ -475,11 +630,28 @@ def main():
                       for slot, notes in tracks]
             total *= args.loops
         print('variant %r  (%s, %d parts, %.1f s):' % (name, song, len(tracks), total))
-        for slot, notes in tracks:
-            v = voices.get(slot)
+        for idx, (slot, notes) in enumerate(tracks):
+            v = voices.get('#%d' % idx, voices.get(slot))
             if v and v['kind'] != 'drop':
-                print('    slot %3d  %-20s %-8s %3d notes'
-                      % (slot, v['name'], v['kind'], len(notes)))
+                print('    #%-2d slot %3d  %-20s %-8s %3d notes'
+                      % (idx, slot, v['name'], v['kind'], len(notes)))
+
+        # A key that matches nothing is silent otherwise: the part simply does
+        # not play, and every other measurement still reports "clean" because
+        # the missing part is not in them. An early brendan variant used another
+        # song's slot numbers and rendered with no melody and no bass at all.
+        present = {s for s, _ in tracks} | {'#%d' % i for i in range(len(tracks))}
+        orphan = [k for k in voices if k not in present]
+        if orphan:
+            print('    WARNING: %s named in the variant but NOT IN THIS SONG -- '
+                  'those parts are silently absent' % sorted(map(str, orphan)))
+        unnamed = [s for s, _ in tracks
+                   if s not in voices
+                   and not any('#%d' % i in voices
+                               for i, (ss, _) in enumerate(tracks) if ss == s)]
+        if unnamed:
+            print('    note: slots %s carry notes but the variant does not '
+                  'mention them (they are silent)' % sorted(set(unnamed)))
         buf, report = render(tracks, voices, wave_table, total, True, args.analyze)
         for line in report:
             print(line)

@@ -91,7 +91,7 @@ voice_group gb_encounter_aqua
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	@ slot 80: PAD -> wave
-	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_6, 1, 5, 14, 3
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_3, 1, 5, 14, 3
 	voice_square_2_alt 60, 0, 1, 0, 1, 4, 1
 	voice_square_2_alt 60, 0, 0, 0, 1, 4, 1
 	@ slot 83: counter (shares) -> square2

@@ -428,7 +428,7 @@ gSongTable::
 	song mus_route113, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_encounter_aqua, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_AQUA_PSG
 	song mus_follow_me, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_brendan, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_brendan, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_BRENDAN_PSG
 	song mus_ever_grande, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_encounter_suspicious, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_SUSPICIOUS_PSG
 	song mus_victory_aqua_magma, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
@@ -458,10 +458,10 @@ gSongTable::
 	song mus_trick_house, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_encounter_twins, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_TWINS_PSG
 	song mus_encounter_elite_four, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_ELITE_FOUR_PSG
-	song mus_encounter_hiker, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_hiker, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_HIKER_PSG
 	song mus_contest_lobby, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_encounter_interviewer, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_encounter_champion, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_encounter_champion, MUSIC_PLAYER_BGM, GBS_MUSIC_ENCOUNTER_CHAMPION_PSG
 	song mus_credits, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_end, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_b_frontier, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE

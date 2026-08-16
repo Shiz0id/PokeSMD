@@ -71,7 +71,7 @@ voice_group gb_encounter_magma
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	@ slot 60: PAD -> wave
-	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_6, 1, 5, 14, 3
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_15, 1, 5, 14, 3
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0

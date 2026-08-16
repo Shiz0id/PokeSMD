@@ -216,3 +216,6 @@
 .include "sound/voicegroups/gb_encounter_may.inc"
 .include "sound/voicegroups/gb_encounter_suspicious.inc"
 .include "sound/voicegroups/gb_encounter_twins.inc"
+.include "sound/voicegroups/gb_encounter_brendan.inc"
+.include "sound/voicegroups/gb_encounter_champion.inc"
+.include "sound/voicegroups/gb_encounter_hiker.inc"

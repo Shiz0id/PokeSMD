@@ -22,8 +22,114 @@ import argparse
 import json
 import re
 import shutil
+import struct
 import sys
 from pathlib import Path
+
+
+# ---------------------------------------------------------------- midi edits
+#
+# SOME ARRANGEMENT DECISIONS CANNOT LIVE IN A VOICEGROUP, and the two that come
+# up are:
+#
+#   transpose -- mid2agb has no transpose option (checked: -L -V -G -P -R -X -E
+#     -N and nothing else) and a voicegroup cannot shift a part's pitch. Lifting
+#     a bass off the 64 Hz floor therefore has to change the notes themselves.
+#
+#   dropping ONE of two tracks that select the same voicegroup slot -- m4a
+#     indexes the voicegroup by the track's program change, so both tracks get
+#     the same voice no matter what is written there. mus_encounter_champion
+#     has its sweep and a doubling of it both on slot 17.
+#
+# Both are applied to the DUPLICATED _gb.mid, never the original.
+
+def _chunks(b):
+    if bytes(b[:4]) != b'MThd':
+        raise ValueError('not a MIDI file')
+    hdr = struct.unpack('>I', bytes(b[4:8]))[0]
+    ntrks = struct.unpack('>H', bytes(b[10:12]))[0]
+    i, out = 8 + hdr, []
+    for _ in range(ntrks):
+        if bytes(b[i:i + 4]) != b'MTrk':
+            break
+        ln = struct.unpack('>I', bytes(b[i + 4:i + 8]))[0]
+        out.append((i, i + 8, i + 8 + ln))
+        i += 8 + ln
+    return ntrks, out
+
+
+def _scan(b, start, end):
+    """-> (program, [positions of note key bytes])"""
+    j, status, prog, keys = start, 0, None, []
+    while j < end:
+        while b[j] & 0x80:      # delta time
+            j += 1
+        j += 1
+        if b[j] & 0x80:
+            status = b[j]
+            j += 1
+        ev = status & 0xF0
+        if ev in (0x80, 0x90, 0xA0):
+            keys.append(j)
+            j += 2
+        elif ev in (0xB0, 0xE0):
+            j += 2
+        elif ev == 0xC0:
+            if prog is None:
+                prog = b[j]
+            j += 1
+        elif ev == 0xD0:
+            j += 1
+        elif status in (0xFF, 0xF0, 0xF7):
+            if status == 0xFF:
+                j += 1
+            ln = 0
+            while b[j] & 0x80:
+                ln = (ln << 7) | (b[j] & 0x7F)
+                j += 1
+            ln = (ln << 7) | b[j]
+            j += 1 + ln
+        else:
+            j += 2
+    return prog, keys
+
+
+def midi_transpose_slot(path, slot, semitones):
+    b = bytearray(path.read_bytes())
+    _, chunks = _chunks(b)
+    moved = 0
+    for (_, s, e) in chunks:
+        prog, keys = _scan(b, s, e)
+        if prog != slot:
+            continue
+        for k in keys:
+            b[k] = max(0, min(127, b[k] + semitones))
+            moved += 1
+    if not moved:
+        return 'no track selects slot %d' % slot
+    path.write_bytes(bytes(b))
+    log('midi: transposed slot %d by %+d (%d notes)' % (slot, semitones, moved))
+    return None
+
+
+def track_slots(path):
+    """-> [program per MIDI track], so '#N' keys can be resolved to a slot."""
+    b = bytearray(path.read_bytes())
+    _, chunks = _chunks(b)
+    return [_scan(b, s, e)[0] for (_, s, e) in chunks]
+
+
+def midi_drop_track(path, index):
+    b = bytearray(path.read_bytes())
+    ntrks, chunks = _chunks(b)
+    if index >= len(chunks):
+        return 'track #%d does not exist' % index
+    cs, _, ce = chunks[index]
+    out = bytearray(b[:cs]) + bytearray(b[ce:])
+    struct.pack_into('>H', out, 10, ntrks - 1)
+    path.write_bytes(bytes(out))
+    log('midi: dropped track #%d' % index)
+    return None
 
 SILENT = 'voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0'
 
@@ -33,7 +139,11 @@ HAND_TUNED = {'mus_petalburg_woods'}
 VOICE_FOR = {
     'square1': 'voice_square_1_alt 60, 0, 0, %(duty)d, %(a)d, %(d)d, %(s)d, %(r)d',
     'square2': 'voice_square_2_alt 60, 0, %(duty)d, %(a)d, %(d)d, %(s)d, %(r)d',
-    'wave':    'voice_programmable_wave_alt 60, 0, ProgrammableWaveData_6, '
+    # The sample number comes from the PLAN, which reads it from the song's own
+    # voicegroup. There are 25 waveforms and the choice is the wave channel's
+    # whole timbre -- hardcoding 6 here retimbred nine of the first twelve songs
+    # converted, which is what 'tinny' turned out to mean.
+    'wave':    'voice_programmable_wave_alt 60, 0, ProgrammableWaveData_%(wave_sample)d, '
                '%(a)d, %(d)d, %(s)d, %(r)d',
     'noise':   'voice_noise_alt 60, 0, 1, %(a)d, %(d)d, %(s)d, %(r)d',
 }
@@ -53,6 +163,24 @@ def source_voicegroup(repo, song):
         return None, None
     stem = g.group(1).lstrip('_')
     return stem, repo / 'sound/voicegroups' / (stem + '.inc')
+
+
+def wave_sample_for(lines, slot):
+    """The waveform for a part going on the wave channel.
+
+    Its own slot's if that slot was already a wave voice -- the exact timbre the
+    composer gave this line. Otherwise the song's wave voice elsewhere, since
+    that is what it chose for that channel at all. There are 25 of them and the
+    choice is the channel's whole timbre, so guessing one is not neutral.
+    """
+    body = [l.strip() for l in lines[1:] if l.strip() and not l.strip().startswith('@')]
+    if slot < len(body):
+        m = re.search(r'ProgrammableWaveData_(\d+)', body[slot])
+        if m:
+            return int(m.group(1))
+    found = sorted(int(m) for m in
+                   re.findall(r'ProgrammableWaveData_(\d+)', '\n'.join(body)))
+    return found[0] if found else 6
 
 
 def write_voicegroup(repo, song, voices, out_stem):
@@ -84,6 +212,12 @@ def write_voicegroup(repo, song, voices, out_stem):
                 out.append('\t@ slot %d: %s' % (slot, v.get('name', 'dropped')))
                 out.append('\t' + SILENT)
             else:
+                if kind == 'wave' and 'wave_sample' not in v:
+                    v = dict(v)
+                    v['wave_sample'] = wave_sample_for(lines, slot)
+                    log('slot %d wave sample %d (from the source voicegroup)'
+                        % (slot, v['wave_sample']))
+                # transpose is handled by editing the _gb.mid, not here.
                 out.append('\t@ slot %d: %s -> %s' % (slot, v.get('name', ''), kind))
                 out.append('\t' + VOICE_FOR[kind] % v)
             replaced += 1
@@ -120,8 +254,24 @@ def wire(repo, song, spec, const):
     stem = song.replace('mus_', '')
     voices = spec['voices']
 
+    # Resolve '#N' track keys to voicegroup slots. A '#N' that is DROPPED is not
+    # a voicegroup entry at all -- it is a MIDI edit, because its slot is shared
+    # with a track being kept and silencing the slot would silence both.
+    slots = track_slots(repo / 'sound/songs/midi' / (song + '.mid'))
+    vg_voices = {}
+    for key, v in voices.items():
+        if isinstance(key, str) and key.startswith('#'):
+            idx = int(key[1:])
+            if v['kind'] == 'drop':
+                continue
+            if idx >= len(slots):
+                return 'track #%d does not exist in %s' % (idx, song)
+            vg_voices[str(slots[idx])] = v
+        else:
+            vg_voices[str(key)] = v
+
     if song not in HAND_TUNED:
-        err = write_voicegroup(repo, song, voices, stem)
+        err = write_voicegroup(repo, song, vg_voices, stem)
         if err:
             return err
     else:
@@ -136,9 +286,23 @@ def wire(repo, song, spec, const):
     # The duplicated MIDI and its build line.
     mid = repo / 'sound/songs/midi' / (song + '.mid')
     gb_mid = repo / 'sound/songs/midi' / (song + '_gb.mid')
-    if not gb_mid.exists():
-        shutil.copyfile(mid, gb_mid)
-        log('copied %s_gb.mid' % song)
+    # ALWAYS re-copy from the original before editing. The edits below are not
+    # idempotent -- transposing twice moves a part two octaves -- so the copy
+    # has to start clean on every run.
+    shutil.copyfile(mid, gb_mid)
+
+    for slot_s, v in sorted(voices.items()):
+        if isinstance(slot_s, str) and slot_s.startswith('#'):
+            continue
+        if v.get('transpose'):
+            err = midi_transpose_slot(gb_mid, int(slot_s), v['transpose'])
+            if err:
+                return err
+    for key, v in sorted(voices.items(), key=str):
+        if isinstance(key, str) and key.startswith('#') and v['kind'] == 'drop':
+            err = midi_drop_track(gb_mid, int(key[1:]))
+            if err:
+                return err
     cfg = repo / 'sound/songs/midi/midi.cfg'
     if ensure_line(cfg, '%s_gb.mid:' % song,
                    '%s_gb.mid: -E -R50 -G_gb_%s -V080\n' % (song, stem)):

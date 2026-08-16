@@ -93,6 +93,51 @@ def source_voices(repo, song):
     return out
 
 
+def wave_samples(repo, song):
+    """slot -> ProgrammableWaveData number, from the song's own voicegroup.
+
+    There are 25 of these and they are different waveforms, so the choice IS the
+    wave channel's timbre. Hardcoding one (this was 6) silently retimbres the
+    channel: it happened to nine of the first twelve songs converted, and reads
+    as 'tinny' or vaguely wrong with no obvious cause.
+    """
+    cfg = (repo / 'sound/songs/midi/midi.cfg').read_text(encoding='utf-8')
+    m = re.search(r'^%s\.mid:\s*(.*)$' % re.escape(song), cfg, re.M)
+    if not m:
+        return {}
+    g = re.search(r'-G(\S+)', m.group(1))
+    if not g:
+        return {}
+    path = repo / 'sound/voicegroups' / (g.group(1).lstrip('_') + '.inc')
+    if not path.exists():
+        return {}
+    out, slot = {}, 0
+    for line in path.read_text(encoding='utf-8').split('\n')[1:]:
+        line = line.strip()
+        if not line or line.startswith('@'):
+            continue
+        w = re.search(r'ProgrammableWaveData_(\d+)', line)
+        if w:
+            out[slot] = int(w.group(1))
+        slot += 1
+    return out
+
+
+def pick_wave_sample(samples, slot):
+    """The sample for the part going on the wave channel.
+
+    Its own slot's if that slot was already a wave voice -- that is the exact
+    timbre the composer gave this line. Otherwise the song's wave voice
+    elsewhere, since that is the timbre it chose for that channel at all. Only
+    then a default.
+    """
+    if slot in samples:
+        return samples[slot]
+    if samples:
+        return sorted(samples.values())[0]
+    return 6
+
+
 def plan(tracks, voices=None):
     """tracks: [(slot, notes)] -> {slot: (channel, role)}"""
     voices = voices or {}
@@ -215,10 +260,13 @@ def main():
             if out is None:
                 print('%-28s  (no note data)' % song)
                 continue
+            samples = wave_samples(args.repo, song)
             voices = {}
             for slot, (ch, role) in out.items():
                 v = dict(ROLE_VOICE[role])
                 v['name'] = role
+                if ch == 'wave':
+                    v['wave_sample'] = pick_wave_sample(samples, slot)
                 voices[str(slot)] = v
             name = song.replace('mus_', '')
             plans[name] = dict(song=song, voices=voices)

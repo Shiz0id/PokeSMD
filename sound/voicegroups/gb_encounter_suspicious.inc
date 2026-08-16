@@ -93,7 +93,7 @@ voice_group gb_encounter_suspicious
 	@ slot 80: dropped
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	@ slot 81: PAD -> wave
-	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_6, 1, 5, 14, 3
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_7, 1, 5, 14, 3
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	@ slot 83: dropped
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
