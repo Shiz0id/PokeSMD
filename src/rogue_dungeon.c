@@ -2367,62 +2367,137 @@ struct DungeonRoom
     u8 x, y, w, h;
 };
 
+// The grass budget has to clear the room cap, because the patch loop runs ONCE
+// PER ROOM and stops at the ceiling rather than spreading what it has. At
+// twelve patches against ten rooms drawing 0-2 each it saturated on 23% of
+// floors, and a saturated floor is not merely thinner - the loop walks rooms in
+// index order, so every missing patch comes off the LAST rooms and the grass
+// quietly migrates to the start of the chain. Sixteen clears ten rooms
+// outright. Costs 16 bytes of EWRAM across the four arrays in sFloor.
+#define DUNGEON_MAX_GRASS_PATCHES 16
+
 // The prepared floor. Held rather than recomputed because object-event
 // templates are loaded before the map is generated, so trainer placement and
 // block painting are two passes over the same seeded layout.
 //
 // Not saved: it is entirely derived from VAR_ROGUE_DUNGEON_SEED.
-EWRAM_DATA static struct DungeonRoom sRooms[DUNGEON_MAX_ROOMS] = {0};
-EWRAM_DATA static u8 sRoomCount = 0;
-EWRAM_DATA static u8 sStairsX = 0;
-EWRAM_DATA static u8 sStairsY = 0;
-EWRAM_DATA static u16 sStairsMetatile = 0;
-EWRAM_DATA static u8 sSpawnX = 0;
-EWRAM_DATA static u8 sSpawnY = 0;
+//
+// ONE STRUCT, SO THE PER-FLOOR RESET IS ONE MEMSET. These were forty loose
+// statics, and the rule joining them - "a floor starts with nothing placed" -
+// was six hand-written assignments in PrepareFloor's prologue. FOUR OF THEM
+// WERE ONCE MISSING: sFloor.itemCount, sFloor.berryCount, sFloor.rockCount and sFloor.eventCount kept
+// the previous floor's values, the arena path returned before reaching the
+// placers, and every boss and mini boss floor spawned the last floor's item
+// balls, berry trees, mining rocks and event NPC at the last floor's
+// coordinates. Found by playing, not by any check.
+//
+// A partial reset of loose statics is a valid-looking edit. A partial memset
+// of one struct is not expressible, which is the entire point of this type.
+//
+// WHAT IS DELIBERATELY NOT IN HERE: anything whose lifetime is not exactly one
+// floor. sFloorPrepared is read before PrepareFloor runs; sSafariBuiltFloor is
+// a cache key that a per-floor zero would silently invalidate every floor;
+// sCaveBits, sCaveWork and sWoodsOpen are generator scratch the generators
+// rewrite in full; the boss-ace and event-interaction statics outlive the
+// prepare pass on purpose. Adding a field here means asserting it is dead at
+// the start of every floor.
+struct RogueFloorState
+{
+    // Four-byte-aligned members first, so grouping these costs no padding.
+    struct BgEvent hiddenItems[DUNGEON_MAX_HIDDEN];
+    struct DungeonRoom rooms[DUNGEON_MAX_ROOMS];
+
+    // Trainers, indexed by object event localId - 1, mirroring how the Battle
+    // Pyramid maps a talked-to object back to its opponent.
+    u16 trainerIds[DUNGEON_MAX_TRAINERS];
+    u16 trainerGfx[DUNGEON_MAX_TRAINERS];
+
+    // Item ball contents, rolled at PREPARE time and held rather than rolled
+    // when the ball is opened: preparing happens on every load of a floor,
+    // including load-from-save with the stored seed, so the same ball yields
+    // the same item without the pickup path having to reseed anything.
+    u16 itemIds[DUNGEON_MAX_ITEMS];
+
+    // The berry is held rather than the tree planted at prepare time, because
+    // planting writes the SAVE BLOCK and preparing happens on every load - see
+    // PlantFloorBerryTrees.
+    u16 berryItems[DUNGEON_MAX_BERRIES];
+
+    u16 stairsMetatile;
+
+    // Rolled at prepare time for EVERY event, whether or not the one picked
+    // reads it - so the number of draws taken from the seeded stream does not
+    // depend on which event came up. Also what the injured Pokemon's overworld
+    // sprite is built from, so it has to be decided before the templates are
+    // written rather than when the player talks to it.
+    u16 eventSpecies;
+
+    // Grass blobs, in cell coordinates. Centres and radii rather than a grid,
+    // which is a handful of bytes instead of a 576-cell map.
+    u8 grassPatchX[DUNGEON_MAX_GRASS_PATCHES];
+    u8 grassPatchY[DUNGEON_MAX_GRASS_PATCHES];
+    u8 grassPatchRadius[DUNGEON_MAX_GRASS_PATCHES];
+    bool8 grassPatchLong[DUNGEON_MAX_GRASS_PATCHES];
+
+    u8 trainerX[DUNGEON_MAX_TRAINERS];
+    u8 trainerY[DUNGEON_MAX_TRAINERS];
+    u8 itemQty[DUNGEON_MAX_ITEMS];
+    u8 itemX[DUNGEON_MAX_ITEMS];
+    u8 itemY[DUNGEON_MAX_ITEMS];
+    u8 berryX[DUNGEON_MAX_BERRIES];
+    u8 berryY[DUNGEON_MAX_BERRIES];
+    u8 rockX[DUNGEON_MAX_ROCKS];
+    u8 rockY[DUNGEON_MAX_ROCKS];
+
+    // How many things each room already holds, this floor.
+    u8 roomUse[DUNGEON_MAX_ROOMS];
+
+    u8 roomCount;
+    u8 stairsX;
+    u8 stairsY;
+    u8 spawnX;
+    u8 spawnY;
+    u8 grassPatchCount;
+    u8 trainerCount;
+    u8 itemCount;
+    u8 berryCount;
+    u8 rockCount;
+    u8 hiddenCount;
+
+    // The floor's event, if it rolled one. eventIndex is an index into
+    // sFloorEvents rather than a copy of the entry, so the table stays the only
+    // place that knows what an event IS.
+    u8 eventX;
+    u8 eventY;
+    u8 eventCount;
+    u8 eventIndex;
+    // The prop's tile, derived from the event's rather than rolled - see the
+    // note in PlaceEvents on why it takes no draw of its own.
+    u8 eventPropX;
+    u8 eventPropY;
+    u8 eventAmbush;
+};
+
+EWRAM_DATA static struct RogueFloorState sFloor = {0};
+
+// PrepareFloor clears this with CpuFill32, which fills sizeof/4 WORDS and
+// silently fills short if the size is not a whole number of them - leaving the
+// tail holding the previous floor's bytes, which is precisely the bug this
+// struct exists to make impossible. The struct ends in a run of u8 scalars, so
+// a single added field is all it would take.
+STATIC_ASSERT(sizeof(struct RogueFloorState) % 4 == 0,
+              RogueFloorStateMustBeAWholeNumberOfWords);
+
+// NOT part of sFloor: read by GenerateRogueDungeonFloor before PrepareFloor
+// runs, so a per-floor zero would be wrong.
 EWRAM_DATA static bool8 sFloorPrepared = FALSE;
 
-// Grass blobs, in cell coordinates. Stored as centres and radii rather than a
-// grid, which is a handful of bytes instead of a 576-cell map.
-//
-// This budget has to clear the room cap, because the patch loop runs ONCE PER
-// ROOM and stops at the ceiling rather than spreading what it has. At twelve
-// patches against ten rooms drawing 0-2 each it saturated on 23% of floors,
-// and a saturated floor is not merely thinner - the loop walks rooms in index
-// order, so every missing patch comes off the LAST rooms and the grass quietly
-// migrates to the start of the chain. Sixteen clears ten rooms outright.
-// Costs 16 bytes of EWRAM across the four arrays below.
-#define DUNGEON_MAX_GRASS_PATCHES 16
-EWRAM_DATA static u8 sGrassPatchX[DUNGEON_MAX_GRASS_PATCHES] = {0};
-EWRAM_DATA static u8 sGrassPatchY[DUNGEON_MAX_GRASS_PATCHES] = {0};
-EWRAM_DATA static u8 sGrassPatchRadius[DUNGEON_MAX_GRASS_PATCHES] = {0};
-EWRAM_DATA static bool8 sGrassPatchLong[DUNGEON_MAX_GRASS_PATCHES] = {0};
-EWRAM_DATA static u8 sGrassPatchCount = 0;
 
 // Cell openness for the woods painter. Held rather than stack-allocated because
 // 576 bytes is a lot of GBA stack.
 EWRAM_DATA static u8 sWoodsOpen[DUNGEON_CELLS_H][DUNGEON_CELLS_W] = {0};
 
-// Trainers for this floor. Indexed by object event localId - 1, mirroring how
-// the Battle Pyramid maps a talked-to object back to its opponent.
-EWRAM_DATA static u16 sTrainerIds[DUNGEON_MAX_TRAINERS] = {0};
-EWRAM_DATA static u8 sTrainerX[DUNGEON_MAX_TRAINERS] = {0};
-EWRAM_DATA static u8 sTrainerY[DUNGEON_MAX_TRAINERS] = {0};
-EWRAM_DATA static u16 sTrainerGfx[DUNGEON_MAX_TRAINERS] = {0};
-EWRAM_DATA static u8 sTrainerCount = 0;
 
-// Item balls for this floor, indexed the same way. Contents are rolled at
-// PREPARE time and held rather than rolled when the ball is opened: preparing
-// happens on every load of a floor, including load-from-save with the stored
-// seed, so the same ball yields the same item without the pickup path having to
-// reseed anything.
-//
-// 40 bytes. The templates the balls occupy cost nothing on top - see
-// DUNGEON_MAX_ITEMS.
-EWRAM_DATA static u16 sItemIds[DUNGEON_MAX_ITEMS] = {0};
-EWRAM_DATA static u8 sItemQty[DUNGEON_MAX_ITEMS] = {0};
-EWRAM_DATA static u8 sItemX[DUNGEON_MAX_ITEMS] = {0};
-EWRAM_DATA static u8 sItemY[DUNGEON_MAX_ITEMS] = {0};
-EWRAM_DATA static u8 sItemCount = 0;
 
 // Hidden items, and the events header that points at them.
 //
@@ -2434,38 +2509,10 @@ EWRAM_DATA static u8 sItemCount = 0;
 // sDungeonEvents is a copy of the map's ROM header with only the bg fields
 // swapped, so warps, coord events and the object event count all keep saying
 // what map.json said.
-// Berry trees for this floor. The berry is held rather than the tree planted at
-// prepare time, because planting writes the SAVE BLOCK and preparing happens on
-// every load - see PlantFloorBerryTrees.
-EWRAM_DATA static u16 sBerryItems[DUNGEON_MAX_BERRIES] = {0};
-EWRAM_DATA static u8 sBerryX[DUNGEON_MAX_BERRIES] = {0};
-EWRAM_DATA static u8 sRockX[DUNGEON_MAX_ROCKS] = {0};
-EWRAM_DATA static u8 sRockY[DUNGEON_MAX_ROCKS] = {0};
-EWRAM_DATA static u8 sRockCount = 0;
-// The floor's event, if it rolled one. sEventIndex is an index into
-// sFloorEvents rather than a copy of the entry, so the table stays the only
-// place that knows what an event IS. 4 bytes total.
-EWRAM_DATA static u8 sEventX = 0;
-EWRAM_DATA static u8 sEventY = 0;
-EWRAM_DATA static u8 sEventCount = 0;
-EWRAM_DATA static u8 sEventIndex = 0;
-// The prop's tile, derived from the event's rather than rolled - see the note in
-// PlaceEvents on why it takes no draw of its own. 2 bytes.
-EWRAM_DATA static u8 sEventPropX = 0;
-EWRAM_DATA static u8 sEventPropY = 0;
-// Rolled at prepare time for every event, whether or not the one picked reads
-// them - so the number of draws taken from the seeded stream does not depend on
-// WHICH event came up. sEventSpecies is also what the injured Pokemon's overworld
-// sprite is built from, so it has to be decided before the templates are written,
-// not when the player talks to it.
-EWRAM_DATA static u16 sEventSpecies = SPECIES_NONE;
-EWRAM_DATA static u8 sEventAmbush = 0;
-EWRAM_DATA static u8 sBerryY[DUNGEON_MAX_BERRIES] = {0};
-EWRAM_DATA static u8 sBerryCount = 0;
-
-EWRAM_DATA static struct BgEvent sHiddenItems[DUNGEON_MAX_HIDDEN] = {0};
+// The events header that points at the hidden items. NOT part of sFloor: it is
+// a copy of the map's ROM header with only the bg fields swapped, rebuilt on
+// every map load rather than per generated floor.
 EWRAM_DATA static struct MapEvents sDungeonEvents = {0};
-EWRAM_DATA static u8 sHiddenCount = 0;
 
 // A wrong id here would clear or read a VANILLA hidden item's flag. Checked at
 // compile time because the two constants live in different headers and the
@@ -2507,12 +2554,10 @@ static u16 DungeonRandom(void)
     return sDungeonRngState >> 16;
 }
 
-// How many things each room already holds, this floor. Reset in PrepareFloor.
-EWRAM_DATA static u8 sRoomUse[DUNGEON_MAX_ROOMS] = {0};
 
 // Picks a room to put something in, PREFERRING ONE THAT IS STILL EMPTY.
 //
-// Placement used to be a flat `DungeonRandom() % sRoomCount`, which is uniform
+// Placement used to be a flat `DungeonRandom() % sFloor.roomCount`, which is uniform
 // WITH REPLACEMENT - so objects landed on rooms that already had one and the
 // floor saturated long before it was full. Ten rooms and thirteen objects still
 // left 2.5 rooms holding nothing at all, and 5.3 holding nothing a player would
@@ -2538,26 +2583,26 @@ static u32 PickRoomLeastUsedFrom(u32 firstRoom)
 {
     u32 i, fewest = 0xFF, candidates = 0, pick;
 
-    if (sRoomCount <= firstRoom)
-        return firstRoom < sRoomCount ? firstRoom : 0;
+    if (sFloor.roomCount <= firstRoom)
+        return firstRoom < sFloor.roomCount ? firstRoom : 0;
 
-    for (i = firstRoom; i < sRoomCount; i++)
+    for (i = firstRoom; i < sFloor.roomCount; i++)
     {
-        if (sRoomUse[i] < fewest)
-            fewest = sRoomUse[i];
+        if (sFloor.roomUse[i] < fewest)
+            fewest = sFloor.roomUse[i];
     }
 
-    for (i = firstRoom; i < sRoomCount; i++)
+    for (i = firstRoom; i < sFloor.roomCount; i++)
     {
-        if (sRoomUse[i] == fewest)
+        if (sFloor.roomUse[i] == fewest)
             candidates++;
     }
 
     pick = DungeonRandom() % candidates;
 
-    for (i = firstRoom; i < sRoomCount; i++)
+    for (i = firstRoom; i < sFloor.roomCount; i++)
     {
-        if (sRoomUse[i] == fewest && pick-- == 0)
+        if (sFloor.roomUse[i] == fewest && pick-- == 0)
             return i;
     }
 
@@ -2569,8 +2614,8 @@ static u32 PickRoomLeastUsedFrom(u32 firstRoom)
 // something that was never put in it.
 static void NoteRoomUsed(u32 room)
 {
-    if (room < DUNGEON_MAX_ROOMS && sRoomUse[room] != 0xFF)
-        sRoomUse[room]++;
+    if (room < DUNGEON_MAX_ROOMS && sFloor.roomUse[room] != 0xFF)
+        sFloor.roomUse[room]++;
 }
 
 static const u8 sText_DungeonFloorPrefix[] = _("DUNGEON B");
@@ -2677,17 +2722,17 @@ void RogueDungeon_GetDebugObjectCensus(u8 *dest)
     u8 *ptr;
 
     ptr = StringCopy(dest, sText_CensusPlaced);
-    ptr = ConvertIntToDecimalStringN(ptr, sTrainerCount, STR_CONV_MODE_LEFT_ALIGN, 2);
+    ptr = ConvertIntToDecimalStringN(ptr, sFloor.trainerCount, STR_CONV_MODE_LEFT_ALIGN, 2);
     ptr = StringCopy(ptr, sText_CensusItems);
-    ptr = ConvertIntToDecimalStringN(ptr, sItemCount, STR_CONV_MODE_LEFT_ALIGN, 2);
+    ptr = ConvertIntToDecimalStringN(ptr, sFloor.itemCount, STR_CONV_MODE_LEFT_ALIGN, 2);
     ptr = StringCopy(ptr, sText_CensusBerries);
-    ptr = ConvertIntToDecimalStringN(ptr, sBerryCount, STR_CONV_MODE_LEFT_ALIGN, 2);
+    ptr = ConvertIntToDecimalStringN(ptr, sFloor.berryCount, STR_CONV_MODE_LEFT_ALIGN, 2);
     ptr = StringCopy(ptr, sText_CensusRocks);
-    ptr = ConvertIntToDecimalStringN(ptr, sRockCount, STR_CONV_MODE_LEFT_ALIGN, 2);
+    ptr = ConvertIntToDecimalStringN(ptr, sFloor.rockCount, STR_CONV_MODE_LEFT_ALIGN, 2);
     ptr = StringCopy(ptr, sText_CensusEvents);
-    ptr = ConvertIntToDecimalStringN(ptr, sEventCount, STR_CONV_MODE_LEFT_ALIGN, 2);
+    ptr = ConvertIntToDecimalStringN(ptr, sFloor.eventCount, STR_CONV_MODE_LEFT_ALIGN, 2);
     ptr = StringCopy(ptr, sText_CensusHidden);
-    ptr = ConvertIntToDecimalStringN(ptr, sHiddenCount, STR_CONV_MODE_LEFT_ALIGN, 2);
+    ptr = ConvertIntToDecimalStringN(ptr, sFloor.hiddenCount, STR_CONV_MODE_LEFT_ALIGN, 2);
 
     // Against OBJECT_EVENTS_COUNT, so the headroom is on screen rather than
     // being something the reader has to remember.
@@ -2871,7 +2916,7 @@ EWRAM_DATA static u8 sBossAceLevel = 0;
 EWRAM_DATA static u8 sBossAceSlot = 0;
 
 // The boss's own object event. An arena places exactly one trainer -
-// PrepareArenaFloor sets sTrainerCount to 1 and fills sTrainerIds[0] - and
+// PrepareArenaFloor sets sFloor.trainerCount to 1 and fills sFloor.trainerIds[0] - and
 // trainer i takes local id i + 1, so the boss is always this one.
 #define DUNGEON_BOSS_LOCAL_ID 1
 
@@ -2897,14 +2942,14 @@ u16 RogueDungeon_AbandonBossAce(void)
 {
     struct ObjectEventTemplate *templates = gSaveBlock1Ptr->objectEventTemplates;
     struct ObjectEventTemplate *boss = &templates[DUNGEON_BOSS_LOCAL_ID - 1];
-    u16 trainerId = sTrainerIds[0];
+    u16 trainerId = sFloor.trainerIds[0];
     u8 size = GetTrainerPartySizeFromId(trainerId);
     const struct TrainerMon *party = GetTrainerPartyFromId(trainerId);
 
     if (!IsDungeonBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
         return FALSE;
 
-    if (sTrainerCount == 0 || size == 0 || party == NULL)
+    if (sFloor.trainerCount == 0 || size == 0 || party == NULL)
         return FALSE;
 
     // The vanish message's only variable. Deliberately buffered here rather than
@@ -2952,7 +2997,7 @@ u16 RogueDungeon_AbandonBossAce(void)
 // weakest to strongest, so the signature Pokemon is always last.
 u16 RogueDungeon_PrepareBossAceOffer(void)
 {
-    u16 trainerId = sTrainerIds[0];
+    u16 trainerId = sFloor.trainerIds[0];
     u8 size = GetTrainerPartySizeFromId(trainerId);
     const struct TrainerMon *party = GetTrainerPartyFromId(trainerId);
 
@@ -2970,7 +3015,7 @@ u16 RogueDungeon_PrepareBossAceOffer(void)
     if (RogueDungeon_IsRunCompleteFloor())
         return ROGUE_ACE_NONE;
 
-    if (sTrainerCount == 0 || size == 0 || party == NULL)
+    if (sFloor.trainerCount == 0 || size == 0 || party == NULL)
         return ROGUE_ACE_NONE;
 
     sBossAceSlot = size - 1;
@@ -3057,7 +3102,7 @@ static void SetBossAceTrainerName(struct Pokemon *mon, u16 trainerId)
 // arrives as the thing that just beat you rather than a blank slate.
 void RogueDungeon_GiveBossAce(void)
 {
-    const struct TrainerMon *party = GetTrainerPartyFromId(sTrainerIds[0]);
+    const struct TrainerMon *party = GetTrainerPartyFromId(sFloor.trainerIds[0]);
     u32 slot = CalculatePlayerPartyCount();
     struct Pokemon *mon;
     u32 i;
@@ -3072,7 +3117,7 @@ void RogueDungeon_GiveBossAce(void)
     // is set below from the boss's own party, so the initial moveset that
     // CreateRandomMonWithIVs would have added is not wanted either.
     CreateMonWithIVs(mon, sBossAceSpecies, sBossAceLevel, Random32(),
-                     OTID_STRUCT_PRESET(BossAceOriginalTrainerId(sTrainerIds[0])),
+                     OTID_STRUCT_PRESET(BossAceOriginalTrainerId(sFloor.trainerIds[0])),
                      MAX_PER_STAT_IVS);
     GiveMonInitialMoveset(mon);
 
@@ -3089,7 +3134,7 @@ void RogueDungeon_GiveBossAce(void)
         SetMonData(mon, MON_DATA_HELD_ITEM, &item);
     }
 
-    SetBossAceTrainerName(mon, sTrainerIds[0]);
+    SetBossAceTrainerName(mon, sFloor.trainerIds[0]);
 
     CalculateMonStats(mon);
     CalculatePlayerPartyCount();
@@ -4388,28 +4433,28 @@ static bool8 PieceClearOfObjects(const struct RogueSetPiece *piece, s32 x, s32 y
         {
             s32 cx = x + i, cy = y + j;
 
-            if ((cx == sStairsX && cy == sStairsY)
-             || (cx == sSpawnX && cy == sSpawnY))
+            if ((cx == sFloor.stairsX && cy == sFloor.stairsY)
+             || (cx == sFloor.spawnX && cy == sFloor.spawnY))
                 return FALSE;
-            for (k = 0; k < sTrainerCount; k++)
-                if (cx == sTrainerX[k] && cy == sTrainerY[k])
+            for (k = 0; k < sFloor.trainerCount; k++)
+                if (cx == sFloor.trainerX[k] && cy == sFloor.trainerY[k])
                     return FALSE;
-            for (k = 0; k < sItemCount; k++)
-                if (cx == sItemX[k] && cy == sItemY[k])
+            for (k = 0; k < sFloor.itemCount; k++)
+                if (cx == sFloor.itemX[k] && cy == sFloor.itemY[k])
                     return FALSE;
-            for (k = 0; k < sRockCount; k++)
-                if (cx == sRockX[k] && cy == sRockY[k])
+            for (k = 0; k < sFloor.rockCount; k++)
+                if (cx == sFloor.rockX[k] && cy == sFloor.rockY[k])
                     return FALSE;
-            for (k = 0; k < sBerryCount; k++)
-                if (cx == sBerryX[k] && cy == sBerryY[k])
+            for (k = 0; k < sFloor.berryCount; k++)
+                if (cx == sFloor.berryX[k] && cy == sFloor.berryY[k])
                     return FALSE;
-            if (sEventCount && cx == sEventX && cy == sEventY)
+            if (sFloor.eventCount && cx == sFloor.eventX && cy == sFloor.eventY)
                 return FALSE;
             // Buried items are the one class with nothing visible on the map,
             // so a set piece over one is silent twice: the player never learns
             // it was there, and the Dowsing Machine points at solid wall.
-            for (k = 0; k < sHiddenCount; k++)
-                if (cx == sHiddenItems[k].x && cy == sHiddenItems[k].y)
+            for (k = 0; k < sFloor.hiddenCount; k++)
+                if (cx == sFloor.hiddenItems[k].x && cy == sFloor.hiddenItems[k].y)
                     return FALSE;
         }
     }
@@ -5234,25 +5279,25 @@ static void PrepareArenaFloor(u16 floor)
         y0 -= y0 % DUNGEON_WOODS_CELL;
     }
 
-    sRoomCount = 1;
-    sRooms[0].x = x0;
-    sRooms[0].y = y0;
-    sRooms[0].w = w;
-    sRooms[0].h = h;
+    sFloor.roomCount = 1;
+    sFloor.rooms[0].x = x0;
+    sFloor.rooms[0].y = y0;
+    sFloor.rooms[0].w = w;
+    sFloor.rooms[0].h = h;
 
     // Player at the south end, boss at the north, so the two face off across
     // the arena. The boss is deliberately NOT in a chokepoint - a defeated
     // trainer object still blocks movement, and would wall the exit off.
-    sSpawnX = x0 + w / 2;
-    sSpawnY = y0 + h - 2;
+    sFloor.spawnX = x0 + w / 2;
+    sFloor.spawnY = y0 + h - 2;
 
-    sStairsX = x0 + w / 2;
-    sStairsY = y0 + 1;
-    sStairsMetatile = theme->stairsDown;
+    sFloor.stairsX = x0 + w / 2;
+    sFloor.stairsY = y0 + 1;
+    sFloor.stairsMetatile = theme->stairsDown;
 
-    sTrainerCount = 1;
-    sTrainerX[0] = x0 + w / 2;
-    sTrainerY[0] = y0 + 3;
+    sFloor.trainerCount = 1;
+    sFloor.trainerX[0] = x0 + w / 2;
+    sFloor.trainerY[0] = y0 + 3;
 
     if (IsDungeonBossFloor(floor))
     {
@@ -5262,16 +5307,16 @@ static void PrepareArenaFloor(u16 floor)
         // finale never permutes anyway.
         u32 identity = DungeonForSlot(dungeon);
 
-        sTrainerIds[0] = sDungeonBosses[identity % ARRAY_COUNT(sDungeonBosses)];
-        sTrainerGfx[0] = sDungeonBossGfx[identity % ARRAY_COUNT(sDungeonBossGfx)];
+        sFloor.trainerIds[0] = sDungeonBosses[identity % ARRAY_COUNT(sDungeonBosses)];
+        sFloor.trainerGfx[0] = sDungeonBossGfx[identity % ARRAY_COUNT(sDungeonBossGfx)];
     }
     else if (dungeon == DUNGEON_COUNT - 1)
     {
         // The last dungeon's mini boss is the rival, fixed rather than picked by
         // level: no stock trainer comes close to floor 110, and the run should
         // not spend its second-to-last arena on an anonymous hiker.
-        sTrainerIds[0] = TRAINER_ROGUE_RIVAL;
-        sTrainerGfx[0] = OBJ_EVENT_GFX_MAY_NORMAL;
+        sFloor.trainerIds[0] = TRAINER_ROGUE_RIVAL;
+        sFloor.trainerGfx[0] = OBJ_EVENT_GFX_MAY_NORMAL;
     }
     else
     {
@@ -5280,9 +5325,9 @@ static void PrepareArenaFloor(u16 floor)
         // at all. The table carries its own sprite, so a female grunt looks
         // female and a leader looks like the leader rather than one of their
         // grunts.
-        sTrainerIds[0] = PickMiniBossForLevel(
+        sFloor.trainerIds[0] = PickMiniBossForLevel(
             FloorTargetLevel(floor) + DUNGEON_MINIBOSS_LEVEL_BONUS,
-            &sTrainerGfx[0]);
+            &sFloor.trainerGfx[0]);
     }
 }
 
@@ -5353,8 +5398,8 @@ void RogueDungeon_OnBossDefeated(void)
     // An arena floor has no other way out, so that stranded the run outright.
     //
     // Both generation paths already read it from the theme; this one did not.
-    MapGridSetMetatileEntryAt(sStairsX + MAP_OFFSET, sStairsY + MAP_OFFSET,
-                              MakeBlock(sStairsMetatile, 0,
+    MapGridSetMetatileEntryAt(sFloor.stairsX + MAP_OFFSET, sFloor.stairsY + MAP_OFFSET,
+                              MakeBlock(sFloor.stairsMetatile, 0,
                                         ThemeForFloor(floor)->elevationFloor));
     DrawWholeMapView();
 }
@@ -5771,11 +5816,32 @@ static const struct RogueLootEntry sLootBerries[] =
 // Weighted pick from a banded table. Shared by both loot tables, because they
 // are the same shape and a second copy of this is a second place for the
 // running-total arithmetic to be wrong.
-static void RollFromTable(const struct RogueLootEntry *table, u32 count,
-                          u16 floor, u16 *item, u8 *quantity)
+//
+// TWO ENTRY POINTS, ONE BODY, AND THE SPLIT IS THE POINT. Which stream a roll
+// comes from is a correctness property, not a detail:
+//
+//   - the PLACERS draw from the seeded stream. Their rolls are part of the
+//     floor's layout, and the number of draws they take must never change or
+//     every object placed afterwards moves.
+//   - the PEDLAR must not. It runs while the player is standing on the floor,
+//     when the seeded stream is not live, and drawing from it there advances
+//     the floor's RNG in response to a player action.
+//
+// This was one function taking a `seeded` flag, and before that one function
+// that always drew from the seeded stream - which the pedlar reached through
+// it, two frames down, while its own comment said it used Random(). Found by
+// check_seeded_stream.py.
+//
+// THE FLAG WAS NOT ENOUGH. With the stream chosen by an argument the call graph
+// still reads "the pedlar can reach DungeonRandom", and the only way to see
+// otherwise is to follow the value - which is exactly the kind of analysis a
+// guard should not need. Two named entry points make the property structural,
+// so the check stays dumb enough to trust.
+
+// The weight of every row whose band covers this floor.
+static u32 LootBandWeight(const struct RogueLootEntry *table, u32 count, u16 floor)
 {
     u32 total = 0;
-    u32 roll;
     u32 i;
 
     for (i = 0; i < count; i++)
@@ -5784,17 +5850,15 @@ static void RollFromTable(const struct RogueLootEntry *table, u32 count,
             total += table[i].weight;
     }
 
-    // Cannot happen with either table as written, and verify_loot_table.py
-    // fails if an edit ever makes it possible - but a gap should hand over
-    // something rather than divide by zero.
-    if (total == 0)
-    {
-        *item = ITEM_POTION;
-        *quantity = 1;
-        return;
-    }
+    return total;
+}
 
-    roll = DungeonRandom() % total;
+// The walk, given a roll already reduced modulo the band's total weight. Takes
+// no draw of its own, which is what keeps both callers honest.
+static void PickFromLootBand(const struct RogueLootEntry *table, u32 count,
+                             u16 floor, u16 *item, u8 *quantity, u32 roll)
+{
+    u32 i;
 
     for (i = 0; i < count; i++)
     {
@@ -5813,6 +5877,47 @@ static void RollFromTable(const struct RogueLootEntry *table, u32 count,
     *quantity = 1;
 }
 
+// Cannot happen with either table as written, and verify_loot_table.py fails if
+// an edit ever makes it possible - but a gap should hand over something rather
+// than divide by zero. Checked BEFORE the draw in both entry points below, so
+// an empty band costs no draw from either stream.
+static bool32 LootBandIsEmpty(u32 total, u16 *item, u8 *quantity)
+{
+    if (total != 0)
+        return FALSE;
+
+    *item = ITEM_POTION;
+    *quantity = 1;
+    return TRUE;
+}
+
+// SEEDED. Placers only - one draw, and only when the band is non-empty.
+static void RollFromTable(const struct RogueLootEntry *table, u32 count,
+                          u16 floor, u16 *item, u8 *quantity)
+{
+    u32 total = LootBandWeight(table, count, floor);
+
+    if (LootBandIsEmpty(total, item, quantity))
+        return;
+
+    PickFromLootBand(table, count, floor, item, quantity,
+                     DungeonRandom() % total);
+}
+
+// LIVE. For code that runs while the player is on the floor, where the seeded
+// stream is not live. Named differently rather than flagged so that reaching
+// the wrong one is visible at the call site and in the call graph.
+static void RollFromTableLive(const struct RogueLootEntry *table, u32 count,
+                              u16 floor, u16 *item, u8 *quantity)
+{
+    u32 total = LootBandWeight(table, count, floor);
+
+    if (LootBandIsEmpty(total, item, quantity))
+        return;
+
+    PickFromLootBand(table, count, floor, item, quantity, Random() % total);
+}
+
 // Buries hidden items through the floor's rooms.
 //
 // Runs after PlaceItems so it can avoid a tile that already has an item ball on
@@ -5828,7 +5933,7 @@ static void PlaceHiddenItems(u16 floor)
     bool32 buryStone;
     u16 stone;
 
-    sHiddenCount = 0;
+    sFloor.hiddenCount = 0;
 
     // Both draws happen before the early returns and before the loop, so they
     // are two fixed steps of the floor's stream rather than steps that depend
@@ -5839,7 +5944,7 @@ static void PlaceHiddenItems(u16 floor)
              && (floor >= DUNGEON_STONE_FIRST_FLOOR);
     stone = sBuriedStones[DungeonRandom() % ARRAY_COUNT(sBuriedStones)];
 
-    if (sRoomCount == 0)
+    if (sFloor.roomCount == 0)
         return;
 
     // NOTHING BURIED WHERE IT CANNOT BE FOUND. item_use.c refuses to start the
@@ -5862,103 +5967,105 @@ static void PlaceHiddenItems(u16 floor)
         u16 item;
         u8 quantity;
         u8 x = 0, y = 0;
-        u32 room = DungeonRandom() % sRoomCount;
+        u32 room = DungeonRandom() % sFloor.roomCount;
 
-        x = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
-        y = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
+        x = sFloor.rooms[room].x + (DungeonRandom() % sFloor.rooms[room].w);
+        y = sFloor.rooms[room].y + (DungeonRandom() % sFloor.rooms[room].h);
 
         // The exit, an item ball, a trainer or another buried item - anything
         // that owns the interaction on that tile, or that the player cannot
         // stand on to search it.
-        if (x == sStairsX && y == sStairsY)
+        if (x == sFloor.stairsX && y == sFloor.stairsY)
             continue;
 
-        for (j = 0; j < sItemCount; j++)
+        for (j = 0; j < sFloor.itemCount; j++)
         {
-            if (sItemX[j] == x && sItemY[j] == y)
+            if (sFloor.itemX[j] == x && sFloor.itemY[j] == y)
                 break;
         }
-        if (j != sItemCount)
+        if (j != sFloor.itemCount)
             continue;
 
-        for (j = 0; j < sTrainerCount; j++)
+        for (j = 0; j < sFloor.trainerCount; j++)
         {
-            if (sTrainerX[j] == x && sTrainerY[j] == y)
+            if (sFloor.trainerX[j] == x && sFloor.trainerY[j] == y)
                 break;
         }
-        if (j != sTrainerCount)
+        if (j != sFloor.trainerCount)
             continue;
 
-        for (j = 0; j < sBerryCount; j++)
+        for (j = 0; j < sFloor.berryCount; j++)
         {
-            if (sBerryX[j] == x && sBerryY[j] == y)
+            if (sFloor.berryX[j] == x && sFloor.berryY[j] == y)
                 break;
         }
-        if (j != sBerryCount)
+        if (j != sFloor.berryCount)
             continue;
 
         // THE ROCKS WERE MISSING FROM THIS LIST, and they are placed before this
         // runs, so a buried item could land under one - unreachable, and the
         // Dowsing Machine pointing at it forever. The same bug the comment at the
         // head of this function describes for balls and trees, one class short.
-        for (j = 0; j < sRockCount; j++)
+        for (j = 0; j < sFloor.rockCount; j++)
         {
-            if (sRockX[j] == x && sRockY[j] == y)
+            if (sFloor.rockX[j] == x && sFloor.rockY[j] == y)
                 break;
         }
-        if (j != sRockCount)
+        if (j != sFloor.rockCount)
             continue;
 
-        if (sEventCount && sEventX == x && sEventY == y)
+        if (sFloor.eventCount && sFloor.eventX == x && sFloor.eventY == y)
             continue;
 
-        for (j = 0; j < sHiddenCount; j++)
+        for (j = 0; j < sFloor.hiddenCount; j++)
         {
-            if (sHiddenItems[j].x == x && sHiddenItems[j].y == y)
+            if (sFloor.hiddenItems[j].x == x && sFloor.hiddenItems[j].y == y)
                 break;
         }
-        if (j != sHiddenCount)
+        if (j != sFloor.hiddenCount)
             continue;
 
-        // sHiddenCount rather than i, so a floor whose first few candidate
+        // sFloor.hiddenCount rather than i, so a floor whose first few candidate
         // positions collided still buries the stone rather than losing it.
-        if (buryStone && sHiddenCount == 0)
+        if (buryStone && sFloor.hiddenCount == 0)
         {
             item = stone;
             quantity = 1;
         }
-        else if (sHiddenCount >= heldCount)
+        else if (sFloor.hiddenCount >= heldCount)
         {
             // The tail of the floor's buried items is materials. Keyed on the
             // INDEX rather than on a fresh roll, so this adds no draw to the
             // floor's stream and cannot shift any placement that follows --
             // the property the two draws above are arranged to preserve.
-            RollFromTable(sLootMaterials, ARRAY_COUNT(sLootMaterials), floor, &item, &quantity);
+            RollFromTable(sLootMaterials, ARRAY_COUNT(sLootMaterials), floor,
+                          &item, &quantity);
         }
         else
         {
-            RollFromTable(sLootHeld, ARRAY_COUNT(sLootHeld), floor, &item, &quantity);
+            RollFromTable(sLootHeld, ARRAY_COUNT(sLootHeld), floor,
+                          &item, &quantity);
         }
 
-        sHiddenItems[sHiddenCount].x = x;
-        sHiddenItems[sHiddenCount].y = y;
+        sFloor.hiddenItems[sFloor.hiddenCount].x = x;
+        sFloor.hiddenItems[sFloor.hiddenCount].y = y;
         // ELEVATION_TRANSITION, not the theme's floor elevation.
         // GetBackgroundEventAtPosition matches a bg event when its elevation
         // equals the PLAYER'S or is ELEVATION_TRANSITION, so transition matches
         // whatever the player is standing at and cannot be wrong. A per-theme
         // elevation hard-coded here is the recurring bug in this project, and
         // it already bit the trainers once on the ocean.
-        sHiddenItems[sHiddenCount].elevation = ELEVATION_TRANSITION;
-        sHiddenItems[sHiddenCount].kind = BG_EVENT_HIDDEN_ITEM;
-        sHiddenItems[sHiddenCount].bgUnion.hiddenItem.item = item;
-        sHiddenItems[sHiddenCount].bgUnion.hiddenItem.quantity = quantity;
+        sFloor.hiddenItems[sFloor.hiddenCount].elevation = ELEVATION_TRANSITION;
+        sFloor.hiddenItems[sFloor.hiddenCount].kind = BG_EVENT_HIDDEN_ITEM;
+        sFloor.hiddenItems[sFloor.hiddenCount].bgUnion.hiddenItem.item = item;
+        sFloor.hiddenItems[sFloor.hiddenCount].bgUnion.hiddenItem.quantity = quantity;
         // Interacted with rather than stepped on. Emerald's step-on path for
         // buried items is not wired up - underfoot is read in exactly one place
         // and only to REJECT - so a TRUE here would bury the item forever.
-        sHiddenItems[sHiddenCount].bgUnion.hiddenItem.underfoot = FALSE;
-        sHiddenItems[sHiddenCount].bgUnion.hiddenItem.hiddenItemId =
-            DUNGEON_HIDDEN_FIRST_ID + sHiddenCount;
-        sHiddenCount++;
+        sFloor.hiddenItems[sFloor.hiddenCount].bgUnion.hiddenItem.underfoot = FALSE;
+        sFloor.hiddenItems[sFloor.hiddenCount].bgUnion.hiddenItem.hiddenItemId =
+            DUNGEON_HIDDEN_FIRST_ID + sFloor.hiddenCount;
+        sFloor.hiddenCount++;
     }
 }
 
@@ -5974,9 +6081,9 @@ static void PlaceBerryTrees(u16 floor)
     u32 count = DUNGEON_BERRY_MIN + floor / DUNGEON_BERRY_FLOORS_PER_EXTRA;
     u32 i, j;
 
-    sBerryCount = 0;
+    sFloor.berryCount = 0;
 
-    if (sRoomCount == 0 || !theme->berries)
+    if (sFloor.roomCount == 0 || !theme->berries)
         return;
     if (count > DUNGEON_MAX_BERRIES)
         count = DUNGEON_MAX_BERRIES;
@@ -5985,44 +6092,44 @@ static void PlaceBerryTrees(u16 floor)
     {
         u8 quantity;
         u32 room = PickRoomLeastUsedFrom(0);
-        u8 x = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
-        u8 y = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
+        u8 x = sFloor.rooms[room].x + (DungeonRandom() % sFloor.rooms[room].w);
+        u8 y = sFloor.rooms[room].y + (DungeonRandom() % sFloor.rooms[room].h);
 
         // A berry tree is solid, so the same rule the item balls have: never on
         // the exit, or the floor cannot be left.
-        if (x == sStairsX && y == sStairsY)
+        if (x == sFloor.stairsX && y == sFloor.stairsY)
             continue;
 
-        for (j = 0; j < sItemCount; j++)
+        for (j = 0; j < sFloor.itemCount; j++)
         {
-            if (sItemX[j] == x && sItemY[j] == y)
+            if (sFloor.itemX[j] == x && sFloor.itemY[j] == y)
                 break;
         }
-        if (j != sItemCount)
+        if (j != sFloor.itemCount)
             continue;
 
-        for (j = 0; j < sTrainerCount; j++)
+        for (j = 0; j < sFloor.trainerCount; j++)
         {
-            if (sTrainerX[j] == x && sTrainerY[j] == y)
+            if (sFloor.trainerX[j] == x && sFloor.trainerY[j] == y)
                 break;
         }
-        if (j != sTrainerCount)
+        if (j != sFloor.trainerCount)
             continue;
 
-        for (j = 0; j < sBerryCount; j++)
+        for (j = 0; j < sFloor.berryCount; j++)
         {
-            if (sBerryX[j] == x && sBerryY[j] == y)
+            if (sFloor.berryX[j] == x && sFloor.berryY[j] == y)
                 break;
         }
-        if (j != sBerryCount)
+        if (j != sFloor.berryCount)
             continue;
 
         NoteRoomUsed(room);
-        sBerryX[sBerryCount] = x;
-        sBerryY[sBerryCount] = y;
+        sFloor.berryX[sFloor.berryCount] = x;
+        sFloor.berryY[sFloor.berryCount] = y;
         RollFromTable(sLootBerries, ARRAY_COUNT(sLootBerries), floor,
-                      &sBerryItems[sBerryCount], &quantity);
-        sBerryCount++;
+                      &sFloor.berryItems[sFloor.berryCount], &quantity);
+        sFloor.berryCount++;
     }
 }
 
@@ -6234,7 +6341,7 @@ static const struct RogueFloorEvent sFloorEvents[] =
 // DevolveForLevel needs a LEVEL, and the trader's level is the traded Pokemon's
 // plus five, which nothing knows until the player picks one.
 //
-// So sEventSpecies holds the RAW roll, and each event devolves it when it can:
+// So sFloor.eventSpecies holds the RAW roll, and each event devolves it when it can:
 // the trader at interaction time against the level it just learned, the injured
 // Pokemon at prepare time against the floor's level - because that one WEARS the
 // species as its overworld sprite, and a Dragonite sprite that hands over a
@@ -6243,7 +6350,7 @@ static const struct RogueFloorEvent sFloorEvents[] =
 // THE FLOOR'S SPECIES, DEVOLVED FOR WHATEVER LEVEL IS ABOUT TO USE IT.
 //
 // EVERY event that fights, gifts or names the rolled species goes through this,
-// and reading sEventSpecies raw for any of those is a bug. It shipped as one: the
+// and reading sFloor.eventSpecies raw for any of those is a bug. It shipped as one: the
 // devolve at prepare time is gated on gfxId == DUNGEON_EVENT_GFX_ROLLED, which is
 // a COSMETIC condition - does the NPC wear the species as its sprite - being used
 // to answer a BALANCE question. The scout wears a hiker, so its shiny was never
@@ -6255,10 +6362,10 @@ static const struct RogueFloorEvent sFloorEvents[] =
 //
 // The TRADER is the one caller that must not go through a floor level: its level
 // is the traded Pokemon's plus five, which nothing knows until the player picks
-// one, and that is the whole reason sEventSpecies holds the raw roll.
+// one, and that is the whole reason sFloor.eventSpecies holds the raw roll.
 static u16 EventSpeciesForLevel(u8 level)
 {
-    return RogueDungeon_DevolveForLevel(sEventSpecies, level);
+    return RogueDungeon_DevolveForLevel(sFloor.eventSpecies, level);
 }
 
 // Rolls the floor's event, and places it the way everything else on a floor is
@@ -6281,22 +6388,22 @@ static bool32 EventTileFree(u32 x, u32 y)
 {
     u32 j;
 
-    if (x == sStairsX && y == sStairsY)
+    if (x == sFloor.stairsX && y == sFloor.stairsY)
         return FALSE;
-    if (x == sSpawnX && y == sSpawnY)
+    if (x == sFloor.spawnX && y == sFloor.spawnY)
         return FALSE;
 
-    for (j = 0; j < sTrainerCount; j++)
-        if (sTrainerX[j] == x && sTrainerY[j] == y)
+    for (j = 0; j < sFloor.trainerCount; j++)
+        if (sFloor.trainerX[j] == x && sFloor.trainerY[j] == y)
             return FALSE;
-    for (j = 0; j < sItemCount; j++)
-        if (sItemX[j] == x && sItemY[j] == y)
+    for (j = 0; j < sFloor.itemCount; j++)
+        if (sFloor.itemX[j] == x && sFloor.itemY[j] == y)
             return FALSE;
-    for (j = 0; j < sBerryCount; j++)
-        if (sBerryX[j] == x && sBerryY[j] == y)
+    for (j = 0; j < sFloor.berryCount; j++)
+        if (sFloor.berryX[j] == x && sFloor.berryY[j] == y)
             return FALSE;
-    for (j = 0; j < sRockCount; j++)
-        if (sRockX[j] == x && sRockY[j] == y)
+    for (j = 0; j < sFloor.rockCount; j++)
+        if (sFloor.rockX[j] == x && sFloor.rockY[j] == y)
             return FALSE;
 
     return TRUE;
@@ -6307,9 +6414,9 @@ static void PlaceEvents(u16 floor)
     u32 i, j, x, y, room, choices = 0;
     u8 eligible[ARRAY_COUNT(sFloorEvents)];
 
-    sEventCount = 0;
+    sFloor.eventCount = 0;
 
-    if (sRoomCount == 0)
+    if (sFloor.roomCount == 0)
         return;
 
     // The odds roll happens FIRST and unconditionally, so it costs the same
@@ -6366,25 +6473,25 @@ static void PlaceEvents(u16 floor)
         if (i >= choices)
             i = choices - 1;
 
-        sEventIndex = eligible[i];
+        sFloor.eventIndex = eligible[i];
     }
 
     // Rolled for EVERY event, not only the ones that read them, so the number of
     // draws taken here does not depend on which event came up. PlaceHiddenItems
     // runs after this and shares the stream.
-    sEventSpecies = sSafariLandSpecies[DungeonRandom()
+    sFloor.eventSpecies = sSafariLandSpecies[DungeonRandom()
                                       % ARRAY_COUNT(sSafariLandSpecies)];
-    sEventAmbush = (DungeonRandom() % DUNGEON_INJURED_AMBUSH_ODDS) == 0;
+    sFloor.eventAmbush = (DungeonRandom() % DUNGEON_INJURED_AMBUSH_ODDS) == 0;
 
     // See the roll/devolve note under sFloorEvents: the event that WEARS the
     // species has to hold the final one, and the floor's level is known here.
-    if (sFloorEvents[sEventIndex].gfxId == DUNGEON_EVENT_GFX_ROLLED)
-        sEventSpecies = RogueDungeon_DevolveForLevel(sEventSpecies,
+    if (sFloorEvents[sFloor.eventIndex].gfxId == DUNGEON_EVENT_GFX_ROLLED)
+        sFloor.eventSpecies = RogueDungeon_DevolveForLevel(sFloor.eventSpecies,
                                                      FloorTargetLevel(floor));
 
     room = PickRoomLeastUsedFrom(0);
-    x = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
-    y = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
+    x = sFloor.rooms[room].x + (DungeonRandom() % sFloor.rooms[room].w);
+    y = sFloor.rooms[room].y + (DungeonRandom() % sFloor.rooms[room].h);
 
     // One attempt, not a retry loop. A floor that happens to roll an occupied
     // tile simply has no event, which is indistinguishable from the three floors
@@ -6394,9 +6501,9 @@ static void PlaceEvents(u16 floor)
         return;
 
     NoteRoomUsed(room);
-    sEventX = x;
-    sEventY = y;
-    sEventCount = 1;
+    sFloor.eventX = x;
+    sFloor.eventY = y;
+    sFloor.eventCount = 1;
 
     // The prop, if this event wants one. PLACED DETERMINISTICALLY, one tile east
     // and falling back to one tile west - NOT with a draw of its own. Every
@@ -6407,33 +6514,33 @@ static void PlaceEvents(u16 floor)
     // A prop that will not fit is simply absent. The event still works; the
     // hiker is just standing next to nothing, which reads as scenery rather than
     // as a bug.
-    if (sFloorEvents[sEventIndex].propGfxId != DUNGEON_EVENT_NO_PROP)
+    if (sFloorEvents[sFloor.eventIndex].propGfxId != DUNGEON_EVENT_NO_PROP)
     {
         u32 room = 0;
 
         // Kept inside the room the event landed in, so a prop cannot end up
         // embedded in a wall or out in a corridor on its own.
-        for (j = 0; j < sRoomCount; j++)
+        for (j = 0; j < sFloor.roomCount; j++)
         {
-            if (x >= sRooms[j].x && x < sRooms[j].x + sRooms[j].w
-                && y >= sRooms[j].y && y < sRooms[j].y + sRooms[j].h)
+            if (x >= sFloor.rooms[j].x && x < sFloor.rooms[j].x + sFloor.rooms[j].w
+                && y >= sFloor.rooms[j].y && y < sFloor.rooms[j].y + sFloor.rooms[j].h)
             {
                 room = j;
                 break;
             }
         }
 
-        if (x + 1 < sRooms[room].x + sRooms[room].w && EventTileFree(x + 1, y))
+        if (x + 1 < sFloor.rooms[room].x + sFloor.rooms[room].w && EventTileFree(x + 1, y))
         {
-            sEventPropX = x + 1;
-            sEventPropY = y;
-            sEventCount = 2;
+            sFloor.eventPropX = x + 1;
+            sFloor.eventPropY = y;
+            sFloor.eventCount = 2;
         }
-        else if (x > sRooms[room].x && EventTileFree(x - 1, y))
+        else if (x > sFloor.rooms[room].x && EventTileFree(x - 1, y))
         {
-            sEventPropX = x - 1;
-            sEventPropY = y;
-            sEventCount = 2;
+            sFloor.eventPropX = x - 1;
+            sFloor.eventPropY = y;
+            sFloor.eventCount = 2;
         }
     }
 }
@@ -6517,8 +6624,8 @@ void RogueDungeon_BufferEventWares(void)
     // appropriate and this holds no second copy of the loot ladder. Random()
     // rather than the seeded stream: what is on the blanket is not part of the
     // floor's layout and re-rolling it on a reload is harmless.
-    RollFromTable(sLootConsumables, ARRAY_COUNT(sLootConsumables), floor,
-                  &sEventWareItem, &quantity);
+    RollFromTableLive(sLootConsumables, ARRAY_COUNT(sLootConsumables), floor,
+                      &sEventWareItem, &quantity);
 
     // Above what the item is worth, because the thing being sold is the gamble.
     // A pedlar who was reliably good value would be the mart with extra steps.
@@ -6632,7 +6739,7 @@ void RogueDungeon_EventTraderDo(void)
 
     // Devolved HERE, against the level only now known. See the roll/devolve note
     // under sFloorEvents.
-    species = RogueDungeon_DevolveForLevel(sEventSpecies, level);
+    species = RogueDungeon_DevolveForLevel(sFloor.eventSpecies, level);
 
     CreateRandomMonWithIVs(mon, species, level, MAX_PER_STAT_IVS);
     CalculateMonStats(mon);
@@ -6648,7 +6755,7 @@ void RogueDungeon_EventEggTake(void)
 {
     u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
     u8 level = FloorTargetLevel(floor);
-    u16 species = RogueDungeon_DevolveForLevel(sEventSpecies, level);
+    u16 species = RogueDungeon_DevolveForLevel(sFloor.eventSpecies, level);
 
     if (!GiveEventMon(species, level))
     {
@@ -6672,7 +6779,7 @@ void RogueDungeon_EventInjuredApproach(void)
 
     StringCopy(gStringVar1,
                GetSpeciesName(EventSpeciesForLevel(FloorTargetLevel(floor))));
-    gSpecialVar_Result = !sEventAmbush;
+    gSpecialVar_Result = !sFloor.eventAmbush;
 }
 
 // Result 0 means the party was full, in which case it is still standing there -
@@ -7688,9 +7795,9 @@ static void PlaceRocks(u16 floor)
     u32 count = DUNGEON_ROCK_MIN + floor / DUNGEON_ROCK_FLOORS_PER_EXTRA;
     u32 i, j;
 
-    sRockCount = 0;
+    sFloor.rockCount = 0;
 
-    if (sRoomCount == 0)
+    if (sFloor.roomCount == 0)
         return;
     if (count > DUNGEON_MAX_ROCKS)
         count = DUNGEON_MAX_ROCKS;
@@ -7698,40 +7805,40 @@ static void PlaceRocks(u16 floor)
     for (i = 0; i < count; i++)
     {
         u32 room = PickRoomLeastUsedFrom(0);
-        u8 x = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
-        u8 y = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
+        u8 x = sFloor.rooms[room].x + (DungeonRandom() % sFloor.rooms[room].w);
+        u8 y = sFloor.rooms[room].y + (DungeonRandom() % sFloor.rooms[room].h);
 
-        if (x == sStairsX && y == sStairsY)
+        if (x == sFloor.stairsX && y == sFloor.stairsY)
             continue;
 
-        for (j = 0; j < sItemCount; j++)
-            if (sItemX[j] == x && sItemY[j] == y)
+        for (j = 0; j < sFloor.itemCount; j++)
+            if (sFloor.itemX[j] == x && sFloor.itemY[j] == y)
                 break;
-        if (j != sItemCount)
+        if (j != sFloor.itemCount)
             continue;
 
-        for (j = 0; j < sTrainerCount; j++)
-            if (sTrainerX[j] == x && sTrainerY[j] == y)
+        for (j = 0; j < sFloor.trainerCount; j++)
+            if (sFloor.trainerX[j] == x && sFloor.trainerY[j] == y)
                 break;
-        if (j != sTrainerCount)
+        if (j != sFloor.trainerCount)
             continue;
 
-        for (j = 0; j < sBerryCount; j++)
-            if (sBerryX[j] == x && sBerryY[j] == y)
+        for (j = 0; j < sFloor.berryCount; j++)
+            if (sFloor.berryX[j] == x && sFloor.berryY[j] == y)
                 break;
-        if (j != sBerryCount)
+        if (j != sFloor.berryCount)
             continue;
 
-        for (j = 0; j < sRockCount; j++)
-            if (sRockX[j] == x && sRockY[j] == y)
+        for (j = 0; j < sFloor.rockCount; j++)
+            if (sFloor.rockX[j] == x && sFloor.rockY[j] == y)
                 break;
-        if (j != sRockCount)
+        if (j != sFloor.rockCount)
             continue;
 
         NoteRoomUsed(room);
-        sRockX[sRockCount] = x;
-        sRockY[sRockCount] = y;
-        sRockCount++;
+        sFloor.rockX[sFloor.rockCount] = x;
+        sFloor.rockY[sFloor.rockCount] = y;
+        sFloor.rockCount++;
     }
 }
 
@@ -7779,11 +7886,11 @@ bool8 RogueDungeon_IsBerryRotten(u32 tree)
 {
     u16 seed = VarGet(VAR_ROGUE_DUNGEON_SEED);
 
-    // sBerryCount >= MIN_TREES, not != 0: the modulo below is what picks the
+    // sFloor.berryCount >= MIN_TREES, not != 0: the modulo below is what picks the
     // victim, so on a one tree floor it always picks that tree and the floor's
     // only berry is always a dud. See DUNGEON_BERRY_ROTTEN_MIN_TREES.
-    if (DUNGEON_BERRY_ROTTEN_GUARANTEED && sBerryCount >= DUNGEON_BERRY_ROTTEN_MIN_TREES
-        && DecorHash(seed, DUNGEON_BERRY_ROTTEN_SALT, 0) % sBerryCount == tree)
+    if (DUNGEON_BERRY_ROTTEN_GUARANTEED && sFloor.berryCount >= DUNGEON_BERRY_ROTTEN_MIN_TREES
+        && DecorHash(seed, DUNGEON_BERRY_ROTTEN_SALT, 0) % sFloor.berryCount == tree)
         return TRUE;
 
     return DecorHash(seed, tree, 0) % DUNGEON_BERRY_ROTTEN_ODDS == 0;
@@ -7804,13 +7911,13 @@ bool8 RogueDungeon_IsSudowoodoTree(u32 tree)
 {
     u16 seed = VarGet(VAR_ROGUE_DUNGEON_SEED);
 
-    if (sBerryCount == 0)
+    if (sFloor.berryCount == 0)
         return FALSE;
 
     if (DecorHash(seed, DUNGEON_SUDOWOODO_SALT, 0) % DUNGEON_SUDOWOODO_ODDS != 0)
         return FALSE;
 
-    return DecorHash(seed, DUNGEON_SUDOWOODO_SALT, 1) % sBerryCount == tree;
+    return DecorHash(seed, DUNGEON_SUDOWOODO_SALT, 1) % sFloor.berryCount == tree;
 }
 
 // The imposter, at the floor's level plus the ambush bonus.
@@ -7867,7 +7974,7 @@ static void PlantFloorBerryTrees(void)
     {
         u8 id = DUNGEON_BERRY_FIRST_TREE_ID + i;
 
-        if (i >= sBerryCount)
+        if (i >= sFloor.berryCount)
         {
             // Blank it rather than leaving last floor's tree standing - the
             // template is hidden, but a live tree in the array would be picked
@@ -7876,7 +7983,7 @@ static void PlantFloorBerryTrees(void)
             continue;
         }
 
-        PlantBerryTree(id, ItemIdToBerryType(sBerryItems[i]),
+        PlantBerryTree(id, ItemIdToBerryType(sFloor.berryItems[i]),
                        BERRY_STAGE_BERRIES, FALSE);
 
         // ROTTEN TREES YIELD LESS, and the roll is a HASH rather than a draw
@@ -7922,8 +8029,8 @@ static void ApplyDungeonEvents(void)
         return;
 
     sDungeonEvents = *gMapHeader.events;
-    sDungeonEvents.bgEvents = sHiddenItems;
-    sDungeonEvents.bgEventCount = sHiddenCount;
+    sDungeonEvents.bgEvents = sFloor.hiddenItems;
+    sDungeonEvents.bgEventCount = sFloor.hiddenCount;
     gMapHeader.events = &sDungeonEvents;
 }
 
@@ -7934,9 +8041,9 @@ static void PlaceItems(u16 floor)
     u32 count = DUNGEON_ITEM_MIN + floor / DUNGEON_ITEM_FLOORS_PER_EXTRA;
     u32 i, j;
 
-    sItemCount = 0;
+    sFloor.itemCount = 0;
 
-    if (sRoomCount == 0)
+    if (sFloor.roomCount == 0)
         return;
     if (count > DUNGEON_MAX_ITEMS)
         count = DUNGEON_MAX_ITEMS;
@@ -7944,39 +8051,40 @@ static void PlaceItems(u16 floor)
     for (i = 0; i < count; i++)
     {
         u32 room = PickRoomLeastUsedFrom(0);
-        u8 x = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
-        u8 y = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
+        u8 x = sFloor.rooms[room].x + (DungeonRandom() % sFloor.rooms[room].w);
+        u8 y = sFloor.rooms[room].y + (DungeonRandom() % sFloor.rooms[room].h);
 
         // Never on the exit: an item ball is solid, so one sitting on the
         // stairs would make the floor impossible to leave.
-        if (x == sStairsX && y == sStairsY)
+        if (x == sFloor.stairsX && y == sFloor.stairsY)
             continue;
 
         // Nor on a trainer, for the same reason in reverse - two object events
         // on one tile stack invisibly and only the top one can be interacted
         // with, so the floor would look like it had lost an item.
-        for (j = 0; j < sTrainerCount; j++)
+        for (j = 0; j < sFloor.trainerCount; j++)
         {
-            if (sTrainerX[j] == x && sTrainerY[j] == y)
+            if (sFloor.trainerX[j] == x && sFloor.trainerY[j] == y)
                 break;
         }
-        if (j != sTrainerCount)
+        if (j != sFloor.trainerCount)
             continue;
 
-        for (j = 0; j < sItemCount; j++)
+        for (j = 0; j < sFloor.itemCount; j++)
         {
-            if (sItemX[j] == x && sItemY[j] == y)
+            if (sFloor.itemX[j] == x && sFloor.itemY[j] == y)
                 break;
         }
-        if (j != sItemCount)
+        if (j != sFloor.itemCount)
             continue;
 
         NoteRoomUsed(room);
-        sItemX[sItemCount] = x;
-        sItemY[sItemCount] = y;
+        sFloor.itemX[sFloor.itemCount] = x;
+        sFloor.itemY[sFloor.itemCount] = y;
         RollFromTable(sLootConsumables, ARRAY_COUNT(sLootConsumables), floor,
-                      &sItemIds[sItemCount], &sItemQty[sItemCount]);
-        sItemCount++;
+                      &sFloor.itemIds[sFloor.itemCount],
+                      &sFloor.itemQty[sFloor.itemCount]);
+        sFloor.itemCount++;
     }
 }
 
@@ -7989,9 +8097,9 @@ static void PlaceTrainers(u16 floor)
     u32 j;
     u32 i;
 
-    sTrainerCount = 0;
+    sFloor.trainerCount = 0;
 
-    if (sRoomCount < 2)
+    if (sFloor.roomCount < 2)
         return;
     if (count > DUNGEON_MAX_TRAINERS)
         count = DUNGEON_MAX_TRAINERS;
@@ -8001,16 +8109,16 @@ static void PlaceTrainers(u16 floor)
         // From room 1: room 0 is the spawn, and a trainer there fights the player
         // before they can move.
         u32 room = PickRoomLeastUsedFrom(1);
-        u8 x = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
-        u8 y = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
+        u8 x = sFloor.rooms[room].x + (DungeonRandom() % sFloor.rooms[room].w);
+        u8 y = sFloor.rooms[room].y + (DungeonRandom() % sFloor.rooms[room].h);
 
         // Never on the exit, or the player cannot reach it without fighting.
-        if (x == sStairsX && y == sStairsY)
+        if (x == sFloor.stairsX && y == sFloor.stairsY)
             continue;
 
         NoteRoomUsed(room);
-        sTrainerX[sTrainerCount] = x;
-        sTrainerY[sTrainerCount] = y;
+        sFloor.trainerX[sFloor.trainerCount] = x;
+        sFloor.trainerY[sFloor.trainerCount] = y;
         // Distinct ids only. The defeat flag is derived from the trainer id, so
         // two slots sharing one would both be marked beaten by a single fight,
         // leaving a trainer standing that refuses to battle.
@@ -8020,15 +8128,15 @@ static void PlaceTrainers(u16 floor)
         themedGfx = 0;
         trainerId = PickTrainerForLevel(target, theme, &themedGfx);
 
-        for (j = 0; j < sTrainerCount; j++)
+        for (j = 0; j < sFloor.trainerCount; j++)
         {
-            if (sTrainerIds[j] == trainerId)
+            if (sFloor.trainerIds[j] == trainerId)
                 break;
         }
-        if (j != sTrainerCount)
+        if (j != sFloor.trainerCount)
             continue;
 
-        sTrainerIds[sTrainerCount] = trainerId;
+        sFloor.trainerIds[sFloor.trainerCount] = trainerId;
 
         // Four ways to answer, most specific first.
         //
@@ -8047,10 +8155,10 @@ static void PlaceTrainers(u16 floor)
         if (gfx == 0)
             gfx = TrainerClassGfx(trainerId);
         if (gfx == 0)
-            gfx = ((sTrainerCount & 1) && theme->trainerGfxAlt) ? theme->trainerGfxAlt
+            gfx = ((sFloor.trainerCount & 1) && theme->trainerGfxAlt) ? theme->trainerGfxAlt
                                                                 : theme->trainerGfx;
-        sTrainerGfx[sTrainerCount] = gfx ? gfx : OBJ_EVENT_GFX_HIKER;
-        sTrainerCount++;
+        sFloor.trainerGfx[sFloor.trainerCount] = gfx ? gfx : OBJ_EVENT_GFX_HIKER;
+        sFloor.trainerCount++;
     }
 }
 
@@ -8335,7 +8443,7 @@ static void GenerateOrganicCave(const struct RogueDungeonTheme *theme)
     }
 
     // A fill so dense it opened nothing. Leave the plane solid; FitPlaneRooms
-    // then finds no rooms and PrepareFloor's existing sRoomCount == 0 guards
+    // then finds no rooms and PrepareFloor's existing sFloor.roomCount == 0 guards
     // take over, exactly as they do for a room sampler that placed nothing.
     if (bestX < 0)
         return;
@@ -8369,7 +8477,7 @@ static void FitPlaneRooms(void)
     if (cap > DUNGEON_MAX_ROOMS)
         cap = DUNGEON_MAX_ROOMS;
 
-    for (attempt = 0; attempt < 400 && sRoomCount < (s32)cap; attempt++)
+    for (attempt = 0; attempt < 400 && sFloor.roomCount < (s32)cap; attempt++)
     {
         struct DungeonRoom room;
         bool8 clear = TRUE;
@@ -8393,9 +8501,9 @@ static void FitPlaneRooms(void)
         room.w = CAVE_ROOM_SIZE;
         room.h = CAVE_ROOM_SIZE;
 
-        for (i = 0; i < sRoomCount; i++)
+        for (i = 0; i < sFloor.roomCount; i++)
         {
-            if (RoomsOverlap(&room, &sRooms[i]))
+            if (RoomsOverlap(&room, &sFloor.rooms[i]))
             {
                 clear = FALSE;
                 break;
@@ -8403,7 +8511,7 @@ static void FitPlaneRooms(void)
         }
 
         if (clear)
-            sRooms[sRoomCount++] = room;
+            sFloor.rooms[sFloor.roomCount++] = room;
     }
 }
 
@@ -8519,12 +8627,12 @@ static void GenerateFacilityFloor(const struct RogueDungeonTheme *theme)
         leaves = DUNGEON_MAX_ROOMS;
 
     // Partition the INTERIOR, with no margin, so the rects tile it exactly and
-    // every room ends up touching its neighbours. Built directly in sRooms -
+    // every room ends up touching its neighbours. Built directly in sFloor.rooms -
     // rects and rooms are the same four bytes, so no second array is needed.
-    sRooms[0].x = 1;
-    sRooms[0].y = 1;
-    sRooms[0].w = DUNGEON_WIDTH - 2;
-    sRooms[0].h = DUNGEON_HEIGHT - 2;
+    sFloor.rooms[0].x = 1;
+    sFloor.rooms[0].y = 1;
+    sFloor.rooms[0].w = DUNGEON_WIDTH - 2;
+    sFloor.rooms[0].h = DUNGEON_HEIGHT - 2;
     count = 1;
 
     while (count < (s32)leaves)
@@ -8536,7 +8644,7 @@ static void GenerateFacilityFloor(const struct RogueDungeonTheme *theme)
         // needing a recursion stack to walk a tree.
         for (i = 0; i < count; i++)
         {
-            s32 area = sRooms[i].w * sRooms[i].h;
+            s32 area = sFloor.rooms[i].w * sFloor.rooms[i].h;
 
             if (area > bestArea)
             {
@@ -8548,34 +8656,34 @@ static void GenerateFacilityFloor(const struct RogueDungeonTheme *theme)
         // Cut across the long axis, so rooms tend to squareness. Near-square
         // partitions pick a direction at random instead, which is what stops
         // every floor subdividing in the same order.
-        if (sRooms[best].w > sRooms[best].h + 2)
+        if (sFloor.rooms[best].w > sFloor.rooms[best].h + 2)
             horiz = FALSE;
-        else if (sRooms[best].h > sRooms[best].w + 2)
+        else if (sFloor.rooms[best].h > sFloor.rooms[best].w + 2)
             horiz = TRUE;
         else
             horiz = (DungeonRandom() & 1) != 0;
 
         if (horiz)
         {
-            if (sRooms[best].h < (s32)minLeaf * 2)
+            if (sFloor.rooms[best].h < (s32)minLeaf * 2)
                 break;
-            cut = minLeaf + (DungeonRandom() % (sRooms[best].h - minLeaf * 2 + 1));
-            sRooms[count].x = sRooms[best].x;
-            sRooms[count].y = sRooms[best].y + cut;
-            sRooms[count].w = sRooms[best].w;
-            sRooms[count].h = sRooms[best].h - cut;
-            sRooms[best].h = cut;
+            cut = minLeaf + (DungeonRandom() % (sFloor.rooms[best].h - minLeaf * 2 + 1));
+            sFloor.rooms[count].x = sFloor.rooms[best].x;
+            sFloor.rooms[count].y = sFloor.rooms[best].y + cut;
+            sFloor.rooms[count].w = sFloor.rooms[best].w;
+            sFloor.rooms[count].h = sFloor.rooms[best].h - cut;
+            sFloor.rooms[best].h = cut;
         }
         else
         {
-            if (sRooms[best].w < (s32)minLeaf * 2)
+            if (sFloor.rooms[best].w < (s32)minLeaf * 2)
                 break;
-            cut = minLeaf + (DungeonRandom() % (sRooms[best].w - minLeaf * 2 + 1));
-            sRooms[count].x = sRooms[best].x + cut;
-            sRooms[count].y = sRooms[best].y;
-            sRooms[count].w = sRooms[best].w - cut;
-            sRooms[count].h = sRooms[best].h;
-            sRooms[best].w = cut;
+            cut = minLeaf + (DungeonRandom() % (sFloor.rooms[best].w - minLeaf * 2 + 1));
+            sFloor.rooms[count].x = sFloor.rooms[best].x + cut;
+            sFloor.rooms[count].y = sFloor.rooms[best].y;
+            sFloor.rooms[count].w = sFloor.rooms[best].w - cut;
+            sFloor.rooms[count].h = sFloor.rooms[best].h;
+            sFloor.rooms[best].w = cut;
         }
         count++;
     }
@@ -8583,28 +8691,28 @@ static void GenerateFacilityFloor(const struct RogueDungeonTheme *theme)
     // Give back the partition walls: FACILITY_VTHICK columns on the right and
     // one row at the bottom. What is left is the room, and what was given back
     // is the wall it shares with the neighbour on that side.
-    sRoomCount = 0;
+    sFloor.roomCount = 0;
     for (i = 0; i < count; i++)
     {
-        if (sRooms[i].w - FACILITY_VTHICK < 3 || sRooms[i].h - 1 < 3)
+        if (sFloor.rooms[i].w - FACILITY_VTHICK < 3 || sFloor.rooms[i].h - 1 < 3)
             continue;
-        sRooms[sRoomCount].x = sRooms[i].x;
-        sRooms[sRoomCount].y = sRooms[i].y;
-        sRooms[sRoomCount].w = sRooms[i].w - FACILITY_VTHICK;
-        sRooms[sRoomCount].h = sRooms[i].h - 1;
-        sRoomCount++;
+        sFloor.rooms[sFloor.roomCount].x = sFloor.rooms[i].x;
+        sFloor.rooms[sFloor.roomCount].y = sFloor.rooms[i].y;
+        sFloor.rooms[sFloor.roomCount].w = sFloor.rooms[i].w - FACILITY_VTHICK;
+        sFloor.rooms[sFloor.roomCount].h = sFloor.rooms[i].h - 1;
+        sFloor.roomCount++;
     }
 
-    if (sRoomCount == 0)
+    if (sFloor.roomCount == 0)
         return;
 
     // Everything solid, then open the rooms.
     for (i = 0; i < CAVE_PLANE_BYTES; i++)
         sCaveBits[i] = 0xFF;
-    for (i = 0; i < sRoomCount; i++)
-        for (y = 0; y < sRooms[i].h; y++)
-            for (x = 0; x < sRooms[i].w; x++)
-                CaveSet(sCaveBits, sRooms[i].x + x, sRooms[i].y + y, FALSE);
+    for (i = 0; i < sFloor.roomCount; i++)
+        for (y = 0; y < sFloor.rooms[i].h; y++)
+            for (x = 0; x < sFloor.rooms[i].w; x++)
+                CaveSet(sCaveBits, sFloor.rooms[i].x + x, sFloor.rooms[i].y + y, FALSE);
 
     // A spanning tree over the adjacency graph, so the floor connects through
     // DOORS rather than through corridors bored across the map. Each round
@@ -8617,10 +8725,10 @@ static void GenerateFacilityFloor(const struct RogueDungeonTheme *theme)
     {
         s32 cand = 0, pick, axis, coord, thick, lo, hi;
 
-        for (i = 0; i < sRoomCount; i++)
-            for (j = 0; j < sRoomCount; j++)
+        for (i = 0; i < sFloor.roomCount; i++)
+            for (j = 0; j < sFloor.roomCount; j++)
                 if (joined[i] && !joined[j]
-                    && FacilitySharedWall(&sRooms[i], &sRooms[j],
+                    && FacilitySharedWall(&sFloor.rooms[i], &sFloor.rooms[j],
                                           &axis, &coord, &thick, &lo, &hi))
                     cand++;
 
@@ -8628,19 +8736,19 @@ static void GenerateFacilityFloor(const struct RogueDungeonTheme *theme)
             break;
 
         pick = DungeonRandom() % cand;
-        for (i = 0; i < sRoomCount; i++)
+        for (i = 0; i < sFloor.roomCount; i++)
         {
-            for (j = 0; j < sRoomCount; j++)
+            for (j = 0; j < sFloor.roomCount; j++)
             {
                 if (!joined[i] || joined[j]
-                    || !FacilitySharedWall(&sRooms[i], &sRooms[j],
+                    || !FacilitySharedWall(&sFloor.rooms[i], &sFloor.rooms[j],
                                            &axis, &coord, &thick, &lo, &hi))
                     continue;
                 if (pick-- != 0)
                     continue;
                 FacilityPunchDoor(axis, coord, thick, lo, hi);
                 joined[j] = TRUE;
-                i = sRoomCount;   // break both loops
+                i = sFloor.roomCount;   // break both loops
                 break;
             }
         }
@@ -8652,11 +8760,11 @@ static void GenerateFacilityFloor(const struct RogueDungeonTheme *theme)
     {
         s32 axis, coord, thick, lo, hi;
 
-        i = DungeonRandom() % sRoomCount;
-        j = DungeonRandom() % sRoomCount;
+        i = DungeonRandom() % sFloor.roomCount;
+        j = DungeonRandom() % sFloor.roomCount;
         if (i == j)
             continue;
-        if (FacilitySharedWall(&sRooms[i], &sRooms[j],
+        if (FacilitySharedWall(&sFloor.rooms[i], &sFloor.rooms[j],
                                &axis, &coord, &thick, &lo, &hi))
             FacilityPunchDoor(axis, coord, thick, lo, hi);
     }
@@ -8665,17 +8773,17 @@ static void GenerateFacilityFloor(const struct RogueDungeonTheme *theme)
     // wall was too short to hold a door - is walled off and dropped, so nothing
     // is ever placed somewhere the player cannot go.
     CaveClear(sCaveWork);
-    CaveFloodFrom(sRooms[0].x + sRooms[0].w / 2, sRooms[0].y + sRooms[0].h / 2);
-    for (i = sRoomCount - 1; i >= 0; i--)
+    CaveFloodFrom(sFloor.rooms[0].x + sFloor.rooms[0].w / 2, sFloor.rooms[0].y + sFloor.rooms[0].h / 2);
+    for (i = sFloor.roomCount - 1; i >= 0; i--)
     {
-        if (CaveBitAt(sCaveWork, sRooms[i].x, sRooms[i].y))
+        if (CaveBitAt(sCaveWork, sFloor.rooms[i].x, sFloor.rooms[i].y))
             continue;
-        for (y = 0; y < sRooms[i].h; y++)
-            for (x = 0; x < sRooms[i].w; x++)
-                CaveSet(sCaveBits, sRooms[i].x + x, sRooms[i].y + y, TRUE);
-        for (j = i; j < sRoomCount - 1; j++)
-            sRooms[j] = sRooms[j + 1];
-        sRoomCount--;
+        for (y = 0; y < sFloor.rooms[i].h; y++)
+            for (x = 0; x < sFloor.rooms[i].w; x++)
+                CaveSet(sCaveBits, sFloor.rooms[i].x + x, sFloor.rooms[i].y + y, TRUE);
+        for (j = i; j < sFloor.roomCount - 1; j++)
+            sFloor.rooms[j] = sFloor.rooms[j + 1];
+        sFloor.roomCount--;
     }
 }
 
@@ -8905,6 +9013,22 @@ static void GenerateTrailFloor(const struct RogueDungeonTheme *theme)
 // Everything a floor is, derived from its seed. Touches no map memory, so it
 // can run at object-event-template load time - which happens before the map is
 // generated, and is where trainers have to be placed.
+#if TESTING
+// TEST-ONLY. How many extra draws PrepareFloor should burn from the seeded
+// stream before the placers run. Zero in every real build, and the whole
+// mechanism compiles out of the shipping ROM.
+//
+// This exists so the placement digest can be held against the failure it is
+// FOR: one accidental DungeonRandom() added to a placer. See the note at the
+// consumption site for why it burns them where it does.
+EWRAM_DATA static u8 sTestStreamSkew = 0;
+
+void RogueDungeon_Test_SetStreamSkew(u8 draws)
+{
+    sTestStreamSkew = draws;
+}
+#endif
+
 static void PrepareFloor(u16 seed)
 {
     u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
@@ -8968,15 +9092,27 @@ static void PrepareFloor(u16 seed)
     // Zeroed here rather than in PrepareArenaFloor so the invariant is "a floor
     // starts with nothing placed" regardless of which generator runs, which is
     // one rule instead of one per path.
-    sRoomCount = 0;
-    sTrainerCount = 0;
-    sItemCount = 0;
-    sBerryCount = 0;
-    sRockCount = 0;
-    sEventCount = 0;
+    CpuFill32(0, &sFloor, sizeof(sFloor));
 
     if (RogueDungeon_IsBossFloor(floor))
     {
+#if TESTING
+        // The arena path returns before it reaches the placers, so the skew
+        // burned further down never happens on a boss floor. Burned here as
+        // well, so a stray draw is tested on BOTH paths rather than only on
+        // the one that happens to have the placers on it.
+        //
+        // A gym boss floor still will not move: PrepareArenaFloor makes no
+        // draws at all and its boss comes from the dungeon's identity, not a
+        // roll. A MINI boss floor does move, through PickMiniBossForLevel's
+        // single draw. The test asserts each case the way the code actually is.
+        {
+            u32 skew;
+
+            for (skew = 0; skew < sTestStreamSkew; skew++)
+                DungeonRandom();
+        }
+#endif
         PrepareArenaFloor(floor);
         BuildWildEncounterTable(floor);
         sFloorPrepared = TRUE;
@@ -9004,14 +9140,14 @@ static void PrepareFloor(u16 seed)
     else if (theme->generator == DUNGEON_GEN_FACILITY)
     {
         // Builds its rooms by subdividing rather than by sampling, so it fills
-        // sRooms itself and the sampler below has nothing to do either.
+        // sFloor.rooms itself and the sampler below has nothing to do either.
         GenerateFacilityFloor(theme);
         attempts = 0;
     }
 
     // Rejection-sample non-overlapping rooms. A fixed attempt budget keeps this
     // bounded; falling short of DUNGEON_MAX_ROOMS is fine.
-    for (attempt = 0; attempt < (s32)attempts && sRoomCount < roomCap; attempt++)
+    for (attempt = 0; attempt < (s32)attempts && sFloor.roomCount < roomCap; attempt++)
     {
         struct DungeonRoom room;
         bool8 clear = TRUE;
@@ -9024,9 +9160,9 @@ static void PrepareFloor(u16 seed)
         room.x = (1 + (DungeonRandom() % (gridW - room.w / unit - 2))) * unit;
         room.y = (1 + (DungeonRandom() % (gridH - room.h / unit - 2))) * unit;
 
-        for (i = 0; i < sRoomCount; i++)
+        for (i = 0; i < sFloor.roomCount; i++)
         {
-            if (RoomsOverlap(&room, &sRooms[i]))
+            if (RoomsOverlap(&room, &sFloor.rooms[i]))
             {
                 clear = FALSE;
                 break;
@@ -9034,7 +9170,7 @@ static void PrepareFloor(u16 seed)
         }
 
         if (clear)
-            sRooms[sRoomCount++] = room;
+            sFloor.rooms[sFloor.roomCount++] = room;
     }
 
     // Exactly one exit per floor, in a room the player does not start in, so
@@ -9042,45 +9178,45 @@ static void PrepareFloor(u16 seed)
     //
     // Each draw is its own statement: as function arguments the order of
     // evaluation would be unspecified, and the layout would depend on it.
-    if (sRoomCount != 0)
+    if (sFloor.roomCount != 0)
     {
-        u8 room = (sRoomCount > 1) ? 1 + (DungeonRandom() % (sRoomCount - 1)) : 0;
+        u8 room = (sFloor.roomCount > 1) ? 1 + (DungeonRandom() % (sFloor.roomCount - 1)) : 0;
 
-        sStairsMetatile = (DungeonRandom() & 1) ? theme->stairsDown : theme->stairsUp;
-        sStairsX = sRooms[room].x + (DungeonRandom() % sRooms[room].w);
-        sStairsY = sRooms[room].y + (DungeonRandom() % sRooms[room].h);
+        sFloor.stairsMetatile = (DungeonRandom() & 1) ? theme->stairsDown : theme->stairsUp;
+        sFloor.stairsX = sFloor.rooms[room].x + (DungeonRandom() % sFloor.rooms[room].w);
+        sFloor.stairsY = sFloor.rooms[room].y + (DungeonRandom() % sFloor.rooms[room].h);
     }
 
-    if (sRoomCount != 0)
+    if (sFloor.roomCount != 0)
     {
-        sSpawnX = sRooms[0].x + sRooms[0].w / 2;
-        sSpawnY = sRooms[0].y + sRooms[0].h / 2;
+        sFloor.spawnX = sFloor.rooms[0].x + sFloor.rooms[0].w / 2;
+        sFloor.spawnY = sFloor.rooms[0].y + sFloor.rooms[0].h / 2;
     }
 
     // Grass blobs, only for themes that have grass. Placed inside rooms so they
     // never land in a tree.
-    sGrassPatchCount = 0;
+    sFloor.grassPatchCount = 0;
     if (theme->tallGrass != 0)
     {
-        for (i = 0; i < sRoomCount && sGrassPatchCount < DUNGEON_MAX_GRASS_PATCHES; i++)
+        for (i = 0; i < sFloor.roomCount && sFloor.grassPatchCount < DUNGEON_MAX_GRASS_PATCHES; i++)
         {
             u32 patches = DungeonRandom() % 3;   // 0-2 per clearing
 
-            while (patches-- && sGrassPatchCount < DUNGEON_MAX_GRASS_PATCHES)
+            while (patches-- && sFloor.grassPatchCount < DUNGEON_MAX_GRASS_PATCHES)
             {
                 // The draw happens whether or not the theme has long grass, so
                 // that a theme losing it does not shift the RNG stream and
                 // silently relay out every floor. && would short-circuit.
                 bool8 wantLong = (DungeonRandom() % 4 == 0);
 
-                sGrassPatchLong[sGrassPatchCount] =
+                sFloor.grassPatchLong[sFloor.grassPatchCount] =
                     (theme->longGrass != 0) && wantLong;
-                sGrassPatchX[sGrassPatchCount] =
-                    (sRooms[i].x + (DungeonRandom() % sRooms[i].w)) / 2;
-                sGrassPatchY[sGrassPatchCount] =
-                    (sRooms[i].y + (DungeonRandom() % sRooms[i].h)) / 2;
-                sGrassPatchRadius[sGrassPatchCount] = 1 + (DungeonRandom() % 2);
-                sGrassPatchCount++;
+                sFloor.grassPatchX[sFloor.grassPatchCount] =
+                    (sFloor.rooms[i].x + (DungeonRandom() % sFloor.rooms[i].w)) / 2;
+                sFloor.grassPatchY[sFloor.grassPatchCount] =
+                    (sFloor.rooms[i].y + (DungeonRandom() % sFloor.rooms[i].h)) / 2;
+                sFloor.grassPatchRadius[sFloor.grassPatchCount] = 1 + (DungeonRandom() % 2);
+                sFloor.grassPatchCount++;
             }
         }
     }
@@ -9093,7 +9229,23 @@ static void PrepareFloor(u16 seed)
     // goes - carrying last floor's counts over would push this floor's objects
     // away from rooms that are empty on it.
     for (i = 0; i < DUNGEON_MAX_ROOMS; i++)
-        sRoomUse[i] = 0;
+        sFloor.roomUse[i] = 0;
+
+#if TESTING
+    // Burned HERE on purpose - after the rooms, the stairs, the spawn and the
+    // grass, which is exactly where a placer's extra draw would land. That
+    // makes the break test SHARP rather than merely positive: the floor's
+    // walls come out byte-identical and only the objects move, which is
+    // precisely the silent failure this digest exists to catch. Skewing at
+    // SeedDungeonRng instead would relayout the whole map and would prove the
+    // much weaker claim that the hash notices a different floor.
+    {
+        u32 skew;
+
+        for (skew = 0; skew < sTestStreamSkew; skew++)
+            DungeonRandom();
+    }
+#endif
 
     BuildWildEncounterTable(floor);
     PlaceTrainers(floor);
@@ -9221,16 +9373,16 @@ static u16 GrassAt(s32 cx, s32 cy, const struct RogueDungeonTheme *theme)
 {
     u32 i;
 
-    for (i = 0; i < sGrassPatchCount; i++)
+    for (i = 0; i < sFloor.grassPatchCount; i++)
     {
-        s32 dx = cx - sGrassPatchX[i];
-        s32 dy = cy - sGrassPatchY[i];
+        s32 dx = cx - sFloor.grassPatchX[i];
+        s32 dy = cy - sFloor.grassPatchY[i];
 
         if (dx < 0) dx = -dx;
         if (dy < 0) dy = -dy;
 
-        if (dx + dy <= sGrassPatchRadius[i])
-            return sGrassPatchLong[i] ? theme->longGrass : theme->tallGrass;
+        if (dx + dy <= sFloor.grassPatchRadius[i])
+            return sFloor.grassPatchLong[i] ? theme->longGrass : theme->tallGrass;
     }
 
     return theme->floor;
@@ -9253,22 +9405,22 @@ static void WriteWoodsBlocks(u16 *map, const struct RogueDungeonTheme *theme)
         for (cx = 0; cx < DUNGEON_CELLS_W; cx++)
             sWoodsOpen[cy][cx] = FALSE;
 
-    for (i = 0; i < sRoomCount; i++)
-        for (cy = 0; cy < sRooms[i].h / DUNGEON_WOODS_CELL; cy++)
-            for (cx = 0; cx < sRooms[i].w / DUNGEON_WOODS_CELL; cx++)
-                OpenCell(sRooms[i].x / DUNGEON_WOODS_CELL + cx,
-                         sRooms[i].y / DUNGEON_WOODS_CELL + cy);
+    for (i = 0; i < sFloor.roomCount; i++)
+        for (cy = 0; cy < sFloor.rooms[i].h / DUNGEON_WOODS_CELL; cy++)
+            for (cx = 0; cx < sFloor.rooms[i].w / DUNGEON_WOODS_CELL; cx++)
+                OpenCell(sFloor.rooms[i].x / DUNGEON_WOODS_CELL + cx,
+                         sFloor.rooms[i].y / DUNGEON_WOODS_CELL + cy);
 
     // Corridors, walked in cell space so they stay a whole stamp wide. Same
     // centre-to-centre chaining as the cave, which keeps every room connected.
-    for (i = 1; i < sRoomCount; i++)
+    for (i = 1; i < sFloor.roomCount; i++)
     {
         // The inner /2 is a room CENTRE and stays. The outer one converted
         // metatiles to cells and is the one that had to follow the cell size.
-        s32 x0 = (sRooms[i - 1].x + sRooms[i - 1].w / 2) / DUNGEON_WOODS_CELL;
-        s32 y0 = (sRooms[i - 1].y + sRooms[i - 1].h / 2) / DUNGEON_WOODS_CELL;
-        s32 x1 = (sRooms[i].x + sRooms[i].w / 2) / DUNGEON_WOODS_CELL;
-        s32 y1 = (sRooms[i].y + sRooms[i].h / 2) / DUNGEON_WOODS_CELL;
+        s32 x0 = (sFloor.rooms[i - 1].x + sFloor.rooms[i - 1].w / 2) / DUNGEON_WOODS_CELL;
+        s32 y0 = (sFloor.rooms[i - 1].y + sFloor.rooms[i - 1].h / 2) / DUNGEON_WOODS_CELL;
+        s32 x1 = (sFloor.rooms[i].x + sFloor.rooms[i].w / 2) / DUNGEON_WOODS_CELL;
+        s32 y1 = (sFloor.rooms[i].y + sFloor.rooms[i].h / 2) / DUNGEON_WOODS_CELL;
 
         while (x0 != x1)
         {
@@ -9323,16 +9475,16 @@ static void WriteFloorBlocks(u16 *backupMapData)
     {
         WriteWoodsBlocks(backupMapData, theme);
         ApplyCosmeticPasses(backupMapData, theme);
-        if (sRoomCount != 0 && !RogueDungeon_IsBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
-            SetBlock(backupMapData, sStairsX, sStairsY,
-                     MakeBlock(sStairsMetatile, 0, theme->elevationFloor));
+        if (sFloor.roomCount != 0 && !RogueDungeon_IsBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
+            SetBlock(backupMapData, sFloor.stairsX, sFloor.stairsY,
+                     MakeBlock(sFloor.stairsMetatile, 0, theme->elevationFloor));
         return;
     }
 
     // The organic cave paints from the plane PrepareFloor computed rather than
     // from rooms and corridors. Boss floors are deliberately NOT included: they
     // are a single centred arena on every theme, and PrepareArenaFloor has
-    // already set sRooms up for that, so the shared path below is correct for
+    // already set sFloor.rooms up for that, so the shared path below is correct for
     // them whatever the theme's generator says.
     if ((theme->generator == DUNGEON_GEN_ORGANIC
          || theme->generator == DUNGEON_GEN_FACILITY
@@ -9353,9 +9505,9 @@ static void WriteFloorBlocks(u16 *backupMapData)
         ApplyWallAutotiling(backupMapData, theme);
         ApplyCosmeticPasses(backupMapData, theme);
 
-        if (sRoomCount != 0)
-            SetBlock(backupMapData, sStairsX, sStairsY,
-                     MakeBlock(sStairsMetatile, 0, theme->elevationFloor));
+        if (sFloor.roomCount != 0)
+            SetBlock(backupMapData, sFloor.stairsX, sFloor.stairsY,
+                     MakeBlock(sFloor.stairsMetatile, 0, theme->elevationFloor));
         return;
     }
 
@@ -9363,12 +9515,12 @@ static void WriteFloorBlocks(u16 *backupMapData)
         for (x = 0; x < DUNGEON_WIDTH; x++)
             SetBlock(backupMapData, x, y, wallBlock);
 
-    for (i = 0; i < sRoomCount; i++)
+    for (i = 0; i < sFloor.roomCount; i++)
     {
-        for (y = 0; y < sRooms[i].h; y++)
-            for (x = 0; x < sRooms[i].w; x++)
+        for (y = 0; y < sFloor.rooms[i].h; y++)
+            for (x = 0; x < sFloor.rooms[i].w; x++)
                 CarveFloor(backupMapData, theme,
-                           sRooms[i].x + x, sRooms[i].y + y);
+                           sFloor.rooms[i].x + x, sFloor.rooms[i].y + y);
     }
 
     // An arena floor is the single room, and its exit is not drawn until the
@@ -9379,8 +9531,8 @@ static void WriteFloorBlocks(u16 *backupMapData)
         // is exactly what WALL_SLIVER_ISOLATED draws, so the platform costs no
         // art. The player never boards it - it is solid - so it cannot strand
         // anyone by dismounting them on a theme they have to swim across.
-        if (theme->arenaPlatform && sTrainerCount != 0)
-            SetBlock(backupMapData, sTrainerX[0], sTrainerY[0], wallBlock);
+        if (theme->arenaPlatform && sFloor.trainerCount != 0)
+            SetBlock(backupMapData, sFloor.trainerX[0], sFloor.trainerY[0], wallBlock);
 
         ApplyWallAutotiling(backupMapData, theme);
         ApplyCosmeticPasses(backupMapData, theme);
@@ -9388,13 +9540,13 @@ static void WriteFloorBlocks(u16 *backupMapData)
     }
 
     // Chain the rooms centre-to-centre so the floor is always fully connected.
-    for (i = 1; i < sRoomCount; i++)
+    for (i = 1; i < sFloor.roomCount; i++)
     {
         CarveCorridor(backupMapData, theme,
-                      sRooms[i - 1].x + sRooms[i - 1].w / 2,
-                      sRooms[i - 1].y + sRooms[i - 1].h / 2,
-                      sRooms[i].x + sRooms[i].w / 2,
-                      sRooms[i].y + sRooms[i].h / 2);
+                      sFloor.rooms[i - 1].x + sFloor.rooms[i - 1].w / 2,
+                      sFloor.rooms[i - 1].y + sFloor.rooms[i - 1].h / 2,
+                      sFloor.rooms[i].x + sFloor.rooms[i].w / 2,
+                      sFloor.rooms[i].y + sFloor.rooms[i].h / 2);
     }
 
     // Runs last, but only rewrites blocks whose collision bit is set, so the
@@ -9402,9 +9554,9 @@ static void WriteFloorBlocks(u16 *backupMapData)
     ApplyWallAutotiling(backupMapData, theme);
     ApplyCosmeticPasses(backupMapData, theme);
 
-    if (sRoomCount != 0)
-        SetBlock(backupMapData, sStairsX, sStairsY,
-                 MakeBlock(sStairsMetatile, 0, theme->elevationFloor));
+    if (sFloor.roomCount != 0)
+        SetBlock(backupMapData, sFloor.stairsX, sFloor.stairsY,
+                 MakeBlock(sFloor.stairsMetatile, 0, theme->elevationFloor));
 }
 
 // Everything that marks the start of a genuinely new floor, as opposed to
@@ -9475,8 +9627,8 @@ void RogueDungeon_LoadObjectEventTemplates(void)
     // battle script checks this flag immediately after running that special, so
     // clearing it there means a defeated trainer is never recognised as such
     // and rematches forever.
-    for (i = 0; i < sTrainerCount; i++)
-        FlagClear(TRAINER_FLAGS_START + sTrainerIds[i]);
+    for (i = 0; i < sFloor.trainerCount; i++)
+        FlagClear(TRAINER_FLAGS_START + sFloor.trainerIds[i]);
 
     CpuFill32(0, templates, sizeof(gSaveBlock1Ptr->objectEventTemplates));
 
@@ -9486,11 +9638,11 @@ void RogueDungeon_LoadObjectEventTemplates(void)
         templates[i].kind = OBJ_KIND_NORMAL;
         templates[i].elevation = elevation;
 
-        if (i < sTrainerCount)
+        if (i < sFloor.trainerCount)
         {
-            templates[i].graphicsId = sTrainerGfx[i];
-            templates[i].x = sTrainerX[i];
-            templates[i].y = sTrainerY[i];
+            templates[i].graphicsId = sFloor.trainerGfx[i];
+            templates[i].x = sFloor.trainerX[i];
+            templates[i].y = sFloor.trainerY[i];
             templates[i].movementType = MOVEMENT_TYPE_FACE_DOWN;
             // EVERY ARENA TRAINER IS TALK-ONLY, not just the ones on a platform.
             // The platform case came first and its reasoning generalises: sight
@@ -9549,11 +9701,11 @@ void RogueDungeon_LoadObjectEventTemplates(void)
         templates[slot].kind = OBJ_KIND_NORMAL;
         templates[slot].elevation = elevation;
 
-        if (i < sItemCount)
+        if (i < sFloor.itemCount)
         {
             templates[slot].graphicsId = OBJ_EVENT_GFX_ITEM_BALL;
-            templates[slot].x = sItemX[i];
-            templates[slot].y = sItemY[i];
+            templates[slot].x = sFloor.itemX[i];
+            templates[slot].y = sFloor.itemY[i];
             templates[slot].movementType = MOVEMENT_TYPE_LOOK_AROUND;
             templates[slot].script = RogueDungeonFloor_EventScript_ItemBall;
             templates[slot].flagId = 0;
@@ -9577,11 +9729,11 @@ void RogueDungeon_LoadObjectEventTemplates(void)
         templates[slot].kind = OBJ_KIND_NORMAL;
         templates[slot].elevation = elevation;
 
-        if (i < sBerryCount)
+        if (i < sFloor.berryCount)
         {
             templates[slot].graphicsId = OBJ_EVENT_GFX_BERRY_TREE;
-            templates[slot].x = sBerryX[i];
-            templates[slot].y = sBerryY[i];
+            templates[slot].x = sFloor.berryX[i];
+            templates[slot].y = sFloor.berryY[i];
             // Both of these are load-bearing rather than decorative. The
             // movement type is how the engine recognises a tree at all - it
             // scans for MOVEMENT_TYPE_BERRY_TREE_GROWTH - and the berry tree id
@@ -9615,11 +9767,11 @@ void RogueDungeon_LoadObjectEventTemplates(void)
         templates[slot].kind = OBJ_KIND_NORMAL;
         templates[slot].elevation = elevation;
 
-        if (i < sRockCount)
+        if (i < sFloor.rockCount)
         {
             templates[slot].graphicsId = OBJ_EVENT_GFX_BREAKABLE_ROCK;
-            templates[slot].x = sRockX[i];
-            templates[slot].y = sRockY[i];
+            templates[slot].x = sFloor.rockX[i];
+            templates[slot].y = sFloor.rockY[i];
             templates[slot].movementType = MOVEMENT_TYPE_NONE;
             templates[slot].trainerRange_berryTreeId = 0;
             templates[slot].script = RogueDungeonFloor_EventScript_MiningRock;
@@ -9644,23 +9796,23 @@ void RogueDungeon_LoadObjectEventTemplates(void)
         templates[slot].kind = OBJ_KIND_NORMAL;
         templates[slot].elevation = elevation;
 
-        if (i == 1 && sEventCount > 1)
+        if (i == 1 && sFloor.eventCount > 1)
         {
             // The prop. NO SCRIPT AND NO TRAINER TYPE - it is scenery the event's
             // text refers to, and a second talkable object beside the NPC would
             // read as a second event that does nothing.
-            templates[slot].graphicsId = sFloorEvents[sEventIndex].propGfxId;
-            templates[slot].x = sEventPropX;
-            templates[slot].y = sEventPropY;
+            templates[slot].graphicsId = sFloorEvents[sFloor.eventIndex].propGfxId;
+            templates[slot].x = sFloor.eventPropX;
+            templates[slot].y = sFloor.eventPropY;
             templates[slot].movementType = MOVEMENT_TYPE_NONE;
             templates[slot].trainerType = TRAINER_TYPE_NONE;
             templates[slot].trainerRange_berryTreeId = 0;
             templates[slot].script = NULL;
             templates[slot].flagId = 0;
         }
-        else if (i == 0 && sEventCount > 0)
+        else if (i == 0 && sFloor.eventCount > 0)
         {
-            const struct RogueFloorEvent *event = &sFloorEvents[sEventIndex];
+            const struct RogueFloorEvent *event = &sFloorEvents[sFloor.eventIndex];
 
             // OBJ_EVENT_MON is a BIT (1 << 14) added to a species id, not a
             // table index - the same construction the rest stop's Unown use.
@@ -9668,10 +9820,10 @@ void RogueDungeon_LoadObjectEventTemplates(void)
             // already in the build.
             templates[slot].graphicsId =
                 (event->gfxId == DUNGEON_EVENT_GFX_ROLLED)
-                    ? OBJ_EVENT_MON + sEventSpecies
+                    ? OBJ_EVENT_MON + sFloor.eventSpecies
                     : event->gfxId;
-            templates[slot].x = sEventX;
-            templates[slot].y = sEventY;
+            templates[slot].x = sFloor.eventX;
+            templates[slot].y = sFloor.eventY;
             // FACE_DOWN rather than LOOK_AROUND: an event NPC is a fixture the
             // player walks up to and talks to, and TRAINER_TYPE_NONE keeps it
             // from ever initiating anything itself. A row may override it - see
@@ -9740,7 +9892,7 @@ u16 RogueDungeon_PrepareFloorItem(void)
 {
     u32 slot = FloorItemSlotOf(gSpecialVar_LastTalked);
 
-    if (slot >= sItemCount)
+    if (slot >= sFloor.itemCount)
     {
         // Nothing sensible to hand over. A Potion rather than ITEM_NONE, which
         // finditem would announce as an empty pickup.
@@ -9748,8 +9900,8 @@ u16 RogueDungeon_PrepareFloorItem(void)
         return ITEM_POTION;
     }
 
-    gSpecialVar_0x8009 = sItemQty[slot];
-    return sItemIds[slot];
+    gSpecialVar_0x8009 = sFloor.itemQty[slot];
+    return sFloor.itemIds[slot];
 }
 
 // Called after the pickup. The ball has to stay gone for the rest of the floor,
@@ -9805,10 +9957,10 @@ bool8 RogueDungeon_HasTrainerBeenBeaten(u8 objectEventId)
 {
     u32 slot = gObjectEvents[objectEventId].localId - 1;
 
-    if (slot >= sTrainerCount)
+    if (slot >= sFloor.trainerCount)
         return FALSE;
 
-    return FlagGet(TRAINER_FLAGS_START + sTrainerIds[slot]);
+    return FlagGet(TRAINER_FLAGS_START + sFloor.trainerIds[slot]);
 }
 
 void RogueDungeon_SetUpTrainerBattle(void)
@@ -9816,9 +9968,9 @@ void RogueDungeon_SetUpTrainerBattle(void)
     u32 slot = gSpecialVar_LastTalked - 1;
     u16 trainerId;
 
-    if (slot >= sTrainerCount)
+    if (slot >= sFloor.trainerCount)
         slot = 0;
-    trainerId = sTrainerIds[slot];
+    trainerId = sFloor.trainerIds[slot];
 
     // Winning a battle ends on gotobeatenscript, which reads
     // battleScriptRetAddrA - NOT sTrainerBattleEndScript, which only serves
@@ -9952,10 +10104,10 @@ void GenerateRogueDungeonFloor(u16 *backupMapData, bool8 setPlayerPosition)
 
     WriteFloorBlocks(backupMapData);
 
-    if (setPlayerPosition == FALSE && sRoomCount != 0)
+    if (setPlayerPosition == FALSE && sFloor.roomCount != 0)
     {
-        gSaveBlock1Ptr->pos.x = sSpawnX;
-        gSaveBlock1Ptr->pos.y = sSpawnY;
+        gSaveBlock1Ptr->pos.x = sFloor.spawnX;
+        gSaveBlock1Ptr->pos.y = sFloor.spawnY;
     }
 
     // Consumed. The next map load must prepare afresh, or it would repaint this
@@ -10034,3 +10186,166 @@ bool8 RogueDungeon_TryStartStairsScript(struct MapPosition *position)
     ScriptContext_SetupScript(RogueDungeonFloor_EventScript_Stairs);
     return TRUE;
 }
+
+
+#if TESTING
+
+// ---------------------------------------------------- test: placement digest
+//
+// THE INVARIANT THIS GUARDS IS THE ONE NOTHING ELSE DOES. Every object on a
+// floor is positioned by draws from one seeded stream, in one fixed order, so
+// no placer may ever change HOW MANY times it draws - inserting or removing a
+// single DungeonRandom() relocates every object placed after it, on every
+// floor, for ever. The build stays clean, every check still passes, and the
+// game is silently different.
+//
+// It runs in the ROM, on the emulator, against the real generator, and that is
+// the point. The two host-side verify_*.py scripts are PORTS - a second
+// implementation in Python - so they can only ever check that the port agrees
+// with itself. One of them had already drifted onto a floor shape the game had
+// stopped generating while reporting a clean pass. A digest taken from the
+// real code cannot drift, because there is nothing for it to drift from.
+
+static void HashByte(u32 *h, u32 value)
+{
+    *h ^= (u8)value;
+    *h *= 16777619u;            // FNV-1a, 32-bit
+}
+
+static void HashHalf(u32 *h, u32 value)
+{
+    HashByte(h, value);
+    HashByte(h, value >> 8);
+}
+
+// Hashes the COUNT before the contents in every case, so a floor that places
+// three items cannot collide with one that places four whose extra entry is
+// still zeroed from the previous floor.
+u32 RogueDungeon_Test_HashFloorPlacements(u16 floor, u16 seed)
+{
+    u32 h = 2166136261u;        // FNV-1a offset basis
+    u32 i;
+
+    // Everything PrepareFloor perturbs, saved and put back. A test that left
+    // the map header pointing at another theme's layout would be a test that
+    // broke the next test in the file.
+    u16 savedFloor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+    u16 savedOrder = VarGet(VAR_ROGUE_RUN_ORDER);
+    const struct MapLayout *savedLayout = gMapHeader.mapLayout;
+    u8 savedMapSec = gMapHeader.regionMapSectionId;
+    bool8 savedPrepared = sFloorPrepared;
+
+    // PINNED TO THE VANILLA DUNGEON ORDER. ThemeForFloor goes through
+    // DungeonForSlot, which reads VAR_ROGUE_RUN_ORDER, so without this the
+    // digest would depend on whatever run order the save block happened to
+    // hold and no value could be pinned. Order 0 means "no shuffle", so a
+    // floor number maps to one fixed theme and the cases below can name it.
+    VarSet(VAR_ROGUE_RUN_ORDER, 0);
+    VarSet(VAR_ROGUE_DUNGEON_FLOOR, floor);
+
+    PrepareFloor(seed);
+
+    // The map itself. Rooms first, because everything else is placed relative
+    // to them - a change here should move the digest even if by some accident
+    // every object landed on its old tile.
+    HashByte(&h, sFloor.roomCount);
+    for (i = 0; i < sFloor.roomCount; i++)
+    {
+        HashByte(&h, sFloor.rooms[i].x);
+        HashByte(&h, sFloor.rooms[i].y);
+        HashByte(&h, sFloor.rooms[i].w);
+        HashByte(&h, sFloor.rooms[i].h);
+    }
+
+    HashByte(&h, sFloor.stairsX);
+    HashByte(&h, sFloor.stairsY);
+    HashHalf(&h, sFloor.stairsMetatile);
+    HashByte(&h, sFloor.spawnX);
+    HashByte(&h, sFloor.spawnY);
+
+    HashByte(&h, sFloor.grassPatchCount);
+    for (i = 0; i < sFloor.grassPatchCount; i++)
+    {
+        HashByte(&h, sFloor.grassPatchX[i]);
+        HashByte(&h, sFloor.grassPatchY[i]);
+        HashByte(&h, sFloor.grassPatchRadius[i]);
+        HashByte(&h, sFloor.grassPatchLong[i]);
+    }
+
+    // The objects. IDs and quantities are hashed as well as positions, because
+    // a loot roll is a draw from the same stream - a table edit that changed
+    // what a ball contains without moving it is the same class of change.
+    HashByte(&h, sFloor.trainerCount);
+    for (i = 0; i < sFloor.trainerCount; i++)
+    {
+        HashByte(&h, sFloor.trainerX[i]);
+        HashByte(&h, sFloor.trainerY[i]);
+        HashHalf(&h, sFloor.trainerIds[i]);
+        HashHalf(&h, sFloor.trainerGfx[i]);
+    }
+
+    HashByte(&h, sFloor.itemCount);
+    for (i = 0; i < sFloor.itemCount; i++)
+    {
+        HashByte(&h, sFloor.itemX[i]);
+        HashByte(&h, sFloor.itemY[i]);
+        HashHalf(&h, sFloor.itemIds[i]);
+        HashByte(&h, sFloor.itemQty[i]);
+    }
+
+    HashByte(&h, sFloor.berryCount);
+    for (i = 0; i < sFloor.berryCount; i++)
+    {
+        HashByte(&h, sFloor.berryX[i]);
+        HashByte(&h, sFloor.berryY[i]);
+        HashHalf(&h, sFloor.berryItems[i]);
+    }
+
+    HashByte(&h, sFloor.rockCount);
+    for (i = 0; i < sFloor.rockCount; i++)
+    {
+        HashByte(&h, sFloor.rockX[i]);
+        HashByte(&h, sFloor.rockY[i]);
+    }
+
+    // The event, its prop and the species it rolled. sFloor.eventSpecies is drawn
+    // for EVERY event whether or not that event reads it, so it is part of the
+    // stream's shape and belongs here.
+    HashByte(&h, sFloor.eventCount);
+    HashByte(&h, sFloor.eventIndex);
+    HashByte(&h, sFloor.eventX);
+    HashByte(&h, sFloor.eventY);
+    HashByte(&h, sFloor.eventPropX);
+    HashByte(&h, sFloor.eventPropY);
+    HashHalf(&h, sFloor.eventSpecies);
+    HashByte(&h, sFloor.eventAmbush);
+
+    // struct BgEvent carries u16 coords, unlike every placer above it, and the
+    // hidden item id is hashed as well as the item: the engine derives the
+    // "already collected" FLAG from that id, so two floors burying the same
+    // item on the same tile under different ids are not the same floor.
+    HashByte(&h, sFloor.hiddenCount);
+    for (i = 0; i < sFloor.hiddenCount; i++)
+    {
+        HashHalf(&h, sFloor.hiddenItems[i].x);
+        HashHalf(&h, sFloor.hiddenItems[i].y);
+        HashByte(&h, sFloor.hiddenItems[i].elevation);
+        HashByte(&h, sFloor.hiddenItems[i].kind);
+        HashHalf(&h, sFloor.hiddenItems[i].bgUnion.hiddenItem.item);
+        HashHalf(&h, sFloor.hiddenItems[i].bgUnion.hiddenItem.hiddenItemId);
+        HashByte(&h, sFloor.hiddenItems[i].bgUnion.hiddenItem.quantity);
+    }
+
+    gMapHeader.mapLayout = savedLayout;
+    gMapHeader.regionMapSectionId = savedMapSec;
+    VarSet(VAR_ROGUE_DUNGEON_FLOOR, savedFloor);
+    VarSet(VAR_ROGUE_RUN_ORDER, savedOrder);
+    // FALSE, not savedPrepared's opposite: the next real map load must prepare
+    // afresh rather than repaint whatever this test left standing.
+    sFloorPrepared = FALSE;
+    (void)savedPrepared;
+
+    return h;
+}
+
+#endif // TESTING

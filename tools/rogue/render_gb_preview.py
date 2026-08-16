@@ -26,6 +26,7 @@ Usage:  python3 tools/rogue/render_gb_preview.py --repo PATH --out DIR
 import argparse
 import json
 import math
+import re
 import struct
 import sys
 import wave
@@ -816,6 +817,43 @@ def write_wav(path, buf):
             for s in buf))
 
 
+PSG_VOICES = frozenset(
+    base + suffix
+    for base in ('voice_square_1', 'voice_square_2',
+                 'voice_programmable_wave', 'voice_noise')
+    for suffix in ('', '_alt'))
+
+
+def gb_voicegroup_slots(repo, song):
+    """-> [macro] per slot of the gb_* voicegroup this song actually ships with.
+
+    Resolved through midi.cfg, never guessed from the song name -- the stem and
+    the voicegroup do not match (mus_petalburg_woods -> gb_woods). Returns []
+    when the song has no _gb build yet, which makes the caller say nothing.
+    """
+    cfg = (Path(repo) / 'sound/songs/midi/midi.cfg').read_text(encoding='utf-8')
+    m = re.search(r'^%s_gb\.mid:\s*(.*)$' % re.escape(song), cfg, re.M)
+    if not m:
+        return []
+    g = re.search(r'-G(\S+)', m.group(1))
+    if not g:
+        return []
+    path = Path(repo) / 'sound/voicegroups' / (g.group(1).lstrip('_') + '.inc')
+    if not path.exists():
+        return []
+    out, seen_label = [], False
+    for line in path.read_text(encoding='utf-8').split('\n'):
+        mm = re.match(r'\s*(voice_\w+)', line)
+        if not mm:
+            continue
+        if mm.group(1) == 'voice_group':
+            seen_label = True
+            continue
+        if seen_label:
+            out.append(mm.group(1))
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--repo', default='.', type=Path)
@@ -852,6 +890,7 @@ def main():
         if args.all:
             names = sorted(loaded)
 
+    failed = []
     for name in names:
         voices = VARIANTS.get(name)
         if voices is None:
@@ -892,8 +931,29 @@ def main():
                    and not any('#%d' % i in voices
                                for i, (ss, _) in enumerate(tracks) if ss == s)]
         if unnamed:
-            print('    note: slots %s carry notes but the variant does not '
-                  'mention them (they are silent)' % sorted(set(unnamed)))
+            # A slot the variant never mentions is SILENT HERE no matter what,
+            # because the render skips it. Whether that matches the ROM depends
+            # entirely on the voicegroup, so ask it rather than assume:
+            #
+            #   silenced there -> preview and ROM agree; the arrangement simply
+            #     dropped a part by omission, which is normal and is a note.
+            #   still a sampled voice there -> the part is INAUDIBLE HERE AND
+            #     AUDIBLE IN THE ROM, playing the original Emerald instrument
+            #     under the PSG reduction. That is the fault that shipped in
+            #     twenty of thirty-six songs while every preview sounded right.
+            slots = gb_voicegroup_slots(args.repo, song)
+            missing = sorted(set(unnamed))
+            leaking = [s for s in missing
+                       if s < len(slots) and slots[s] not in PSG_VOICES]
+            quiet = [s for s in missing if s not in leaking]
+            if quiet:
+                print('    note: slots %s carry notes but the variant does not '
+                      'mention them (silenced in the voicegroup)' % quiet)
+            if leaking:
+                print('    FAIL: slots %s carry notes, are not in the variant, '
+                      'and are NOT silenced in the voicegroup -- they will play '
+                      'on the original sampled voice in the ROM' % leaking)
+                failed.append((name, leaking))
         buf, report = render(tracks, voices, wave_table, total, True, args.analyze)
         for line in report:
             print(line)
@@ -906,6 +966,12 @@ def main():
             write_wav(p, buf)
             print('    wrote %s' % p)
         print()
+
+    if failed:
+        print('%d variant(s) leave slots unaccounted for:' % len(failed))
+        for name, slots in failed:
+            print('    %-24s slots %s' % (name, slots))
+        return 1
 
     return 0
 

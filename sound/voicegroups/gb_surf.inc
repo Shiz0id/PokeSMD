@@ -6,9 +6,12 @@
 @ songs have more parts than that.
 
 voice_group gb_surf
-	voice_keysplit_all voicegroup_rs_drumset
-	voice_square_2_alt 60, 0, 2, 0, 3, 3, 1
-	voice_square_1_alt 60, 0, 0, 2, 0, 3, 3, 1
+	@ slot 0: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	@ slot 1: dropped
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	@ slot 2: counter -> square2
+	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_2_alt 60, 0, 2, 0, 1, 7, 2
 	voice_square_1_alt 60, 0, 0, 2, 0, 1, 7, 2
@@ -51,7 +54,8 @@ voice_group gb_surf
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_pizzicato_strings, 255, 216, 0, 165
+	@ slot 45: strings 2nd
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	@ slot 46: harp arpeggio -> wave
 	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_1, 0, 4, 13, 3
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -69,7 +73,8 @@ voice_group gb_surf
 	@ slot 58: tuba bass -> square2
 	voice_square_2_alt 60, 0, 3, 0, 2, 12, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_keysplit voicegroup_french_horn_keysplit, keysplit_french_horn
+	@ slot 60: STRINGS - the tune -> square1
+	voice_square_1_alt 60, 0, 0, 2, 0, 3, 12, 2
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -82,23 +87,31 @@ voice_group gb_surf
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_flute, 255, 127, 231, 127
+	@ slot 73: STRINGS - the tune -> square1
+	voice_square_1_alt 60, 0, 0, 2, 0, 3, 12, 2
 	voice_programmable_wave 60, 0, ProgrammableWaveData_1, 0, 7, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_2_alt 60, 0, 2, 1, 1, 7, 2
+	@ slot 80: dropped
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_6, 0, 7, 15, 2
-	voice_square_1_alt 60, 0, 0, 2, 1, 1, 7, 2
+	@ slot 82: counter -> square2
+	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
 	@ slot 83: dropped
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	@ slot 84: counter -> square2
 	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
 	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_6, 0, 7, 15, 3
-	voice_square_1_alt 60, 0, 0, 2, 0, 0, 7, 2
-	voice_square_1_alt 60, 0, 0, 3, 0, 0, 7, 2
-	voice_square_2_alt 60, 0, 1, 1, 2, 6, 2
-	voice_square_1_alt 60, 0, 0, 1, 1, 2, 6, 2
-	voice_square_1_alt 60, 0, 0, 1, 0, 0, 6, 2
+	@ slot 86: counter -> square2
+	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
+	@ slot 87: counter -> square2
+	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
+	@ slot 88: dropped
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	@ slot 89: counter -> square2
+	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
+	@ slot 90: counter -> square2
+	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1

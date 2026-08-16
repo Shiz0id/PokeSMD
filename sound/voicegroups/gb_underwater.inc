@@ -22,7 +22,8 @@ voice_group gb_underwater
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_tubular_bell, 128, 165, 90, 216
+	@ slot 14: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -55,11 +56,14 @@ voice_group gb_underwater
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_pizzicato_strings, 255, 226, 0, 38
+	@ slot 45: glockenspiel MELODY -> square1
+	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
 	@ slot 46: harp -> wave
 	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_1, 0, 4, 14, 3
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_timpani, 255, 0, 193, 226
-	voice_keysplit voicegroup_strings_keysplit, keysplit_strings
+	@ slot 47: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	@ slot 48: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -84,7 +88,8 @@ voice_group gb_underwater
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_flute, 255, 0, 255, 165
+	@ slot 73: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -94,7 +99,8 @@ voice_group gb_underwater
 	@ slot 80: dropped
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_1, 1, 4, 10, 1
+	@ slot 82: counter (high, dropped)
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0

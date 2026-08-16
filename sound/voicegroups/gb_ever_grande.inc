@@ -6,8 +6,10 @@
 @ songs have more parts than that.
 
 voice_group gb_ever_grande
-	voice_keysplit_all voicegroup_rs_drumset
-	voice_keysplit voicegroup_piano_keysplit, keysplit_piano
+	@ slot 0: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	@ slot 1: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -24,7 +26,8 @@ voice_group gb_ever_grande
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_organ2, 255, 0, 255, 210
+	@ slot 17: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -47,7 +50,8 @@ voice_group gb_ever_grande
 	voice_square_2_alt 60, 0, 3, 0, 2, 12, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_synth_bass, 255, 252, 0, 115
+	@ slot 38: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -65,7 +69,8 @@ voice_group gb_ever_grande
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_keysplit voicegroup_trumpet_keysplit, keysplit_trumpet
+	@ slot 56: dropped
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -82,7 +87,8 @@ voice_group gb_ever_grande
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_flute, 255, 0, 255, 127
+	@ slot 73: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0

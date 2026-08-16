@@ -8,7 +8,8 @@
 voice_group gb_victory_road
 	@ slot 0: percussion -> noise
 	voice_noise_alt 60, 0, 1, 0, 1, 0, 2
-	voice_keysplit voicegroup_piano_keysplit, keysplit_piano
+	@ slot 1: dropped
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -21,7 +22,8 @@ voice_group gb_victory_road
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_tubular_bell, 255, 165, 90, 216
+	@ slot 14: PAD -> wave
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_2, 1, 5, 14, 3
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -42,8 +44,10 @@ voice_group gb_victory_road
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_fretless_bass, 255, 253, 0, 188
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_slap_bass, 255, 235, 128, 99
+	@ slot 35: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	@ slot 36: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -52,22 +56,25 @@ voice_group gb_victory_road
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	@ slot 45: dropped
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	@ slot 47: PAD -> wave
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_2, 1, 5, 14, 3
+	@ slot 48: PAD -> wave
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_2, 1, 5, 14, 3
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_timpani, 255, 0, 180, 246
-	@ slot 48: MELODY -> square1
-	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	@ slot 56: PAD -> wave
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_2, 1, 5, 14, 3
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 56: bass -> square2
-	voice_square_2_alt 60, 0, 3, 0, 2, 12, 1
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_keysplit voicegroup_tuba_keysplit, keysplit_tuba
+	@ slot 58: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	@ slot 60: PAD -> wave
 	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_2, 1, 5, 14, 3
@@ -83,7 +90,8 @@ voice_group gb_victory_road
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_flute, 255, 0, 255, 127
+	@ slot 73: PAD -> wave
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_2, 1, 5, 14, 3
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -94,18 +102,17 @@ voice_group gb_victory_road
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	@ slot 81: counter (shares) -> square2
 	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
-	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_6, 0, 7, 15, 0
+	@ slot 82: dropped
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	@ slot 83: dropped
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	voice_square_2_alt 60, 0, 1, 0, 1, 4, 1
-	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_2, 0, 7, 15, 1
+	@ slot 84: counter (shares) -> square2
+	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
+	@ slot 85: dropped
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1_alt 60, 0, 0, 0, 0, 2, 3, 1
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	@ slot 87: dropped
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -139,6 +146,12 @@ voice_group gb_victory_road
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_noise_alt 60, 0, 0, 0, 3, 4, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	@ slot 126: percussion -> noise
+	voice_noise_alt 60, 0, 1, 0, 1, 0, 2
 	@ slot 127: percussion -> noise
 	voice_noise_alt 60, 0, 1, 0, 1, 0, 2

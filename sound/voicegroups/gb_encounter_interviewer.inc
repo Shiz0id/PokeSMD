@@ -20,7 +20,8 @@ voice_group gb_encounter_interviewer
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_xylophone, 255, 235, 0, 204
+	@ slot 13: TRUMPET upper -> square1
+	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -46,7 +47,8 @@ voice_group gb_encounter_interviewer
 	@ slot 36: slap bass -> square2
 	voice_square_2_alt 60, 0, 3, 0, 2, 12, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_synth_bass, 255, 252, 0, 115
+	@ slot 38: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -64,8 +66,8 @@ voice_group gb_encounter_interviewer
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 56: TRUMPET lower (the fifth) -> wave
-	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_5, 0, 3, 14, 2
+	@ slot 56: TRUMPET upper -> square1
+	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -95,8 +97,10 @@ voice_group gb_encounter_interviewer
 	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
 	@ slot 82: bass octave dbl
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	voice_square_1_alt 60, 0, 0, 1, 2, 1, 5, 0
-	voice_square_2_alt 60, 0, 1, 2, 1, 5, 0
+	@ slot 83: dropped
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	@ slot 84: counter -> square2
+	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0

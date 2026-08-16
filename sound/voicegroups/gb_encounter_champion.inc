@@ -20,7 +20,8 @@ voice_group gb_encounter_champion
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_xylophone, 255, 235, 0, 204
+	@ slot 13: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -32,7 +33,8 @@ voice_group gb_encounter_champion
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_nylon_str_guitar, 255, 249, 25, 76
+	@ slot 24: SWEEP - the tune -> square1
+	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -48,7 +50,8 @@ voice_group gb_encounter_champion
 	@ slot 36: bass -> square2
 	voice_square_2_alt 60, 0, 3, 0, 2, 12, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_synth_bass, 255, 252, 0, 115
+	@ slot 38: SWEEP - the tune -> square1
+	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -57,7 +60,8 @@ voice_group gb_encounter_champion
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_timpani, 255, 0, 180, 246
+	@ slot 47: sweep doubling
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -66,7 +70,8 @@ voice_group gb_encounter_champion
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_keysplit voicegroup_trumpet_keysplit, keysplit_trumpet
+	@ slot 56: SWEEP - the tune -> square1
+	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -93,12 +98,15 @@ voice_group gb_encounter_champion
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	@ slot 80: high sparkle
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	voice_square_1_alt 60, 0, 0, 2, 1, 1, 4, 1
-	voice_square_2_alt 60, 0, 2, 1, 1, 4, 1
+	@ slot 81: high sparkle
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	@ slot 82: pad -> wave
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_1, 1, 5, 14, 3
 	@ slot 83: pad -> wave
 	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_1, 1, 5, 14, 3
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_1, 0, 7, 15, 0
+	@ slot 85: counter -> square2
+	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0

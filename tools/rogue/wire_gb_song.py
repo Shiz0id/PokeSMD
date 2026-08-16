@@ -59,8 +59,18 @@ def _chunks(b):
 
 
 def _scan(b, start, end):
-    """-> (program, [positions of note key bytes])"""
-    j, status, prog, keys = start, 0, None, []
+    """-> (ALL programs in order, [positions of note key bytes])
+
+    ALL of them, not the first. A track may change program part way through --
+    mus_route119's first track walks 58 -> 56 -> 46 -> 9 -> 46 -> 56 -- and the
+    ROM honours every change. Treating a track as having one instrument leaves
+    the later slots unnamed by the plan, so the generator copies whatever filler
+    the source voicegroup had there: voice_square_1 at full sustain with no
+    decay, fighting the melody for square 1. That is inaudible in a preview,
+    which renders one voice per track, and it is why petalburg_woods, route119
+    and route111 sounded nothing like theirs.
+    """
+    j, status, progs, keys = start, 0, [], []
     while j < end:
         while b[j] & 0x80:      # delta time
             j += 1
@@ -75,8 +85,8 @@ def _scan(b, start, end):
         elif ev in (0xB0, 0xE0):
             j += 2
         elif ev == 0xC0:
-            if prog is None:
-                prog = b[j]
+            if b[j] not in progs:
+                progs.append(b[j])
             j += 1
         elif ev == 0xD0:
             j += 1
@@ -91,7 +101,7 @@ def _scan(b, start, end):
             j += 1 + ln
         else:
             j += 2
-    return prog, keys
+    return progs, keys
 
 
 def midi_transpose_slot(path, slot, semitones):
@@ -99,8 +109,8 @@ def midi_transpose_slot(path, slot, semitones):
     _, chunks = _chunks(b)
     moved = 0
     for (_, s, e) in chunks:
-        prog, keys = _scan(b, s, e)
-        if prog != slot:
+        progs, keys = _scan(b, s, e)
+        if slot not in progs:
             continue
         for k in keys:
             b[k] = max(0, min(127, b[k] + semitones))
@@ -136,7 +146,7 @@ def midi_floor_lift_slot(path, slot):
     """
     b = bytearray(path.read_bytes())
     _, chunks = _chunks(b)
-    targets = [(s, e) for (_, s, e) in chunks if _scan(b, s, e)[0] == slot]
+    targets = [(s, e) for (_, s, e) in chunks if slot in _scan(b, s, e)[0]]
     if not targets:
         return None
 
@@ -188,15 +198,17 @@ def note_tracks(b):
     _, chunks = _chunks(b)
     out = []
     for ci, (_, s, e) in enumerate(chunks):
-        prog, keys = _scan(b, s, e)
+        progs, keys = _scan(b, s, e)
         if keys:
-            out.append((ci, prog))
+            out.append((ci, progs))
     return out
 
 
 def track_slots(path):
     """-> [program per note-bearing MIDI track], matching parse_midi."""
-    return [prog for _, prog in note_tracks(bytearray(path.read_bytes()))]
+    # First program per track: what a #N key resolves to.
+    return [(progs[0] if progs else None)
+            for _, progs in note_tracks(bytearray(path.read_bytes()))]
 
 
 def midi_drop_track(path, index):
@@ -215,8 +227,40 @@ def midi_drop_track(path, index):
 
 SILENT = 'voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0'
 
-# Songs whose arrangement was tuned by ear. Never regenerate these from a plan.
-HAND_TUNED = {'mus_petalburg_woods'}
+# The four CGB voice types, each with an _alt form. A gb_* voicegroup must
+# contain NOTHING ELSE -- that is the whole claim its header makes.
+#
+# WHY A NON-PSG VOICE IN HERE IS INVISIBLE. It does not fail to build: a
+# voice_directsound entry is valid asm anywhere. It does not steal a PSG
+# channel either, because m4a allocates sampled voices from a separate pool --
+# so no contention measurement moves. The song simply plays that part on the
+# original Emerald instrument, UNDERNEATH the PSG reduction. And
+# render_gb_preview.py skips slots the plan does not mention, so the preview is
+# thinner than the ROM and sounds correct. Twenty of thirty-six songs shipped
+# this way.
+PSG_VOICES = frozenset(
+    base + suffix
+    for base in ('voice_square_1', 'voice_square_2',
+                 'voice_programmable_wave', 'voice_noise')
+    for suffix in ('', '_alt'))
+
+
+def is_psg_voice(line):
+    """True if this line is a PSG voice, or is not a slot at all.
+
+    Comments, blanks and the voice_group label are not slots and pass through.
+    """
+    m = re.match(r'\s*(voice_\w+)', line)
+    if not m or m.group(1) == 'voice_group':
+        return True
+    return m.group(1) in PSG_VOICES
+
+# Songs whose arrangement was tuned by ear and must not be regenerated from the
+# HEURISTIC. Empty now: the woods arrangement lives in a plan of its own, taken
+# from the accepted variant, so it goes through this tool like everything else
+# and gets the same full slot coverage. Leaving it out was what let its counter
+# line hijack square 1 whenever the track changed program.
+HAND_TUNED = set()
 
 VOICE_FOR = {
     'square1': 'voice_square_1_alt 60, 0, 0, %(duty)d, %(a)d, %(d)d, %(s)d, %(r)d',
@@ -287,7 +331,16 @@ def write_voicegroup(repo, song, voices, out_stem):
             continue
         v = voices.get(str(slot))
         if v is None:
-            out.append(line.rstrip())
+            # A slot the plan does not name is filler ONLY IF IT IS ALREADY PSG.
+            # The header above has always claimed unlisted slots are silenced;
+            # until this branch existed it copied them through verbatim, so any
+            # slot the song actually selects kept its sampled Emerald voice.
+            if is_psg_voice(line):
+                out.append(line.rstrip())
+            else:
+                out.append('\t@ slot %d: not in the arrangement and not a PSG '
+                           'voice -- silenced' % slot)
+                out.append('\t' + SILENT)
         else:
             kind = v['kind']
             if kind == 'drop':
@@ -306,8 +359,10 @@ def write_voicegroup(repo, song, voices, out_stem):
         slot += 1
 
     if replaced != len(voices):
-        return ('plan names %d slots but the voicegroup only has %d of them'
-                % (len(voices), replaced))
+        missing = sorted(int(k) for k in voices if int(k) >= slot)
+        return ('%d slots to set but only %d are within this voicegroup '
+                '(%d entries); out of range: %s'
+                % (len(voices), replaced, slot, missing))
 
     out.append('')
     dest = repo / 'sound/voicegroups' / ('gb_%s.inc' % out_stem)
@@ -339,18 +394,43 @@ def wire(repo, song, spec, const):
     # Resolve '#N' track keys to voicegroup slots. A '#N' that is DROPPED is not
     # a voicegroup entry at all -- it is a MIDI edit, because its slot is shared
     # with a track being kept and silencing the slot would silence both.
-    slots = track_slots(repo / 'sound/songs/midi' / (song + '.mid'))
+    mid_src = repo / 'sound/songs/midi' / (song + '.mid')
+    per_track = note_tracks(bytearray(mid_src.read_bytes()))   # [(chunk, [progs])]
+    slots = [(p[0] if p else None) for _, p in per_track]
+
+    # A TRACK'S VOICE MUST COVER EVERY SLOT IT EVER SELECTS. Tracks change
+    # program part way through, and a slot no plan named keeps whatever filler
+    # the source voicegroup had -- a full-sustain 50% square that then competes
+    # for square 1 with the melody. Naming only the first program is what made
+    # petalburg_woods, route119 and route111 sound nothing like their previews.
+    #
+    # Kept parts are written first so that where a kept and a dropped track
+    # share a slot, the kept one wins and the part is still heard.
     vg_voices = {}
+    dropped_slots = []
+    for idx, (_, progs) in enumerate(per_track):
+        first = progs[0] if progs else None
+        v = voices.get('#%d' % idx)
+        if v is None and first is not None:
+            v = voices.get(str(first))
+        if v is None:
+            continue
+        if v['kind'] == 'drop':
+            dropped_slots.append((idx, progs))
+            continue
+        for slot in progs:
+            vg_voices.setdefault(str(slot), v)
+
+    for idx, progs in dropped_slots:
+        for slot in progs:
+            vg_voices.setdefault(str(slot), dict(voices.get('#%d' % idx)
+                                                 or voices.get(str(progs[0]))))
+
+    # Any slot named by the plan but selected by no track still gets written,
+    # so a hand-tuned variant naming a slot directly is not lost.
     for key, v in voices.items():
-        if isinstance(key, str) and key.startswith('#'):
-            idx = int(key[1:])
-            if v['kind'] == 'drop':
-                continue
-            if idx >= len(slots):
-                return 'track #%d does not exist in %s' % (idx, song)
-            vg_voices[str(slots[idx])] = v
-        else:
-            vg_voices[str(key)] = v
+        if not (isinstance(key, str) and key.startswith('#')):
+            vg_voices.setdefault(str(key), v)
 
     if song not in HAND_TUNED:
         err = write_voicegroup(repo, song, vg_voices, stem)
@@ -444,14 +524,63 @@ def wire(repo, song, spec, const):
     return None
 
 
+def resilence(repo):
+    """Apply the PSG-only invariant to voicegroups already on disk.
+
+    THIS EXISTS BECAUSE THE ARRANGEMENTS CANNOT BE REGENERATED. wire() needs a
+    plans.json, and the one that produced the thirty-five generated voicegroups
+    was a working file that was never committed. wire() is also not idempotent
+    for MIDI edits -- it transposes parts and drops tracks in the _gb.mid, so
+    re-running it would apply both a second time.
+
+    This pass touches the voicegroup and nothing else, and is idempotent: a
+    silenced slot is itself a PSG voice, so a second run finds nothing to do.
+    """
+    changed = []
+    for path in sorted((repo / 'sound/voicegroups').glob('gb_*.inc')):
+        lines = path.read_text(encoding='utf-8').split('\n')
+        out, slot, n, seen_label = [], -1, 0, False
+        for line in lines:
+            if re.match(r'\s*voice_group\s', line):
+                seen_label = True
+                out.append(line)
+                continue
+            if not seen_label or not re.match(r'\s*voice_\w+', line):
+                out.append(line)
+                continue
+            slot += 1
+            if is_psg_voice(line):
+                out.append(line)
+            else:
+                out.append('\t@ slot %d: not in the arrangement and not a PSG '
+                           'voice -- silenced' % slot)
+                out.append('\t' + SILENT)
+                n += 1
+        if n:
+            path.write_text('\n'.join(out), encoding='utf-8', newline='\n')
+            changed.append((path.name, n))
+    return changed
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--repo', default='.', type=Path)
-    ap.add_argument('--plans', required=True, type=Path)
+    ap.add_argument('--plans', type=Path)
+    ap.add_argument('--resilence', action='store_true',
+                    help='silence non-PSG slots in existing gb_*.inc and exit')
     ap.add_argument('--songs', help='comma-separated plan names')
     ap.add_argument('--all', action='store_true')
     args = ap.parse_args()
 
+    if args.resilence:
+        changed = resilence(args.repo)
+        for name, n in changed:
+            print('%s: %d slot(s) silenced' % (name, n))
+        print('\n%d voicegroup(s) changed' % len(changed))
+        return 0
+
+    if not args.plans:
+        sys.exit('need --plans (or --resilence)')
     plans = json.loads(args.plans.read_text(encoding='utf-8'))
     if args.all:
         names = sorted(plans)

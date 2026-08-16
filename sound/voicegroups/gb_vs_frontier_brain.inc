@@ -8,11 +8,14 @@
 voice_group gb_vs_frontier_brain
 	@ slot 0: percussion -> noise
 	voice_noise_alt 60, 0, 1, 0, 1, 0, 2
-	voice_keysplit voicegroup_piano_keysplit, keysplit_piano
+	@ slot 1: bass -> square2
+	voice_square_2_alt 60, 0, 3, 0, 2, 12, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sd90_classical_detuned_ep1_low, 128, 249, 0, 188
-	voice_directsound 60, 0, DirectSoundWaveData_sd90_classical_detuned_ep1_high, 255, 188, 103, 165
+	@ slot 4: bass -> square2
+	voice_square_2_alt 60, 0, 3, 0, 2, 12, 1
+	@ slot 5: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -21,10 +24,12 @@ voice_group gb_vs_frontier_brain
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_tubular_bell, 255, 165, 90, 216
+	@ slot 14: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_organ2, 255, 0, 255, 127
+	@ slot 17: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -33,32 +38,40 @@ voice_group gb_vs_frontier_brain
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	@ slot 24: dropped
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_nylon_str_guitar, 255, 165, 128, 204
+	@ slot 25: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sd90_classical_overdrive_guitar, 255, 0, 255, 127
-	voice_directsound 60, 0, DirectSoundWaveData_sd90_classical_distortion_guitar_high, 255, 165, 154, 165
+	@ slot 29: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	@ slot 30: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_fingered_bass, 255, 253, 0, 149
+	@ slot 33: PAD -> wave
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_1, 1, 5, 14, 3
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	@ slot 35: PAD -> wave
 	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_1, 1, 5, 14, 3
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_synth_bass, 255, 252, 0, 146
+	@ slot 38: bass -> square2
+	voice_square_2_alt 60, 0, 3, 0, 2, 12, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_pizzicato_strings, 255, 216, 0, 165
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_harp, 255, 242, 51, 242
+	@ slot 45: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	@ slot 46: bass -> square2
+	voice_square_2_alt 60, 0, 3, 0, 2, 12, 1
 	@ slot 47: bass -> square2
 	voice_square_2_alt 60, 0, 3, 0, 2, 12, 1
-	voice_keysplit voicegroup_strings_keysplit, keysplit_strings
+	@ slot 48: bass -> square2
+	voice_square_2_alt 60, 0, 3, 0, 2, 12, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -66,14 +79,16 @@ voice_group gb_vs_frontier_brain
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_keysplit voicegroup_trumpet_keysplit, keysplit_trumpet
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	@ slot 60: dropped
+	@ slot 56: dropped
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sd90_classical_distortion_guitar_low, 255, 165, 180, 165
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	@ slot 60: bass -> square2
+	voice_square_2_alt 60, 0, 3, 0, 2, 12, 1
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	@ slot 62: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -94,11 +109,13 @@ voice_group gb_vs_frontier_brain
 	@ slot 80: MELODY -> square1
 	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_2_alt 60, 0, 0, 0, 1, 6, 0
+	@ slot 82: counter (shares) -> square2
+	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
 	@ slot 83: counter (shares) -> square2
 	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
 	voice_square_2_alt 60, 0, 0, 0, 2, 6, 5
-	voice_square_1_alt 60, 0, 0, 0, 0, 1, 6, 0
+	@ slot 85: MELODY -> square1
+	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	@ slot 87: dropped
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
@@ -134,7 +151,8 @@ voice_group gb_vs_frontier_brain
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sd90_special_scream_drive, 255, 0, 255, 165
+	@ slot 120: not in the arrangement and not a PSG voice -- silenced
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0

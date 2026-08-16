@@ -139,16 +139,30 @@ def dungeon_maps():
     return found
 
 
-# Every static the object template builder reads to decide how many of a thing
-# to spawn. If PrepareFloor does not zero one of these before it branches, the
+# Every count the object template builder reads to decide how many of a thing to
+# spawn, plus the one that decides how many BURIED items the map header
+# publishes. If PrepareFloor does not clear one of these before it branches, the
 # arena path - which returns early, without ever reaching the placers - leaves
-# the PREVIOUS floor's value standing and the builder spawns that many objects at
-# last floor's coordinates.
+# the PREVIOUS floor's value standing.
 #
-# That shipped, and playing found it: boss and mini boss floors carried the
-# previous floor's event NPC, item balls, berry trees and mining rocks.
-PLACEMENT_COUNTERS = ('sRoomCount', 'sTrainerCount', 'sItemCount',
-                      'sBerryCount', 'sRockCount', 'sEventCount')
+# That shipped twice. The first four (item, berry, rock, event) spawned last
+# floor's objects on every boss and mini boss floor, and playing found it. The
+# fifth, hiddenCount, was never on this list at all: it is cleared only inside
+# PlaceHiddenItems, which the arena path never reaches, so a boss floor
+# published the previous floor's buried items through ApplyDungeonEvents - at
+# the previous floor's coordinates, and collectable, because RollNewFloorSeed
+# clears their flags.
+#
+# THE LIST IS NO LONGER THE GUARD. It is only what gets NAMED in the failure
+# message. The guard is that all of this state lives in one struct and the
+# prologue clears the struct whole - see check_counter_resets.
+PLACEMENT_COUNTERS = ('roomCount', 'trainerCount', 'itemCount',
+                      'berryCount', 'rockCount', 'eventCount', 'hiddenCount')
+
+# The struct the whole per-floor state lives in, and the clear that must appear
+# in PrepareFloor's prologue.
+FLOOR_STRUCT = 'RogueFloorState'
+FLOOR_OBJECT = 'sFloor' 
 
 
 def check_counter_resets(repo):
@@ -174,12 +188,46 @@ def check_counter_resets(repo):
     prologue = tail[:stop]
 
     fails = []
-    for name in PLACEMENT_COUNTERS:
-        if not re.search(r'\b%s\s*=\s*0\s*;' % name, prologue):
-            fails.append('%s is not zeroed in PrepareFloor before it branches, '
-                         'so a boss or mini boss floor keeps the previous '
-                         "floor's value and spawns objects that are not there"
-                         % name)
+    # 1. THE PROLOGUE MUST CLEAR THE WHOLE STRUCT. Anything narrower is a
+    #    hand-maintained list of what to reset, and this project has now been
+    #    bitten twice by such a list being one entry short.
+    if not re.search(r'CpuFill32\s*\(\s*0\s*,\s*&%s\s*,\s*sizeof\s*\(\s*%s\s*\)\s*\)'
+                     % (FLOOR_OBJECT, FLOOR_OBJECT), prologue):
+        fails.append(
+            'PrepareFloor does not clear the whole of %s before it branches. '
+            'The arena path returns before reaching the placers, so anything '
+            'left standing is the previous floor\'s' % FLOOR_OBJECT)
+
+    # 2. AND EVERY COUNTER MUST BE INSIDE IT. A counter declared as a loose
+    #    static is one the memset above cannot reach, which is how hiddenCount
+    #    was missed for as long as it was.
+    m = re.search(r'struct\s+%s\s*\{(.*?)\n\};' % FLOOR_STRUCT, src, re.S)
+    if m is None:
+        fails.append('could not find struct %s in src/rogue_dungeon.c'
+                     % FLOOR_STRUCT)
+    else:
+        members = m.group(1)
+        for name in PLACEMENT_COUNTERS:
+            if not re.search(r'\b%s\s*[;\[]' % name, members):
+                fails.append(
+                    '%s is not a member of struct %s, so PrepareFloor\'s clear '
+                    'does not reach it and a boss or mini boss floor keeps the '
+                    "previous floor's value" % (name, FLOOR_STRUCT))
+            if re.search(r'^EWRAM_DATA\s+static\s+[\w ]*\bs%s%s\b'
+                         % (name[0].upper(), name[1:]), src, re.M):
+                fails.append(
+                    '%s also exists as a loose EWRAM static - two counters with '
+                    'one name is worse than none' % name)
+
+    # 3. The struct must be a whole number of words, or CpuFill32 fills SHORT
+    #    and the tail keeps the previous floor's bytes. Asserted in C too;
+    #    checked here as well because that assert is easy to delete.
+    if 'sizeof(struct %s) %% 4 == 0' % FLOOR_STRUCT not in src:
+        fails.append(
+            'nothing asserts sizeof(struct %s) is a multiple of 4. CpuFill32 '
+            'fills sizeof/4 words and silently fills short otherwise'
+            % FLOOR_STRUCT)
+
     return fails
 
 

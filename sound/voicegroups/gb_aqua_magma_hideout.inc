@@ -43,7 +43,8 @@ voice_group gb_aqua_magma_hideout
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_fretless_bass, 255, 253, 0, 188
+	@ slot 35: copy of #8
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	@ slot 36: copy of #8
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -96,8 +97,10 @@ voice_group gb_aqua_magma_hideout
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	@ slot 82: bass -> square2
 	voice_square_2_alt 60, 0, 3, 0, 2, 12, 1
-	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_15, 0, 7, 15, 0
-	voice_square_1_alt 60, 0, 0, 0, 0, 1, 4, 1
+	@ slot 83: bass -> square2
+	voice_square_2_alt 60, 0, 3, 0, 2, 12, 1
+	@ slot 84: counter (shares) -> square2
+	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -139,6 +142,7 @@ voice_group gb_aqua_magma_hideout
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_noise_alt 60, 0, 0, 0, 1, 7, 1
+	@ slot 126: percussion -> noise
+	voice_noise_alt 60, 0, 1, 0, 1, 0, 2
 	@ slot 127: percussion -> noise
 	voice_noise_alt 60, 0, 1, 0, 1, 0, 2

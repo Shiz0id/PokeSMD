@@ -37,8 +37,10 @@ voice_group gb_encounter_girl
 	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
 	@ slot 25: dropped
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	voice_square_2 60, 0, 1, 0, 6, 0, 0
-	voice_square_1 60, 0, 0, 1, 0, 6, 0, 0
+	@ slot 26: counter (shares) -> square2
+	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
+	@ slot 27: dropped
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -94,7 +96,8 @@ voice_group gb_encounter_girl
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_6, 0, 7, 15, 0
+	@ slot 81: dropped
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -139,6 +142,7 @@ voice_group gb_encounter_girl
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_noise_alt 60, 0, 0, 0, 4, 1, 4
+	@ slot 126: percussion -> noise
+	voice_noise_alt 60, 0, 1, 0, 1, 0, 2
 	@ slot 127: percussion -> noise
 	voice_noise_alt 60, 0, 1, 0, 1, 0, 2

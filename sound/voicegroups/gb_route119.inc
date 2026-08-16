@@ -11,19 +11,15 @@ voice_group gb_route119
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1_alt 60, 0, 0, 2, 0, 7, 3, 3
-	voice_square_1_alt 60, 0, 0, 2, 0, 1, 4, 1
+	@ slot 4: dropped
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	@ slot 5: dropped
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_glockenspiel, 255, 204, 51, 242
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	@ slot 9: dropped
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -53,8 +49,17 @@ voice_group gb_route119
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_harp, 255, 242, 0, 242
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_timpani, 255, 0, 193, 239
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
+	@ slot 46: dropped
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
+	@ slot 47: dropped
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	@ slot 48: PAD -> wave
 	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_2, 1, 5, 14, 3
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -64,12 +69,14 @@ voice_group gb_route119
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_keysplit voicegroup_trumpet_keysplit, keysplit_trumpet
+	@ slot 56: bass -> square2
+	voice_square_2_alt 60, 0, 3, 0, 2, 12, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	@ slot 58: bass -> square2
 	voice_square_2_alt 60, 0, 3, 0, 2, 12, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_keysplit voicegroup_french_horn_keysplit, keysplit_french_horn
+	@ slot 60: PAD -> wave
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_2, 1, 5, 14, 3
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -94,9 +101,12 @@ voice_group gb_route119
 	@ slot 81: dropped
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_1_alt 60, 0, 0, 0, 0, 3, 3, 0
+	@ slot 83: dropped
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	@ slot 84: dropped
 	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
-	voice_square_2_alt 60, 0, 1, 0, 1, 4, 3
+	@ slot 85: counter (shares) -> square2
+	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_2_alt 60, 0, 0, 0, 2, 4, 0
+	@ slot 87: counter (shares) -> square2
+	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1

@@ -11,8 +11,10 @@ voice_group gb_encounter_swimmer
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_square_2_alt 60, 0, 2, 0, 1, 6, 1
-	voice_square_1_alt 60, 0, 0, 2, 0, 1, 6, 1
+	@ slot 4: counter -> square2
+	voice_square_2_alt 60, 0, 1, 0, 1, 10, 1
+	@ slot 5: MELODY (square_1 part) -> square1
+	voice_square_1_alt 60, 0, 0, 2, 0, 2, 13, 1
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -53,11 +55,13 @@ voice_group gb_encounter_swimmer
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_directsound 60, 0, DirectSoundWaveData_sc88pro_pizzicato_strings, 255, 216, 0, 165
+	@ slot 45: harp -> wave
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_1, 1, 4, 14, 3
 	@ slot 46: harp -> wave
 	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_1, 1, 4, 14, 3
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_keysplit voicegroup_strings_keysplit, keysplit_strings
+	@ slot 48: harp 2nd
+	voice_square_1_alt 60, 0, 0, 3, 0, 0, 0, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -69,7 +73,8 @@ voice_group gb_encounter_swimmer
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
-	voice_keysplit voicegroup_french_horn_keysplit, keysplit_french_horn
+	@ slot 60: harp -> wave
+	voice_programmable_wave_alt 60, 0, ProgrammableWaveData_1, 1, 4, 14, 3
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
@@ -140,4 +145,5 @@ voice_group gb_encounter_swimmer
 	voice_square_1 60, 0, 0, 2, 0, 0, 15, 0
 	@ slot 126: perc -> noise
 	voice_noise_alt 60, 0, 1, 0, 1, 0, 2
-	voice_noise_alt 60, 0, 0, 0, 1, 0, 2
+	@ slot 127: perc -> noise
+	voice_noise_alt 60, 0, 1, 0, 1, 0, 2

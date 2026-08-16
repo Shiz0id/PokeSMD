@@ -2131,4 +2131,15 @@ void RogueDungeon_Debug_ResetObjectCensus(void);
 // numbers from the last one.
 void RogueDungeon_GetDebugObjectCensus(u8 *dest);
 
+#if TESTING
+// Test-only, and compiled out of the shipping ROM. See the long note above the
+// definition in src/rogue_dungeon.c for what this guards and why it lives in
+// the ROM rather than in a host-side port.
+u32 RogueDungeon_Test_HashFloorPlacements(u16 floor, u16 seed);
+
+// Make the next PrepareFloor burn this many extra draws before the placers
+// run, so a test can prove ONE stray draw moves every object after it.
+void RogueDungeon_Test_SetStreamSkew(u8 draws);
+#endif
+
 #endif // GUARD_ROGUE_DUNGEON_H
