@@ -396,7 +396,12 @@ static const struct Usm_MenuItem sUsmMenuItems[USM_ICO_COUNT] = {
             .iconId = USM_ICO_SOUND,
             .template = &sSpriteTemplate_Sound,
             .sheet = &sSpriteSheet_Sound,
-            .label = COMPOUND_STRING("Sound"),
+            // "Jukebox", not "Sound": this opens the music player, and a track
+            // chosen there IS the location's music until it is stopped. The
+            // icon id and the RogueGbSounds_* internals keep their names -- GB
+            // Sounds is a real subsystem underneath and a different thing from
+            // this menu entry.
+            .label = COMPOUND_STRING("Jukebox"),
             // FALSE, like Debug. TRUE fades the screen out and tears the
             // overworld down, and the music player draws onto the field.
             .shouldFade = FALSE,
