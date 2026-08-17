@@ -424,12 +424,39 @@ static u16 UNUSED GetStandardFrameBaseTileNum(void)
 
 u8 AddMapNamePopUpWindow(void)
 {
+    return AddMapNamePopUpWindowAt(1);
+}
+
+// The same window, on either side of the screen. The GEN_5 plate spans the full
+// width and has no side to be on, so tilemapLeft is ignored there.
+//
+// Everything except the position is identical between the two -- size, palette
+// and base block especially, because the base block is what the frame tiles and
+// every other window's tiles are laid out around.
+u8 AddMapNamePopUpWindowAt(u8 tilemapLeft)
+{
+    // A pop-up queued behind another one reuses this window WITHOUT the old one
+    // ever having been removed: the incoming-pop-up path in
+    // Task_MapNamePopUpWindow skips STATE_ERASE entirely and re-enters
+    // STATE_PRINT. That is invisible while every plate sits in the same place,
+    // and wrong the moment two of them do not -- walk onto a new floor within a
+    // few seconds of leaving the music player and the FLOOR name would draw in
+    // the NOW PLAYING plate's corner. So a position change retires the window
+    // first, using the same teardown pair HideMapNamePopUpWindow uses.
+    if (sMapNamePopupWindowId != WINDOW_NONE
+     && OW_POPUP_GENERATION != GEN_5
+     && GetWindowAttribute(sMapNamePopupWindowId, WINDOW_TILEMAP_LEFT) != tilemapLeft)
+    {
+        ClearStdWindowAndFrame(sMapNamePopupWindowId, TRUE);
+        RemoveMapNamePopUpWindow();
+    }
+
     if (sMapNamePopupWindowId == WINDOW_NONE)
     {
         if (OW_POPUP_GENERATION == GEN_5)
             sMapNamePopupWindowId = AddWindowParameterized(0, 0, 0, 30, 3, 14, 0x107);
         else
-            sMapNamePopupWindowId = AddWindowParameterized(0, 1, 1, 10, 3, 14, 0x107);
+            sMapNamePopupWindowId = AddWindowParameterized(0, tilemapLeft, 1, 10, 3, 14, 0x107);
     }
     return sMapNamePopupWindowId;
 }

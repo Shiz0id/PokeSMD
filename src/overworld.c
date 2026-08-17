@@ -1,6 +1,7 @@
 #include "global.h"
 #include "constants/rogue_dungeon.h"
 #include "rogue_dungeon.h"
+#include "rogue_gb_sounds.h"
 #include "overworld.h"
 #include "battle_pyramid.h"
 #include "battle_setup.h"
@@ -1256,6 +1257,15 @@ u16 GetCurrLocationDefaultMusic(void)
 {
     u16 music;
 
+    // The music player's jukebox outranks the map. Answered here rather than in
+    // GetLocationMusic because it must beat the Route 111 sandstorm and Route
+    // 118 special cases below as well as the map header -- while a track is
+    // chosen, it IS this location's music, and everything downstream comparing
+    // against GetCurrentMapMusic() then finds nothing to change.
+    music = RogueGbSounds_GetJukeboxSong();
+    if (music != MUS_DUMMY)
+        return music;
+
     // Play the desert music only when the sandstorm is active on Route 111.
     if (gSaveBlock1Ptr->location.mapGroup == MAP_GROUP(MAP_ROUTE111)
      && gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_ROUTE111)
@@ -1278,7 +1288,15 @@ u16 GetCurrLocationDefaultMusic(void)
 
 u16 GetWarpDestinationMusic(void)
 {
-    u16 music = GetLocationMusic(&sWarpDestination);
+    // The jukebox, as in GetCurrLocationDefaultMusic. Both funnels must answer
+    // with it: this one is what the warp path compares against, and reporting
+    // the destination's own music here is what would fade the chosen track out
+    // on the way to the next floor.
+    u16 music = RogueGbSounds_GetJukeboxSong();
+    if (music != MUS_DUMMY)
+        return music;
+
+    music = GetLocationMusic(&sWarpDestination);
     if (music != MUS_ROUTE118)
     {
         return music;
@@ -1310,7 +1328,16 @@ void Overworld_PlaySpecialMapMusic(void)
     if (gDisableMapMusicChangeOnMapLoad == MUSIC_DISABLE_KEEP)
         return;
 
-    if (music != MUS_ABNORMAL_WEATHER && music != MUS_NONE)
+    // The surfing, underwater and savedMusic layers sit ON TOP of the location's
+    // music and would each quietly replace the jukebox track -- surfing off a
+    // dungeon floor being the realistic one. The jukebox is a deliberate choice
+    // by the player and beats all three.
+    //
+    // This is also the path that puts the track back after a battle: the battle
+    // BGM left sCurrentMapMusic elsewhere, so the comparison below finds a
+    // difference and re-issues the jukebox song.
+    if (music != MUS_ABNORMAL_WEATHER && music != MUS_NONE
+     && RogueGbSounds_GetJukeboxSong() == MUS_DUMMY)
     {
         if (gSaveBlock1Ptr->savedMusic)
             music = gSaveBlock1Ptr->savedMusic;
@@ -1336,6 +1363,15 @@ void Overworld_ClearSavedMusic(void)
 
 static void TransitionMapMusic(void)
 {
+    // Nothing transitions while the jukebox is on. Both funnels already report
+    // the jukebox track, so the comparison below would find no change in the
+    // ordinary case -- but the surfing branch further down rewrites newMusic
+    // AFTER that comparison, and a script that set its own music would leave
+    // sCurrentMapMusic pointing somewhere else. Returning here covers both;
+    // Overworld_PlaySpecialMapMusic puts the track back on the new map.
+    if (RogueGbSounds_GetJukeboxSong() != MUS_DUMMY)
+        return;
+
     if (gDisableMapMusicChangeOnMapLoad == MUSIC_DISABLE_STOP)
     {
         StopMapMusic();
@@ -1390,8 +1426,17 @@ u8 GetMapMusicFadeoutSpeed(void)
 
 void TryFadeOutOldMapMusic(void)
 {
-    u16 currentMusic = GetCurrentMapMusic();
-    u16 warpMusic = GetWarpDestinationMusic();
+    u16 currentMusic;
+    u16 warpMusic;
+
+    // The fade-out half of the warp, and the one that would actually be heard:
+    // without this the chosen track fades to silence on the way down a floor and
+    // TransitionMapMusic then has nothing to bring back.
+    if (RogueGbSounds_GetJukeboxSong() != MUS_DUMMY)
+        return;
+
+    currentMusic = GetCurrentMapMusic();
+    warpMusic = GetWarpDestinationMusic();
     if (FlagGet(FLAG_DONT_TRANSITION_MUSIC) != TRUE && warpMusic != GetCurrentMapMusic())
     {
         if (currentMusic == MUS_SURF

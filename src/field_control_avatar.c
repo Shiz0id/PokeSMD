@@ -47,6 +47,8 @@
 #include "constants/songs.h"
 #include "constants/trainer_hill.h"
 #include "rogue_dungeon.h"
+#include "rogue_gb_sounds.h"
+#include "rogue_music_player.h"
 
 static EWRAM_DATA u8 sWildEncounterImmunitySteps = 0;
 static EWRAM_DATA u16 sPrevMetatileBehavior = 0;
@@ -99,17 +101,62 @@ void FieldClearPlayerInput(struct FieldInput *input)
     input->tookStep = FALSE;
     input->pressedBButton = FALSE;
     input->pressedRButton = FALSE;
+    input->skipToNextTrack = FALSE;
+    input->skipToPrevTrack = FALSE;
     input->input_field_1_1 = FALSE;
     input->input_field_1_2 = FALSE;
     input->input_field_1_3 = FALSE;
     input->dpadDirection = 0;
 }
 
+// SELECT IS A MODIFIER AS WELL AS THE REGISTERED KEY ITEM BUTTON, so the item
+// has to act on RELEASE.
+//
+// It cannot act on the press: the press is always the FIRST half of SELECT+L/R,
+// so every skip would also throw whatever is registered -- and with two or more
+// items registered the press opens TxRegItemsMenu, which takes over input and
+// swallows the L or R outright, making the combo simply not work.
+//
+// sSelectHeld is what turns "SELECT is down" into "SELECT was just let go", and
+// sSelectConsumed remembers that this particular hold was spent on a skip.
+static bool8 sSelectHeld;
+static bool8 sSelectConsumed;
+
 void FieldGetPlayerInput(struct FieldInput *input, u16 newKeys, u16 heldKeys)
 {
     u8 tileTransitionState = gPlayerAvatar.tileTransitionState;
     u8 runningState = gPlayerAvatar.runningState;
     bool8 forcedMove = MetatileBehavior_IsForcedMovementTile(GetPlayerCurMetatileBehavior(runningState));
+    bool32 selectReleased;
+
+    // Forget the modifier whenever the field is not ours. Without this, SELECT
+    // released inside a menu or across a warp comes back as a stray item use on
+    // the first frame the player has control again -- this function keeps running
+    // while ProcessPlayerFieldInput is gated, so the held state would survive
+    // something that ate the release.
+    if (ArePlayerFieldControlsLocked())
+    {
+        sSelectHeld = FALSE;
+        sSelectConsumed = FALSE;
+    }
+
+    if (newKeys & SELECT_BUTTON)
+        sSelectConsumed = FALSE;
+
+    // Deliberately outside the movement guard below: skipping a track while
+    // running is fine, and gating it would make the combo drop presses at exactly
+    // the moments a player is most likely to use it.
+    if ((heldKeys & SELECT_BUTTON) && (newKeys & (L_BUTTON | R_BUTTON)))
+    {
+        if (newKeys & R_BUTTON)
+            input->skipToNextTrack = TRUE;
+        else
+            input->skipToPrevTrack = TRUE;
+        sSelectConsumed = TRUE;
+    }
+
+    selectReleased = (sSelectHeld && !(heldKeys & SELECT_BUTTON));
+    sSelectHeld = (heldKeys & SELECT_BUTTON) != 0;
 
     if ((tileTransitionState == T_TILE_CENTER && forcedMove == FALSE) || tileTransitionState == T_NOT_MOVING)
     {
@@ -117,7 +164,7 @@ void FieldGetPlayerInput(struct FieldInput *input, u16 newKeys, u16 heldKeys)
         {
             if (newKeys & START_BUTTON)
                 input->pressedStartButton = TRUE;
-            if (newKeys & SELECT_BUTTON)
+            if (selectReleased && !sSelectConsumed)
                 input->pressedSelectButton = TRUE;
             if (newKeys & A_BUTTON)
                 input->pressedAButton = TRUE;
@@ -159,6 +206,13 @@ void FieldGetPlayerInput(struct FieldInput *input, u16 newKeys, u16 heldKeys)
             input->DEBUG_OVERWORLD_TRIGGER_EVENT = FALSE;
         }
     }
+
+    // R also starts a DexNav search. Cancelled HERE rather than downstream
+    // because the press has not been acted on yet -- ProcessPlayerFieldInput
+    // runs later -- so SELECT+R skips a track and does not also begin a search
+    // and hide the NOW PLAYING plate on the way.
+    if (input->skipToNextTrack)
+        input->pressedRButton = FALSE;
 }
 
 int ProcessPlayerFieldInput(struct FieldInput *input)
@@ -238,6 +292,20 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
     // their side simply does not have this line. Keep it.
     if (input->tookStep && TryFindHiddenPokemon())
         return TRUE;
+
+    // SELECT+R / SELECT+L: skip through the music player's queue. Checked before
+    // the registered-item block below, though they cannot both be set on one
+    // frame -- FieldGetPlayerInput only reports SELECT once the hold ends, and
+    // only if that hold was not spent on a skip.
+    //
+    // Returns 0, not 1: a return of 1 makes the caller lock field controls, and
+    // skipping a track is not an event the player has to be released from.
+    if (input->skipToNextTrack || input->skipToPrevTrack)
+    {
+        if (RogueGbSounds_QueueAdvance(input->skipToNextTrack ? 1 : -1))
+            RogueMusicPlayer_ShowNowPlaying();
+        return 0;
+    }
 
     if (input->pressedSelectButton)
     {

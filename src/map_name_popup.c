@@ -43,14 +43,45 @@ enum MapPopUp_Themes_BW
     MAPPOPUP_THEME_BW_DEFAULT,
 };
 
+// WHAT THE PLATE IS ANNOUNCING.
+//
+// The map name is the only style that has somewhere to read its own string
+// from; anything else must be handed one. The style lives on the TASK rather
+// than in a module static because the task is what actually owns a pending
+// pop-up: ShowPopup hurries an outgoing plate offscreen and queues the new one
+// through tIncomingPopUp, so a static would be read by whichever plate happened
+// to draw next rather than by the one it was set for.
+//
+// Everything else here is shared on purpose. The GEN_3 slide is driven by
+// scrolling the whole of BG0 with REG_OFFSET_BG0VOFS, so a second pop-up task
+// would be writing that same register on the same frames and both plates would
+// judder. Sharing also gets the collision handling for free.
+enum MapPopUp_Style
+{
+    POPUP_STYLE_MAP,
+    POPUP_STYLE_NOW_PLAYING,
+};
+
+// Where the plate sits, in tiles. The frame is drawn OUTSIDE the window, from
+// x - 1 to x + width, so the left plate spans columns 0..11 and the right one
+// 18..29 -- mirrored, and both inside the 30 visible columns.
+#define POPUP_TILE_LEFT   1
+#define POPUP_TILE_RIGHT  19
+
 // static functions
 static void Task_MapNamePopUpWindow(u8 taskId);
 static void UpdateSecondaryPopUpWindow(u8 secondaryPopUpWindowId);
 static void ShowMapNamePopUpWindow(void);
 static void LoadMapNamePopUpWindowBg(void);
+static void ShowPopup(u8 style);
 
 // EWRAM
 EWRAM_DATA u8 gPopupTaskId = 0;
+
+// The jukebox track name, copied rather than pointed at. It must outlive the
+// music player's allocation -- freed on the same frame the pop-up is asked for
+// -- and survive the task's thirty-frame wait before anything is drawn.
+static EWRAM_DATA u8 sNowPlayingName[MAP_POPUP_NAME_BUFFER_LENGTH] = {0};
 
 // .rodata
 static const u8 sMapPopUp_Table[][960] =
@@ -364,8 +395,33 @@ enum {
 #define tYOffset       data[2]
 #define tIncomingPopUp data[3]
 #define tPrintTimer    data[4]
+#define tStyle         data[5]
 
 void ShowMapNamePopup(void)
+{
+    ShowPopup(POPUP_STYLE_MAP);
+}
+
+void ShowNowPlayingPopup(const u8 *trackName)
+{
+    u32 length = StringLength(trackName);
+
+    // Bounded because the source is a hand-written row in
+    // src/data/rogue_music_player.h and the destination is fixed. A name that
+    // outgrew this buffer would run off the end of it, so
+    // check_music_player_table.py asserts none does -- but a copy that trusts
+    // the table would turn that check being wrong into a memory bug rather than
+    // a truncated word.
+    if (length > MAP_POPUP_NAME_BUFFER_LENGTH - 1)
+        length = MAP_POPUP_NAME_BUFFER_LENGTH - 1;
+
+    StringCopyN(sNowPlayingName, trackName, length);
+    sNowPlayingName[length] = EOS;
+
+    ShowPopup(POPUP_STYLE_NOW_PLAYING);
+}
+
+static void ShowPopup(u8 style)
 {
     if (FlagGet(FLAG_HIDE_MAP_NAME_POPUP) != TRUE)
     {
@@ -387,6 +443,7 @@ void ShowMapNamePopup(void)
 
             gTasks[gPopupTaskId].tState = STATE_PRINT;
             gTasks[gPopupTaskId].tYOffset = POPUP_OFFSCREEN_Y;
+            gTasks[gPopupTaskId].tStyle = style;
         }
         else
         {
@@ -395,6 +452,10 @@ void ShowMapNamePopup(void)
             if (gTasks[gPopupTaskId].tState != STATE_SLIDE_OUT)
                 gTasks[gPopupTaskId].tState = STATE_SLIDE_OUT;
             gTasks[gPopupTaskId].tIncomingPopUp = TRUE;
+            // Safe to overwrite now: the outgoing plate was drawn when IT was
+            // shown and is only being scrolled away, so this reaches the
+            // incoming one and nothing else.
+            gTasks[gPopupTaskId].tStyle = style;
         }
     }
 }
@@ -581,8 +642,17 @@ static void ShowMapNamePopUpWindow(void)
     u8 x;
     const u8 *mapDisplayHeaderSource;
     u8 mapNamePopUpWindowId, secondaryPopUpWindowId;
+    bool32 nowPlaying = (gTasks[gPopupTaskId].tStyle == POPUP_STYLE_NOW_PLAYING);
 
-    if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE)
+    if (nowPlaying)
+    {
+        // Not a place, so none of the location branches below apply -- and the
+        // string was copied when the pop-up was asked for, because the caller's
+        // copy is gone by now.
+        withoutPrefixPtr = &(mapDisplayHeader[MAP_POPUP_PREFIX_BUFFER_LENGTH]);
+        StringCopy(withoutPrefixPtr, sNowPlayingName);
+    }
+    else if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE)
     {
         if (gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_TOP)
         {
@@ -618,7 +688,10 @@ static void ShowMapNamePopUpWindow(void)
     }
     else
     {
-        AddMapNamePopUpWindow();
+        // The only difference between the two plates: which side it sits on.
+        // Same size, same base block, same palette -- nothing about VRAM moves,
+        // so this cannot overlap the frame tiles or another window's blocks.
+        AddMapNamePopUpWindowAt(nowPlaying ? POPUP_TILE_RIGHT : POPUP_TILE_LEFT);
     }
 
     LoadMapNamePopUpWindowBg();
@@ -638,9 +711,49 @@ static void ShowMapNamePopUpWindow(void)
     }
     else
     {
-        u32 fontId = GetFontIdToFit(withoutPrefixPtr, FONT_NORMAL, -1, 80);
+        u32 fontId;
+        // Where the name sits. It drops to make room for the NOW PLAYING
+        // caption, which only the jukebox plate draws.
+        u8 nameY = 3;
+
+        if (nowPlaying)
+        {
+            // Without this the plate is ambiguous: a track name and a location
+            // name are drawn by the same code, in the same frame, in the same
+            // font -- so "ROUTE 209" reads as somewhere you just walked into.
+            //
+            // THE TWO LINES FIT EXACTLY, with nothing to spare. The plate is 3
+            // tiles = 24px, FONT_SMALL_NARROW is 8px and FONT_NORMAL is 16, so
+            // caption at y=0 and name at y=8 come to 24. Read the heights out
+            // of sFontInfos before changing either font or either y: FONT_SMALL
+            // is 12px, not 8, and using it here overflows the plate by 4px and
+            // overlaps the name -- which is what this comment exists to stop.
+            //
+            // The caption goes INSIDE the plate rather than above it because
+            // the window sits at tilemapTop 1 with its frame's top edge on row
+            // 0, already flush against the top of the screen. There is no row
+            // above it to draw in.
+            u8 caption[MAP_POPUP_STRING_BUFFER_LENGTH];
+            u8 *captionText = &(caption[MAP_POPUP_PREFIX_BUFFER_LENGTH]);
+
+            caption[0] = EXT_CTRL_CODE_BEGIN;
+            caption[1] = EXT_CTRL_CODE_BACKGROUND;
+            caption[2] = TEXT_COLOR_TRANSPARENT;
+            caption[3] = EXT_CTRL_CODE_BEGIN;
+            caption[4] = EXT_CTRL_CODE_ACCENT;
+            caption[5] = TEXT_COLOR_TRANSPARENT;
+            StringCopy(captionText, COMPOUND_STRING("NOW PLAYING"));
+
+            AddTextPrinterParameterized(
+                GetMapNamePopUpWindowId(), FONT_SMALL_NARROW, caption,
+                GetStringCenterAlignXOffset(FONT_SMALL_NARROW, captionText, 80),
+                0, TEXT_SKIP_DRAW, NULL);
+            nameY = 8;
+        }
+
+        fontId = GetFontIdToFit(withoutPrefixPtr, FONT_NORMAL, -1, 80);
         x = GetStringCenterAlignXOffset(fontId, withoutPrefixPtr, 80);
-        AddTextPrinterParameterized(GetMapNamePopUpWindowId(), fontId, mapDisplayHeader, x, 3, TEXT_SKIP_DRAW, NULL);
+        AddTextPrinterParameterized(GetMapNamePopUpWindowId(), fontId, mapDisplayHeader, x, nameY, TEXT_SKIP_DRAW, NULL);
         CopyWindowToVram(GetMapNamePopUpWindowId(), COPYWIN_FULL);
     }
 }

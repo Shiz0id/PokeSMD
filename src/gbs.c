@@ -780,6 +780,27 @@ void ply_gbs_switch(struct MusicPlayerInfo *mplayInfo, struct MusicPlayerTrack *
         gbsTrack->noteUnitLength = 1;
 
         // Disable m4a control of CGB channel.
+        //
+        // UNLINK IT FIRST. struct CgbChannel ends with track,
+        // prevChannelPointer and nextChannelPointer: CGB channels sit in the
+        // SAME per-track doubly linked channel list as the DirectSound ones,
+        // and RealClearChain is what m4a uses to take one out of it --
+        // prev->next = next, next->prev = prev, chan->track = NULL.
+        //
+        // Zeroing statusFlags alone leaves chan->track set and both links
+        // intact, while making the channel look FREE to m4a's allocator, whose
+        // test is statusFlags & SOUND_CHANNEL_SF_ON (0xC7). m4a then hands the
+        // same channel to another track and relinks it while the original
+        // track still points at it, so the list ends up inconsistent or
+        // cyclic -- and ply_fine walks it following nextChannelPointer, in
+        // interrupt context. A cycle there is an infinite loop with the sound
+        // engine wedged and the game still running.
+        //
+        // This needs m4a to be ACTIVELY holding this exact PSG channel at the
+        // instant a GBS track switches onto it, which is why it is rare and
+        // why it takes colliding sounds: reported as battle move sounds
+        // killing audio after several minutes of play.
+        ClearChain(&soundInfo->cgbChans[cgbChannel]);
         soundInfo->cgbChans[cgbChannel].statusFlags = 0;
 
         // Clear used bit. gUsedCGBChannels is a four-bit mask, set as
@@ -835,11 +856,29 @@ static void ClearCGBChannel(struct GBSTrack *track)
 #include "constants/gbs_songs.h"
 #if ENABLE_DEBUG_SOUND_CHECK_MENU == FALSE
 #include "event_data.h"
+#include "rogue_gb_sounds.h"
 #include "constants/flags.h"
 
 const struct Song *GetSong(u32 n)
 {
     const struct Song *song = &gSongTable[n];
+
+    // The music player's jukebox may be holding this song in a PSG REMIX -- an
+    // m4a arrangement on a PSG voicegroup, which song_table.inc's third column
+    // deliberately does not carry, so it is unreachable from a song number any
+    // other way. Checked before the flag because it IS the chosen arrangement,
+    // not an alternative the flag may select.
+    //
+    // Without this the remix survives being left alone but not being re-issued:
+    // it would silently become the plain m4a track the first time the map music
+    // was restarted, coming out of a battle for instance.
+    u16 forcedGbsId = RogueGbSounds_GetJukeboxForcedGbsId(n);
+
+    // Same bound as the branch below, and it matters just as much: this id
+    // reaches here from a hand-written table row.
+    if (forcedGbsId != GBS_MUSIC_NONE && forcedGbsId < GBS_MUSIC_COUNT)
+        return &gGBSSongTable[forcedGbsId];
+
     if (FlagGet(FLAG_SYS_GBS_ENABLED))
     {
         u16 gbsSongId = song->me;

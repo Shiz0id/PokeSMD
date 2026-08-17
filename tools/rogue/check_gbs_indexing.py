@@ -19,6 +19,13 @@ Both are "an index into an engine table", which this project's own notes call ou
 as something a data check cannot catch. So this checks the SOURCE, the way
 check_charms.py asserts a mirrored pair rather than a table value.
 
+Rule 2 is checked PER LOOKUP SITE, keyed on the expression each site indexes
+with. It used to count occurrences of the literal name "gbsSongId" and compare
+that count against the number of lookups, which failed in both directions the
+moment the jukebox added a third lookup under a different variable: it reported
+correct, bounded code as unbounded, and it would equally have PASSED a genuinely
+unbounded lookup as long as some other site still carried the string.
+
 Usage:  python3 tools/rogue/check_gbs_indexing.py [REPO | --repo PATH]
         python3 tools/rogue/check_gbs_indexing.py --selftest
 """
@@ -29,6 +36,11 @@ from pathlib import Path
 
 GBS_C = 'src/gbs.c'
 M4A_C = 'src/m4a.c'
+
+# How far above a gGBSSongTable lookup its bound may sit. Every real site guards
+# on the line immediately above; the nearest OTHER site is nine lines away, so
+# this window cannot let one lookup borrow a neighbour's bound and pass.
+GUARD_LINES = 4
 
 # Index expressions that are safe for a four-element array.
 SAFE_CGB_INDEX = re.compile(
@@ -75,18 +87,31 @@ def check(repo):
                         'four-bit mask, so a raw 4..7 shift clears nothing and '
                         'leaves the real bit set' % shift.strip())
 
-    # 3. Every gGBSSongTable index must be bounds-checked in the same condition.
-    n_idx = len(re.findall(r'gGBSSongTable\[', gbs))
-    n_bound = len(re.findall(r'gbsSongId < GBS_MUSIC_COUNT', gbs))
-    if n_idx == 0:
+    # 3. Every gGBSSongTable index must be bounds-checked in the condition
+    #    guarding it, against the SAME expression it is indexed with. See the
+    #    module docstring for why this is per-site rather than a count.
+    lines = gbs.split('\n')
+    sites = [(n, m.group(1).strip())
+             for n, line in enumerate(lines, 1)
+             for m in re.finditer(r'gGBSSongTable\[([^\]]+)\]', line)]
+    if not sites:
         return fail('gGBSSongTable is never indexed -- has GetSong moved?')
-    if n_bound < n_idx:
-        return fail('%d gGBSSongTable lookups but only %d bounded by '
-                    'GBS_MUSIC_COUNT -- an out-of-range id in song_table.inc '
-                    'would return garbage as a song header' % (n_idx, n_bound))
+
+    unbounded = []
+    for n, var in sites:
+        guard = '\n'.join(lines[max(0, n - 1 - GUARD_LINES):n])
+        if not re.search(r'%s\s*<\s*GBS_MUSIC_COUNT' % re.escape(var), guard):
+            unbounded.append('line %d, gGBSSongTable[%s]' % (n, var))
+    if unbounded:
+        return fail('%d of %d gGBSSongTable lookups have no "< GBS_MUSIC_COUNT" '
+                    'on the index expression within %d lines above them (%s) -- '
+                    'an out-of-range id in song_table.inc or the music player '
+                    'table would return garbage as a song header'
+                    % (len(unbounded), len(sites), GUARD_LINES,
+                       '; '.join(unbounded)))
 
     print('PASS  check_gbs_indexing.py  (cgbChans 4-safe, %d bounded '
-          'gGBSSongTable lookups)' % n_idx)
+          'gGBSSongTable lookups)' % len(sites))
     return True
 
 
@@ -102,8 +127,12 @@ def selftest(repo):
          lambda s: s.replace('~(1 << cgbChannel)', '~(1 << gbChannel)', 1)),
         ('the % 4 derivation removed', GBS_C,
          lambda s: s.replace('cgbChannel = gbChannel % 4', 'cgbChannel = gbChannel', 1)),
-        ('gGBSSongTable bound dropped', GBS_C,
+        # One case per lookup site, because the point of checking per site is
+        # that breaking ONE of them fires while the others still carry a bound.
+        ('gGBSSongTable bound dropped in GetSong', GBS_C,
          lambda s: s.replace(' && gbsSongId < GBS_MUSIC_COUNT', '', 1)),
+        ('gGBSSongTable bound dropped on the jukebox lookup', GBS_C,
+         lambda s: s.replace(' && forcedGbsId < GBS_MUSIC_COUNT', '', 1)),
         ('gCgbChans grown without re-reading this check', M4A_C,
          lambda s: s.replace('struct CgbChannel gCgbChans[4]',
                              'struct CgbChannel gCgbChans[8]', 1)),

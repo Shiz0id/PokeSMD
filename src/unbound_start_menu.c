@@ -38,6 +38,7 @@
 #include "palette.h"
 #include "party_menu.h"
 #include "pokedex.h"
+#include "rogue_music_player.h"
 #include "rtc.h"
 #include "safari_zone.h"
 #include "save_dialog.h"
@@ -303,7 +304,6 @@ static bool8 StartMenuPokedexCallback(void);
 static bool8 Usm_RogueCharmsCallback(void);
 extern const u8 RogueCharms_EventScript_ShowList[];
 static bool8 Usm_RogueGbSoundsCallback(void);
-extern const u8 RogueGbSounds_EventScript_Toggle[];
 static bool8 StartMenuPokemonCallback(void);
 static bool8 StartMenuBagCallback(void);
 static bool8 StartMenuPokeNavCallback(void);
@@ -397,7 +397,9 @@ static const struct Usm_MenuItem sUsmMenuItems[USM_ICO_COUNT] = {
             .template = &sSpriteTemplate_Sound,
             .sheet = &sSpriteSheet_Sound,
             .label = COMPOUND_STRING("Sound"),
-            .shouldFade = TRUE,
+            // FALSE, like Debug. TRUE fades the screen out and tears the
+            // overworld down, and the music player draws onto the field.
+            .shouldFade = FALSE,
             .callback = Usm_RogueGbSoundsCallback,
         },
     [USM_ICO_DEBUG] =
@@ -438,13 +440,18 @@ static bool8 Usm_RogueCharmsCallback(void)
     return TRUE;
 }
 
-// Today this only toggles GB Sounds. It hands off to a script for the same
-// reason the charm listing does: a msgbox is vanilla machinery, and the two
-// screens that would otherwise host it are both upstream forks. When this grows
-// into a music player it replaces the script, not this callback's shape.
+// Opens the music player DIRECTLY, the way StartMenuDebugCallback opens the
+// debug menu, and for the same reason: both are hosted on the overworld as
+// windows over the field.
+//
+// It was a script hand-off first, which was wrong twice over. The entry's
+// shouldFade tore the overworld down and faded out, so the menu drew into a
+// black screen; and lockall through special/waitstate did not hold the field,
+// so the overworld kept processing the same buttons the menu was reading. The
+// player now locks the field itself -- see RogueMusicPlayer_Open.
 static bool8 Usm_RogueGbSoundsCallback(void)
 {
-    ScriptContext_SetupScript(RogueGbSounds_EventScript_Toggle);
+    RogueMusicPlayer_Open();
     return TRUE;
 }
 

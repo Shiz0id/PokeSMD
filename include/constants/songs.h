@@ -543,6 +543,231 @@
 #define PH_NURSE_HELD               608
 #define PH_NURSE_SOLO               609
 
+// Test pair for the decompiled All-Instrument bank -- same MIDI, one per
+// sample bank. See tools/rogue/decompile_voicegroup.py.
+#define MUS_GM_ECRUTEAK             610
+#define MUS_GM_DIALGA               611
+#define MUS_GM_ECRUTEAK_CTRL        612
+
+// Imported from DIAMOND & PEARL by tools/rogue/import_midi_pack.py
+#define MUS_DPPT_BATTLE_CHAMPION    615
+#define MUS_DPPT_BATTLE_CYRUS       616
+#define MUS_DPPT_BATTLE_LAKE_POKEMON 617
+#define MUS_DPPT_BATTLE_LEAGUE      618
+#define MUS_DPPT_BATTLE_TEAM_GALACTIC 619
+#define MUS_DPPT_BATTLE_TRAINER     620
+#define MUS_DPPT_CANALAVE_CITY      621
+#define MUS_DPPT_CYNTHIAS_THEME     622
+#define MUS_DPPT_ENCOUNTER_BLACK_BELT 623
+#define MUS_DPPT_ENCOUNTER_RIVAL    624
+#define MUS_DPPT_ETERNA_CITY        625
+#define MUS_DPPT_ETERNA_FOREST      626
+#define MUS_DPPT_HEARTHOME_CITY     627
+#define MUS_DPPT_INTRO_FIRST_PART   628
+#define MUS_DPPT_INTRO_SECOND_PART  629
+#define MUS_DPPT_LAKE_THEME         630
+#define MUS_DPPT_OPENING            631
+#define MUS_DPPT_ROUTE_201          632
+#define MUS_DPPT_ROUTE_205          633
+#define MUS_DPPT_ROUTE_206          634
+#define MUS_DPPT_ROUTE_209          635
+#define MUS_DPPT_ROUTE_210          636
+#define MUS_DPPT_ROUTE_216          637
+#define MUS_DPPT_ROUTE_225          638
+#define MUS_DPPT_SANDGEM_TOWN       639
+#define MUS_DPPT_SOLACEON_TOWN_NIGHT 640
+#define MUS_DPPT_SUNYSHORE_CITY     641
+#define MUS_DPPT_SUPER_CONTEST      642
+#define MUS_DPPT_TWINLEAF_TOWN      643
+#define MUS_DPPT_VICTORY_WILD       644
+
+// Imported from MYSTERY DUNGEON by tools/rogue/import_midi_pack.py
+#define MUS_PMD_RAGGED_MOUNTAIN     645
+#define MUS_PMD_AT_THE_END_OF_THE_ROAD 646
+#define MUS_PMD_BOSS_BATTLE         647
+#define MUS_PMD_BURIED_RELIC        648
+#define MUS_PMD_DANGER_THERES_TROUBLE 649
+#define MUS_PMD_HAPPINESS           650
+#define MUS_PMD_HEARTWARMING        651
+#define MUS_PMD_KECLEON_SHOP        652
+#define MUS_PMD_MAGMA_CAVERN        653
+#define MUS_PMD_MONSTER_HOUSE       654
+#define MUS_PMD_MT_BLAZE            655
+#define MUS_PMD_MT_FREEZE           656
+#define MUS_PMD_MT_THUNDER          657
+#define MUS_PMD_PARTING_FAREWELL    658
+#define MUS_PMD_PERSONALITY_QUIZ    659
+#define MUS_PMD_RESCUE_TEAM_BASE    660
+#define MUS_PMD_AT_THE_END_OF_THE_DAY 661
+#define MUS_PMD_DARK_CRATER         662
+#define MUS_PMD_DIALGAS_FIGHT_TO_THE_FINISH 663
+#define MUS_PMD_DONT_EVER_FORGET    664
+#define MUS_PMD_DUSK_FOREST         665
+#define MUS_PMD_SECOND_DARK_MATTER_BATTLE 666
+#define MUS_PMD_SKY_PEAK_COAST      667
+
+// Imported from BLACK & WHITE by tools/rogue/import_midi_pack.py
+#define MUS_BW_ACCUMULA_TOWN        668
+#define MUS_BW_ANVILLE_TOWN         669
+#define MUS_BW_ASPERTIA_CITY        670
+#define MUS_BW_DRIFTVEIL_CITY       671
+#define MUS_BW_ENCOUNTER_ALDER      672
+#define MUS_BW_ENCOUNTER_BEAUTY     673
+#define MUS_BW_LEGENDARY            674
+#define MUS_BW_LENTIMAS_TOWN        675
+#define MUS_BW_NS_THEME             676
+#define MUS_BW_PLASMA_FRIGATE_DECK  677
+#define MUS_BW_ROUTE_10             678
+#define MUS_BW_ROUTE_2_3            679
+#define MUS_BW_ROUTE_4_5_16         680
+#define MUS_BW_ROUTE_GATE           681
+#define MUS_BW_VICTORY_IN_THE_PWT   682
+
+// Imported from HEARTGOLD/SOULSILVER by tools/rogue/import_midi_pack.py
+#define MUS_HGSS_AZALEA_TOWN        683
+#define MUS_HGSS_BATTLE_GYM_JOHTO   684
+#define MUS_HGSS_BATTLE_GYM_KANTO   685
+#define MUS_HGSS_BATTLE_TEAM_ROCKET 686
+#define MUS_HGSS_BURNED_TOWER       687
+#define MUS_HGSS_CELADON_CITY       688
+#define MUS_HGSS_CERULEAN_CITY      689
+#define MUS_HGSS_CHERRYGROVE_CITY   690
+#define MUS_HGSS_DARK_CAVE          691
+#define MUS_HGSS_ELMS_LAB           692
+#define MUS_HGSS_ENCOUNTER_RIVAL    693
+#define MUS_HGSS_GAME_CORNER        694
+#define MUS_HGSS_GOLDENROD_CITY     695
+#define MUS_HGSS_INDIGO_PLATEAU     696
+#define MUS_HGSS_LAVENDER_TOWN      697
+#define MUS_HGSS_LYRAS_THEME        698
+#define MUS_HGSS_MAIN_MENU          699
+#define MUS_HGSS_MART               700
+#define MUS_HGSS_NATIONAL_PARK      701
+#define MUS_HGSS_NEW_BARK_TOWN      702
+#define MUS_HGSS_POKEATHLON         703
+#define MUS_HGSS_POKEMON_CENTER     704
+#define MUS_HGSS_ROUTE_1            705
+#define MUS_HGSS_ROUTE_26           706
+#define MUS_HGSS_ROUTE_3            707
+#define MUS_HGSS_ROUTE_30           708
+#define MUS_HGSS_SS_AQUA            709
+#define MUS_HGSS_SPROUT_TOWER       710
+#define MUS_HGSS_UNION_CAVE         711
+#define MUS_HGSS_VIOLET_CITY        712
+#define MUS_HGSS_VIRIDIAN_CITY      713
+#define MUS_HGSS_VIRIDIAN_FOREST    714
+
+// Imported from POKEMON RANGER by tools/rogue/import_midi_pack.py
+#define MUS_RANGER_TEAM_DIM_SUN_SINIS_TRIO_BATTLE 715
+#define MUS_RANGER_VIEN_FOREST      716
+#define MUS_RANGER_ARCEUS_BATTLE    717
+#define MUS_RANGER_POKEMON_PINCHERS_ADMIN_BATTLE 718
+#define MUS_RANGER_FIORE_TEMPLE_PEAK 719
+#define MUS_RANGER_FIRST_CAPTURE    720
+#define MUS_RANGER_KROKKA_TUNNEL    721
+#define MUS_RANGER_LYRA_FOREST      722
+#define MUS_RANGER_RANGER_NET       723
+#define MUS_RANGER_TITLE_SCREEN     724
+
+// Imported from X & Y by tools/rogue/import_midi_pack.py
+#define MUS_XY_BATTLE_MAISON        725
+#define MUS_XY_BICYCLE_THEME        726
+#define MUS_XY_BOUTIQUE             727
+#define MUS_XY_ENCOUNTER_ACE_TRAINER 728
+#define MUS_XY_ENCOUNTER_RIVAL      729
+#define MUS_XY_LIVE_COMPETITION_THEME 730
+#define MUS_XY_POWER_PLANT          731
+#define MUS_XY_ROUTE_15             732
+
+// Imported from ORAS, SM & SWSH by tools/rogue/import_midi_pack.py
+#define MUS_MODERN_ORAS_SOARING_DREAMS 733
+#define MUS_MODERN_ORAS_SOARING_ILLUSIONS 734
+#define MUS_MODERN_ORAS_ZINNIA      735
+#define MUS_MODERN_SWSH_POSTWICK    736
+#define MUS_MODERN_SWSH_ROUTE_1_2   737
+#define MUS_MODERN_SWSH_STOW_ON_SIDE 738
+#define MUS_MODERN_USUM_HAUOLI_CITY_DAY 739
+#define MUS_MODERN_USUM_PO_TOWN     740
+#define MUS_MODERN_USUM_ROUTE_2     741
+#define MUS_MODERN_USUM_VAST_PONI_CANYON 742
+
+// Imported from GUEST TRACKS by tools/rogue/import_midi_pack.py
+#define MUS_GUEST_FINAL_FANTASY_1_VICTORY 743
+#define MUS_GUEST_FIRE_EMBLEM_7_STRIKE 744
+#define MUS_GUEST_GSC_ELMS_LAB      745
+#define MUS_GUEST_LIQUID_CRYSTAL_MT_SILVER 746
+#define MUS_GUEST_MMZX_ADVENT_DETERMINED_EYES 747
+#define MUS_GUEST_ROUTE_29_VGMUSIC_REMIX 748
+#define MUS_GUEST_SONIC_ADVANCE_3_CHAOS_ANGEL_MAP 749
+#define MUS_GUEST_SONIC_ADVENTURE_SADNESS_THEME 750
+#define MUS_GUEST_TCG_GRASS_CLUB    751
+
+// Imported from NICO by tools/rogue/import_midi_pack.py
+#define MUS_NICO_AEGIS_CAVE         752
+#define MUS_NICO_BRINE_CAVE         753
+#define MUS_NICO_BW_VS_LEGENDARY    754
+#define MUS_NICO_DUSK_FOREST        755
+#define MUS_NICO_LOOKER_THEME       756
+#define MUS_NICO_VS_CHAMPION_NEMONA 757
+#define MUS_NICO_VS_CIPHER_ADMIN    758
+#define MUS_NICO_VS_GYM_LEADER_REMIX 759
+#define MUS_NICO_WATERFALL_COLOSSEUM 760
+
+// Imported from JORTS ARRANGEMENTS by tools/rogue/import_midi_pack.py
+#define MUS_JORTS_A_FIFTH_OF_BEETHOVEN 761
+#define MUS_JORTS_ASTRAL_OBSERVATORY 762
+#define MUS_JORTS_BEEDLE_SHOP       763
+#define MUS_JORTS_BENEATH_THE_MASK  764
+#define MUS_JORTS_BIOLIZARD         765
+#define MUS_JORTS_CAMEL_BY_CAMEL    766
+#define MUS_JORTS_CIPHER_ADMIN_BATTLE 767
+#define MUS_JORTS_CLOCKTOWN_DAY_1   768
+#define MUS_JORTS_CORRIDORS_OF_TIME 769
+#define MUS_JORTS_DARK_WORLD        770
+#define MUS_JORTS_DRAGON_ROOST_ISLAND 771
+#define MUS_JORTS_ECHOES_SUTHORN_BEACH 772
+#define MUS_JORTS_FAREWELL_HYRULE_KING 773
+#define MUS_JORTS_FLASHING_LIGHTS   774
+#define MUS_JORTS_FLY_ME_TO_THE_MOON 775
+#define MUS_JORTS_FOREST_HAVEN      776
+#define MUS_JORTS_FOUR_GIANTS       777
+#define MUS_JORTS_GERUDO_DESERT     778
+#define MUS_JORTS_GERUDO_VALLEY     779
+#define MUS_JORTS_GET_LUCKY         780
+#define MUS_JORTS_GRANDPAS_HOUSE    781
+#define MUS_JORTS_GREAT_FAIRY_FOUNTAIN 782
+#define MUS_JORTS_HERO_OF_THE_WINDS 783
+#define MUS_JORTS_MARKET_MINISH_CAP 784
+#define MUS_JORTS_MARKET_OOT        785
+#define MUS_JORTS_MINISH_VILLAGE    786
+#define MUS_JORTS_MIPHAS_GRACE      787
+#define MUS_JORTS_MIRROR_B_OG       788
+#define MUS_JORTS_MOLGERA           789
+#define MUS_JORTS_MOONLIGHT_SONATA_3RD_MOVEMENT 790
+#define MUS_JORTS_OOT_TITLE_THEME   791
+#define MUS_JORTS_ORDON_VILLAGE     792
+#define MUS_JORTS_OUTSET_ISLAND     793
+#define MUS_JORTS_PINK_AND_WHITE    794
+#define MUS_JORTS_PIRATE_SHIP_INTERIOR 795
+#define MUS_JORTS_RAP_SNITCH_KNISHES 796
+#define MUS_JORTS_SCARS_OF_TIME     797
+#define MUS_JORTS_STONE_TOWER_TEMPLE 798
+#define MUS_JORTS_THE_LEGENDARY_HERO 799
+#define MUS_JORTS_WINDFALL_ISLAND   800
+#define MUS_JORTS_XD_PURIFICATION_CHAMBER 801
+
+// Imported from AQUA COMMUNITY by tools/rogue/import_midi_pack.py
+#define MUS_AQUA_FARM_TUNE          802
+
+// Imported from AQUA COMMUNITY by tools/rogue/import_midi_pack.py
+#define MUS_AQUA_JAZZY_SONG         803
+
+// Imported from AQUA COMMUNITY by tools/rogue/import_midi_pack.py
+#define MUS_AQUA_SADPOP             804
+
+// Imported from AQUA COMMUNITY by tools/rogue/import_midi_pack.py
+#define MUS_AQUA_TURNABOUT_SISTERS  805
+
 #define MUS_ROUTE118                0x7FFF  // Map is split into 2 music sections. controlled by GetCurrLocationDefaultMusic().
 
 #define MUS_NONE                    0xFFFF

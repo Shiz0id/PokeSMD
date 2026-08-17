@@ -67,3 +67,42 @@ tools/aif2pcm/aif2pcm
 *.smolTM
 __pycache__
 .map_version
+
+# ---------------------------------------------------------------------------
+# THIRD-PARTY AUDIO -- NOT OURS TO REDISTRIBUTE. Regenerate it locally.
+#
+# Same principle the decomp itself runs on: you supply your own assets and the
+# tools rebuild from them. Nothing below is committed, and nothing below needs
+# to be -- every file is reproducible in one command from a source you hold.
+# docs/AUDIO_CREDITS.md has the provenance of each pack and the exact commands.
+#
+# Instrument samples decompiled from "All-Instrument Patch (Emerald).ups". The
+# patch's own README says it samples the Windows MIDI instruments, i.e.
+# Microsoft/Roland gm.dls -- a different rights holder from the ROM, and the
+# patch author states no redistribution terms.
+sound/direct_sound_samples/ai_*.wav
+
+# Sample sets that arrived with the imported per-song voicegroups.
+sound/direct_sound_samples/dp_*.wav
+sound/direct_sound_samples/hg_*.wav
+sound/direct_sound_samples/kawai_*.wav
+
+# Imported arrangements. These are third-party COMPOSITIONS -- not only game
+# music; several are commercial works with active rights holders.
+sound/songs/midi/mus_bw_*.mid
+sound/songs/midi/mus_hgss_*.mid
+sound/songs/midi/mus_dppt_*.mid
+sound/songs/midi/mus_pmd_*.mid
+sound/songs/midi/mus_ranger_*.mid
+sound/songs/midi/mus_xy_*.mid
+sound/songs/midi/mus_modern_*.mid
+sound/songs/midi/mus_guest_*.mid
+sound/songs/midi/mus_nico_*.mid
+sound/songs/midi/mus_jorts_*.mid
+sound/songs/midi/mus_gm_*.mid
+# NOT `mus_aqua_*` -- that would also swallow vanilla mus_aqua_magma_hideout
+# and its _gb variant, which ARE ours to keep. Listed one by one instead.
+sound/songs/midi/mus_aqua_farm_tune.mid
+sound/songs/midi/mus_aqua_jazzy_song.mid
+sound/songs/midi/mus_aqua_sadpop.mid
+sound/songs/midi/mus_aqua_turnabout_sisters.mid

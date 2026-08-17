@@ -19,6 +19,12 @@ struct FieldInput
     bool8 input_field_1_5:1;
     bool8 input_field_1_6:1;
     bool8 input_field_1_7:1;
+    // SELECT+R and SELECT+L: skip through the music player's queue. Named bits
+    // rather than two of the input_field_1_* spares above, because those are an
+    // unlabelled pool upstream also draws from -- the debug menu already took
+    // input_field_1_2 -- and a collision in there is silent and unreadable.
+    bool8 skipToNextTrack:1;
+    bool8 skipToPrevTrack:1;
     u8 dpadDirection;
 };
 
