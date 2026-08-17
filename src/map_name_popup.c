@@ -712,9 +712,11 @@ static void ShowMapNamePopUpWindow(void)
     else
     {
         u32 fontId;
-        // Where the name sits. It drops to make room for the NOW PLAYING
-        // caption, which only the jukebox plate draws.
+        // Where the name sits, and which font family it starts from. Both drop
+        // to make room for the NOW PLAYING caption, which only the jukebox
+        // plate draws.
         u8 nameY = 3;
+        u32 nameFont = FONT_NORMAL;
 
         if (nowPlaying)
         {
@@ -722,12 +724,24 @@ static void ShowMapNamePopUpWindow(void)
             // name are drawn by the same code, in the same frame, in the same
             // font -- so "ROUTE 209" reads as somewhere you just walked into.
             //
-            // THE TWO LINES FIT EXACTLY, with nothing to spare. The plate is 3
-            // tiles = 24px, FONT_SMALL_NARROW is 8px and FONT_NORMAL is 16, so
-            // caption at y=0 and name at y=8 come to 24. Read the heights out
-            // of sFontInfos before changing either font or either y: FONT_SMALL
-            // is 12px, not 8, and using it here overflows the plate by 4px and
-            // overlaps the name -- which is what this comment exists to stop.
+            // DO NOT SIZE THIS LAYOUT FROM sFontInfos. maxLetterHeight there is
+            // the LINE ADVANCE, not what gets blitted -- FONT_SMALL_NARROW
+            // declares 8 and draws gCurGlyph.height = 12. Sizing from the
+            // declared 8 is exactly how the caption ended up sitting four rows
+            // on top of the name on hardware. The real heights are in
+            // DecompressGlyph_*:
+            //
+            //     FONT_SMALL_NARROW   declares  8   DRAWS 12
+            //     FONT_NORMAL         declares 16   DRAWS 15
+            //     FONT_SHORT family   declares 14   DRAWS 14
+            //
+            // The plate is 3 tiles = 24px, so caption + FONT_NORMAL needs 27
+            // and cannot fit at any offset. The name therefore starts from
+            // FONT_SHORT, whose narrowing chain (SHORT -> SHORT_NARROW ->
+            // SHORT_NARROWER) is 14px throughout, and sits at y=10:
+            // 10 + 14 = 24 exactly, nothing clipped. The two rows it shares
+            // with the caption are the caption's empty tail -- "NOW PLAYING" is
+            // uppercase and its ink stops well short of row 12.
             //
             // The caption goes INSIDE the plate rather than above it because
             // the window sits at tilemapTop 1 with its frame's top edge on row
@@ -748,10 +762,11 @@ static void ShowMapNamePopUpWindow(void)
                 GetMapNamePopUpWindowId(), FONT_SMALL_NARROW, caption,
                 GetStringCenterAlignXOffset(FONT_SMALL_NARROW, captionText, 80),
                 0, TEXT_SKIP_DRAW, NULL);
-            nameY = 8;
+            nameY = 10;
+            nameFont = FONT_SHORT;
         }
 
-        fontId = GetFontIdToFit(withoutPrefixPtr, FONT_NORMAL, -1, 80);
+        fontId = GetFontIdToFit(withoutPrefixPtr, nameFont, -1, 80);
         x = GetStringCenterAlignXOffset(fontId, withoutPrefixPtr, 80);
         AddTextPrinterParameterized(GetMapNamePopUpWindowId(), fontId, mapDisplayHeader, x, nameY, TEXT_SKIP_DRAW, NULL);
         CopyWindowToVram(GetMapNamePopUpWindowId(), COPYWIN_FULL);
