@@ -1,0 +1,349 @@
+#include "global.h"
+#include "bg.h"
+#include "gpu_regs.h"
+#include "main.h"
+#include "palette.h"
+#include "scanline_effect.h"
+#include "sprite.h"
+#include "task.h"
+#include "trig.h"
+#include "constants/rgb.h"
+#include "rogue_mode7.h"
+
+// Mode 7 ground plane.
+//
+// The whole technique is one idea: BG2 is an affine background, and the affine
+// registers are rewritten every scanline so that each row of the screen samples
+// the plane at a different scale. Rows near the horizon sample a long way out,
+// rows near the bottom sample close by, and the result reads as a floor.
+//
+// Tonc chapter 21 is the reference. Two things from it matter here:
+//
+//   lambda = z/D = camera_height / h        (eq 20.2, h = rows below horizon)
+//
+// and the ordering rule, which is the part that fails silently: BG2X must be
+// derived from the ALREADY-ROUNDED BG2PA, because the rounded PA is what the
+// hardware accumulates across the scanline. Deriving it from the unrounded
+// scale compiles, looks nearly right, and shears every row.
+//
+// The host-side prototype in tools/mode7/ rendered all of this before any of it
+// was written, and measured the two limits that shape the camera:
+//
+//   * REG_BG2PA is s16 in .8, so it cannot express a scale above 127.996. That
+//     is reached on the rows closest to the horizon, and the higher the camera
+//     the more rows are affected. Those rows are parked rather than clamped --
+//     see BuildScanlineTable.
+//   * Camera height 64-96 is the clean window. Below that, lambda quantised
+//     coarsely starts repeating between adjacent scanlines.
+
+#define MODE7_PLANE_TILES 64                    // 512x512 px = 64x64 tiles
+#define MODE7_CHAR_BASE   0
+#define MODE7_SCREEN_BASE 8                     // 2 KB units; the map needs two
+
+// Four words is the whole affine set: PA, PB, PC, PD, X, Y.
+// DMA_DEST_RELOAD means "increment across the transfer, then reload", which is
+// exactly right for four consecutive registers repeated every scanline.
+#define MODE7_DMA_CONTROL                                                      \
+    (((DMA_ENABLE | DMA_START_HBLANK | DMA_REPEAT | DMA_SRC_INC                \
+       | DMA_DEST_RELOAD | DMA_32BIT) << 16) | 4)
+
+// (1 << 16) / h, so a division per scanline becomes a multiply and a shift.
+// Index is rows below the horizon; entry 0 is never read.
+static const u32 sInvH[DISPLAY_HEIGHT] =
+{
+    0, 65536, 32768, 21845, 16384, 13107, 10922, 9362, 8192, 7281, 6553,
+    5957, 5461, 5041, 4681, 4369, 4096, 3855, 3640, 3449, 3276, 3120, 2978,
+    2849, 2730, 2621, 2520, 2427, 2340, 2259, 2184, 2114, 2048, 1985, 1927,
+    1872, 1820, 1771, 1724, 1680, 1638, 1598, 1560, 1524, 1489, 1456, 1424,
+    1394, 1365, 1337, 1310, 1285, 1260, 1236, 1213, 1191, 1170, 1149, 1129,
+    1110, 1092, 1074, 1057, 1040, 1024, 1008, 992, 978, 963, 949, 936, 923,
+    910, 897, 885, 873, 862, 851, 840, 829, 819, 809, 799, 789, 780, 771,
+    762, 753, 744, 736, 728, 720, 712, 704, 697, 689, 682, 675, 668, 661,
+    655, 648, 642, 636, 630, 624, 618, 612, 606, 601, 595, 590, 585, 579,
+    574, 569, 564, 560, 555, 550, 546, 541, 537, 532, 528, 524, 520, 516,
+    512, 508, 504, 500, 496, 492, 489, 485, 481, 478, 474, 471, 468, 464,
+    461, 458, 455, 451, 448, 445, 442, 439, 436, 434, 431, 428, 425, 422,
+    420, 417, 414, 412
+};
+
+static EWRAM_DATA ALIGNED(4) struct Mode7Scanline sScanlineTable[DISPLAY_HEIGHT] = {0};
+static EWRAM_DATA struct Mode7Camera sCamera = {0};
+
+static void VBlankCB_Mode7(void);
+static void MainCB2_Mode7(void);
+static void BuildPlane(void);
+static void ApplyScanline(const struct Mode7Scanline *line);
+
+// ---------------------------------------------------------------------------
+
+void RogueMode7_BuildScanlineTable(const struct Mode7Camera *cam)
+{
+    s32 cosYaw = gSineTable[(cam->yaw + 64) & 0xFF];    // Q8.8
+    s32 sinYaw = gSineTable[cam->yaw & 0xFF];           // Q8.8
+    s32 row;
+
+    for (row = 0; row < DISPLAY_HEIGHT; row++)
+    {
+        struct Mode7Scanline *out = &sScanlineTable[row];
+        s32 h = row - cam->horizon;
+        s32 lambda, pa, pc, z, centreX, centreZ;
+
+        // Above the horizon there is no ground. Park the sampler instead of
+        // leaving stale values: a stale row shows last frame's ground floating
+        // in the sky.
+        if (h < 1)
+        {
+            out->pa = 0;
+            out->pb = 0;
+            out->pc = 0;
+            out->pd = 0;
+            out->x = 0;
+            out->y = 0;
+            continue;
+        }
+
+        // lambda = height / h. sInvH is (1 << 16) / h, so the product is
+        // Q24.24 and a >> 16 brings it back to Q24.8.
+        lambda = (s32)(((u32)cam->height * sInvH[h]) >> 16);
+
+        // The rows nearest the horizon want a scale REG_BG2PA cannot hold.
+        // Park them rather than let them clamp: a clamped PA shears the row
+        // visibly, while a parked one is a flat band the horizon haze covers.
+        // |pa| <= lambda because |cos| <= 1, so testing lambda is sufficient.
+        if (lambda > 32767)
+        {
+            out->pa = 0;
+            out->pb = 0;
+            out->pc = 0;
+            out->pd = 0;
+            out->x = 0;
+            out->y = 0;
+            continue;
+        }
+
+        pa = (lambda * cosYaw) >> 8;
+        pc = (-lambda * sinYaw) >> 8;
+        z = lambda * MODE7_PROJ_D;                      // forward distance, Q24.8
+
+        // Where the centre of this scanline lands on the plane.
+        centreX = cam->x + ((z * sinYaw) >> 8);
+        centreZ = cam->z + ((z * cosYaw) >> 8);
+
+        // Tonc "Type C". Take the half-screen offset back out using pa and pc
+        // as they will actually be written, not using lambda. This single
+        // detail is the difference between a clean plane and one that shears.
+        out->pa = pa;
+        out->pb = 0;
+        out->pc = pc;
+        out->pd = 0;
+        out->x = centreX - (DISPLAY_WIDTH / 2) * pa;
+        out->y = centreZ - (DISPLAY_WIDTH / 2) * pc;
+    }
+}
+
+static void ApplyScanline(const struct Mode7Scanline *line)
+{
+    SetGpuReg(REG_OFFSET_BG2PA, line->pa);
+    SetGpuReg(REG_OFFSET_BG2PB, line->pb);
+    SetGpuReg(REG_OFFSET_BG2PC, line->pc);
+    SetGpuReg(REG_OFFSET_BG2PD, line->pd);
+    SetGpuReg(REG_OFFSET_BG2X_L, line->x & 0xFFFF);
+    SetGpuReg(REG_OFFSET_BG2X_H, line->x >> 16);
+    SetGpuReg(REG_OFFSET_BG2Y_L, line->y & 0xFFFF);
+    SetGpuReg(REG_OFFSET_BG2Y_H, line->y >> 16);
+}
+
+void RogueMode7_ArmHBlankDma(void)
+{
+    DmaStop(0);
+
+    // The first HBlank DMA fires AFTER scanline 0 has been drawn, so it feeds
+    // scanline 1. Point the DMA at entry 1 and write entry 0 by hand -- the
+    // same off-by-one scanline_effect.c handles the same way.
+    DmaSet(0, &sScanlineTable[1], (void *)REG_ADDR_BG2PA, MODE7_DMA_CONTROL);
+    ApplyScanline(&sScanlineTable[0]);
+}
+
+void RogueMode7_Stop(void)
+{
+    DmaStop(0);
+}
+
+// ---------------------------------------------------------------------------
+// Testbed
+// ---------------------------------------------------------------------------
+
+// A checkerboard with a bordered tile and a coarse accent grid. Flat colour
+// hides shear; borders and a grid do not, which is the entire point of testing
+// against this rather than against art.
+static void BuildPlane(void)
+{
+    ALIGNED(4) u8 tile[64];
+    ALIGNED(4) u8 row[MODE7_PLANE_TILES];
+    u32 i, x, y;
+
+    // VRAM rejects 8-bit writes, so every tile and every map row is assembled
+    // in RAM and copied as words. Writing a u8 straight to VRAM here would
+    // corrupt the neighbouring byte instead of failing.
+    for (i = 0; i < 64; i++)
+    {
+        bool32 edge = (i < 8) || (i >= 56) || ((i & 7) == 0) || ((i & 7) == 7);
+        tile[i] = edge ? 2 : 1;
+    }
+    CpuCopy32(tile, (void *)(BG_CHAR_ADDR(MODE7_CHAR_BASE) + 1 * 64), 64);
+
+    for (i = 0; i < 64; i++)
+    {
+        bool32 edge = (i < 8) || (i >= 56) || ((i & 7) == 0) || ((i & 7) == 7);
+        tile[i] = edge ? 1 : 3;
+    }
+    CpuCopy32(tile, (void *)(BG_CHAR_ADDR(MODE7_CHAR_BASE) + 2 * 64), 64);
+
+    for (i = 0; i < 64; i++)
+        tile[i] = 4;
+    CpuCopy32(tile, (void *)(BG_CHAR_ADDR(MODE7_CHAR_BASE) + 3 * 64), 64);
+
+    // Affine map entries are ONE BYTE each -- no priority, no palette bank, no
+    // flip. That byte is why the plane is capped at 256 distinct tiles.
+    for (y = 0; y < MODE7_PLANE_TILES; y++)
+    {
+        for (x = 0; x < MODE7_PLANE_TILES; x++)
+        {
+            if ((x % 8) == 0 || (y % 8) == 0)
+                row[x] = 3;
+            else
+                row[x] = ((x ^ y) & 1) ? 1 : 2;
+        }
+        CpuCopy32(row,
+                  (void *)(BG_SCREEN_ADDR(MODE7_SCREEN_BASE)
+                           + y * MODE7_PLANE_TILES),
+                  MODE7_PLANE_TILES);
+    }
+}
+
+static void SetPlanePalette(void)
+{
+    static const u16 sPal[] = {
+        RGB(0, 0, 0),        // 0 unused by the plane; the backdrop colour
+        RGB(24, 20, 14),     // 1 light check
+        RGB(14, 11, 8),      // 2 dark check / tile border
+        RGB(8, 7, 12),       // 3 accent grid
+        RGB(31, 28, 16),     // 4 marker
+    };
+
+    LoadPalette(sPal, BG_PLTT_ID(0), sizeof(sPal));
+}
+
+static void VBlankCB_Mode7(void)
+{
+    LoadOam();
+    ProcessSpriteCopyRequests();
+    TransferPlttBuffer();
+
+    // Built here rather than in the main loop so nothing writes the table
+    // while the DMA is walking it. The table is single-buffered to keep it to
+    // 2,560 bytes of EWRAM; if this ever overruns VBlank the fix is to double
+    // buffer and build outside it, at 2,560 bytes more.
+    RogueMode7_BuildScanlineTable(&sCamera);
+    RogueMode7_ArmHBlankDma();
+}
+
+static void MainCB2_Mode7(void)
+{
+    s32 cosYaw = gSineTable[(sCamera.yaw + 64) & 0xFF];
+    s32 sinYaw = gSineTable[sCamera.yaw & 0xFF];
+    s32 speed = 0;
+
+    if (JOY_HELD(DPAD_UP))
+        speed = 3 << 8;
+    else if (JOY_HELD(DPAD_DOWN))
+        speed = -(3 << 8);
+
+    if (speed != 0)
+    {
+        sCamera.x += (speed * sinYaw) >> 8;
+        sCamera.z += (speed * cosYaw) >> 8;
+    }
+
+    if (JOY_HELD(DPAD_LEFT))
+        sCamera.yaw--;
+    if (JOY_HELD(DPAD_RIGHT))
+        sCamera.yaw++;
+
+    // Altitude is the interesting axis to be able to sweep by hand: it is what
+    // decides how many rows near the horizon get parked.
+    if (JOY_HELD(R_BUTTON) && sCamera.height < (200 << 8))
+        sCamera.height += (1 << 8);
+    if (JOY_HELD(L_BUTTON) && sCamera.height > (8 << 8))
+        sCamera.height -= (1 << 8);
+
+    if (JOY_HELD(B_BUTTON) && sCamera.horizon > 8)
+        sCamera.horizon--;
+    if (JOY_HELD(A_BUTTON) && sCamera.horizon < DISPLAY_HEIGHT - 8)
+        sCamera.horizon++;
+
+    RunTasks();
+    AnimateSprites();
+    BuildOamBuffer();
+    UpdatePaletteFade();
+}
+
+void CB2_RogueMode7Test(void)
+{
+    switch (gMain.state)
+    {
+    default:
+    case 0:
+        SetVBlankCallback(NULL);
+        RogueMode7_Stop();
+        ScanlineEffect_Stop();
+
+        SetGpuReg(REG_OFFSET_DISPCNT, 0);
+        SetGpuReg(REG_OFFSET_BG0CNT, 0);
+        SetGpuReg(REG_OFFSET_BG1CNT, 0);
+        SetGpuReg(REG_OFFSET_BG2CNT, 0);
+        SetGpuReg(REG_OFFSET_BG3CNT, 0);
+        SetGpuReg(REG_OFFSET_BLDCNT, 0);
+        DmaFill16(3, 0, (void *)VRAM, VRAM_SIZE);
+        DmaFill32(3, 0, (void *)OAM, OAM_SIZE);
+        DmaFill16(3, 0, (void *)PLTT, PLTT_SIZE);
+        ResetPaletteFade();
+        ResetTasks();
+        ResetSpriteData();
+        gMain.state = 1;
+        break;
+    case 1:
+        BuildPlane();
+        SetPlanePalette();
+
+        sCamera.x = 256 << 8;
+        sCamera.z = 0;
+        sCamera.height = 88 << 8;   // inside the clean window the proto measured
+        sCamera.yaw = 0;
+        sCamera.horizon = 48;
+        gMain.state = 2;
+        break;
+    case 2:
+        // BGCNT_WRAP is what makes the flight endless: without it the plane is
+        // transparent outside its 512x512, instead of tiling.
+        SetGpuReg(REG_OFFSET_BG2CNT, BGCNT_PRIORITY(1)
+                                   | BGCNT_CHARBASE(MODE7_CHAR_BASE)
+                                   | BGCNT_SCREENBASE(MODE7_SCREEN_BASE)
+                                   | BGCNT_256COLOR
+                                   | BGCNT_AFF512x512
+                                   | BGCNT_WRAP);
+
+        RogueMode7_BuildScanlineTable(&sCamera);
+        RogueMode7_ArmHBlankDma();
+
+        SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_MODE_1
+                                    | DISPCNT_OBJ_1D_MAP
+                                    | DISPCNT_BG2_ON
+                                    | DISPCNT_OBJ_ON);
+        EnableInterrupts(INTR_FLAG_VBLANK);
+        SetVBlankCallback(VBlankCB_Mode7);
+        SetMainCallback2(MainCB2_Mode7);
+        gMain.state = 0;
+        break;
+    }
+}

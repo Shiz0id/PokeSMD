@@ -16,7 +16,10 @@ cd "$(dirname "$0")/../.." || exit 2
 repo="$PWD"
 fail=0
 
-for f in tools/rogue/check_*.py tools/rogue/verify_*.py; do
+# tools/mode7/ is globbed too. A check that lives beside its subject but is not
+# reached by this runner is worth nothing -- which is exactly what happened to
+# the four verify_*.py above. New tool directories go on this line.
+for f in tools/rogue/check_*.py tools/rogue/verify_*.py tools/mode7/check_*.py; do
     base="$(basename "$f")"
     if echo "$POSITIONAL" | grep -qw "$base"; then
         out="$(python3 "$f" "$repo" 2>&1)"
