@@ -33,6 +33,8 @@
 #include "constants/rgb.h"
 #include "constants/trainers.h"
 #include "constants/union_room.h"
+#include "rogue_journal.h"
+#include "rogue_dungeon.h"
 
 enum {
     WIN_MSG,
@@ -72,6 +74,26 @@ struct TrainerCardData
     u8 textNumLinkPokeblocks[70];
     u8 textNumLinkContests[70];
     u8 textBattleFacilityStat[70];
+    // The run journal's page, rendered up front by BufferJournalPage and only
+    // printed by the back's print state machine. See RogueJournal_BufferLine for
+    // why expanding inside the print path is not an option.
+    //
+    // hasJournal is the SINGLE GATE, and it is the link guard: it is assigned in
+    // exactly one place, under !sData->isLink, and every site that draws or
+    // reads the journal tests it. Without that, a partner's card would render
+    // THIS console's run history under THEIR name - the journal comes from
+    // SaveBlock3, which is always the local player's, while every other field on
+    // the back comes from the received struct TrainerCard.
+    bool8 hasJournal;
+    u8 journalRows;   // how many of the arrays below are filled, 0..PAGE
+    u8 journalPage;   // 0 is the NEWEST page, which is where the card opens
+    // Cached at card setup rather than recomputed per frame. Nothing can append
+    // while the card is open - it is a full-screen callback with no script
+    // running behind it - so the count cannot move under the paging.
+    u8 journalPages;
+    u8 journalLines[ROGUE_JOURNAL_ROWS_PER_PAGE][ROGUE_JOURNAL_LINE_LENGTH];
+    u8 journalFloor[ROGUE_JOURNAL_ROWS_PER_PAGE];      // 0 = draw no floor tag
+    bool8 journalSeparator[ROGUE_JOURNAL_ROWS_PER_PAGE];
     u16 monIconPal[16 * PARTY_SIZE];
     s8 flipBlendY;
     bool8 timeColonNeedDraw;
@@ -155,6 +177,9 @@ static void BufferLinkPokeblocksNum(void);
 static void BufferLinkContestNum(void);
 static void BufferBattleFacilityStats(void);
 static void PrintStatOnBackOfCard(u8 top, const u8 *str1, u8 *str2, const u8 *color);
+static void BufferJournalPage(void);
+static void PrintJournalOnCardBack(void);
+static bool8 TryChangeJournalPage(void);
 static void LoadStickerGfx(void);
 static u8 SetCardBgsAndPals(void);
 static void DrawCardBackStats(void);
@@ -373,6 +398,14 @@ static void CloseTrainerCard(u8 taskId)
 #define STATE_CLOSE_CARD          14
 #define STATE_WAIT_LINK_PARTNER   15
 #define STATE_CLOSE_CARD_LINK     16
+// Turning a journal page. TWO STATES AND NOT A LOOP: PrintAllOnCardBack is a
+// state machine that draws one step per frame, and the only place in this file
+// that runs its steps back to back is Task_DrawFlippedCardSide, which does so
+// only when !gReceivedRemoteLinkPlayers - that exception exists for the link
+// timing, not as a licence to draw synchronously. Paging reuses the same
+// per-frame budget the first draw was built around.
+#define STATE_REDRAW_BACK_CLEAR   17
+#define STATE_REDRAW_BACK_PRINT   18
 
 static void Task_TrainerCard(u8 taskId)
 {
@@ -470,6 +503,16 @@ static void Task_TrainerCard(u8 taskId)
         }
         break;
     case STATE_HANDLE_INPUT_BACK:
+        // BEFORE the A and B handling, and it consumes nothing they use: the
+        // d-pad is unbound on both sides of this card, so paging displaces no
+        // existing control. A still closes and B still flips.
+        if (TryChangeJournalPage())
+        {
+            PlaySE(SE_SELECT);
+            sData->mainState = STATE_REDRAW_BACK_CLEAR;
+            break;
+        }
+
         if (JOY_NEW(B_BUTTON))
         {
             if (gReceivedRemoteLinkPlayers && sData->isLink && InUnionRoom() == TRUE)
@@ -524,6 +567,28 @@ static void Task_TrainerCard(u8 taskId)
         {
             sData->mainState = STATE_HANDLE_INPUT_FRONT;
             PlaySE(SE_RG_CARD_OPEN);
+        }
+        break;
+    // Re-renders the back in place. No flip, no BG0 scroll, no HBlank work -
+    // the card is already face down and only the text layer changes.
+    case STATE_REDRAW_BACK_CLEAR:
+        FillWindowPixelBuffer(WIN_CARD_TEXT, PIXEL_FILL(0));
+        // Re-expanded for the new page BEFORE anything prints, for the reason
+        // RogueJournal_BufferLine gives: it goes through gStringVar1 and 2, and
+        // the print path uses those too.
+        BufferJournalPage();
+        // Set explicitly rather than trusted. PrintAllOnCardBack resets it on
+        // completion, so it is 0 here today - but that is the previous caller's
+        // invariant, not this state's, and paging is the first thing to re-enter
+        // that machine from outside the flip.
+        sData->printState = 0;
+        sData->mainState = STATE_REDRAW_BACK_PRINT;
+        break;
+    case STATE_REDRAW_BACK_PRINT:
+        if (PrintAllOnCardBack())
+        {
+            DrawTrainerCardWindow(WIN_CARD_TEXT);
+            sData->mainState = STATE_HANDLE_INPUT_BACK;
         }
         break;
    }
@@ -660,34 +725,29 @@ static bool8 HasAllFrontierSymbols(void)
     return TRUE;
 }
 
+// STARS ARE RUNS CLEARED, not the vanilla four conditions.
+//
+// A run has no Hall of Fame, no contest paintings and no Frontier symbols, and
+// its Pokedex resets with the party - so all four vanilla conditions are
+// unreachable and every card in this build was permanently a zero-star card.
+// The star count also picks the card's PALETTE, so the one thing the roguelike
+// does have a ladder of is what should drive it: clear a run, the card goes up a
+// grade.
+//
+// CLAMPED TO 4, and that is not cosmetic. stars indexes sHoennTrainerCardPals[],
+// which has exactly five entries, and it is a field sent over link. A fifth win
+// unclamped reads a palette pointer past the end of that table.
 u32 CountPlayerTrainerStars(void)
 {
-    u8 stars = 0;
+    u32 runs = VarGet(VAR_ROGUE_RUNS_COMPLETED);
 
-    if (GetGameStat(GAME_STAT_ENTERED_HOF))
-        stars++;
-    if (HasAllRegionalMons())
-        stars++;
-
-    if (IS_FRLG)
-    {
-        if (HasAllMons())
-            stars++;
-#if FREE_POKEMON_JUMP == FALSE
-        if (gSaveBlock2Ptr->berryPick.berriesPicked >= 200 && gSaveBlock2Ptr->pokeJump.jumpsInRow >= 200)
-            stars++;
-#endif // FREE_POKEMON_JUMP
-    }
-    else
-    {
-        if (CountPlayerMuseumPaintings() >= CONTEST_CATEGORIES_COUNT)
-            stars++;
-        if (HasAllFrontierSymbols())
-            stars++;
-    }
-
-    return stars;
+    return runs < 4 ? runs : 4;
 }
+
+// The vanilla version counted GAME_STAT_ENTERED_HOF, HasAllRegionalMons,
+// CountPlayerMuseumPaintings and HasAllFrontierSymbols. It is deleted rather
+// than kept behind a branch because none of the four is reachable in a run and a
+// dead copy would only rot; `git log` has it if a future mode needs it back.
 
 static void SetPlayerCardData(struct TrainerCard *trainerCard, u8 cardType)
 {
@@ -837,6 +897,28 @@ static void SetDataFromTrainerCard(void)
     sData->unused_F = FALSE;
     sData->hasTrades = FALSE;
     memset(sData->badgeCount, 0, sizeof(sData->badgeCount));
+
+    // THE LINK GUARD, and the only assignment of hasJournal anywhere.
+    //
+    // Every other field on the back comes from sData->trainerCard, which for a
+    // received card is the PARTNER'S data. The journal does not: it comes from
+    // SaveBlock3, which is always this console's. So a journal drawn on a link
+    // card would be the local player's run history printed under someone else's
+    // name, with nothing on screen looking wrong.
+    //
+    // An empty journal falls through to the vanilla stat rows rather than
+    // showing six blank lines - which is also what a fresh save sees before its
+    // first run has opened.
+    sData->hasJournal = (!sData->isLink && RogueJournal_Count() != 0);
+
+    // The card always opens on the newest page. Both of these are derived here,
+    // beside the gate, so nothing downstream has to ask the journal again.
+    sData->journalPage = 0;
+    sData->journalPages = 0;
+    if (sData->hasJournal)
+        sData->journalPages = (RogueJournal_Count() + ROGUE_JOURNAL_ROWS_PER_PAGE - 1)
+                            / ROGUE_JOURNAL_ROWS_PER_PAGE;
+
     if (sData->trainerCard.hasPokedex)
         sData->hasPokedex++;
 
@@ -852,9 +934,25 @@ static void SetDataFromTrainerCard(void)
     if (sData->trainerCard.battleTowerWins || sData->trainerCard.battleTowerStraightWins)
         sData->hasBattleTowerWins++;
 
-    for (i = 0, badgeFlag = FLAG_BADGE01_GET; badgeFlag < FLAG_BADGE01_GET + NUM_BADGES; badgeFlag++, i++)
+    // THE BADGE ROW IS DUNGEONS CLEARED THIS RUN, not badges.
+    //
+    // RogueDungeon_ApplyNewGameUnlocks sets FLAG_BADGE01_GET through 08 at new
+    // game so adopted boss aces obey their trainer, so the vanilla loop here lit
+    // all eight on every card from the first frame of a new save - eight slots
+    // saying nothing. The run has a real ladder of exactly this shape.
+    //
+    // EIGHT SLOTS AND FOURTEEN DUNGEONS, so this shows the gym stretch only.
+    // That is the honest reading rather than a compromise: the row is eight
+    // 16x16 cells at a fixed 3-tile pitch (see DrawStarsAndBadgesOnCard), the
+    // Elite Four are a different kind of thing, and a ninth badge has nowhere to
+    // go. Past dungeon 8 the row simply reads full.
+    //
+    // Link-safe without a guard of its own: DrawStarsAndBadgesOnCard only draws
+    // badges when !sData->isLink, and badgeCount is read nowhere else.
+    badgeFlag = RogueDungeon_DungeonsClearedThisRun();
+    for (i = 0; i < NUM_BADGES; i++)
     {
-        if (FlagGet(badgeFlag))
+        if (i < badgeFlag)
             sData->badgeCount[i]++;
     }
 }
@@ -963,6 +1061,33 @@ static bool8 PrintAllOnCardFront(void)
 
 static bool8 PrintAllOnCardBack(void)
 {
+    // THE JOURNAL REPLACES THE STAT ROWS, it does not share the page with them.
+    // The six rows it draws are exactly the six PrintStatOnBackOfCard uses, and
+    // on this build four of those six are permanently empty anyway - link
+    // battles, trades, Pokeblocks with friends and link contests are all zero in
+    // a roguelike, so SetDataFromTrainerCard already suppresses them.
+    //
+    // A LINK CARD, OR A JOURNAL WITH NOTHING IN IT, FALLS THROUGH TO THE VANILLA
+    // ROWS UNCHANGED. That is the whole of the link behaviour: nothing below is
+    // reached with hasJournal set, and nothing above it is skipped without.
+    if (sData->hasJournal)
+    {
+        switch (sData->printState)
+        {
+        case 0:
+            PrintNameOnCardBack();
+            break;
+        case 1:
+            PrintJournalOnCardBack();
+            break;
+        default:
+            sData->printState = 0;
+            return TRUE;
+        }
+        sData->printState++;
+        return FALSE;
+    }
+
     switch (sData->printState)
     {
     case 0:
@@ -1003,6 +1128,7 @@ static bool8 PrintAllOnCardBack(void)
 static void BufferTextsVarsForCardPage2(void)
 {
     BufferNameForCardBack();
+    BufferJournalPage();
     BufferHofDebutTime();
     BufferLinkBattleResults();
     BufferNumTrades();
@@ -1219,6 +1345,138 @@ static void PrintHofDebutTimeOnCard(void)
 {
     if (sData->hasHofResult)
         PrintStatOnBackOfCard(0, gText_HallOfFameDebut, sData->textHofTime, sTrainerCardStatColors);
+}
+
+static const u8 sText_JournalFloorTag[] = _("F{STR_VAR_1}");
+static const u8 sText_JournalPage[] = _("Page {STR_VAR_1}/{STR_VAR_2}");
+
+// UP is newer, DOWN is older - the direction the page already reads in.
+// Returns TRUE when the page moved, which is what puts the card into the redraw.
+//
+// CLAMPS RATHER THAN WRAPPING. A wrap on a paged list makes the ends invisible:
+// the player cannot tell "this is the oldest thing I have" from "it scrolled
+// round again", and the whole point of the journal is knowing how far back it
+// goes. The queue in the music player wraps for the opposite reason - a
+// one-entry queue there has to be able to restart itself.
+static bool8 TryChangeJournalPage(void)
+{
+    if (!sData->hasJournal || sData->journalPages <= 1)
+        return FALSE;
+
+    if (JOY_NEW(DPAD_DOWN) && sData->journalPage + 1 < sData->journalPages)
+    {
+        sData->journalPage++;
+        return TRUE;
+    }
+
+    if (JOY_NEW(DPAD_UP) && sData->journalPage != 0)
+    {
+        sData->journalPage--;
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+// Renders one page of the journal into sData, newest first.
+//
+// BUFFERED UP FRONT, like every other string on this side of the card, because
+// RogueJournal_BufferLine expands through gStringVar1 and gStringVar2 - and the
+// FRONT of the card uses gStringVar1 for the money row. Expanding inside the
+// per-frame print path would interleave the two.
+static void BufferJournalPage(void)
+{
+    u32 i;
+
+    sData->journalRows = 0;
+
+    if (!sData->hasJournal)
+        return;
+
+    for (i = 0; i < ROGUE_JOURNAL_ROWS_PER_PAGE; i++)
+    {
+        const struct RogueJournalEntry *entry = RogueJournal_EntryFromNewest(
+            sData->journalPage * ROGUE_JOURNAL_ROWS_PER_PAGE + i);
+
+        // Fewer entries than rows is the normal case for a young save, not an
+        // error - the count is what bounds the draw, not the array size.
+        if (entry == NULL)
+            break;
+
+        RogueJournal_BufferLine(entry, sData->journalLines[i]);
+        sData->journalFloor[i] = entry->floor;
+        sData->journalSeparator[i] = RogueJournal_KindInfo(entry->kind)->isSeparator;
+        sData->journalRows++;
+    }
+}
+
+// One journal row, in the geometry PrintStatOnBackOfCard already establishes:
+// y = top * 16 + 33, so the six rows land on the rules the back art draws and
+// nothing needs repainting.
+//
+// LEFT ALIGNED, unlike the stat printer, which right-aligns its value to x=216.
+// A journal line is a sentence rather than a label and a number.
+static void PrintJournalOnCardBack(void)
+{
+    static const u8 xOffsets[] = {8, 16};
+
+    u32 i;
+    u8 x = xOffsets[sData->isHoenn];
+
+    // The page indicator shares the NAME row rather than spending one of the six
+    // journal rows on itself. The name is right-aligned to x=216 there and the
+    // left half of that row is empty on the back, so the two do not meet.
+    // Hidden on a single page, where "Page 1/1" is noise.
+    if (sData->journalPages > 1)
+    {
+        ConvertIntToDecimalStringN(gStringVar1, sData->journalPage + 1,
+                                   STR_CONV_MODE_LEFT_ALIGN, 2);
+        ConvertIntToDecimalStringN(gStringVar2, sData->journalPages,
+                                   STR_CONV_MODE_LEFT_ALIGN, 2);
+        StringExpandPlaceholders(gStringVar4, sText_JournalPage);
+        AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_NORMAL, x, 9,
+                                     sTrainerCardTextColors, TEXT_SKIP_DRAW,
+                                     gStringVar4);
+    }
+
+    for (i = 0; i < sData->journalRows; i++)
+    {
+        u8 y = i * 16 + 33;
+
+        // A separator spans the row in the stat colour; the reader partitions
+        // runs on these, so they have to be findable at a glance rather than
+        // read. Ordinary entries get the text colour and a floor tag.
+        if (sData->journalSeparator[i])
+        {
+            AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_NARROW, x, y,
+                                         sTrainerCardStatColors, TEXT_SKIP_DRAW,
+                                         sData->journalLines[i]);
+            continue;
+        }
+
+        // Floor 0 means the entry is not floor-scoped, which is what every
+        // separator carries - but an ordinary kind may too, so this is a test
+        // rather than an else. UNEXERCISED TODAY: all three kinds that exist are
+        // separators, so nothing reaches this branch until the event kinds land.
+        if (sData->journalFloor[i] != 0)
+        {
+            ConvertIntToDecimalStringN(gStringVar1, sData->journalFloor[i],
+                                       STR_CONV_MODE_LEFT_ALIGN, 3);
+            StringExpandPlaceholders(gStringVar4, sText_JournalFloorTag);
+            AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_NARROW, x, y,
+                                         sTrainerCardStatColors, TEXT_SKIP_DRAW,
+                                         gStringVar4);
+        }
+
+        // FONT_NARROW for the entry text, and the floor tag above it too. The
+        // row is 224px less the x=16 margin and another 32 for the tag, so about
+        // 176px - which FONT_NORMAL spends in roughly 29 characters and the
+        // longest line here exceeds. The tag matches so the two do not sit at
+        // visibly different weights on one row.
+        AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_NARROW, x + 32, y,
+                                     sTrainerCardTextColors, TEXT_SKIP_DRAW,
+                                     sData->journalLines[i]);
+    }
 }
 
 static const u8 *const sLinkBattleTexts[] =
@@ -1538,6 +1796,14 @@ static void DrawStarsAndBadgesOnCard(void)
 
 static void DrawCardBackStats(void)
 {
+    // These are the wins/losses and straight-wins marks, written as raw glyph
+    // tiles at BG3 cells hardcoded to the vanilla back art's rows 9-16. The
+    // journal draws over exactly those rows, so left running they would strew
+    // stray punctuation across it - and they are tilemap writes, not text, so
+    // nothing in the print path would clear them.
+    if (sData->hasJournal)
+        return;
+
     if (sData->cardType == CARD_TYPE_FRLG)
     {
         if (sData->hasTrades)

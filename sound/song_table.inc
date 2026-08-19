@@ -819,6 +819,28 @@ gSongTable::
 	song mus_aqua_jazzy_song, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_aqua_sadpop, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_aqua_turnabout_sisters, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_battle_gym_leader, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_eterna_city_alt, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_hgss_champion_lance, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_route_201_night, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_route_203_night, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_route_203, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_route_205_night, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_route_206_night, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_route_209_night, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_route_210_night, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_route_216_night, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_route_228_night, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_route_228, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_battle_galactic_admin, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_battle_rival, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_battle_spear_pillar, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_encounter_champion, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_encounter_dawn, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_natural_disaster, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_snowpoint_city_night, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_snowpoint_city, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dppt_rse_title, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 
 	.align 2
 dummy_song_header:

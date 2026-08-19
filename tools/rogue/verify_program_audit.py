@@ -45,7 +45,25 @@ from audit_program_usage import song_programs, GM_DRUM_LO, GM_DRUM_HI
 # across several m4a tracks, clamping extreme pitches -- categorised by
 # diagnose_audit_gaps.py. Raising it is only correct alongside a diagnosis of the
 # new cases. If it needs raising and you cannot say why, the parser has broken.
-BASELINE_MAX = 115
+#
+# 115 -> 116 when the sixteen DPPt route MIDIs went in (eight routes, day and
+# night; six of them REPLACING pack rips that were already counted here, which
+# is why sixteen songs moved this by one). The diagnosis, per
+# diagnose_audit_gaps.py: every new entry is the track-restructuring class -
+# mid2agb emitting fewer m4a tracks than the MIDI has channels - and NOT a
+# channel-budget problem, because all sixteen sound on 6 to 9 channels against
+# a budget of 12. Measured, not assumed.
+#
+# NOTE THE SHAPE OF THIS CONSTANT: it is a bare COUNT, so it drifts every time
+# the song set changes and carries no record of WHICH songs are known-bad. A
+# named set would not drift and would catch a song silently swapping places
+# with another. Worth doing the next time this needs touching.
+# 116 -> 121 with the seventeen-file DPPt batch (eight replacements, nine new).
+# Diagnosed, not nudged: every new entry is the same track-restructuring class,
+# and the batch is clean on the two things that would be real - all of it now
+# sits inside frlg_drumset's 36-89 key range, and nothing is over the
+# 12-channel budget except the two already noted.
+BASELINE_MAX = 121
 
 SEMI = {"Cn": 0, "Cs": 1, "Dn": 2, "Ds": 3, "En": 4, "Fn": 5,
         "Fs": 6, "Gn": 7, "Gs": 8, "An": 9, "As": 10, "Bn": 11}

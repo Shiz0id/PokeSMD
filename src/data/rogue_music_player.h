@@ -143,10 +143,19 @@ static const u8 sRogueMusicPlaylistParent[RMP_PLAYLIST_COUNT] =
 static const struct RogueMusicTrack sRogueMusicTracks[] =
 {
     // ---- Dungeon floors -------------------------------------------------
-    // In theme order, matching sDungeonThemes in rogue_dungeon.c. Every one of
-    // these has a PSG remix except the two that have real GBS data instead.
+    // In theme order, matching sDungeonThemes in rogue_dungeon.c -- change a
+    // theme's .music and this row has to move with it, or the jukebox offers
+    // the wrong track under the right dungeon name.
+    //
+    // THREE of these have no PSG remix: WOODS, OCEAN and CAVE. (An earlier note
+    // here said two, and said they had real GBS data instead; neither part was
+    // true of the woods or the ocean, which have neither.)
     TRACK(MUS_PETALBURG_WOODS,    GBS_MUSIC_NONE,                 RMP_PLAYLIST_DUNGEON, "WOODS"),
-    TRACK(MUS_MT_PYRE, GBS_MUSIC_NONE, RMP_PLAYLIST_DUNGEON, "CAVE"),
+    // FRLG's Cerulean Cave track, which is filed under Rocket Hideout --
+    // see the cave theme in rogue_dungeon.c. The one dungeon track with no
+    // PSG arrangement of its own; MUS_MT_PYRE's remix stayed in the PSG
+    // list under its own name rather than following the dungeon here.
+    TRACK(MUS_RG_ROCKET_HIDEOUT, GBS_MUSIC_NONE, RMP_PLAYLIST_DUNGEON, "CAVE"),
     TRACK(MUS_AQUA_MAGMA_HIDEOUT, GBS_MUSIC_NONE, RMP_PLAYLIST_DUNGEON, "NEW MAUVILLE"),
     TRACK(MUS_MT_CHIMNEY, GBS_MUSIC_NONE, RMP_PLAYLIST_DUNGEON, "FIERY PATH"),
     // MUS_DESERT's song label is mus_route111 -- hence the id below. Verified
@@ -379,7 +388,7 @@ static const struct RogueMusicTrack sRogueMusicTracks[] =
     // Offering them as the GB version of a vanilla track told the player
     // something false, so they live here instead, as themselves.
     // REMIX rows play their arrangement whatever the flag says.
-    REMIX(MUS_MT_PYRE, GBS_MUSIC_MT_PYRE_PSG, RMP_PLAYLIST_PSG, "CAVE (PSG)"),
+    REMIX(MUS_MT_PYRE, GBS_MUSIC_MT_PYRE_PSG, RMP_PLAYLIST_PSG, "MT PYRE (PSG)"),
     REMIX(MUS_AQUA_MAGMA_HIDEOUT, GBS_MUSIC_AQUA_MAGMA_HIDEOUT_PSG, RMP_PLAYLIST_PSG, "NEW MAUVILLE (PSG)"),
     REMIX(MUS_MT_CHIMNEY, GBS_MUSIC_MT_CHIMNEY_PSG, RMP_PLAYLIST_PSG, "FIERY PATH (PSG)"),
     REMIX(MUS_DESERT, GBS_MUSIC_ROUTE111_PSG, RMP_PLAYLIST_PSG, "MIRAGE TOWER (PSG)"),
@@ -576,6 +585,38 @@ static const struct RogueMusicTrack sRogueMusicTracks[] =
 
     // Imported from AQUA COMMUNITY.
     TRACK(MUS_AQUA_TURNABOUT_SISTERS, GBS_MUSIC_NONE, RMP_PLAYLIST_AQUA_MISC, "TURNABOUT SISTERS"),
+
+    // Imported from DPPT.
+    TRACK(MUS_DPPT_BATTLE_GYM_LEADER, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "BATTLE GYM LEADER"),
+    TRACK(MUS_DPPT_ETERNA_CITY_ALT, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "ETERNA CITY ALT"),
+
+    // Imported from HGSS.
+    TRACK(MUS_HGSS_CHAMPION_LANCE, GBS_MUSIC_NONE, RMP_PLAYLIST_HGSS, "CHAMPION LANCE"),
+
+    // Imported from DPPT.
+    TRACK(MUS_DPPT_ROUTE_201_NIGHT, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "ROUTE 201 NIGHT"),
+    TRACK(MUS_DPPT_ROUTE_203_NIGHT, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "ROUTE 203 NIGHT"),
+    TRACK(MUS_DPPT_ROUTE_203, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "ROUTE 203"),
+    TRACK(MUS_DPPT_ROUTE_205_NIGHT, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "ROUTE 205 NIGHT"),
+    TRACK(MUS_DPPT_ROUTE_206_NIGHT, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "ROUTE 206 NIGHT"),
+    TRACK(MUS_DPPT_ROUTE_209_NIGHT, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "ROUTE 209 NIGHT"),
+    TRACK(MUS_DPPT_ROUTE_210_NIGHT, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "ROUTE 210 NIGHT"),
+    TRACK(MUS_DPPT_ROUTE_216_NIGHT, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "ROUTE 216 NIGHT"),
+    TRACK(MUS_DPPT_ROUTE_228_NIGHT, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "ROUTE 228 NIGHT"),
+    TRACK(MUS_DPPT_ROUTE_228, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "ROUTE 228"),
+
+    // Imported from DPPT.
+    TRACK(MUS_DPPT_BATTLE_GALACTIC_ADMIN, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "BATTLE GALACTIC ADMIN"),
+    TRACK(MUS_DPPT_BATTLE_RIVAL, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "BATTLE RIVAL"),
+    TRACK(MUS_DPPT_BATTLE_SPEAR_PILLAR, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "BATTLE SPEAR PILLAR"),
+    TRACK(MUS_DPPT_ENCOUNTER_CHAMPION, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "ENCOUNTER CHAMPION"),
+    TRACK(MUS_DPPT_ENCOUNTER_DAWN, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "ENCOUNTER DAWN"),
+    TRACK(MUS_DPPT_NATURAL_DISASTER, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "NATURAL DISASTER"),
+    TRACK(MUS_DPPT_SNOWPOINT_CITY_NIGHT, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "SNOWPOINT CITY NIGHT"),
+    TRACK(MUS_DPPT_SNOWPOINT_CITY, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "SNOWPOINT CITY"),
+
+    // Imported from DPPT.
+    TRACK(MUS_DPPT_RSE_TITLE, GBS_MUSIC_NONE, RMP_PLAYLIST_DPPT, "RSE TITLE"),
 };
 
 #undef TRACK
@@ -597,6 +638,18 @@ static const struct RogueMusicTrack sRogueMusicTracks[] =
 // tools/rogue/check_music_player_table.py asserts both bounds fit. Raise this
 // when it says to; it is deliberately not derived, because a derived value would
 // silently absorb a playlist that had grown past what the menu can sensibly show.
-#define ROGUE_MUSIC_MAX_LIST_ROWS 48
+//
+// 48 -> 64 when DIAMOND & PEARL reached 51. The check said to, which is the
+// system working: it caught the overflow before the ListMenuItem array could be
+// written past. The cost is 16 * 8 = 128 bytes on the ONE allocation the player
+// makes while it is open, and nothing at all when it is closed.
+//
+// BUT 51 ROWS IN ONE SCROLLING LIST IS ALREADY TOO MANY TO USE, and raising a
+// number does not fix that. The player nests one level - RMP_PLAYLIST_PSG sits
+// under GAME BOY through sRogueMusicPlaylistParent - so the real answer when
+// DPPT next grows is to split it into sublists (routes, battles, towns) rather
+// than to raise this again. The machinery already exists; only the table rows
+// are missing.
+#define ROGUE_MUSIC_MAX_LIST_ROWS 64
 
 #endif // GUARD_DATA_ROGUE_MUSIC_PLAYER_H

@@ -17,6 +17,17 @@ only the tilesets are findable by name; everything else needs a subject search.
 `gTileset_General` 0x024 (vanilla, for comparison) is gravel despite being the
 only Hoenn arrow warp. Render or open before committing to anything.
 
+**AND THE TOP-LEVEL DIRECTORY NAMES LIE TOO.**
+`Overworld Trainer Sprites/spilledpizza/` is a **full decomp-layout tree** —
+`graphics/trainers/front_pics/` with 90+ Diamond/Pearl classes,
+`graphics/object_events/`, `src/`, `include/`. Every Sinnoh gym leader front pic
+in this repo is in there, and **`Trainer Front Sprites/` contains none of them**,
+so a search scoped to the obviously-named directory finds nothing and concludes
+they do not exist. Search the whole tree by subject, then check what shape what
+you found is actually in — the three Sinnoh leaders missing from spilledpizza's
+`object_events` come from PurrfectDoodle in three different frame layouts, one
+with its transparent colour at palette index 8. See `JOHTO_SINNOH_SPRITES.md`.
+
 ## Top level
 
 | dir | size | verdict |
@@ -24,8 +35,8 @@ only Hoenn arrow warp. Render or open before committing to anything.
 | Battle Backgrounds | 47 MB | **highest value.** 118 PNGs, 256x512 indexed. Two creators ship "Pokeemerald ready to use" folders |
 | Tilesets | 337 MB | 34 full decomp-format sets, see below |
 | Audio | 121 MB | 443 `.mid` + **84 `.inc` voicegroups**, decomp naming (`mus_*`, `se_*`) |
-| Overworld Trainer Sprites | 185 MB | 33 creators. **All Johto + Sinnoh leaders present** |
-| Trainer Front Sprites | 24 MB | 27 creators. Same |
+| Overworld Trainer Sprites | 185 MB | 33 creators. All Johto + Sinnoh leaders — **and FRONT pics, see the misfiling note below** |
+| Trainer Front Sprites | 24 MB | 27 creators. Johto complete (Black Fragrant); **no Sinnoh leader at all** |
 | Official Pokemon Assets | 135 MB | `HGSS_Front_Sprites.png`, `Gen3_Front_Sprites.png`, item icons, HGSS OW mons |
 | Overworld Other Sprites | 5.7 MB | includes a **Berry trees** folder |
 | Items | 2.9 MB | 4 creators |

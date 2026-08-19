@@ -94,6 +94,20 @@ RogueDungeonFloor_EventScript_ChooseStarters::
 	@ either way, since they were never gated on the bag.
 	additem ITEM_MEGA_RING, 1
 	additem ITEM_Z_POWER_RING, 1
+	@ The journal's run boundary. HERE rather than in C, because no C function
+	@ runs exactly once per run: both the whiteout path and the run-complete
+	@ path warp to this floor and this prompt runs afterwards, so this script is
+	@ the once-per-run event. RogueDungeon_ResetRun looks like the obvious site
+	@ and is wrong twice - it also runs on the losing path before anything has
+	@ been picked, and it is the one function that must never mention the
+	@ journal at all.
+	@
+	@ Beside the setvar deliberately: the same line makes the run active, so a
+	@ run that exists without a journal entry opening it is not reachable.
+	special RogueJournal_OnRunStarted
+	@ And the first dungeon, which no rest stop precedes - the transition in
+	@ RogueDungeonFloor_EventScript_ToRestStop names every later one.
+	special RogueDungeon_JournalDungeonEntered
 	setvar VAR_ROGUE_RUN_STATE, ROGUE_RUN_ACTIVE
 	releaseall
 	end
@@ -302,10 +316,16 @@ RogueDungeonFloor_EventScript_EventTraderAlone::
 	msgbox RogueDungeonFloor_Text_TraderAlone, MSGBOX_DEFAULT
 	goto RogueDungeonFloor_EventScript_EventDone
 
-@ The egg. Free, and the price is the party slot.
+@ The egg, lying on the floor. Free, and the price is the party slot.
+@
+@ NO faceplayer, unlike every other event here. This one is an OBJECT rather than
+@ an NPC - its graphics info sets inanimate, so faceplayer would be a no-op that
+@ still reads in the source as though something were meant to turn round.
+@
+@ Taking it removes it. RogueDungeon_EventEggTake does that itself rather than
+@ leaving it to a second special here, for the reason on the definition.
 RogueDungeonFloor_EventScript_EventEgg::
 	lock
-	faceplayer
 	compare VAR_ROGUE_EVENT_SPENT, 1
 	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
 	msgbox RogueDungeonFloor_Text_EggOffer, MSGBOX_YESNO
@@ -703,6 +723,11 @@ RogueDungeonFloor_EventScript_EventNest::
 	faceplayer
 	compare VAR_ROGUE_EVENT_SPENT, 1
 	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
+@ The intro NAMES what is standing there rather than describing the ground.
+@ It used to say the floor was thickly webbed, which is a spider, and the
+@ species is rolled from the safari pool - so two floors in three it was
+@ webbing over a bird or a fish.
+	special RogueDungeon_EventNestApproach
 	msgbox RogueDungeonFloor_Text_NestIntro, MSGBOX_YESNO
 	compare VAR_RESULT, NO
 	goto_if_eq RogueDungeonFloor_EventScript_EventDone
@@ -718,18 +743,30 @@ RogueDungeonFloor_EventScript_EventNest::
 	special RogueDungeon_EventNestWave
 	dowildbattle
 @ Reached only by surviving all three - a whiteout never comes back here.
+@
+@ The payout is a SPECIAL rather than addmoney, and that is the fix: addmoney
+@ hands the money over without saying so, so the event ended on a line about
+@ something being still warm and no visible reward of any kind. The special
+@ buffers the item and the amount into the text below, and takes the nest off
+@ the map itself - removeobject alone did not manage that, for the reason on
+@ HideFloorEventObject.
+	special RogueDungeon_EventNestHoard
 	playfanfare MUS_OBTAIN_ITEM
 	waitfanfare
+	compare VAR_RESULT, 0
+	goto_if_eq RogueDungeonFloor_EventScript_EventNestNoRoom
 	msgbox RogueDungeonFloor_Text_NestCleared, MSGBOX_DEFAULT
-	addmoney DUNGEON_NEST_REWARD_MONEY
-	removeobject VAR_LAST_TALKED
+	goto RogueDungeonFloor_EventScript_EventDone
+
+RogueDungeonFloor_EventScript_EventNestNoRoom::
+	msgbox RogueDungeonFloor_Text_NestClearedNoRoom, MSGBOX_DEFAULT
 	goto RogueDungeonFloor_EventScript_EventDone
 
 RogueDungeonFloor_Text_NestIntro:
-	.string "The floor here is thickly webbed, and\n"
-	.string "it is moving.\p"
-	.string "Whatever is under it has not noticed\n"
-	.string "you yet.\p"
+	.string "A {STR_VAR_1} is here, and it is\n"
+	.string "not alone.\p"
+	.string "More are packed in behind it, and\n"
+	.string "none of them have noticed you.\p"
 	.string "Disturb the nest?$"
 
 RogueDungeonFloor_Text_NestDisturb:
@@ -737,8 +774,17 @@ RogueDungeonFloor_Text_NestDisturb:
 
 RogueDungeonFloor_Text_NestCleared:
 	.string "The last of them stops moving.\p"
-	.string "Whatever they were guarding is still\n"
-	.string "warm.$"
+	.string "The nest is heaped on what its\n"
+	.string "last visitors were carrying.\p"
+	.string "{PLAYER} found {STR_VAR_3} {STR_VAR_1}\n"
+	.string "and ¥{STR_VAR_2}.$"
+
+RogueDungeonFloor_Text_NestClearedNoRoom:
+	.string "The last of them stops moving.\p"
+	.string "The nest is heaped on what its\n"
+	.string "last visitors were carrying.\p"
+	.string "{PLAYER} took ¥{STR_VAR_2}. There was\n"
+	.string "no room in the bag for the rest.$"
 
 @ THE PHANTOM.
 @
@@ -910,18 +956,18 @@ RogueDungeonFloor_Text_TraderAlone:
 	.string "I am not taking it off you.”$"
 
 RogueDungeonFloor_Text_EggOffer:
-	.string "A woman is crouched over something\n"
-	.string "warm.\p"
-	.string "“It is nearly out. I cannot carry it\n"
-	.string "any further. Will you take it?”$"
+	.string "An Egg is lying here, tucked out of\n"
+	.string "the way. It is still warm.\p"
+	.string "Take it?$"
 
 RogueDungeonFloor_Text_EggHatched:
-	.string "The egg cracked open…\p"
+	.string "{PLAYER} lifted the Egg free.\p"
+	.string "It shifted, then cracked open…\p"
 	.string "{PLAYER}'s {STR_VAR_1} hatched!$"
 
 RogueDungeonFloor_Text_EggNoRoom:
-	.string "“You have no room for it. Come back\n"
-	.string "lighter and it is yours.”$"
+	.string "There is no room to carry it.\p"
+	.string "The Egg is left where it lies.$"
 
 RogueDungeonFloor_Text_InjuredApproach:
 	.string "A {STR_VAR_1} is swaying dangerously.\p"
@@ -985,6 +1031,13 @@ RogueDungeonFloor_EventScript_BossDone::
 	special RogueDungeon_OnBossDefeated
 	goto_if_set FLAG_ROGUE_BOSS_REWARD_TAKEN, RogueDungeonFloor_EventScript_BossExit
 	setflag FLAG_ROGUE_BOSS_REWARD_TAKEN
+	@ BEHIND THE FLAG, and that is the whole placement. The special above runs
+	@ again on every re-talk - the engine answers "you already won" by jumping
+	@ to the post-battle script - so a journal line written there would be
+	@ rewritten every time the player spoke to the beaten boss. This side of the
+	@ goto runs exactly once per boss, which is what the reward half relies on
+	@ too. It covers mini bosses as well; the special picks the line by floor.
+	special RogueDungeon_JournalBossDefeated
 	call RogueDungeonFloor_EventScript_BossVanish
 	call RogueDungeonFloor_EventScript_BossTM
 	call RogueDungeonFloor_EventScript_BossAce
@@ -1129,6 +1182,10 @@ RogueDungeonFloor_EventScript_RunComplete::
 RogueDungeonFloor_EventScript_ToRestStop::
 	msgbox RogueDungeonFloor_Text_GymCleared, MSGBOX_DEFAULT
 	addvar VAR_ROGUE_DUNGEON_FLOOR, 1
+	@ AFTER the addvar, so it names the dungeon being entered rather than the
+	@ one just finished. This is the once-per-dungeon site for every dungeon
+	@ except the first, which the starter prompt covers.
+	special RogueDungeon_JournalDungeonEntered
 	warp MAP_ROGUE_REST_STOP, 8, 6
 	waitstate
 	end
@@ -1558,7 +1615,7 @@ RogueDungeonFloor_EventScript_EventDittoBall::
 	release
 	end
 
-@ ------------------------------------------------------------ the enraged totem
+@ ------------------------------------------------------------ the enraged Alpha
 @
 @ Wears the rolled species' own overworld sprite, the same way the injured
 @ Pokemon does. NO LEGENDARIES: the pool it draws from carries none.
@@ -1566,29 +1623,29 @@ RogueDungeonFloor_EventScript_EventDittoBall::
 @ The stat boost is settotemboost, the engine's OWN totem-battle feature -- it
 @ brings its own animation and its own message, and reimplementing it in C would
 @ have been a second copy of something already in the build.
-RogueDungeonFloor_EventScript_EventTotem::
+RogueDungeonFloor_EventScript_EventAlpha::
 	lock
 	faceplayer
 	compare VAR_ROGUE_EVENT_SPENT, 1
 	goto_if_eq RogueDungeonFloor_EventScript_EventSpent
-	special RogueDungeon_EventTotemApproach
+	special RogueDungeon_EventAlphaApproach
 @ message + waitmessage rather than msgbox: the text box has to STAY UP
 @ while the menu is open. msgbox closes it, which left a multichoice
 @ floating over an empty screen with nothing saying what the options were.
 @ This is the shape the Poke Mart clerk uses in front of `pokemart`.
-	message RogueDungeonFloor_Text_TotemIntro
+	message RogueDungeonFloor_Text_AlphaIntro
 	waitmessage
-	multichoice 0, 0, MULTI_ROGUE_TOTEM, FALSE
+	multichoice 0, 0, MULTI_ROGUE_ALPHA, FALSE
 	switch VAR_RESULT
-	case 0, RogueDungeonFloor_EventScript_EventTotemFight
-	case 1, RogueDungeonFloor_EventScript_EventTotemSneak
-	case 2, RogueDungeonFloor_EventScript_EventTotemFeed
+	case 0, RogueDungeonFloor_EventScript_EventAlphaFight
+	case 1, RogueDungeonFloor_EventScript_EventAlphaSneak
+	case 2, RogueDungeonFloor_EventScript_EventAlphaFeed
 	goto RogueDungeonFloor_EventScript_EventDone
 
-RogueDungeonFloor_EventScript_EventTotemFight::
-	msgbox RogueDungeonFloor_Text_TotemFight, MSGBOX_DEFAULT
+RogueDungeonFloor_EventScript_EventAlphaFight::
+	msgbox RogueDungeonFloor_Text_AlphaFight, MSGBOX_DEFAULT
 	setvar VAR_ROGUE_EVENT_SPENT, 1
-	special RogueDungeon_EventTotemBattle
+	special RogueDungeon_EventAlphaBattle
 	settotemboost B_POSITION_OPPONENT_LEFT, 1, 1, 1, 1, 1
 	dowildbattle
 @ AND IT LEAVES. A wild Pokemon that is defeated or caught and then goes on
@@ -1597,38 +1654,63 @@ RogueDungeonFloor_EventScript_EventTotemFight::
 @ removeobject rather than a flag: a floor is never revisited, so there is
 @ nothing to persist.
 	removeobject VAR_LAST_TALKED
+@ AND THE BOOST IT WAS FIGHTING WITH, if the player caught it rather than
+@ knocking it out. settotemboost above is BATTLE-ONLY - stat stages live on
+@ struct BattlePokemon and are thrown away with the battle - so a caught Alpha
+@ used to arrive as an ordinary member of its species wearing none of what was
+@ just fought. ROGUE_CHARM_ALPHA is where it is kept instead.
+@
+@ BEFORE the prize block, which can goto away to the no-room branch and would
+@ skip anything sequenced after it.
+	special RogueDungeon_EventAlphaKept
+	compare VAR_RESULT, 1
+	call_if_eq RogueDungeonFloor_EventScript_EventAlphaKept
+@ 2 is "caught, but the party was full so it went to a box". It still counts
+@ as an Alpha - the charm installs itself when the player withdraws it - and
+@ saying nothing here would read as the catch having done nothing.
+	compare VAR_RESULT, 2
+	call_if_eq RogueDungeonFloor_EventScript_EventAlphaBoxed
 @ AND THE PRIZE. The intro has always said something glitters behind it; for a
 @ long time nothing did. A mega stone for a Pokemon the party actually has, or a
-@ Z-crystal - see RogueDungeon_EventTotemReward.
+@ Z-crystal - see RogueDungeon_EventAlphaReward.
 @
 @ Only on a WIN, and being knocked out or running away has to come away with
 @ nothing or the challenge is not a wager at all.
 	special RogueDungeon_EventBattleWon
 	compare VAR_RESULT, 0
 	goto_if_eq RogueDungeonFloor_EventScript_EventDone
-	special RogueDungeon_EventTotemReward
+	special RogueDungeon_EventAlphaReward
 	compare VAR_RESULT, 0
-	goto_if_eq RogueDungeonFloor_EventScript_EventTotemNoRoom
+	goto_if_eq RogueDungeonFloor_EventScript_EventAlphaNoRoom
 	playfanfare MUS_OBTAIN_ITEM
-	msgbox RogueDungeonFloor_Text_TotemPrize, MSGBOX_DEFAULT
+	msgbox RogueDungeonFloor_Text_AlphaPrize, MSGBOX_DEFAULT
 	waitfanfare
 	goto RogueDungeonFloor_EventScript_EventDone
 
 
-RogueDungeonFloor_EventScript_EventTotemSneak::
-	special RogueDungeon_EventTotemSneak
+@ Called, not jumped to: the prize block still has to run after it.
+RogueDungeonFloor_EventScript_EventAlphaKept::
+	msgbox RogueDungeonFloor_Text_AlphaKept, MSGBOX_DEFAULT
+	return
+
+RogueDungeonFloor_EventScript_EventAlphaBoxed::
+	msgbox RogueDungeonFloor_Text_AlphaBoxed, MSGBOX_DEFAULT
+	return
+
+RogueDungeonFloor_EventScript_EventAlphaSneak::
+	special RogueDungeon_EventAlphaSneak
 	compare VAR_RESULT, 0
-	goto_if_eq RogueDungeonFloor_EventScript_EventTotemBroke
+	goto_if_eq RogueDungeonFloor_EventScript_EventAlphaBroke
 	setvar VAR_ROGUE_EVENT_SPENT, 1
-	msgbox RogueDungeonFloor_Text_TotemSneak, MSGBOX_DEFAULT
+	msgbox RogueDungeonFloor_Text_AlphaSneak, MSGBOX_DEFAULT
 	goto RogueDungeonFloor_EventScript_EventDone
 
-RogueDungeonFloor_EventScript_EventTotemFeed::
-	special RogueDungeon_EventTotemFeed
+RogueDungeonFloor_EventScript_EventAlphaFeed::
+	special RogueDungeon_EventAlphaFeed
 	compare VAR_RESULT, 0
-	goto_if_eq RogueDungeonFloor_EventScript_EventTotemNoFood
+	goto_if_eq RogueDungeonFloor_EventScript_EventAlphaNoFood
 	setvar VAR_ROGUE_EVENT_SPENT, 1
-	msgbox RogueDungeonFloor_Text_TotemFeed, MSGBOX_DEFAULT
+	msgbox RogueDungeonFloor_Text_AlphaFeed, MSGBOX_DEFAULT
 	dowildbattle
 @ AND IT LEAVES. A wild Pokemon that is defeated or caught and then goes on
 @ standing exactly where it was reads as a broken event - the spent guard
@@ -1639,16 +1721,16 @@ RogueDungeonFloor_EventScript_EventTotemFeed::
 	release
 	end
 
-RogueDungeonFloor_EventScript_EventTotemBroke::
-	msgbox RogueDungeonFloor_Text_TotemBroke, MSGBOX_DEFAULT
+RogueDungeonFloor_EventScript_EventAlphaBroke::
+	msgbox RogueDungeonFloor_Text_AlphaBroke, MSGBOX_DEFAULT
 	goto RogueDungeonFloor_EventScript_EventDone
 
-RogueDungeonFloor_EventScript_EventTotemNoRoom::
-	msgbox RogueDungeonFloor_Text_TotemNoRoom, MSGBOX_DEFAULT
+RogueDungeonFloor_EventScript_EventAlphaNoRoom::
+	msgbox RogueDungeonFloor_Text_AlphaNoRoom, MSGBOX_DEFAULT
 	goto RogueDungeonFloor_EventScript_EventDone
 
-RogueDungeonFloor_EventScript_EventTotemNoFood::
-	msgbox RogueDungeonFloor_Text_TotemNoFood, MSGBOX_DEFAULT
+RogueDungeonFloor_EventScript_EventAlphaNoFood::
+	msgbox RogueDungeonFloor_Text_AlphaNoFood, MSGBOX_DEFAULT
 	goto RogueDungeonFloor_EventScript_EventDone
 
 @ ------------------------------------------------------------------------ text
@@ -1801,35 +1883,46 @@ RogueDungeonFloor_Text_DittoSpring:
 	.string "You reach for the ball.\p"
 	.string "It reaches back!$"
 
-RogueDungeonFloor_Text_TotemIntro:
-	.string "A {STR_VAR_1} blocks the way, far\n"
-	.string "larger than it should be.\p"
+RogueDungeonFloor_Text_AlphaIntro:
+	.string "An ALPHA {STR_VAR_1}!\p"
+	.string "It is far larger than it should be.\p"
 	.string "CHALLENGE it for what it guards,\n"
 	.string "SNEAK past for money, or LEAVE FOOD.$"
 
-RogueDungeonFloor_Text_TotemFight:
+RogueDungeonFloor_Text_AlphaFight:
 	.string "It draws itself up!$"
 
-RogueDungeonFloor_Text_TotemSneak:
+RogueDungeonFloor_Text_AlphaSneak:
 	.string "You scatter {STR_VAR_2} worth of\n"
 	.string "supplies and slip past in the fuss.$"
 
-RogueDungeonFloor_Text_TotemBroke:
+RogueDungeonFloor_Text_AlphaBroke:
 	.string "You have nothing to distract it with.$"
 
-RogueDungeonFloor_Text_TotemFeed:
+RogueDungeonFloor_Text_AlphaFeed:
 	.string "You set the {STR_VAR_2} down and\n"
 	.string "step back.\p"
 	.string "It calms, and looks at you plainly.$"
 
-RogueDungeonFloor_Text_TotemNoFood:
+RogueDungeonFloor_Text_AlphaNoFood:
 	.string "You have nothing it would want.$"
 
-RogueDungeonFloor_Text_TotemPrize:
+RogueDungeonFloor_Text_AlphaKept:
+	.string "What made it an ALPHA is its own,\n"
+	.string "not the fight's.\p"
+	.string "It keeps it.$"
+
+RogueDungeonFloor_Text_AlphaBoxed:
+	.string "Your party was full, so it was\n"
+	.string "sent to a BOX.\p"
+	.string "What made it an ALPHA is its own.\n"
+	.string "Take it out and you will see.$"
+
+RogueDungeonFloor_Text_AlphaPrize:
 	.string "Behind it, half buried, was\n"
 	.string "{STR_VAR_1}!$"
 
-RogueDungeonFloor_Text_TotemNoRoom:
+RogueDungeonFloor_Text_AlphaNoRoom:
 	.string "Something was buried behind it,\n"
 	.string "but there was no room in your bag.$"
 

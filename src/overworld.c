@@ -1233,7 +1233,7 @@ static bool16 IsInfiltratedSpaceCenter(struct WarpData *warp)
 
 u16 GetLocationMusic(struct WarpData *warp)
 {
-    // Eight dungeon themes share MAP_ROGUE_DUNGEON_FLOOR and music lives in the
+    // Six dungeon themes share MAP_ROGUE_DUNGEON_FLOOR and music lives in the
     // map header, so without this they all play that one header's track. Hooked
     // here because this is the single funnel both GetCurrLocationDefaultMusic
     // and GetWarpDestinationMusic go through. Returns 0 off a dungeon floor.

@@ -158,13 +158,31 @@ void RogueBwTrainerAnim_OnLoadPic(u32 battler, u16 trainerPic)
 
     ClearState(battler);
 
+    // A POSITION HAS ONE PIXEL BUFFER. Evict any mon animation on this battler
+    // before the buffer they share is written - see the header.
+    //
+    // UNCONDITIONAL, AND BEFORE THE GetBwTrainerAnim MISS BELOW, exactly as
+    // RogueBwAnim_OnLoadSprite calls RogueBwTrainerAnim_Stop before its own
+    // miss and for the same reason: a trainer with no animation of their own
+    // still overwrites the buffer with their STOCK pic. The caller has already
+    // decompressed it into gMonSpritesGfxPtr->spritesGfx[position].
+    //
+    // THIS SAT BELOW THE MISS AND SHIPPED AS A CORRUPTED SCREEN. Only thirteen
+    // trainers have an animation, so for every other one - which is all four
+    // regions' bosses but Hoenn's - nothing stopped the mon, and RogueBwAnim's
+    // tick carried on copying its frames straight over the trainer pic.
+    //
+    // It stayed invisible because an ordinary win faints the opponent's team
+    // first: FreeMonSprite runs, the sprite latch dies, and nothing is
+    // animating by the time the trainer slides in for the defeat text. The
+    // battle debug's Instant Win skips every faint, so the animations are still
+    // live - and a DOUBLE is the worst case, with a live animation in both
+    // opponent positions.
+    RogueBwAnim_StopForBattler(battler);
+
     anim = GetBwTrainerAnim(trainerPic);
     if (anim == NULL)
         return;
-
-    // A POSITION HAS ONE PIXEL BUFFER. Evict any mon animation on this battler
-    // before publishing into the buffer they share - see the header.
-    RogueBwAnim_StopForBattler(battler);
 
     // AllocUnchecked, NOT Alloc. Alloc calls fatalf when the heap cannot
     // satisfy it and never returns NULL, so a NULL check after it is dead code

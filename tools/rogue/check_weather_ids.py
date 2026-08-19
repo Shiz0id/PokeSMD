@@ -57,11 +57,41 @@ INTENT = {
     'WEATHER_MONSOON':  'mechanical',  # every rain sets B_WEATHER_RAIN_NORMAL
     'WEATHER_BLIZZARD': 'mechanical',  # or Glacia loses the boost SNOW gave her
     'WEATHER_LEAVES':   'cosmetic',    # dungeon 1, and the woods had no weather
+    # The cave, dungeon 2, and the first id past the 16-19 gap - WEATHER_COUNT
+    # moved from 24 to 25 for it. Cosmetic for the same reason as the leaves:
+    # the theme had no weather at all before, so omission from the battle switch
+    # removes nothing. Its art is a follower Pokemon's overworld sprite rather
+    # than a weather sheet, which costs this check nothing - every table below
+    # is indexed by the id, and the id is an ordinary one.
+    'WEATHER_ZUBATS':   'cosmetic',
+    # The ocean, and the second id past the gap. Cosmetic for the same reason as
+    # the zubats and the leaves: the theme had no weather at all before, so
+    # omission from the battle switch removes nothing. Shares its entire
+    # implementation with the zubats - see the FLIERS block in
+    # field_weather_effect.c - which costs this check nothing, because every
+    # table it holds ids against is indexed by the id and these are ordinary.
+    'WEATHER_SEABIRDS': 'cosmetic',
     # Vanilla's, but a project map asks for each of them, so the intent is ours
     # to state. Adding these was not bookkeeping - none of it was written down
     # anywhere before this check demanded it.
     'WEATHER_SNOW':     'mechanical',  # Glacia's three approach floors, 1.5x Ice Def
     'WEATHER_UNDERWATER_BUBBLES': 'cosmetic',
+    # VANILLA'S AGAIN, and both arrived the same way: a theme was moved onto a
+    # weather map, and the weather came with whatever battle behaviour the
+    # vanilla constant already had. That is the reason these two rows matter
+    # more than the ones above. A weather written here is a decision at every
+    # step; a vanilla weather adopted for its art brings its switch membership
+    # silently, in EITHER direction, and nothing about adding a map says which.
+    'WEATHER_VOLCANIC_ASH': 'cosmetic',    # Fiery Path; not in the switch, and
+                                           # the theme had no weather to lose
+    # Mirage Tower, and the one row here that changes how a dungeon PLAYS.
+    # WEATHER_SANDSTORM is already a case in battle_util.c and sets
+    # B_WEATHER_SANDSTORM, so every battle on that dungeon now chips 1/16 max HP
+    # a turn off anything not Rock, Ground or Steel -- the player's team
+    # included -- and hands Rock types 1.5x Special Defence. The exact inverse
+    # of the blizzard three rows up: there the default would have silently
+    # REMOVED a battle effect, here the vanilla constant silently ADDS one.
+    'WEATHER_SANDSTORM': 'mechanical',
     # In the switch, but READ THE GATE: its case body is `if (B_OVERWORLD_FOG ==
     # GEN_4)`, and this build is GEN_LATEST, so it sets no gBattleWeather at
     # all. What actually makes Phoebe's floors mechanical is the separate

@@ -657,7 +657,19 @@ void CB2_InitTitleScreen(void)
                                     | DISPCNT_OBJ_ON
                                     | DISPCNT_WIN0_ON
                                     | DISPCNT_OBJWIN_ON);
-        m4aSongNumStart(MUS_TITLE);
+        // THE DP-STYLE ARRANGEMENT OF THIS VERY TUNE, not a different song.
+        // MUS_DPPT_RSE_TITLE is a dev-test rip of the RSE title done in
+        // Diamond/Pearl instrumentation, so it is the same music the title
+        // screen has always played, rearranged.
+        //
+        // Swapped HERE rather than by overwriting mus_title.mid, so the vanilla
+        // arrangement is still song 30 and still in the jukebox, and reverting
+        // is this one line.
+        //
+        // The MAIN MENU inherits it: nothing between here and the CONTINUE /
+        // NEW GAME screen issues another PlayBGM, which is also why the Birch
+        // speech is unaffected - that one plays MUS_ROUTE122 for itself.
+        m4aSongNumStart(MUS_DPPT_RSE_TITLE);
         gMain.state = 5;
         break;
     case 5:

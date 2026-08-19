@@ -69,6 +69,90 @@ BOSSES = [
     "TRAINER_SIDNEY", "TRAINER_PHOEBE", "TRAINER_GLACIA", "TRAINER_DRAKE",
     "TRAINER_WALLACE", "TRAINER_STEVEN",
 ]
+
+# Parallel to the SECOND block of sDungeonBosses - the Kanto counterpart of the
+# identity at the same position. Paired by position in its own game, not by type.
+#
+# THE LEVELS ARE STOCK FIRERED AND ARE NOT SCALED, which was a decision and not
+# an oversight: these bosses are only reachable after a clear, so they are
+# allowed to be lumpier than the ordering a first playthrough walks - the same
+# argument that lets the order shuffle ship with no scaling. What that costs is
+# measured below rather than asserted, and it is concentrated in exactly two
+# rows. See KANTO_TOLERANCE.
+#
+# Red is the fourteenth and is authored rather than ported; his levels are the
+# GSC Mt. Silver team's. See constants/opponents.h.
+KANTO_BOSSES = [
+    "TRAINER_ROGUE_KANTO_BROCK", "TRAINER_ROGUE_KANTO_MISTY",
+    "TRAINER_ROGUE_KANTO_LT_SURGE", "TRAINER_ROGUE_KANTO_ERIKA",
+    "TRAINER_ROGUE_KANTO_KOGA", "TRAINER_ROGUE_KANTO_SABRINA",
+    "TRAINER_ROGUE_KANTO_BLAINE", "TRAINER_ROGUE_KANTO_GIOVANNI",
+    "TRAINER_ROGUE_KANTO_LORELEI", "TRAINER_ROGUE_KANTO_BRUNO",
+    "TRAINER_ROGUE_KANTO_AGATHA", "TRAINER_ROGUE_KANTO_LANCE",
+    "TRAINER_ROGUE_KANTO_BLUE",
+    "TRAINER_ROGUE_KANTO_RED",
+]
+
+# Parallel to the THIRD block of sDungeonBosses.
+#
+# UNLIKE KANTO, THESE ARE SCALED, and the difference is the whole reason there
+# is no JOHTO_TOLERANCE below. Johto's stock late game runs 5-10 levels UNDER
+# this curve - Karen -10.0, Lance -9.3 - and under is not the same kind of wrong
+# as over: a Kanto boss +10 is a hard fight, a Johto boss -10 at floor 105 is a
+# pushover. tools/rogue/gen_johto_parties.py lifts slots 6-12 onto the curve by
+# a per-party offset, targeting the SAME gap the Hoenn boss at that identity
+# sits at, so all three regions have the same difficulty shape.
+#
+# The consequence to check for: these must fit inside SHUFFLE_TOLERANCE, the
+# HOENN bound, with no allowance of their own. If a Johto row ever needs one,
+# the scaling has drifted and the tool is what to fix.
+#
+# Koga, Bruno and Lance are their Gen 2 selves, with their own trainer ids -
+# not the Kanto rows of the same name. Ethan is authored and is the finale,
+# because Red is already Kanto's.
+JOHTO_BOSSES = [
+    "TRAINER_ROGUE_JOHTO_FALKNER", "TRAINER_ROGUE_JOHTO_BUGSY",
+    "TRAINER_ROGUE_JOHTO_WHITNEY", "TRAINER_ROGUE_JOHTO_MORTY",
+    "TRAINER_ROGUE_JOHTO_CHUCK", "TRAINER_ROGUE_JOHTO_JASMINE",
+    "TRAINER_ROGUE_JOHTO_PRYCE", "TRAINER_ROGUE_JOHTO_CLAIR",
+    "TRAINER_ROGUE_JOHTO_WILL", "TRAINER_ROGUE_JOHTO_KOGA",
+    "TRAINER_ROGUE_JOHTO_BRUNO", "TRAINER_ROGUE_JOHTO_KAREN",
+    "TRAINER_ROGUE_JOHTO_LANCE",
+    "TRAINER_ROGUE_JOHTO_ETHAN",
+]
+
+
+# Parallel to the FOURTH block. Scaled like Johto and for the same reason,
+# though Sinnoh drifts the other way: its stock teams run a uniform +5 to +8
+# OVER this curve. That is Kanto's direction but not Kanto's shape - Kanto is
+# two outlier rows on a decent fit, which a wider tolerance covers honestly,
+# while Sinnoh is thirteen rows on a different curve.
+#
+# PLATINUM'S GYM ORDER: Fantina third, Maylene fourth. Diamond/Pearl's order
+# puts a level 32 Lucario against a curve of 19.
+#
+# Dawn is the finale, her anime team fully evolved. Barry is the rival and is
+# absent from the boss table, like Silver.
+SINNOH_BOSSES = [
+    "TRAINER_ROGUE_SINNOH_ROARK", "TRAINER_ROGUE_SINNOH_GARDENIA",
+    "TRAINER_ROGUE_SINNOH_FANTINA", "TRAINER_ROGUE_SINNOH_MAYLENE",
+    "TRAINER_ROGUE_SINNOH_CRASHER_WAKE", "TRAINER_ROGUE_SINNOH_BYRON",
+    "TRAINER_ROGUE_SINNOH_CANDICE", "TRAINER_ROGUE_SINNOH_VOLKNER",
+    "TRAINER_ROGUE_SINNOH_AARON", "TRAINER_ROGUE_SINNOH_BERTHA",
+    "TRAINER_ROGUE_SINNOH_FLINT", "TRAINER_ROGUE_SINNOH_LUCIAN",
+    "TRAINER_ROGUE_SINNOH_CYNTHIA",
+    "TRAINER_ROGUE_SINNOH_DAWN",
+]
+
+REGIONS = {"H": BOSSES, "K": KANTO_BOSSES, "J": JOHTO_BOSSES,
+           "S": SINNOH_BOSSES}
+
+# Per-region bound. Hoenn's 9 is the tight one that guards the shuffle's band
+# width; Kanto has 12 because its stock levels were deliberately left alone;
+# JOHTO IS BACK ON HOENN'S 9 because its levels were scaled instead. That
+# asymmetry is the record of two different decisions and is not tidiable.
+TOLERANCE_FOR = {"H": None, "K": None, "J": None}   # filled in below
+
 RIVAL = "TRAINER_ROGUE_RIVAL"
 
 # How far above the curve a boss is allowed to sit before this complains. The
@@ -88,6 +172,40 @@ E4_SHUFFLED = E4_DUNGEONS - 1          # Wallace is pinned to the fifth slot
 # two (-6.5 Norman at slot 5, +8.0 Brawly at slot 0) plus a level of slack, and it
 # is deliberately tight enough that widening a band trips it.
 SHUFFLE_TOLERANCE = 9
+
+# The same measure for a KANTO boss, and it is a SEPARATE NUMBER ON PURPOSE.
+#
+# The obvious move was to widen SHUFFLE_TOLERANCE until Kanto fitted under it.
+# That is wrong, and it is wrong in the way this repo's notes keep warning
+# about: SHUFFLE_TOLERANCE at 9 is tight enough that raising DUNGEON_SHUFFLE_BAND
+# trips it, which is the entire reason it exists. Widening it to admit Koga would
+# have bought Kanto in and quietly retired the check that guards band width -
+# a check that stops catching what it was written for is worth nothing.
+#
+# So the Hoenn rows keep their 9 and the Kanto rows get their own bound, and the
+# sweep below picks by region. The cost of the decision is then visible as a
+# number rather than hidden inside a loosened constant.
+#
+# 12 is the measured worst case plus a level and a half. The worst is +10.5,
+# MISTY at slot 0 - which is worth reading twice, because the row that needed the
+# widening is not the one the stock levels predict. Koga and Sabrina are the two
+# that miss against their OWN slots; the shuffle then moves other rows into slots
+# that expose them, and Misty at 19.5 against floor 10's curve of 9 is worse than
+# either. The full list is printed by the sweep below rather than kept here, so
+# it cannot go stale the way a hand-written one would.
+#
+# The underlying cause is the same in every case: FireRed's mid-game jumps where
+# Emerald's does not, and the gym band swap is free to land either side of a jump.
+KANTO_TOLERANCE = 12
+
+# Resolved here rather than at the definition above, because SHUFFLE_TOLERANCE
+# and KANTO_TOLERANCE are declared between the two.
+# Kanto is the ONLY region with an allowance of its own, and that is the point:
+# it is the one whose levels were deliberately left stock. Johto and Sinnoh were
+# scaled instead, so they answer to Hoenn's bound like Hoenn does.
+TOLERANCE_FOR = {"H": SHUFFLE_TOLERANCE, "K": KANTO_TOLERANCE,
+                 "J": SHUFFLE_TOLERANCE, "S": SHUFFLE_TOLERANCE}
+SCALED_REGIONS = ("J", "S")
 
 
 def length_of(dungeon):
@@ -241,7 +359,13 @@ def main():
 
     # 5. the curve against the parties it has to fit.
     parties = party_levels()
-    missing = [t for t in BOSSES + [RIVAL] if t not in parties]
+    for tag, table in REGIONS.items():
+        check(len(table) == len(BOSSES),
+              f"region {tag} has {len(table)} bosses for {len(BOSSES)} "
+              f"identities; every region block of sDungeonBosses must be the "
+              f"same length")
+    missing = [t for t in sum(REGIONS.values(), []) + [RIVAL]
+               if t not in parties]
     if missing:
         print("MISSING from trainers.party: " + ", ".join(missing))
         return 1
@@ -260,12 +384,31 @@ def main():
                   f"floor {floor + 1}: {BOSSES[d]} avg {avg:.1f} is "
                   f"{gap:+.1f} off the curve's {curve}")
 
-    # Steven is meant to stand above the curve, but not out of sight of it.
-    steven_floor = boss_floors[-1]
-    steven = parties["TRAINER_STEVEN"]
-    gap = sum(steven) / len(steven) - target_level(steven_floor)
-    check(3 <= gap <= 8,
-          f"Steven sits {gap:+.1f} over the curve; intended +3 to +8")
+    # The finale is meant to stand above the curve, but not out of sight of it -
+    # and BOTH finales are, because the region roll reaches slot 13 too.
+    #
+    # Red is held to Steven's band rather than to a Kanto one. He is authored,
+    # not ported, so there is nothing to be faithful to and no reason to let him
+    # drift: if his party ever needs a wider band than Steven's, the party is
+    # what is wrong. That is the difference between this row and Koga's.
+    #
+    # DERIVED FROM THE TABLES, NOT NAMED. Writing "TRAINER_ROGUE_KANTO_RED" here
+    # was the first version and it silently stopped testing the finale the moment
+    # the last row of KANTO_BOSSES changed - the check went on measuring Red, who
+    # was no longer standing there. Caught by the break harness, which is the
+    # only reason it is not still written that way.
+    finale_floor = boss_floors[-1]
+    for finale in [t[-1] for t in REGIONS.values()]:
+        lv = parties[finale]
+        gap = sum(lv) / len(lv) - target_level(finale_floor)
+        # Steven already has a row in the table above, printed by the loop over
+        # BOSSES. Only the Kanto finale needs one adding.
+        if finale not in BOSSES:
+            print(f"{finale_floor + 1:>6}  {finale:<24} "
+                  f"{min(lv):>5}-{max(lv):<6} {sum(lv) / len(lv):>5.1f} "
+                  f"{target_level(finale_floor):>6} {gap:>+5.1f}")
+        check(3 <= gap <= 8,
+              f"{finale} sits {gap:+.1f} over the curve; intended +3 to +8")
 
     rival_floor = mini[-1] - 1
     rival = parties[RIVAL]
@@ -302,12 +445,19 @@ def main():
             check(not any(is_boss_floor(f) for f in covered[:-1]),
                   f"{mapped} covers a boss floor that is not its last")
 
-    # 7. every permitted dungeon order keeps every boss near its slot's curve.
+    # 7. every permitted dungeon order keeps every boss near its slot's curve,
+    #    IN EITHER REGION.
     #
-    # Exhaustive, not sampled: 384 orders x 12 shuffled slots is 4,608 pairings
-    # and there are only 12 x 12 distinct ones, so this is cheap and complete.
-    # The finale is excluded - Steven never permutes and is checked above with a
-    # band of his own.
+    # Exhaustive, not sampled, and note what is NOT enumerated: the region word
+    # is 14 independent bits, so 384 orders x 2^14 regions is 6.3 million runs.
+    # It does not need enumerating. The tolerance is a per-boss test and the
+    # region bits do not interact - whether Koga is too high at slot 4 does not
+    # depend on who is standing at slot 7 - so sweeping (slot, identity, region)
+    # triples covers every one of those 6.3 million runs with 392 comparisons.
+    # Enumerating the product instead would take minutes to prove the same thing.
+    #
+    # The finale is excluded from the sweep: neither Steven nor Red permutes, and
+    # both are checked above with a band of their own.
     print()
     boss_slots = [s for s in range(DUNGEON_COUNT - 1)]
     worst_low = (0.0, None)
@@ -318,34 +468,73 @@ def main():
         for slot in boss_slots:
             identity = dungeon_for_slot(slot, order)
             floor = sum(length_of(d) for d in range(slot + 1)) - 1
-            levels = parties[BOSSES[identity]]
-            gap = sum(levels) / len(levels) - target_level(floor)
-            seen[(slot, identity)] = gap
 
-            if gap < worst_low[0]:
-                worst_low = (gap, (slot, identity, floor))
-            if gap > worst_high[0]:
-                worst_high = (gap, (slot, identity, floor))
+            for region, table in REGIONS.items():
+                levels = parties[table[identity]]
+                gap = sum(levels) / len(levels) - target_level(floor)
+                bound = TOLERANCE_FOR[region]
+                seen[(slot, identity, region)] = gap
 
-            check(abs(gap) <= SHUFFLE_TOLERANCE,
-                  f"order {order:#05x}: {BOSSES[identity]} at slot {slot} "
-                  f"(floor {floor + 1}) is {gap:+.1f} off the curve, "
-                  f"past the {SHUFFLE_TOLERANCE} the shuffle allows")
+                if gap < worst_low[0]:
+                    worst_low = (gap, (slot, identity, region, floor))
+                if gap > worst_high[0]:
+                    worst_high = (gap, (slot, identity, region, floor))
+
+                check(abs(gap) <= bound,
+                      f"order {order:#05x} region {region}: {table[identity]} "
+                      f"at slot {slot} (floor {floor + 1}) is {gap:+.1f} off "
+                      f"the curve, past the {bound} that region allows")
 
     def describe(entry):
         gap, place = entry
         if place is None:
             return "none"
-        slot, identity, floor = place
-        return (f"{gap:+.1f}  {BOSSES[identity]} at slot {slot}, "
+        slot, identity, region, floor = place
+        return (f"{gap:+.1f}  {REGIONS[region][identity]} at slot {slot}, "
                 f"floor {floor + 1}")
 
     print(f"shuffle: {len(list(every_order()))} orders "
-          f"({1 << GYM_BANDS} gym x {len(E4_ORDERS)} E4), "
-          f"{len(seen)} distinct slot/boss pairings")
+          f"({1 << GYM_BANDS} gym x {len(E4_ORDERS)} E4) "
+          f"x {len(REGIONS) ** DUNGEON_COUNT:,} region words, "
+          f"{len(seen)} distinct slot/boss/region pairings")
     print(f"  worst under curve  {describe(worst_low)}")
     print(f"  worst over curve   {describe(worst_high)}")
-    print(f"  tolerance          {SHUFFLE_TOLERANCE}")
+    print("  tolerance          " + ", ".join(
+        f"{TOLERANCE_FOR[r]} {r}" for r in REGIONS))
+
+    # Which rows need a bound wider than Hoenn's, named rather than left for
+    # somebody to rediscover. Kanto's appear here by design - its levels were
+    # deliberately left stock. JOHTO'S MUST NOT: they were scaled precisely so
+    # they would fit the Hoenn bound, so a Johto row in this list means the
+    # scaling has drifted and gen_johto_parties.py is what to fix.
+    over_hoenn = sorted(
+        (gap, slot, identity, region)
+        for (slot, identity, region), gap in seen.items()
+        if region != "H" and abs(gap) > SHUFFLE_TOLERANCE)
+    if over_hoenn:
+        print(f"  rows past the Hoenn {SHUFFLE_TOLERANCE}:")
+        for gap, slot, identity, region in over_hoenn:
+            print(f"    {gap:+.1f}  {REGIONS[region][identity]} at slot {slot}")
+    for r in SCALED_REGIONS:
+        bad = [x for x in over_hoenn if x[3] == r]
+        check(not bad,
+              f"a {r} row needs a wider bound than Hoenn's; that region's levels "
+              f"are SCALED specifically so they would not, so the scaling has "
+              f"drifted - fix the generator, not this number "
+              f"({bad[0][1] if bad else ''})")
+
+    # AND THE CONSTANT ITSELF, which is a separate assertion and was missing.
+    # The rule above only fires once a Johto row actually exceeds Hoenn's bound,
+    # so with the scaling healthy, raising TOLERANCE_FOR["J"] to 20 changes
+    # nothing and is caught by nothing - the guard would simply be off, and stay
+    # off until the day something drifted into the gap. Found by the break
+    # harness, which is the only reason this line exists.
+    for r in SCALED_REGIONS:
+        check(TOLERANCE_FOR[r] == SHUFFLE_TOLERANCE,
+              f"region {r}'s tolerance is {TOLERANCE_FOR[r]}, not Hoenn's "
+              f"{SHUFFLE_TOLERANCE}. It is SCALED rather than left stock, which "
+              f"is the whole reason it does not get an allowance of its own - "
+              f"widening this hides scaling drift instead of reporting it")
 
     print(f"\nrun: {TOTAL_FLOORS} floors, {DUNGEON_COUNT} dungeons, "
           f"levels {target_level(0)} to {target_level(TOTAL_FLOORS - 1)}")

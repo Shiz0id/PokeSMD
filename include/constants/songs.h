@@ -768,6 +768,38 @@
 // Imported from AQUA COMMUNITY by tools/rogue/import_midi_pack.py
 #define MUS_AQUA_TURNABOUT_SISTERS  805
 
+// Imported from DPPT by tools/rogue/import_midi_pack.py
+#define MUS_DPPT_BATTLE_GYM_LEADER  806
+#define MUS_DPPT_ETERNA_CITY_ALT    807
+
+// Imported from HGSS by tools/rogue/import_midi_pack.py
+#define MUS_HGSS_CHAMPION_LANCE     808
+
+// Imported from DPPT by tools/rogue/import_midi_pack.py
+#define MUS_DPPT_ROUTE_201_NIGHT    809
+#define MUS_DPPT_ROUTE_203_NIGHT    810
+#define MUS_DPPT_ROUTE_203          811
+#define MUS_DPPT_ROUTE_205_NIGHT    812
+#define MUS_DPPT_ROUTE_206_NIGHT    813
+#define MUS_DPPT_ROUTE_209_NIGHT    814
+#define MUS_DPPT_ROUTE_210_NIGHT    815
+#define MUS_DPPT_ROUTE_216_NIGHT    816
+#define MUS_DPPT_ROUTE_228_NIGHT    817
+#define MUS_DPPT_ROUTE_228          818
+
+// Imported from DPPT by tools/rogue/import_midi_pack.py
+#define MUS_DPPT_BATTLE_GALACTIC_ADMIN 819
+#define MUS_DPPT_BATTLE_RIVAL       820
+#define MUS_DPPT_BATTLE_SPEAR_PILLAR 821
+#define MUS_DPPT_ENCOUNTER_CHAMPION 822
+#define MUS_DPPT_ENCOUNTER_DAWN     823
+#define MUS_DPPT_NATURAL_DISASTER   824
+#define MUS_DPPT_SNOWPOINT_CITY_NIGHT 825
+#define MUS_DPPT_SNOWPOINT_CITY     826
+
+// Imported from DPPT by tools/rogue/import_midi_pack.py
+#define MUS_DPPT_RSE_TITLE          827
+
 #define MUS_ROUTE118                0x7FFF  // Map is split into 2 music sections. controlled by GetCurrLocationDefaultMusic().
 
 #define MUS_NONE                    0xFFFF

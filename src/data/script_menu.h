@@ -1167,7 +1167,7 @@ static const struct MenuAction MultichoiceList_RogueFossil[] =
     {gText_Exit},
 };
 
-static const struct MenuAction MultichoiceList_RogueTotem[] =
+static const struct MenuAction MultichoiceList_RogueAlpha[] =
 {
     {COMPOUND_STRING("CHALLENGE")},
     {COMPOUND_STRING("SNEAK PAST")},
@@ -1220,7 +1220,7 @@ static const struct MultichoiceListStruct sMultichoiceLists[] =
     [MULTI_ROGUE_PHANTOM]              = MULTICHOICE(MultichoiceList_RoguePhantom),
     [MULTI_ROGUE_TRANSPOSER]           = MULTICHOICE(MultichoiceList_RogueTransposer),
     [MULTI_ROGUE_FOSSIL]               = MULTICHOICE(MultichoiceList_RogueFossil),
-    [MULTI_ROGUE_TOTEM]                = MULTICHOICE(MultichoiceList_RogueTotem),
+    [MULTI_ROGUE_ALPHA]                = MULTICHOICE(MultichoiceList_RogueAlpha),
     [MULTI_ROGUE_SHRINE]               = MULTICHOICE(MultichoiceList_RogueShrine),
     [MULTI_ROGUE_HERBALIST]            = MULTICHOICE(MultichoiceList_RogueHerbalist),
     [MULTI_PC]                         = MULTICHOICE(MultichoiceList_Exit),

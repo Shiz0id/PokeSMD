@@ -1109,14 +1109,19 @@ static void Autorun_DrawChoices(u8 selection)
 #endif // OPT_AUTORUN
 
 #if OPT_EXTENDED_OPTIONS_MENU == TRUE
-// The roguelike's dungeon order shuffle, unlocked by clearing a run. Reuses the
-// ON/OFF strings the way Autorun above does rather than inventing a pair.
+// The roguelike's dungeon order shuffle. Reuses the ON/OFF strings the way
+// Autorun above does rather than inventing a pair.
 //
-// The control is VISIBLE BEFORE IT IS UNLOCKED and does nothing until then -
-// RollDungeonOrder checks FLAG_ROGUE_RUN_COMPLETED first and ignores this. The
-// menu's y-positions are compile-time from the enum index, so an item that
-// appears and disappears would move every row below it; a mild spoiler was the
-// better trade against that.
+// THE CONTROL IS AUTHORITATIVE AT ALL TIMES, and it did not used to be:
+// RollDungeonOrder checked FLAG_ROGUE_RUN_COMPLETED first, so before a clear
+// this entry read ON and did nothing at all. A first run is still vanilla by
+// DEFAULT - ApplyNewGameUnlocks sets the flag at new game and the first clear
+// clears it - but the default is now a starting position rather than a lock,
+// and what this entry says is what the next run will do.
+//
+// The entry is visible from the first run for the same reason it always was:
+// the menu's y-positions are compile-time from the enum index, so an item that
+// appears and disappears would move every row below it.
 static u8 DungeonOrder_ProcessInput(u8 selection)
 {
     if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))

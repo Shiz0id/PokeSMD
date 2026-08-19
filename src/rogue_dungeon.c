@@ -40,6 +40,7 @@
 #include "constants/rogue_safari_pool.h"
 #include "rogue_dungeon.h"
 #include "rogue_charms.h"
+#include "rogue_journal.h"
 #include "battle.h"
 
 extern const u8 RogueDungeonFloor_EventScript_Stairs[];
@@ -66,7 +67,7 @@ extern const u8 RogueDungeonFloor_EventScript_EventFossil[];
 extern const u8 RogueDungeonFloor_EventScript_EventTutor[];
 extern const u8 RogueDungeonFloor_EventScript_EventCrystal[];
 extern const u8 RogueDungeonFloor_EventScript_EventDittoBall[];
-extern const u8 RogueDungeonFloor_EventScript_EventTotem[];
+extern const u8 RogueDungeonFloor_EventScript_EventAlpha[];
 extern const u8 RogueDungeonFloor_EventScript_EventOrb[];
 extern const u8 RogueDungeonFloor_EventScript_EventShuppet[];
 extern const u8 RogueDungeonFloor_EventScript_EventClefairy[];
@@ -1151,8 +1152,20 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         // have been a silent regression - the same shape of mistake as a new
         // weather dropping out of battle_util.c's switch.
         .mapId = MAP_ROGUE_DUNGEON_LEAVES,
-        // it IS Petalburg Woods, and the only theme this track was ever right for
-        .music = MUS_PETALBURG_WOODS,
+        // SADPOP, not Petalburg Woods. An autumnal track from Team Aqua's pack
+        // that fits the falling-leaves weather this theme already runs, which
+        // Petalburg Woods - a spring forest - never quite did.
+        //
+        // SET HERE AND NOT IN map.json. MAP_ROGUE_DUNGEON_LEAVES is a shared
+        // header and this field is what ThemeForFloor(floor)->music returns, so
+        // the change lands on the woods alone. Editing the map would move the
+        // music for anything else that ever lands on that map, and the header
+        // still says MUS_PETALBURG_WOODS as the fallback for exactly that case.
+        //
+        // It was also the quietest thing in the run at -V080; it is -V108 now
+        // with its CC7 lifted to peak, against the 23.6 effective loudness the
+        // old woods track had. See tools/rogue/tune_song_volume.py.
+        .music = MUS_AQUA_SADPOP,
         .mapSecId = MAPSEC_ROGUE_WOODS,
         .berries = TRUE,   // open sky and soil
         .generator = DUNGEON_GEN_WOODS,
@@ -1219,9 +1232,26 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     [DUNGEON_THEME_CAVE] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_FLOOR,
-        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
-        // vanilla uses it for Shoal Cave -- a plain deep cave
-        .music = MUS_MT_PYRE,
+        // Zubats through a cave, and the one weather on this branch whose art
+        // is not a weather sheet at all - it drives a FOLLOWER POKEMON's
+        // overworld sprite through CreateObjectGraphicsSprite. A map of its own
+        // for the usual reason (weather is a header field and cannot be faked
+        // the way the tileset swap is; see theme->mapId), and cosmetic: absent
+        // from battle_util.c's switch, and this theme had no weather before, so
+        // there is nothing for that to take away.
+        .mapId = MAP_ROGUE_DUNGEON_ZUBATS,
+        // FRLG's Rocket Hideout theme, and READ PAST THE NAME: FRLG gives this
+        // exact track to CERULEAN CAVE, its deepest and latest cave, which is
+        // corroborated in this repo rather than remembered --
+        // data/maps/CeruleanCave_B1F_Frlg/map.json carries this constant. So it
+        // is a cave track that happens to be named after the first place the
+        // player hears it. It replaced MUS_MT_PYRE, which is a tomb rather than
+        // a cave and always read as more funereal than this dungeon wants.
+        //
+        // Still the theme's and still what plays; the header carries it as the
+        // fallback. Mirrored in the jukebox's dungeon block, which is declared
+        // to be in theme order - change one and the other lies.
+        .music = MUS_RG_ROCKET_HIDEOUT,
         .mapSecId = MAPSEC_ROGUE_CAVE,
         .generator = DUNGEON_GEN_ORGANIC,
         .caveFill = 48,
@@ -1354,8 +1384,18 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     [DUNGEON_THEME_FIERYPATH] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_FIERYPATH,
-        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
-        // the volcano track, for a lava cave
+        // Ash falling through a lava cave. A map of its own purely because
+        // weather is a header field and cannot be faked the way the tileset
+        // swap is - see theme->mapId - and the weather itself is VANILLA'S, so
+        // it cost a map and nothing else. Cosmetic: WEATHER_VOLCANIC_ASH is
+        // absent from battle_util.c's switch, and this theme had no weather
+        // before, so there is nothing for that to take away.
+        .mapId = MAP_ROGUE_DUNGEON_ASH,
+        // the volcano track, for a lava cave. Still the theme's, and still what
+        // plays: RogueDungeon_GetLocationMusic returns this in preference to
+        // the map header, which is what makes moving a theme onto a weather map
+        // safe for music now. The header carries MUS_MT_CHIMNEY too, as the
+        // fallback, so the two cannot disagree.
         .music = MUS_MT_CHIMNEY,
         .mapSecId = MAPSEC_ROGUE_FIERYPATH,
         .generator = DUNGEON_GEN_ORGANIC,
@@ -1411,8 +1451,19 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     [DUNGEON_THEME_MIRAGETOWER] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_MIRAGETOWER,
-        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
-        // Mirage Tower stands in the desert and this is the desert track
+        // A sandstorm over a sandstone tower in Hoenn's desert. Vanilla's
+        // weather, so it cost a map and nothing else - but READ THE OTHER HALF:
+        // WEATHER_SANDSTORM is already a case in battle_util.c's
+        // overworld-to-battle switch, so this is MECHANICAL and pointing the
+        // theme here chips 1/16 max HP a turn off both teams for every battle
+        // on the dungeon. Deliberate, and the inverse of the blizzard's trap:
+        // there a new weather would silently have LOST a battle effect, here a
+        // vanilla constant silently BRINGS one. See data/maps/
+        // RogueDungeonSandstorm/scripts.inc and the INTENT table in
+        // tools/rogue/check_weather_ids.py.
+        .mapId = MAP_ROGUE_DUNGEON_SANDSTORM,
+        // Mirage Tower stands in the desert and this is the desert track. The
+        // theme's own, and what plays; the header carries it as the fallback.
         .music = MUS_DESERT,
         .mapSecId = MAPSEC_ROGUE_MIRAGETOWER,
         .generator = DUNGEON_GEN_CAVE,
@@ -1557,7 +1608,17 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     [DUNGEON_THEME_OCEAN] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_OCEAN,
-        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        // Clouds, a flock of Wingull, the odd Pelipper cruising beneath them,
+        // and every one of them reflected on the water. A map of its own for
+        // the usual reason - weather is a header field and cannot be faked the
+        // way the tileset swap is; see theme->mapId - and cosmetic: absent from
+        // battle_util.c's switch, and this theme had no weather before.
+        //
+        // ITS ENCOUNTER TABLE IS THE FLOOR MAP'S AND NOT A WEATHER MAP'S. This
+        // is the first WATER theme to move onto a weather map, and the nine
+        // weather maps before it all carry land_mons alone; a clone of one of
+        // them would have silently taken surfing and fishing off this dungeon.
+        .mapId = MAP_ROGUE_DUNGEON_SEABIRDS,
         // vanilla uses it for Faraway and Southern Islands
         .music = MUS_ABANDONED_SHIP,
         .mapSecId = MAPSEC_ROGUE_OCEAN,
@@ -2825,6 +2886,16 @@ void RogueDungeon_ApplyNewGameUnlocks(void)
 
     FlagSet(FLAG_SYS_B_DASH);             // running actually works
     FlagSet(FLAG_RECEIVED_RUNNING_SHOES); // event bookkeeping to match
+
+    // A FIRST PLAYTHROUGH WALKS VANILLA'S OWN ORDER, and this is where that is
+    // decided now. RollDungeonOrder reads nothing but the toggle, so the
+    // starting position of the toggle has to be set here rather than implied by
+    // a second condition inside the roll - that second condition is exactly
+    // what made the options entry inert. Stored inverted, so SET is OFF.
+    //
+    // The player may turn it on immediately, and that is the point: the default
+    // is an opinion about a first run, not a lock.
+    FlagSet(FLAG_ROGUE_VANILLA_ORDER);
 }
 
 // A run begins with two starters the player picks, not a handed-out team. The
@@ -3138,6 +3209,14 @@ void RogueDungeon_GiveBossAce(void)
 
     CalculateMonStats(mon);
     CalculatePlayerPartyCount();
+
+    // AFTER the mon is real, and reading the local rather than sBossAceSpecies,
+    // which is cleared on the next line. The player only reaches here by
+    // answering yes to the offer, so nothing logs an ace that was declined.
+    RogueJournal_Append(ROGUE_JOURNAL_ACE_ADOPTED,
+                        VarGet(VAR_ROGUE_DUNGEON_FLOOR) + 1,
+                        sBossAceSpecies, sFloor.trainerIds[0]);
+
     sBossAceSpecies = SPECIES_NONE;
 }
 
@@ -3159,6 +3238,17 @@ void RogueDungeon_OnRunCompleted(void)
 {
     u32 completed = VarGet(VAR_ROGUE_RUNS_COMPLETED);
 
+    // THE FIRST CLEAR TURNS THE SHUFFLE ON, and only the first. Tested before
+    // the FlagSet below, which is the whole reason these two lines are in this
+    // order - after it, every clear would look like the first and would keep
+    // re-enabling a shuffle the player had deliberately switched off.
+    //
+    // ResetRun runs after this on the winning path and rolls the order, so the
+    // run that clears the game is still the one that unlocks the shuffle for
+    // its successor.
+    if (!FlagGet(FLAG_ROGUE_RUN_COMPLETED))
+        FlagClear(FLAG_ROGUE_VANILLA_ORDER);
+
     FlagSet(FLAG_ROGUE_RUN_COMPLETED);
 
     // A var is 16 bits and there is no sensible behaviour past the top, so it
@@ -3173,6 +3263,12 @@ void RogueDungeon_OnRunCompleted(void)
     // of the game they actually finished.
     if (DUNGEON_TOTAL_FLOORS > VarGet(VAR_ROGUE_BEST_FLOOR))
         VarSet(VAR_ROGUE_BEST_FLOOR, DUNGEON_TOTAL_FLOORS);
+
+    // The journal's WINNING terminal, and it is a separate kind from RUN_FELL
+    // rather than one row with an outcome param for the same reason this
+    // function is not called from ResetRun: only this path may say a run was
+    // won, and a shared row would let the losing path write it.
+    RogueJournal_Append(ROGUE_JOURNAL_RUN_CLEARED, 0, 0, 0);
 }
 
 // Rolls the dungeon order for the run that is about to start.
@@ -3188,17 +3284,122 @@ void RogueDungeon_OnRunCompleted(void)
 //
 // It also means an in-progress save keeps vanilla order for the rest of its run
 // and shuffles from the next one, which is the graceful way for this to arrive.
+// Rolls which region each dungeon identity's boss comes from. Two bits per
+// identity across two vars, and every identity is rolled independently - so a
+// run can be Roxanne, Misty, Whitney, Erika and there is no per-run "this is a
+// Johto run" state anywhere. See VAR_ROGUE_RUN_REGION_LO.
+//
+// ROLLED PER IDENTITY RATHER THAN AS A MASKED WORD, because the region count is
+// not a power of two once Sinnoh is unwired: DUNGEON_REGION_WIRED is 3, so a
+// masked 2-bit field would produce a 4 one time in four and index a block of the
+// boss tables that does not exist. `% DUNGEON_REGION_WIRED` is the whole
+// difference, and it is why this is a loop rather than one Random().
+//
+// The bias that modulo introduces is real and is not worth correcting: Random()
+// is 16 bits, so 65536 % 3 leaves Hoenn one extra chance in 21845. Rejection
+// sampling here would cost a loop with no bound to buy a difference no player
+// can observe.
+//
+// Nothing forces a minimum or a maximum number of any region. A run of all
+// fourteen Hoenn is legitimate and so is a run of all fourteen Johto; clamping
+// the count would stop the words being a plain bitfield and would need its own
+// inverse in the debug readout.
+static void RollDungeonRegion(void)
+{
+    u32 lo = 0, hi = 0;
+    u32 i;
+
+    for (i = 0; i < DUNGEON_COUNT; i++)
+    {
+        u32 region = Random() % DUNGEON_REGION_WIRED;
+
+        if (i < DUNGEON_REGION_PER_VAR)
+            lo |= region << (i * DUNGEON_REGION_BITS);
+        else
+            hi |= region << ((i - DUNGEON_REGION_PER_VAR) * DUNGEON_REGION_BITS);
+    }
+
+    VarSet(VAR_ROGUE_RUN_REGION_LO, lo);
+    VarSet(VAR_ROGUE_RUN_REGION_HI, hi);
+}
+
+// Which region this identity's boss comes from. Reads the field rather than the
+// word so every call site asks the same question the same way, and so the range
+// test lives in exactly one place - an identity past DUNGEON_COUNT would
+// otherwise shift by more than a var is wide, which is undefined and would
+// silently answer one region on some builds and another elsewhere.
+//
+// CLAMPED TO WHAT IS WIRED, not to what is named. DUNGEON_REGION_COUNT is 4 and
+// only DUNGEON_REGION_WIRED blocks exist in the boss tables, so a save written
+// by a future build - or a debug poke - could hold a 3 that this build has no
+// rows for. Answering Hoenn is wrong-but-safe; indexing past the tables is
+// neither.
+static u32 DungeonRegionOf(u32 identity)
+{
+    u32 word, shift;
+
+    if (identity >= DUNGEON_COUNT)
+        return DUNGEON_REGION_HOENN;
+
+    if (identity < DUNGEON_REGION_PER_VAR)
+    {
+        word = VarGet(VAR_ROGUE_RUN_REGION_LO);
+        shift = identity * DUNGEON_REGION_BITS;
+    }
+    else
+    {
+        word = VarGet(VAR_ROGUE_RUN_REGION_HI);
+        shift = (identity - DUNGEON_REGION_PER_VAR) * DUNGEON_REGION_BITS;
+    }
+
+    word = (word >> shift) & DUNGEON_REGION_MASK;
+
+    return word < DUNGEON_REGION_WIRED ? word : DUNGEON_REGION_HOENN;
+}
+
+// Slot in, ROW OUT - the row every one of the five parallel boss tables is
+// indexed by. This is DungeonForSlot composed with the region roll, and it is
+// the only thing that should ever index those tables.
+//
+// The two halves compose in this order and not the other: the shuffle decides
+// WHICH DUNGEON stands at a slot, and the region decides WHO ITS BOSS IS. So the
+// identity comes out of DungeonForSlot first and the region bit is then read for
+// that identity, never for the slot.
+static u32 BossRowForSlot(u32 slot)
+{
+    u32 identity = DungeonForSlot(slot);
+
+    return identity + DungeonRegionOf(identity) * DUNGEON_COUNT;
+}
+
 static void RollDungeonOrder(void)
 {
     u32 order;
 
-    // Vanilla until the run has been cleared once, and after that only while the
-    // player leaves the toggle on. Note ResetRun is called AFTER
-    // RogueDungeon_OnRunCompleted on the winning path, so the run that clears the
-    // game is also the one that unlocks the shuffle for its successor.
-    if (!FlagGet(FLAG_ROGUE_RUN_COMPLETED) || FlagGet(FLAG_ROGUE_VANILLA_ORDER))
+    // THE TOGGLE IS THE ONLY AUTHORITY HERE, and the clear is what sets its
+    // DEFAULT rather than what overrides it. This used to be gated on
+    // FLAG_ROGUE_RUN_COMPLETED as well as on the toggle,
+    // which made the options entry a one-way switch: it could turn the shuffle
+    // off but never on, so a player who had not cleared the game saw a control
+    // that said ON and did nothing, with no way to tell that from a run whose
+    // roll came up identity.
+    //
+    // The first-playthrough-is-vanilla intent is unchanged and now lives where
+    // a default belongs - ApplyNewGameUnlocks sets the flag at new game, and
+    // OnRunCompleted clears it on the FIRST clear only. After that the setting
+    // is the player's, and a later clear does not reach in and re-enable it.
+    if (FlagGet(FLAG_ROGUE_VANILLA_ORDER))
     {
         VarSet(VAR_ROGUE_RUN_ORDER, 0);
+
+        // CLEARED, NOT LEFT ALONE, and this line is load bearing. Both words
+        // outlive a run - they are vars, and ResetRun does not wipe vars - so a
+        // player who clears the game, plays a shuffled run and then turns the
+        // toggle off would keep whatever region word that run happened to roll.
+        // The toggle would put the dungeons back in vanilla order and leave Red
+        // standing on floor 115, which is the shuffle visibly not being off.
+        VarSet(VAR_ROGUE_RUN_REGION_LO, 0);
+        VarSet(VAR_ROGUE_RUN_REGION_HI, 0);
         return;
     }
 
@@ -3213,6 +3414,8 @@ static void RollDungeonOrder(void)
     // and it lands on the same branch as "not shuffling" in DungeonForSlot,
     // because it describes the same run. 1 in 384.
     VarSet(VAR_ROGUE_RUN_ORDER, order);
+
+    RollDungeonRegion();
 }
 
 void RogueDungeon_ResetRun(void)
@@ -3554,6 +3757,18 @@ bool8 RogueDungeon_TryHandleWhiteOut(void)
     VarSet(VAR_ROGUE_LAST_RUN_FLOOR, VarGet(VAR_ROGUE_DUNGEON_FLOOR) + 1);
     if (VarGet(VAR_ROGUE_LAST_RUN_FLOOR) > VarGet(VAR_ROGUE_BEST_FLOOR))
         VarSet(VAR_ROGUE_BEST_FLOOR, VarGet(VAR_ROGUE_LAST_RUN_FLOOR));
+
+    // The journal's LOSING terminal. The summary above is shown once and then
+    // cleared; this one is permanent, so it is what the run stays readable
+    // through after the next loss has overwritten VAR_ROGUE_LAST_RUN_FLOOR.
+    //
+    // READS THAT VAR RATHER THAN VAR_ROGUE_DUNGEON_FLOOR, deliberately: ResetRun
+    // below puts the floor counter back to 0 and leaves this one standing, so
+    // the append cannot be silently broken by being moved after it. Floor field
+    // 0 because a separator is a boundary between runs rather than an event on a
+    // floor - the floor it fell on is what the line itself prints.
+    RogueJournal_Append(ROGUE_JOURNAL_RUN_FELL, 0,
+                        VarGet(VAR_ROGUE_LAST_RUN_FLOOR), 0);
 
     RogueDungeon_ResetRun();
 
@@ -4970,13 +5185,86 @@ static void CarveCorridor(u16 *map, const struct RogueDungeonTheme *theme,
 // TRAINER_STEVEN is Emerald's Meteor Falls superboss at levels 75-78, twenty
 // above Wallace. That gap is deliberate - it is the whole point of the last ten
 // floors - and the encounter curve climbs to meet it. See the curve constants.
+// EVERY ONE OF THESE FIVE TABLES IS NOW TWO BLOCKS OF DUNGEON_COUNT, NOT ONE.
+// Rows 0-13 are Hoenn, rows 14-27 are the Kanto counterpart of the same
+// identity, and the row is `identity + region * DUNGEON_COUNT` - which is what
+// BossRowForSlot returns and the only thing that should index any of them.
+//
+// A second block rather than a second set of tables, deliberately.
+// RogueDungeon_GetBossBGM and RogueDungeon_GetBossEnvironment both search these
+// by TRAINER ID, and a second set would have meant a second loop in each, in a
+// file where the last two boss-keyed lookups were already written twice. The
+// STATIC_ASSERTs below then cover both halves for free.
+//
+// The Kanto pairing is by POSITION IN ITS OWN GAME, not by type or by gimmick:
+// Kanto's first leader against Hoenn's first, its Elite Four against Hoenn's in
+// their own fought order. That is what keeps the level fit close enough to
+// stand - see the tolerance note in verify_run_structure.py, and note that
+// Koga and Sabrina do NOT fit inside the Hoenn tolerance and have their own.
 static const u16 sDungeonBosses[] =
 {
     TRAINER_ROXANNE_1, TRAINER_BRAWLY_1, TRAINER_WATTSON_1, TRAINER_FLANNERY_1,
     TRAINER_NORMAN_1,  TRAINER_WINONA_1, TRAINER_TATE_AND_LIZA_1, TRAINER_JUAN_1,
     TRAINER_SIDNEY, TRAINER_PHOEBE, TRAINER_GLACIA, TRAINER_DRAKE, TRAINER_WALLACE,
     TRAINER_STEVEN,
+
+    TRAINER_ROGUE_KANTO_BROCK,   TRAINER_ROGUE_KANTO_MISTY,
+    TRAINER_ROGUE_KANTO_LT_SURGE, TRAINER_ROGUE_KANTO_ERIKA,
+    TRAINER_ROGUE_KANTO_KOGA,    TRAINER_ROGUE_KANTO_SABRINA,
+    TRAINER_ROGUE_KANTO_BLAINE,  TRAINER_ROGUE_KANTO_GIOVANNI,
+    TRAINER_ROGUE_KANTO_LORELEI, TRAINER_ROGUE_KANTO_BRUNO,
+    TRAINER_ROGUE_KANTO_AGATHA,  TRAINER_ROGUE_KANTO_LANCE,
+    TRAINER_ROGUE_KANTO_BLUE,
+    TRAINER_ROGUE_KANTO_RED,
+
+    // Johto. Koga and Bruno are their GEN 2 selves here, not the Kanto rows
+    // eight identities above - same characters, different trainers, and see
+    // constants/opponents.h for why that was worth two ids.
+    //
+    // ETHAN, NOT RED, at identity 13. Red is already Kanto's finale and a run
+    // cannot field one trainer twice; Ethan is his HGSS successor, which keeps
+    // the finale a player character in both regions.
+    //
+    // SILVER IS ABSENT FROM THIS TABLE ON PURPOSE. He is the Johto rival and
+    // the run's rival is the fixed floor-110 mini boss, picked on a different
+    // code path from these tables. His id and party exist; nothing places him.
+    TRAINER_ROGUE_JOHTO_FALKNER, TRAINER_ROGUE_JOHTO_BUGSY,
+    TRAINER_ROGUE_JOHTO_WHITNEY, TRAINER_ROGUE_JOHTO_MORTY,
+    TRAINER_ROGUE_JOHTO_CHUCK,   TRAINER_ROGUE_JOHTO_JASMINE,
+    TRAINER_ROGUE_JOHTO_PRYCE,   TRAINER_ROGUE_JOHTO_CLAIR,
+    TRAINER_ROGUE_JOHTO_WILL,    TRAINER_ROGUE_JOHTO_KOGA,
+    TRAINER_ROGUE_JOHTO_BRUNO,   TRAINER_ROGUE_JOHTO_KAREN,
+    TRAINER_ROGUE_JOHTO_LANCE,
+    TRAINER_ROGUE_JOHTO_ETHAN,
+
+    // Sinnoh, in PLATINUM's gym order - Fantina third and Maylene fourth, which
+    // is the arrangement whose levels climb smoothly. Diamond/Pearl's order
+    // would put a level 32 Lucario against a curve of 19.
+    //
+    // Dawn is the finale and Barry, like Silver, is absent from this table:
+    // he is the rival and the rival is a different code path.
+    TRAINER_ROGUE_SINNOH_ROARK,   TRAINER_ROGUE_SINNOH_GARDENIA,
+    TRAINER_ROGUE_SINNOH_FANTINA, TRAINER_ROGUE_SINNOH_MAYLENE,
+    TRAINER_ROGUE_SINNOH_CRASHER_WAKE, TRAINER_ROGUE_SINNOH_BYRON,
+    TRAINER_ROGUE_SINNOH_CANDICE, TRAINER_ROGUE_SINNOH_VOLKNER,
+    TRAINER_ROGUE_SINNOH_AARON,   TRAINER_ROGUE_SINNOH_BERTHA,
+    TRAINER_ROGUE_SINNOH_FLINT,   TRAINER_ROGUE_SINNOH_LUCIAN,
+    TRAINER_ROGUE_SINNOH_CYNTHIA,
+    TRAINER_ROGUE_SINNOH_DAWN,
 };
+
+// WIRED, not COUNT. COUNT is what the two-bit field can name (4); WIRED is how
+// many regions actually have a block here. They differ whenever a region has
+// sprites but no parties yet, and asserting against COUNT would demand rows for
+// a region nothing can roll.
+STATIC_ASSERT(ARRAY_COUNT(sDungeonBosses) == DUNGEON_COUNT * DUNGEON_REGION_WIRED,
+              BossTableIsOneBlockPerWiredRegion);
+STATIC_ASSERT(DUNGEON_REGION_WIRED <= DUNGEON_REGION_COUNT,
+              WiredRegionsMustBeNameable);
+STATIC_ASSERT(DUNGEON_REGION_COUNT <= (1 << DUNGEON_REGION_BITS),
+              RegionsMustFitTheField);
+STATIC_ASSERT(DUNGEON_COUNT <= DUNGEON_REGION_PER_VAR * 2,
+              RegionFieldsMustFitTwoVars);
 
 // Parallel to sDungeonBosses, so the boss looks like who it is.
 static const u16 sDungeonBossGfx[] =
@@ -4987,7 +5275,47 @@ static const u16 sDungeonBossGfx[] =
     OBJ_EVENT_GFX_SIDNEY, OBJ_EVENT_GFX_PHOEBE, OBJ_EVENT_GFX_GLACIA,
     OBJ_EVENT_GFX_DRAKE, OBJ_EVENT_GFX_WALLACE,
     OBJ_EVENT_GFX_STEVEN,
+
+    // All fourteen were confirmed present in PokeSMD.map, not in the header.
+    // These rows sat inside `#if IS_FRLG` until the FRLG overworld block was
+    // opened wholesale for trainer variety - so before that change every one of
+    // these constants existed, compiled, and pointed at nothing.
+    OBJ_EVENT_GFX_BROCK, OBJ_EVENT_GFX_MISTY, OBJ_EVENT_GFX_LT_SURGE,
+    OBJ_EVENT_GFX_ERIKA, OBJ_EVENT_GFX_KOGA, OBJ_EVENT_GFX_SABRINA,
+    OBJ_EVENT_GFX_BLAINE, OBJ_EVENT_GFX_GIOVANNI,
+    OBJ_EVENT_GFX_LORELEI, OBJ_EVENT_GFX_BRUNO, OBJ_EVENT_GFX_AGATHA,
+    OBJ_EVENT_GFX_LANCE, OBJ_EVENT_GFX_BLUE,
+    OBJ_EVENT_GFX_RED,
+
+    // Johto, staged by tools/rogue/stage_overworld_sprites.py - Black Fragrant's
+    // set for the leaders and Will and Karen, Emerald Rogue's for Ethan. NOTE
+    // that Johto's Koga and Bruno take the KANTO overworld sprites: there is no
+    // Gen 2 art for either in any source searched, and the characters are the
+    // same people. Their battle pics differ from their overworld sprites in
+    // exactly the way vanilla's often do.
+    OBJ_EVENT_GFX_ROGUE_JOHTO_FALKNER, OBJ_EVENT_GFX_ROGUE_JOHTO_BUGSY,
+    OBJ_EVENT_GFX_ROGUE_JOHTO_WHITNEY, OBJ_EVENT_GFX_ROGUE_JOHTO_MORTY,
+    OBJ_EVENT_GFX_ROGUE_JOHTO_CHUCK,   OBJ_EVENT_GFX_ROGUE_JOHTO_JASMINE,
+    OBJ_EVENT_GFX_ROGUE_JOHTO_PRYCE,   OBJ_EVENT_GFX_ROGUE_JOHTO_CLAIR,
+    OBJ_EVENT_GFX_ROGUE_JOHTO_WILL,    OBJ_EVENT_GFX_KOGA,
+    OBJ_EVENT_GFX_BRUNO,               OBJ_EVENT_GFX_ROGUE_JOHTO_KAREN,
+    OBJ_EVENT_GFX_LANCE,
+    OBJ_EVENT_GFX_ROGUE_JOHTO_ETHAN,
+
+    // Sinnoh. The only region with its own overworld art for all fourteen, so
+    // nothing is borrowed here the way Johto's Koga, Bruno and Lance are.
+    OBJ_EVENT_GFX_ROGUE_SINNOH_ROARK,   OBJ_EVENT_GFX_ROGUE_SINNOH_GARDENIA,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_FANTINA, OBJ_EVENT_GFX_ROGUE_SINNOH_MAYLENE,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_CRASHER_WAKE, OBJ_EVENT_GFX_ROGUE_SINNOH_BYRON,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_CANDICE, OBJ_EVENT_GFX_ROGUE_SINNOH_VOLKNER,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_AARON,   OBJ_EVENT_GFX_ROGUE_SINNOH_BERTHA,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_FLINT,   OBJ_EVENT_GFX_ROGUE_SINNOH_LUCIAN,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_CYNTHIA,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_DAWN,
 };
+
+STATIC_ASSERT(ARRAY_COUNT(sDungeonBossGfx) == ARRAY_COUNT(sDungeonBosses),
+              BossGfxMustBeParallelToBosses);
 
 // Parallel to sDungeonBosses. The eight gym entries are exactly what each leader
 // hands over in the stock game.
@@ -5004,7 +5332,61 @@ static const u16 sDungeonBossTMs[] =
     ITEM_TM_TAUNT,     ITEM_TM_SHADOW_BALL, ITEM_TM_BLIZZARD,   ITEM_TM_DRAGON_CLAW,
     ITEM_TM_HYPER_BEAM,
     ITEM_NONE,  // Steven: the run ends on his floor and the bag is wiped with it
+
+    // The Kanto eight give exactly what they hand over in FireRed, which is a
+    // different list from Hoenn's and is the point of fighting them: Bulldoze
+    // has no Gen 3 TM, so Brock's is Rock Tomb like Roxanne's, but Misty gives
+    // Water Pulse where Wattson's counterpart Wattson gives Shock Wave, and
+    // Erika's Giga Drain is a TM this run has no other source for.
+    //
+    // The Elite Four and Blue give nothing in FireRed either, so the last five
+    // follow the same invention rule as the Hoenn five above - the signature
+    // type where the stock 50 has a TM for it. Lorelei takes Blizzard as Glacia
+    // does; Bruno takes Bulk Up rather than Brick Break so a Fighting boss is
+    // not handing out the same TM as Brawly two dungeons earlier.
+    ITEM_TM_ROCK_TOMB,   ITEM_TM_WATER_PULSE, ITEM_TM_SHOCK_WAVE,
+    ITEM_TM_GIGA_DRAIN,  ITEM_TM_TOXIC,       ITEM_TM_CALM_MIND,
+    ITEM_TM_OVERHEAT,    ITEM_TM_EARTHQUAKE,
+    ITEM_TM_BLIZZARD,    ITEM_TM_BULK_UP,     ITEM_TM_SHADOW_BALL,
+    ITEM_TM_DRAGON_CLAW, ITEM_TM_HYPER_BEAM,
+    ITEM_NONE,  // Red: the finale, and the bag is wiped on his floor too
+
+    // Johto's eight give what they hand over in Gen 2 wherever the stock 50 has
+    // that move; where it does not, the signature type's nearest TM. Falkner's
+    // Mud-Slap and Bugsy's Fury Cutter have no Gen 3 TM at all, so they take
+    // Aerial Ace and the Bug-adjacent Facade rather than nothing - a boss that
+    // hands over ITEM_NONE reads as a bug to a player, not as fidelity.
+    //
+    // Whitney's Attract is the one that is exactly right: TM45 in both games.
+    ITEM_TM_AERIAL_ACE,  ITEM_TM_FACADE,      ITEM_TM_ATTRACT,
+    ITEM_TM_SHADOW_BALL, ITEM_TM_BULK_UP,     ITEM_TM_IRON_TAIL,
+    ITEM_TM_BLIZZARD,    ITEM_TM_DRAGON_CLAW,
+    ITEM_TM_CALM_MIND,   ITEM_TM_TOXIC,       ITEM_TM_BRICK_BREAK,
+    ITEM_TM_TAUNT,       ITEM_TM_HYPER_BEAM,
+    ITEM_NONE,  // Ethan: the finale, same as Steven and Red
+
+    // Sinnoh. Its leaders hand over Gen 4 TMs that mostly have no Gen 3 number,
+    // so these are the signature type's nearest equivalent from the stock 50 -
+    // the same invention rule the Hoenn and Kanto Elite Four rows use.
+    //
+    // Roark's Stealth Rock is the one worth naming: it does not exist as a TM
+    // here, so he gives Rock Tomb like every other first-gym Rock leader in
+    // this table. Three regions now hand out Rock Tomb at identity 0, which is
+    // repetitive and is the correct answer anyway - it is the Rock TM.
+    ITEM_TM_ROCK_TOMB,   ITEM_TM_GIGA_DRAIN,  ITEM_TM_SHADOW_BALL,
+    // Crasher Wake gets RAIN DANCE, not Surf - Surf is an HM here and has no
+    // ITEM_TM_ constant at all. Water Pulse would have been the obvious swap
+    // and is already Juan's and Misty's, so three regions would hand out the
+    // same TM at three different identities. Rain Dance is his own.
+    ITEM_TM_BULK_UP,     ITEM_TM_RAIN_DANCE,  ITEM_TM_IRON_TAIL,
+    ITEM_TM_BLIZZARD,    ITEM_TM_THUNDERBOLT,
+    ITEM_TM_AERIAL_ACE,  ITEM_TM_EARTHQUAKE,  ITEM_TM_OVERHEAT,
+    ITEM_TM_CALM_MIND,   ITEM_TM_DRAGON_CLAW,
+    ITEM_NONE,  // Dawn: the finale
 };
+
+STATIC_ASSERT(ARRAY_COUNT(sDungeonBossTMs) == ARRAY_COUNT(sDungeonBosses),
+              BossTMsMustBeParallelToBosses);
 
 // Parallel to sDungeonBosses. ZERO MEANS "let the engine choose", which is the
 // right answer for thirteen of the fourteen: GetBattleBGM in src/pokemon.c
@@ -5032,6 +5414,72 @@ static const u16 sDungeonBossMusic[] =
     0, 0, 0, 0,  // Sidney, Phoebe, Glacia, Drake
     0,           // Wallace
     MUS_VS_FRONTIER_BRAIN,  // Steven
+
+    // KANTO PLAYS FIRERED'S OWN TRACKS. The class switch would resolve these to
+    // Hoenn's themes perfectly well - Leader Frlg lands on MUS_VS_GYM_LEADER -
+    // which is correct and is not what a Kanto run should sound like.
+    //
+    // ALL TWELVE LEADERS AND ELITE FOUR SHARE ONE TRACK, and that is FireRed
+    // being faithfully reproduced rather than a shortcut: FRLG has no separate
+    // Elite Four theme and reuses "Battle! Gym Leader" for them. The absence of
+    // any MUS_RG_VS_ELITE_FOUR constant in songs.h is the corroboration.
+    MUS_RG_VS_GYM_LEADER, MUS_RG_VS_GYM_LEADER,  // Brock, Misty
+    MUS_RG_VS_GYM_LEADER, MUS_RG_VS_GYM_LEADER,  // Lt. Surge, Erika
+    MUS_RG_VS_GYM_LEADER, MUS_RG_VS_GYM_LEADER,  // Koga, Sabrina
+    MUS_RG_VS_GYM_LEADER, MUS_RG_VS_GYM_LEADER,  // Blaine, Giovanni
+    MUS_RG_VS_GYM_LEADER, MUS_RG_VS_GYM_LEADER,  // Lorelei, Bruno
+    MUS_RG_VS_GYM_LEADER, MUS_RG_VS_GYM_LEADER,  // Agatha, Lance
+    MUS_RG_VS_CHAMPION,                          // Blue
+    // RED IS THE EXCEPTION AND IT IS NOT THE ONE STEVEN IS. Steven needs a row
+    // because his class is misfiled as Rival; Red's class is Champion Frlg and
+    // would resolve perfectly well to MUS_VS_CHAMPION. He is set explicitly
+    // anyway because he stands in the FINALE slot, where the run's last ten
+    // floors have been climbing towards a superboss - and letting him take the
+    // champion theme would mean the finale played the same track as the dungeon
+    // five slots above it whenever Blue also rolled Kanto.
+    MUS_VS_FRONTIER_BRAIN,  // Red
+
+    // THE ELITE FOUR SHARE THE GYM TRACK, exactly as Kanto's do and for the
+    // same reason: Gold/Silver has no separate Elite Four theme either, so
+    // twelve of the fourteen on one track is what that game sounds like.
+    //
+    // LANCE HAS HIS OWN, hand-imported rather than taken from the GBA Music
+    // Pack. That pack ships only three HGSS battle tracks - Gym Johto, Gym
+    // Kanto and Team Rocket - and no champion theme at all, so this was a gap
+    // no further import of that pack could ever have closed.
+    MUS_HGSS_BATTLE_GYM_JOHTO, MUS_HGSS_BATTLE_GYM_JOHTO,  // Falkner, Bugsy
+    MUS_HGSS_BATTLE_GYM_JOHTO, MUS_HGSS_BATTLE_GYM_JOHTO,  // Whitney, Morty
+    MUS_HGSS_BATTLE_GYM_JOHTO, MUS_HGSS_BATTLE_GYM_JOHTO,  // Chuck, Jasmine
+    MUS_HGSS_BATTLE_GYM_JOHTO, MUS_HGSS_BATTLE_GYM_JOHTO,  // Pryce, Clair
+    MUS_HGSS_BATTLE_GYM_JOHTO, MUS_HGSS_BATTLE_GYM_JOHTO,  // Will, Koga
+    MUS_HGSS_BATTLE_GYM_JOHTO, MUS_HGSS_BATTLE_GYM_JOHTO,  // Bruno, Karen
+    MUS_HGSS_CHAMPION_LANCE,                               // Lance
+    // Ethan takes the superboss theme for the reason Red does: he stands in the
+    // FINALE slot, ten floors past the champion, and letting his Champion Frlg
+    // class resolve normally would play the same track the dungeon five slots
+    // above him just used.
+    MUS_VS_FRONTIER_BRAIN,  // Ethan
+
+    // THE GYM THEME IS HAND-IMPORTED TOO. The pack's six DPPT battle tracks -
+    // Champion, Cyrus, Lake Pokemon, League, Team Galactic and Trainer - do not
+    // include one, so this came in separately. Its MIDI carries the SDAT
+    // sequence name SEQ_BA_GYM, which is how it was identified as DPPt's rather
+    // than HGSS's, whose sequences are prefixed GS_.
+    //
+    // MUS_DPPT_BATTLE_TRAINER was the stopgap and was rejected: it is the
+    // ordinary trainer theme, so using it for a gym leader would DOWNGRADE the
+    // fight below MUS_VS_GYM_LEADER, which at least is a leader's theme.
+    //
+    // MUS_DPPT_BATTLE_LEAGUE is genuinely the Elite Four theme in DPPt, not a
+    // guess from the name.
+    MUS_DPPT_BATTLE_GYM_LEADER, MUS_DPPT_BATTLE_GYM_LEADER,  // Roark, Gardenia
+    MUS_DPPT_BATTLE_GYM_LEADER, MUS_DPPT_BATTLE_GYM_LEADER,  // Fantina, Maylene
+    MUS_DPPT_BATTLE_GYM_LEADER, MUS_DPPT_BATTLE_GYM_LEADER,  // Wake, Byron
+    MUS_DPPT_BATTLE_GYM_LEADER, MUS_DPPT_BATTLE_GYM_LEADER,  // Candice, Volkner
+    MUS_DPPT_BATTLE_LEAGUE, MUS_DPPT_BATTLE_LEAGUE,    // Aaron, Bertha
+    MUS_DPPT_BATTLE_LEAGUE, MUS_DPPT_BATTLE_LEAGUE,    // Flint, Lucian
+    MUS_DPPT_BATTLE_CHAMPION,                          // Cynthia
+    MUS_VS_FRONTIER_BRAIN,  // Dawn: the finale, for the reason Red and Ethan are
 };
 
 STATIC_ASSERT(ARRAY_COUNT(sDungeonBossMusic) == ARRAY_COUNT(sDungeonBosses),
@@ -5099,6 +5547,54 @@ static const u8 sDungeonBossEnvironment[] =
     BATTLE_ENVIRONMENT_SIDNEY, BATTLE_ENVIRONMENT_PHOEBE,
     BATTLE_ENVIRONMENT_FROZEN_DEPTHS, BATTLE_ENVIRONMENT_DRAKE,
     // Wallace, then Steven.
+    BATTLE_ENVIRONMENT_CHAMPION,
+    BATTLE_ENVIRONMENT_CHAMPION,
+
+    // The Kanto eight, on the same gym-leader interior. There is no Kanto gym
+    // backdrop in this ROM and inventing one is art, not a table row.
+    BATTLE_ENVIRONMENT_LEADER, BATTLE_ENVIRONMENT_LEADER,
+    BATTLE_ENVIRONMENT_LEADER, BATTLE_ENVIRONMENT_LEADER,
+    BATTLE_ENVIRONMENT_LEADER, BATTLE_ENVIRONMENT_LEADER,
+    BATTLE_ENVIRONMENT_LEADER, BATTLE_ENVIRONMENT_LEADER,
+    // The Kanto Elite Four take the HOENN member's stadium palette at the same
+    // identity, because the palettes are recolours of one stadium and there are
+    // no Kanto ones. Note who lands on Glacia's row: identity 10 is AGATHA, not
+    // Lorelei - the Kanto four are paired by fought order, and Lorelei is first
+    // where Glacia is third. So Agatha inherits the frozen-cave exception, and
+    // that is correct rather than a mispairing: the exception belongs to the
+    // DUNGEON, which is nine floors of ice whoever stands at the end of it.
+    // Lorelei being the Ice specialist and getting Sidney's stadium instead is
+    // the same fact read from the other side.
+    BATTLE_ENVIRONMENT_SIDNEY, BATTLE_ENVIRONMENT_PHOEBE,
+    BATTLE_ENVIRONMENT_FROZEN_DEPTHS, BATTLE_ENVIRONMENT_DRAKE,
+    // Blue, then Red.
+    BATTLE_ENVIRONMENT_CHAMPION,
+    BATTLE_ENVIRONMENT_CHAMPION,
+
+    // Johto, following the same rule: the backdrop belongs to the DUNGEON, not
+    // to the trainer, so identity 10 keeps the frozen cave whoever stands there
+    // - Glacia, Agatha, and now Bruno.
+    BATTLE_ENVIRONMENT_LEADER, BATTLE_ENVIRONMENT_LEADER,
+    BATTLE_ENVIRONMENT_LEADER, BATTLE_ENVIRONMENT_LEADER,
+    BATTLE_ENVIRONMENT_LEADER, BATTLE_ENVIRONMENT_LEADER,
+    BATTLE_ENVIRONMENT_LEADER, BATTLE_ENVIRONMENT_LEADER,
+    BATTLE_ENVIRONMENT_SIDNEY, BATTLE_ENVIRONMENT_PHOEBE,
+    BATTLE_ENVIRONMENT_FROZEN_DEPTHS, BATTLE_ENVIRONMENT_DRAKE,
+    // Lance, then Ethan.
+    BATTLE_ENVIRONMENT_CHAMPION,
+    BATTLE_ENVIRONMENT_CHAMPION,
+
+    // Sinnoh. Identity 10 keeps the frozen cave again - Glacia, Agatha, Bruno
+    // and now Flint, whose Fire team standing in an ice cave is the sharpest
+    // illustration yet that this backdrop belongs to the DUNGEON and not the
+    // trainer. That is the rule; the visual joke is free.
+    BATTLE_ENVIRONMENT_LEADER, BATTLE_ENVIRONMENT_LEADER,
+    BATTLE_ENVIRONMENT_LEADER, BATTLE_ENVIRONMENT_LEADER,
+    BATTLE_ENVIRONMENT_LEADER, BATTLE_ENVIRONMENT_LEADER,
+    BATTLE_ENVIRONMENT_LEADER, BATTLE_ENVIRONMENT_LEADER,
+    BATTLE_ENVIRONMENT_SIDNEY, BATTLE_ENVIRONMENT_PHOEBE,
+    BATTLE_ENVIRONMENT_FROZEN_DEPTHS, BATTLE_ENVIRONMENT_DRAKE,
+    // Cynthia, then Dawn.
     BATTLE_ENVIRONMENT_CHAMPION,
     BATTLE_ENVIRONMENT_CHAMPION,
 };
@@ -5301,14 +5797,14 @@ static void PrepareArenaFloor(u16 floor)
 
     if (IsDungeonBossFloor(floor))
     {
-        // IDENTITY here, and SLOT in the branch below. The boss and its sprite
-        // belong to whichever dungeon is standing at this depth; "is this the
-        // last dungeon in the run" is a question about the position, and the
-        // finale never permutes anyway.
-        u32 identity = DungeonForSlot(dungeon);
+        // ROW here, and SLOT in the branch below. The boss and its sprite belong
+        // to whichever dungeon is standing at this depth and to whichever region
+        // that dungeon rolled; "is this the last dungeon in the run" is a
+        // question about the position, and the finale never permutes anyway.
+        u32 row = BossRowForSlot(dungeon);
 
-        sFloor.trainerIds[0] = sDungeonBosses[identity % ARRAY_COUNT(sDungeonBosses)];
-        sFloor.trainerGfx[0] = sDungeonBossGfx[identity % ARRAY_COUNT(sDungeonBossGfx)];
+        sFloor.trainerIds[0] = sDungeonBosses[row % ARRAY_COUNT(sDungeonBosses)];
+        sFloor.trainerGfx[0] = sDungeonBossGfx[row % ARRAY_COUNT(sDungeonBossGfx)];
     }
     else if (dungeon == DUNGEON_COUNT - 1)
     {
@@ -5359,16 +5855,19 @@ u16 RogueDungeon_IsRunCompleteFloor(void)
 // got.
 u16 RogueDungeon_GiveBossTM(void)
 {
-    // IDENTITY: the TM is the boss's, so it travels with the boss. Under the
-    // shuffle that means a band-of-two swap can hand over Bulk Up before Rock
-    // Tomb, which is one dungeon of drift and deliberately not corrected.
-    u32 dungeon = DungeonForSlot(DungeonIndexOf(VarGet(VAR_ROGUE_DUNGEON_FLOOR)));
+    // ROW: the TM is the boss's, so it travels with the boss - through the
+    // shuffle and through the region roll both. Under the shuffle a band-of-two
+    // swap can hand over Bulk Up before Rock Tomb, which is one dungeon of drift
+    // and deliberately not corrected; under the region roll the same identity
+    // gives Water Pulse as Misty where it gave Shock Wave as Wattson, which is
+    // the whole reason for fighting the other region's leader.
+    u32 row = BossRowForSlot(DungeonIndexOf(VarGet(VAR_ROGUE_DUNGEON_FLOOR)));
     u16 item;
 
     if (!IsDungeonBossFloor(VarGet(VAR_ROGUE_DUNGEON_FLOOR)))
         return FALSE;
 
-    item = sDungeonBossTMs[dungeon % ARRAY_COUNT(sDungeonBossTMs)];
+    item = sDungeonBossTMs[row % ARRAY_COUNT(sDungeonBossTMs)];
     if (item == ITEM_NONE)
         return FALSE;
 
@@ -5376,7 +5875,148 @@ u16 RogueDungeon_GiveBossTM(void)
         return FALSE;
 
     CopyItemName(item, gStringVar1);
+
+    // Safe to append here rather than from the script, because this whole block
+    // sits behind FLAG_ROGUE_BOSS_REWARD_TAKEN - see the comment on
+    // RogueDungeonFloor_EventScript_BossDone. AddBagItem has already succeeded,
+    // so this records what the player is actually holding.
+    RogueJournal_Append(ROGUE_JOURNAL_TM_TAKEN,
+                        VarGet(VAR_ROGUE_DUNGEON_FLOOR) + 1, item, 0);
     return TRUE;
+}
+
+// The boss floor's journal line, and it is a SPECIAL rather than a call inside
+// RogueDungeon_OnBossDefeated for one reason: OnBossDefeated runs again every
+// time the player talks to the beaten boss, because the engine answers "you
+// already won" by jumping straight to the post-battle script. An append there
+// would write a fresh line on every conversation.
+//
+// The script calls this immediately after `setflag FLAG_ROGUE_BOSS_REWARD_TAKEN`,
+// which is the once-per-boss gate the reward half already relies on.
+void RogueDungeon_JournalBossDefeated(void)
+{
+    u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+
+    // TWO LITERAL APPENDS RATHER THAN ONE WITH A TERNARY KIND, and the reason is
+    // the check: check_run_journal.py proves every kind has an append site by
+    // looking for RogueJournal_Append(ROGUE_JOURNAL_<KIND>, so a kind reaching
+    // the call through a variable is invisible to it. It caught this exact
+    // function. Naming both is one extra line and keeps the rule enforceable.
+    //
+    // Mini bosses and dungeon bosses share this script, and both stand in
+    // trainerIds[0] - see PickMiniBossForLevel and the boss table.
+    if (IsDungeonBossFloor(floor))
+        RogueJournal_Append(ROGUE_JOURNAL_BOSS_BEATEN, floor + 1,
+                            sFloor.trainerIds[0], 0);
+    else
+        RogueJournal_Append(ROGUE_JOURNAL_MINIBOSS_BEATEN, floor + 1,
+                            sFloor.trainerIds[0], 0);
+}
+
+// Names the dungeon the run has just walked into. Called from the two script
+// sites that begin one - the starter prompt for the first, and the rest stop
+// transition for every later one - rather than from PrepareFloor, which runs
+// again on a save-and-reload and would duplicate the line.
+void RogueDungeon_JournalDungeonEntered(void)
+{
+    u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+
+    RogueJournal_Append(ROGUE_JOURNAL_DUNGEON_ENTERED, floor + 1,
+                        ThemeForFloor(floor)->mapSecId, 0);
+}
+
+// How many dungeons the current run has finished, which is the index of the one
+// it is standing in. For the trainer card's badge row - see the note there on
+// why eight slots is the honest number to show.
+u32 RogueDungeon_DungeonsClearedThisRun(void)
+{
+    return DungeonIndexOf(VarGet(VAR_ROGUE_DUNGEON_FLOOR));
+}
+
+static const u8 sText_DebugRunCleared[]   = _("RUN1 CLEARED x");
+static const u8 sText_DebugRunUncleared[] = _("RUN1 NOT CLEARED");
+static const u8 sText_DebugShuffleOn[]    = _(" SHUF ON");
+static const u8 sText_DebugShuffleOff[]   = _(" SHUF OFF");
+static const u8 sText_DebugSlot[]         = _("S");
+static const u8 sText_DebugSlotSep[]      = _(" ");
+// ONE PER REGION, INDEXED BY THE REGION, not a two-way test. This used to pick
+// Kanto for any row past DUNGEON_COUNT while four regions shipped, so every
+// Johto and Sinnoh boss was labelled Kanto - the debug tool for the scrambler
+// quietly disagreeing with the scrambler about what it had just rolled.
+//
+// Four named arrays and then a pointer table, rather than the literals inline:
+// _() is a charmap macro that expands to a BRACED initializer, so it can fill a
+// u8 array and cannot initialise a pointer.
+static const u8 sText_DebugRegionHoenn[]  = _(" (H)");
+static const u8 sText_DebugRegionKanto[]  = _(" (K)");
+static const u8 sText_DebugRegionJohto[]  = _(" (J)");
+static const u8 sText_DebugRegionSinnoh[] = _(" (S)");
+
+static const u8 *const sDebugRegionText[] =
+{
+    sText_DebugRegionHoenn, sText_DebugRegionKanto,
+    sText_DebugRegionJohto, sText_DebugRegionSinnoh,
+};
+
+// THE SCRAMBLER'S ONLY HONEST TEST, and it is a debug tool rather than a check
+// for a reason worth stating: everything below is a pure function of two vars,
+// so a host-side check can prove the arithmetic and can prove nothing about
+// whether the trainer that arithmetic names is the one that walks onto the
+// arena floor. That question is answered by standing in front of it.
+//
+// Line one is the clear latch AND the switch, and it needs both because they
+// are no longer the same question. FLAG_ROGUE_RUN_COMPLETED decides where the
+// switch STARTS; FLAG_ROGUE_VANILLA_ORDER is what RollDungeonOrder actually
+// reads. Showing only the latch is what this used to do, and it would now
+// report OFF for a perfectly shuffled run that the player had switched on
+// before their first clear.
+void RogueDungeon_GetDebugRunState(u8 *dest)
+{
+    u8 *ptr;
+
+    if (!FlagGet(FLAG_ROGUE_RUN_COMPLETED))
+        ptr = StringCopy(dest, sText_DebugRunUncleared);
+    else
+    {
+        ptr = StringCopy(dest, sText_DebugRunCleared);
+        ptr = ConvertIntToDecimalStringN(ptr, VarGet(VAR_ROGUE_RUNS_COMPLETED),
+                                         STR_CONV_MODE_LEFT_ALIGN, 5);
+    }
+
+    StringCopy(ptr, FlagGet(FLAG_ROGUE_VANILLA_ORDER) ? sText_DebugShuffleOff
+                                                      : sText_DebugShuffleOn);
+}
+
+// Line two: which boss actually stands at a slot, by name, with the region it
+// came from. Stepped one slot at a time rather than listed, because fourteen
+// names do not fit in a debug window and the interesting question is always
+// about one slot.
+//
+// GOES THROUGH BossRowForSlot, NOT THROUGH THE TABLES. Reading sDungeonBosses
+// with the slot would print a lineup that no floor generation agrees with, and
+// it would be wrong in exactly the way that is hardest to notice - plausible
+// names, in a plausible order, describing a run nobody is playing.
+void RogueDungeon_GetDebugRunSlot(u16 slot, u8 *dest)
+{
+    u32 row = BossRowForSlot(slot) % ARRAY_COUNT(sDungeonBosses);
+    u8 *ptr = StringCopy(dest, sText_DebugSlot);
+
+    ptr = ConvertIntToDecimalStringN(ptr, slot + 1, STR_CONV_MODE_LEFT_ALIGN, 2);
+    ptr = StringCopy(ptr, sText_DebugSlotSep);
+    ptr = StringCopy(ptr, GetTrainerNameFromId(sDungeonBosses[row]));
+    StringCopy(ptr, sDebugRegionText[(row / DUNGEON_COUNT)
+                                     % ARRAY_COUNT(sDebugRegionText)]);
+}
+
+// Re-rolls both words without ending a run. RollDungeonOrder is static and stays
+// that way - a second caller outside this file could roll an order mid-descent
+// and repaint the dungeons under the player, which is precisely why the real
+// roll lives in ResetRun. This one is deliberately the debug menu's only door to
+// it, and it still respects the gate: rerolling with the run uncleared zeroes
+// both words, which is the correct answer and worth being able to see.
+void RogueDungeon_Debug_RerollRunOrder(void)
+{
+    RollDungeonOrder();
 }
 
 // Called from the boss post-battle script. The exit does not exist until now,
@@ -6183,10 +6823,22 @@ static const struct RogueFloorEvent sFloorEvents[] =
     { OBJ_EVENT_GFX_HIKER,       RogueDungeonFloor_EventScript_EventTrader,
       0,  DUNGEON_TOTAL_FLOORS, DUNGEON_EVENT_WEIGHT_COMMON },
 
-    // An egg. Free, and the price is the party slot - which this build already
-    // treats as a real wager, since the boss ace offer is refused on a full
-    // party and the archivist is the only way to make room.
-    { OBJ_EVENT_GFX_WOMAN_2,     RogueDungeonFloor_EventScript_EventEgg,
+    // An egg found on the floor. Free, and the price is the party slot - which
+    // this build already treats as a real wager, since the boss ace offer is
+    // refused on a full party and the archivist is the only way to make room.
+    //
+    // AN OBJECT, NOT AN NPC, and that is the whole of the fix. This was
+    // OBJ_EVENT_GFX_WOMAN_2 crouched over the egg offering to hand it over, and
+    // between the sprite and a line about it being nearly out, the scene read as
+    // a woman giving birth to a Pokemon egg. Nothing in the text said that; the
+    // pairing did. It is also what the event always wanted to be - every other
+    // reward on this table is offered BY someone, and an egg is a thing you FIND.
+    //
+    // The sprite is the party-menu egg icon at overworld scale - see
+    // tools/rogue/make_egg_sprite.py, and note that OBJ_EVENT_MON + SPECIES_EGG
+    // is NOT a route to one: SPECIES_EGG carries no .overworldData, so the
+    // follower path the injured Pokemon uses would dereference nothing.
+    { OBJ_EVENT_GFX_ROGUE_EGG,   RogueDungeonFloor_EventScript_EventEgg,
       0,  DUNGEON_TOTAL_FLOORS, DUNGEON_EVENT_WEIGHT_COMMON },
 
     // An injured Pokemon, wearing its OWN overworld sprite - the reason the gfx
@@ -6261,11 +6913,24 @@ static const struct RogueFloorEvent sFloorEvents[] =
     { OBJ_EVENT_GFX_ITEM_BALL,   RogueDungeonFloor_EventScript_EventDittoBall,
       10, DUNGEON_TOTAL_FLOORS },
 
-    // The enraged totem. Wears the rolled species' own sprite like the injured
+    // The enraged Alpha. Wears the rolled species' own sprite like the injured
     // Pokemon - the second use of DUNGEON_EVENT_GFX_ROLLED, and the thing that
     // made the sentinel worth having.
-    { DUNGEON_EVENT_GFX_ROLLED,  RogueDungeonFloor_EventScript_EventTotem,
-      20, DUNGEON_TOTAL_FLOORS },
+    //
+    // IT PROWLS. The second wanderer after the Shuppet, and for the opposite
+    // reason: the Shuppet drifts because a grief-eater standing politely still
+    // is furniture, and this one because a thing described as enraged and
+    // oversized should not be holding perfectly still either.
+    //
+    // RANGE 1 IS NOT A TUNING CHOICE - see DUNGEON_EVENT_WANDER_RANGE, which is
+    // applied to any event whose movement type is not the default. Object events
+    // are destroyed off-screen and respawn at their TEMPLATE tile, so a wanderer
+    // that strays out of view snaps back instead of carrying on. At one tile
+    // that is almost never visible; widen it and the snap is what gets noticed.
+    { DUNGEON_EVENT_GFX_ROLLED,  RogueDungeonFloor_EventScript_EventAlpha,
+      20, DUNGEON_TOTAL_FLOORS, DUNGEON_EVENT_WEIGHT_DEFAULT,
+      DUNGEON_EVENT_ANY_THEME, DUNGEON_EVENT_NO_PROP,
+      MOVEMENT_TYPE_WANDER_AROUND },
 
     // The orb at the summit. NO PROP AND NO NPC - the orb IS the object, wearing
     // OBJ_EVENT_GFX_METEORITE, which is a sphere sitting on the ground and was
@@ -6409,6 +7074,29 @@ static bool32 EventTileFree(u32 x, u32 y)
     return TRUE;
 }
 
+// DEBUG ONLY. When set, every floor that rolls an event at all gets the Alpha
+// instead of whatever it drew. Not saved and not part of a run - see
+// RogueDungeon_Debug_SetForceAlphaEvent and the note at its use in PlaceEvents.
+static bool8 sDebugForceAlphaEvent;
+
+// Which row of sFloorEvents is the Alpha.
+//
+// FOUND BY ITS SCRIPT, NOT WRITTEN DOWN AS A NUMBER. The table is reordered
+// whenever an event is added - the second slate was inserted in the middle of
+// it once already - and a hardcoded index would silently start forcing a
+// different event, which in a DEBUG tool is the worst kind of wrong: it would
+// look like it worked.
+static u32 DebugAlphaEventIndex(void)
+{
+    u32 i;
+
+    for (i = 0; i < ARRAY_COUNT(sFloorEvents); i++)
+        if (sFloorEvents[i].script == RogueDungeonFloor_EventScript_EventAlpha)
+            return i;
+
+    return ARRAY_COUNT(sFloorEvents);
+}
+
 static void PlaceEvents(u16 floor)
 {
     u32 i, j, x, y, room, choices = 0;
@@ -6423,7 +7111,13 @@ static void PlaceEvents(u16 floor)
     // number of draws whether or not a floor gets an event. A roll skipped on
     // the cheap path would desynchronise nothing today - this is the last placer
     // - but it would the moment anything is added after it.
-    if (DungeonRandom() % 100 >= DUNGEON_EVENT_PERCENT)
+    //
+    // THE DEBUG OVERRIDE IGNORES THE RESULT, NEVER THE DRAW. Taking the branch
+    // without calling DungeonRandom would shift every object placed after this
+    // point, so the debug floor and the real floor of the same seed would not be
+    // the same floor - which is the one property that makes the debug warp worth
+    // having. Same reason the roll is unconditional in the first place.
+    if (DungeonRandom() % 100 >= DUNGEON_EVENT_PERCENT && !sDebugForceAlphaEvent)
         return;
 
     // An arena is the boss and the player facing off across an empty room. There
@@ -6474,6 +7168,20 @@ static void PlaceEvents(u16 floor)
             i = choices - 1;
 
         sFloor.eventIndex = eligible[i];
+
+        // AFTER the draw, deliberately. The Alpha is banded to floor 21+, so on
+        // floor 3 it is not in the eligible list at all and there is no way to
+        // pick it through the weighting - but overriding BEFORE the roll would
+        // change how many times DungeonRandom is called, and every placer shares
+        // that stream. Rolling normally and then discarding the answer costs one
+        // wasted draw and keeps the rest of the floor identical.
+        if (sDebugForceAlphaEvent)
+        {
+            u32 forced = DebugAlphaEventIndex();
+
+            if (forced < ARRAY_COUNT(sFloorEvents))
+                sFloor.eventIndex = forced;
+        }
     }
 
     // Rolled for EVERY event, not only the ones that read them, so the number of
@@ -6751,6 +7459,53 @@ void RogueDungeon_EventTraderDo(void)
 // The egg. Free, and the cost is the party slot - which this build already treats
 // as a wager, since the boss ace is refused on a full party and the archivist at
 // the rest stop is the only way to make room. Result 0 means no room.
+//
+// THE REMOVAL IS FOLDED IN rather than being a second special the script has to
+// remember, which is where this differs from the item balls and the mining rocks
+// - those two need the split because a finditem sits between the pickup and the
+// removal, and this one has nothing in between. An egg is an OBJECT now, so a
+// taken egg still sitting in the dirt is the one way the event can look broken,
+// and the guarantee wanted is "taking it removes it", not "the script also calls
+// the remover".
+//
+// Same mechanism as RogueDungeon_HideMinedRock, and for the same reason: object
+// events are destroyed off-screen and respawn from their TEMPLATE, so despawning
+// the sprite alone would put the egg back the moment the player walked away and
+// returned. Moving the template off the map is what makes it stay gone, and it
+// survives a save and reload because the save block copy is what comes back.
+// Takes the floor's event object off the map, for good.
+//
+// REMOVEOBJECT ALONE DOES NOT DO THIS, and this file currently says it both
+// ways: the item ball's note says a bare removeobject does not hold, and the
+// injured Pokemon's says a floor is never revisited so it does. The item ball
+// is the one that is right, and the reason is in TrySpawnObjectEvents - it
+// walks EVERY template each time the camera moves and respawns any whose
+// position has come inside the new bounds, so an object removed but left in its
+// template is back the moment the player walks away and returns. Moving the
+// template is what makes it stay gone, which is what RogueDungeon_HideMinedRock
+// and RogueDungeon_HideTakenFloorItem already do for their own objects.
+//
+// Guarded on the local id being a floor event's own, because the template slot
+// is derived from it - called against anything else this moves an unrelated
+// object off the map, which surfaces two features later as something that is
+// simply missing.
+static void HideFloorEventObject(void)
+{
+    struct ObjectEventTemplate *templates = gSaveBlock1Ptr->objectEventTemplates;
+    u32 slot;
+
+    if (gSpecialVar_LastTalked < DUNGEON_EVENT_FIRST_LOCAL_ID
+     || gSpecialVar_LastTalked >= DUNGEON_EVENT_FIRST_LOCAL_ID + DUNGEON_MAX_EVENTS)
+        return;
+
+    slot = gSpecialVar_LastTalked - 1;
+    templates[slot].x = INT16_MAX;
+    templates[slot].y = INT16_MAX;
+    RemoveObjectEventByLocalIdAndMap(gSpecialVar_LastTalked,
+                                     gSaveBlock1Ptr->location.mapNum,
+                                     gSaveBlock1Ptr->location.mapGroup);
+}
+
 void RogueDungeon_EventEggTake(void)
 {
     u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
@@ -6765,6 +7520,7 @@ void RogueDungeon_EventEggTake(void)
 
     StringCopy(gStringVar1, GetSpeciesName(species));
     gSpecialVar_Result = 1;
+    HideFloorEventObject();
 }
 
 // The injured Pokemon. Result 1 if it joins, 0 if it was feigning - both decided
@@ -7575,16 +8331,21 @@ void RogueDungeon_EventDittoAmbush(void)
                                 SPECIES_DITTO, level, ITEM_NONE);
 }
 
-// ---- The enraged totem.
+// ---- The enraged Alpha.
+//
+// The personality of the Alpha currently on the floor, or 0 for none. Set when
+// the battle is built and read back after it to find where a caught one landed.
+static u32 sAlphaPersonality;
+
 //
 // NO LEGENDARIES. sSafariLandSpecies is the pool the rest of the floor draws
 // from and carries none, so this needs no exclusion list of its own - but if that
 // pool ever gains one, this is the event that would hand the player a legendary
 // for winning a coin flip.
-#define DUNGEON_TOTEM_LEVEL_BONUS 5
-#define DUNGEON_TOTEM_SNEAK_PERCENT 25
+#define DUNGEON_ALPHA_LEVEL_BONUS 5
+#define DUNGEON_ALPHA_SNEAK_PERCENT 25
 
-void RogueDungeon_EventTotemApproach(void)
+void RogueDungeon_EventAlphaApproach(void)
 {
     u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
 
@@ -7595,25 +8356,102 @@ void RogueDungeon_EventTotemApproach(void)
 // The stat boost itself is the SCRIPT's settotemboost, not ours - the engine
 // already has the whole totem-battle feature including its animation and its
 // message, and reimplementing it here would be a second copy that drifts.
-void RogueDungeon_EventTotemBattle(void)
+//
+// THIS IS THE ONE PLACE THE TWO MEANINGS OF "TOTEM" MEET, and the reason our
+// side is called ALPHA everywhere else. The engine's settotemboost / isTotem
+// feature is UPSTREAM and keeps its name; renaming it would conflict on every
+// future merge. We call theirs. We are not one.
+void RogueDungeon_EventAlphaBattle(void)
 {
     u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
-    u32 level = FloorTargetLevel(floor) + DUNGEON_TOTEM_LEVEL_BONUS;
+    u32 level = FloorTargetLevel(floor) + DUNGEON_ALPHA_LEVEL_BONUS;
 
     if (level > MAX_LEVEL)
         level = MAX_LEVEL;
 
-    // Devolved against the FLOOR's level, not the totem's boosted one. It is
+    // Devolved against the FLOOR's level, not the Alpha's boosted one. It is
     // already five levels up with every stat raised a stage; letting it be a
     // whole evolution higher as well is the difference between a hard fight
     // and an unwinnable one.
     CreateScriptedWildMon(EventSpeciesForLevel(FloorTargetLevel(floor)),
                           level, ITEM_NONE);
+
+    // THE HANDLE ON THIS POKEMON, taken now because after the battle there is
+    // no other way back to it. A caught mon is copied wholesale into whatever
+    // party slot happened to be free, and nothing reports which - but the copy
+    // carries its personality, and personality is already what the charm system
+    // keys a row to a Pokemon by (see MonCharms). So this reuses that identity
+    // rule rather than inventing a second one.
+    //
+    // A static rather than save data: the grant happens later in the SAME
+    // script, before anything can save, and a run only ever has one Alpha in
+    // flight at a time.
+    sAlphaPersonality = GetMonData(&gParties[B_TRAINER_OPPONENT_A][0],
+                                   MON_DATA_PERSONALITY);
+}
+
+// DID THE PLAYER KEEP IT, and if so which slot did it land in.
+//
+// Separate from RogueDungeon_EventBattleWon, which counts caught AND knocked
+// out because both earn the prize. This one needs CAUGHT specifically: a
+// defeated Alpha is not in the party to carry anything.
+//
+// The charm is the whole reason this exists. settotemboost writes stat STAGES,
+// which live on struct BattlePokemon and die with the battle - so without this
+// the player catches the thing they just fought and receives an ordinary member
+// of its species. ROGUE_CHARM_ALPHA is where that boost is kept instead.
+//
+// VAR_RESULT: 0 nothing to do, 1 the charm is on it now, 2 it went to a PC box
+// and is registered instead. The script says something different for 2, because
+// "you caught it and nothing happened" is what the player would otherwise see.
+void RogueDungeon_EventAlphaKept(void)
+{
+    u32 i, count;
+
+    gSpecialVar_Result = 0;
+
+    // Zero doubles as "no Alpha in flight", which is the same sentinel the
+    // charm rows themselves use for an empty personality slot.
+    if (gBattleOutcome != B_OUTCOME_CAUGHT || sAlphaPersonality == 0)
+        return;
+
+    // REGISTERED FIRST AND UNCONDITIONALLY, before anything looks at the party.
+    // A full party sends the catch straight to a PC box, where there is no charm
+    // row to write to - and this is the reward for the hardest optional fight in
+    // the run, so it must not be lost to how many Pokemon happened to be carried.
+    // The registry is keyed on personality and RogueCharm_SyncParty installs from
+    // it, so the charm arrives the moment the Pokemon does.
+    RogueCharm_RegisterAlpha(sAlphaPersonality);
+
+    count = CalculatePlayerPartyCount();
+
+    for (i = 0; i < count; i++)
+    {
+        if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_PERSONALITY)
+            != sAlphaPersonality)
+            continue;
+
+        // Through the script wrapper rather than InstallCharm directly - it is
+        // what resyncs the party, writes the run journal line and recalculates
+        // stats, and rogue_charms.h says events reach charms only this way.
+        // RegisterAlpha has already installed it; this is what JOURNALS it.
+        gSpecialVar_0x8000 = ROGUE_CHARM_ALPHA;
+        gSpecialVar_0x8001 = 0xFFFF;
+        gSpecialVar_0x8002 = i;
+        RogueCharm_ScriptGrantMon();
+        sAlphaPersonality = 0;
+        return;
+    }
+
+    // Not in the party, so it is in a box. The registry holds it and the charm
+    // installs itself on withdrawal - see EnsureAlphaCharms.
+    gSpecialVar_Result = 2;
+    sAlphaPersonality = 0;
 }
 
 // Laying down food. Costs one healing item from the bag and turns the fight into
 // an ordinary catchable encounter at the floor's own level.
-void RogueDungeon_EventTotemFeed(void)
+void RogueDungeon_EventAlphaFeed(void)
 {
     static const u16 sFood[] =
     {
@@ -7641,7 +8479,7 @@ void RogueDungeon_EventTotemFeed(void)
     }
 }
 
-// ---- what the totem is guarding.
+// ---- what the Alpha is guarding.
 //
 // The event's own text has always said "something glitters behind it" and the
 // challenge branch handed over nothing at all. This is the something.
@@ -7650,7 +8488,7 @@ void RogueDungeon_EventTotemFeed(void)
 // run-defining item in the build and also the most useless one: Charizardite
 // found by a team with no Charizard is a bag slot. So the party is searched
 // first and the reward is drawn from what it can actually use, which turns the
-// totem from a loot roll into the moment a run's plan comes together.
+// Alpha from a loot roll into the moment a run's plan comes together.
 //
 // The lookup walks the species' own form change table rather than keeping a
 // second species-to-stone list. Those tables are where the pairing is DEFINED -
@@ -7661,11 +8499,15 @@ void RogueDungeon_EventTotemFeed(void)
 // roll. A crystal is keyed on a TYPE rather than a species, so it is the one
 // reward that is never dead weight - which makes it exactly right for a party
 // with nothing that megas, and worth a rare roll even for one that does.
-#define DUNGEON_TOTEM_Z_ODDS 8
+#define DUNGEON_ALPHA_Z_ODDS 8
+
+// How many Alphas must already have been beaten before the Shiny Charm joins
+// the pool. ONE, so it is the SECOND Alpha of a run that can hand it over.
+#define DUNGEON_ALPHA_SHINY_AFTER 1
 
 // Type-indexed, matching the item ids' own order. Read straight off the run of
 // ITEM_NORMALIUM_Z onward in constants/items.h.
-static const u16 sTotemZCrystals[] =
+static const u16 sAlphaZCrystals[] =
 {
     [TYPE_NORMAL]   = ITEM_NORMALIUM_Z,
     [TYPE_FIRE]     = ITEM_FIRIUM_Z,
@@ -7710,50 +8552,101 @@ static u16 MegaStoneFor(u16 species)
 // A crystal for a type somebody on the team actually attacks with, chosen from a
 // party member at random rather than always the lead - the lead is whoever is
 // healthiest, which is not the same as whoever the run is built around.
-static u16 TotemZCrystal(void)
+// AN EGG IS NOT A TEAM MEMBER, and both halves of the reward have to agree on
+// that. CalculatePlayerPartyCount counts eggs, and MON_DATA_SPECIES on an egg
+// returns the species it will hatch into rather than SPECIES_EGG - so an egg
+// reads exactly like a Pokemon to anything that does not ask.
+//
+// Left wrong for a while because it is invisible unless you look for it: the
+// reward is still a real item, just one keyed on a Pokemon the player cannot
+// use for many floors, and a Charizardite handed to a team whose only
+// Charizard is unhatched is precisely the dead bag slot this event exists to
+// avoid. The dungeon has an egg event, so it is reachable in a normal run.
+static bool32 AlphaRewardCounts(struct Pokemon *mon)
+{
+    return !GetMonData(mon, MON_DATA_IS_EGG);
+}
+
+static u16 AlphaZCrystal(void)
 {
     u32 count = CalculatePlayerPartyCount();
-    struct Pokemon *mon;
-    u32 type;
+    u8 eligible[PARTY_SIZE];
+    u32 found = 0, i, type;
 
-    if (count == 0)
-        return sTotemZCrystals[TYPE_NORMAL];
+    // Gathered first rather than picked and retried: a party that is all eggs
+    // would make a retry loop spin, and one draw keeps this cheap.
+    for (i = 0; i < count; i++)
+        if (AlphaRewardCounts(&gParties[B_TRAINER_PLAYER][i]))
+            eligible[found++] = i;
 
-    mon = &gParties[B_TRAINER_PLAYER][Random() % count];
-    type = GetSpeciesType(GetMonData(mon, MON_DATA_SPECIES), Random() % 2);
+    if (found == 0)
+        return sAlphaZCrystals[TYPE_NORMAL];
 
-    if (type >= ARRAY_COUNT(sTotemZCrystals) || sTotemZCrystals[type] == ITEM_NONE)
+    type = GetSpeciesType(
+        GetMonData(&gParties[B_TRAINER_PLAYER][eligible[Random() % found]],
+                   MON_DATA_SPECIES),
+        Random() % 2);
+
+    if (type >= ARRAY_COUNT(sAlphaZCrystals) || sAlphaZCrystals[type] == ITEM_NONE)
         type = TYPE_NORMAL;
 
-    return sTotemZCrystals[type];
+    return sAlphaZCrystals[type];
 }
 
 // VAR_RESULT: 0 the bag had no room, 1 it was handed over.
-void RogueDungeon_EventTotemReward(void)
+void RogueDungeon_EventAlphaReward(void)
 {
     u32 count = CalculatePlayerPartyCount();
-    u16 stones[PARTY_SIZE];
+    // One mega stone per party member, plus the Shiny Charm.
+    u16 pool[PARTY_SIZE + 1];
     u32 found = 0, i;
+    u32 beaten = RogueCharm_AlphasBeaten();
     u16 item;
 
     gSpecialVar_Result = 0;
 
+    // COUNTED HERE, AND READ BEFORE IT IS COUNTED. The script only reaches this
+    // special once RogueDungeon_EventBattleWon has passed, so arriving is the
+    // definition of having beaten or caught one - and counting before the bag is
+    // touched is deliberate, because running out of room does not un-beat it.
+    RogueCharm_NoteAlphaBeaten();
+
     for (i = 0; i < count; i++)
     {
-        u16 stone = MegaStoneFor(GetMonData(&gParties[B_TRAINER_PLAYER][i],
-                                            MON_DATA_SPECIES));
+        u16 stone;
+
+        // See AlphaRewardCounts: an egg reads as its hatched species here, and
+        // a stone for a Pokemon that does not exist yet is a dead bag slot.
+        if (!AlphaRewardCounts(&gParties[B_TRAINER_PLAYER][i]))
+            continue;
+
+        stone = MegaStoneFor(GetMonData(&gParties[B_TRAINER_PLAYER][i],
+                                        MON_DATA_SPECIES));
 
         // Skipped if the player already carries it: a second Charizardite is a
         // bag slot, and this is the one event whose whole promise is that the
         // prize was worth the fight.
         if (stone != ITEM_NONE && !CheckBagHasItem(stone, 1))
-            stones[found++] = stone;
+            pool[found++] = stone;
     }
 
-    if (found != 0 && (Random() % DUNGEON_TOTEM_Z_ODDS) != 0)
-        item = stones[Random() % found];
+    // THE SHINY CHARM, FROM THE SECOND ALPHA ON. It joins the same draw the mega
+    // stones sit in rather than replacing anything, so beating a second Alpha
+    // widens what the third might give instead of scripting what it will.
+    //
+    // IT RETIRES ITSELF and needs no "once per run" flag: importance 1 makes it
+    // a key item, so the same already-carried skip the stones use takes it back
+    // out of the pool the moment it is won. One rule, two item kinds.
+    //
+    // Not on the FIRST Alpha, because a run that meets one on floor 21 and never
+    // sees another should not have the shiny rate of one that cleared three.
+    if (beaten >= DUNGEON_ALPHA_SHINY_AFTER && !CheckBagHasItem(ITEM_SHINY_CHARM, 1))
+        pool[found++] = ITEM_SHINY_CHARM;
+
+    if (found != 0 && (Random() % DUNGEON_ALPHA_Z_ODDS) != 0)
+        item = pool[Random() % found];
     else
-        item = TotemZCrystal();
+        item = AlphaZCrystal();
 
     if (!AddBagItem(item, 1))
         return;
@@ -7765,7 +8658,7 @@ void RogueDungeon_EventTotemReward(void)
 // Did the player actually beat it? dowildbattle leaves the outcome in
 // gBattleOutcome and nothing puts it where a script can compare it.
 //
-// CAUGHT COUNTS. A totem that is caught rather than knocked out was still
+// CAUGHT COUNTS. An Alpha that is caught rather than knocked out was still
 // overcome, and withholding the prize for the better outcome would be perverse.
 void RogueDungeon_EventBattleWon(void)
 {
@@ -7773,9 +8666,22 @@ void RogueDungeon_EventBattleWon(void)
                           || gBattleOutcome == B_OUTCOME_CAUGHT);
 }
 
-void RogueDungeon_EventTotemSneak(void)
+// The debug toggle. Sticky on purpose: the point is to warp through several
+// floors looking at Alphas, and a one-shot would have to be re-armed between
+// each one. Cleared by leaving it off, and never written to a save.
+void RogueDungeon_Debug_SetForceAlphaEvent(bool8 on)
 {
-    u32 cost = GetMoney(&gSaveBlock1Ptr->money) * DUNGEON_TOTEM_SNEAK_PERCENT / 100;
+    sDebugForceAlphaEvent = on;
+}
+
+bool8 RogueDungeon_Debug_GetForceAlphaEvent(void)
+{
+    return sDebugForceAlphaEvent;
+}
+
+void RogueDungeon_EventAlphaSneak(void)
+{
+    u32 cost = GetMoney(&gSaveBlock1Ptr->money) * DUNGEON_ALPHA_SNEAK_PERCENT / 100;
 
     if (cost == 0 || !IsEnoughMoney(&gSaveBlock1Ptr->money, cost))
     {
@@ -7964,6 +8870,71 @@ void RogueDungeon_EventNestWave(void)
     // times. EventSpeciesForLevel devolves the raw roll for the level, so a
     // shallow floor gets the first stage rather than something it cannot beat.
     CreateScriptedWildMon(EventSpeciesForLevel(level), level, ITEM_NONE);
+}
+
+// The species the player is standing in front of, for the line before the
+// yes/no. THE INTRO USED TO DESCRIBE THE TERRAIN and described the wrong one:
+// it said the floor was thickly webbed and moving, which is a spider, while the
+// species is rolled out of sSafariLandSpecies and is a bird or a fish as often
+// as it is a bug. Naming what is actually there works for all of them, and it
+// costs one string.
+//
+// sFloor.eventSpecies rather than EventSpeciesForLevel: for a GFX_ROLLED event
+// the stored species has ALREADY been devolved to the floor's level at prepare
+// time, because that is the one the object is wearing. The waves devolve again
+// against their own lower levels, so naming a wave's species could name
+// something the player cannot see standing there.
+void RogueDungeon_EventNestApproach(void)
+{
+    StringCopy(gStringVar1, GetSpeciesName(sFloor.eventSpecies));
+}
+
+// What the nest was sitting on. Called once, after the third wave.
+//
+// THE OLD PAYOUT WAS INVISIBLE, which is the defect this fixes. It was a bare
+// addmoney of a flat 5000 with no message naming it, after a line about
+// something being still warm - so on screen the fanfare played, the text
+// promised a guarded thing, and neither the bag nor the wallet appeared to
+// change. Every number handed over here is now buffered into the string the
+// player reads, which is what the gambler and the pedlar already do.
+//
+// The item comes from the floor's OWN consumable table - the same ladder the
+// item balls draw from - so this holds no second copy of the loot curve and
+// cannot drift from it. LIVE roll rather than the seeded stream: the player is
+// standing on the floor and DungeonRandom is not live once they are.
+//
+// Result 0 means the bag had no room. THE MONEY IS PAID EITHER WAY, and it is
+// paid before the bag is touched: a full bag should cost the player the item,
+// which the script has a line for, and not silently cost them the rest of it
+// too.
+void RogueDungeon_EventNestHoard(void)
+{
+    u16 floor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
+    u16 item = ITEM_NONE;
+    u8 quantity = 0;
+    u32 money = DUNGEON_NEST_REWARD_MIN + floor * DUNGEON_NEST_REWARD_PER_FLOOR;
+
+    RollFromTableLive(sLootConsumables, ARRAY_COUNT(sLootConsumables), floor,
+                      &item, &quantity);
+
+    AddMoney(&gSaveBlock1Ptr->money, money);
+    ConvertIntToDecimalStringN(gStringVar2, money, STR_CONV_MODE_LEFT_ALIGN,
+                               MAX_MONEY_DIGITS);
+
+    // The nest is spent the moment it is cleared, whichever way the bag goes.
+    HideFloorEventObject();
+
+    if (item == ITEM_NONE || quantity == 0 || !AddBagItem(item, quantity))
+    {
+        gSpecialVar_Result = 0;
+        return;
+    }
+
+    // Plural-aware, because the loot table hands out stacks and "found 3 POTION"
+    // is the kind of thing that gets noticed and never written down.
+    CopyItemNameHandlePlural(item, gStringVar1, quantity);
+    ConvertIntToDecimalStringN(gStringVar3, quantity, STR_CONV_MODE_LEFT_ALIGN, 3);
+    gSpecialVar_Result = 1;
 }
 
 static void PlantFloorBerryTrees(void)
@@ -10231,6 +11202,8 @@ u32 RogueDungeon_Test_HashFloorPlacements(u16 floor, u16 seed)
     // broke the next test in the file.
     u16 savedFloor = VarGet(VAR_ROGUE_DUNGEON_FLOOR);
     u16 savedOrder = VarGet(VAR_ROGUE_RUN_ORDER);
+    u16 savedRegionLo = VarGet(VAR_ROGUE_RUN_REGION_LO);
+    u16 savedRegionHi = VarGet(VAR_ROGUE_RUN_REGION_HI);
     const struct MapLayout *savedLayout = gMapHeader.mapLayout;
     u8 savedMapSec = gMapHeader.regionMapSectionId;
     bool8 savedPrepared = sFloorPrepared;
@@ -10240,7 +11213,17 @@ u32 RogueDungeon_Test_HashFloorPlacements(u16 floor, u16 seed)
     // digest would depend on whatever run order the save block happened to
     // hold and no value could be pinned. Order 0 means "no shuffle", so a
     // floor number maps to one fixed theme and the cases below can name it.
+    //
+    // AND PINNED TO HOENN, for exactly the same reason and one step further
+    // along: PrepareBossFloor goes through BossRowForSlot, which reads
+    // the region words, so a boss floor's trainer id and sprite would otherwise
+    // depend on the save block too. Zero is all-Hoenn, which is the arrangement
+    // every pinned digest in this file was taken under. BOTH words: the region
+    // field for identity 7 upward lives in the high one, so pinning only the low
+    // word leaves half the run's bosses reading whatever was saved.
     VarSet(VAR_ROGUE_RUN_ORDER, 0);
+    VarSet(VAR_ROGUE_RUN_REGION_LO, 0);
+    VarSet(VAR_ROGUE_RUN_REGION_HI, 0);
     VarSet(VAR_ROGUE_DUNGEON_FLOOR, floor);
 
     PrepareFloor(seed);
@@ -10340,6 +11323,8 @@ u32 RogueDungeon_Test_HashFloorPlacements(u16 floor, u16 seed)
     gMapHeader.regionMapSectionId = savedMapSec;
     VarSet(VAR_ROGUE_DUNGEON_FLOOR, savedFloor);
     VarSet(VAR_ROGUE_RUN_ORDER, savedOrder);
+    VarSet(VAR_ROGUE_RUN_REGION_LO, savedRegionLo);
+    VarSet(VAR_ROGUE_RUN_REGION_HI, savedRegionHi);
     // FALSE, not savedPrepared's opposite: the next real map load must prepare
     // afresh rather than repaint whatever this test left standing.
     sFloorPrepared = FALSE;

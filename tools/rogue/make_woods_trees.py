@@ -61,6 +61,31 @@ PALETTE = 6
 RUSTBORO_BASE_METATILES = 350        # vanilla count, ids 0x200-0x35D
 GRASS_METATILE = 0x001               # the woods floor, primary
 TREE_ATTR_DONOR = 0x1D4              # vanilla woods tree, primary
+
+# LAYER TYPE, WHICH THE DONOR CANNOT SUPPLY. The attribute is copied from the
+# vanilla tree so behaviour is never invented, but its LAYER TYPE is wrong for
+# this art and copying it shipped a visible bug: the player walking along the
+# bottom of a tree was drawn behind the trunk.
+#
+# Vanilla's tree bakes tree and grass together into the BOTTOM half of the
+# metatile, so NORMAL - middle plus top - puts its art on the middle layer,
+# under the player, and leaves the top half blank. Ours does the opposite (see
+# the docstring): grass in the bottom half, tree in the TOP half, which under
+# NORMAL lands the entire tree on BG1, above the player. Correct for the two
+# canopy rows, which the player really does walk behind. Wrong for the third,
+# which is trunk and ground shadow at the player's own feet.
+#
+# COVERED shifts both halves down a layer - grass to BG3, tree to BG2 - so the
+# bottom row draws under the sprite while the canopy above keeps drawing over
+# it. Nothing else moves: layer type is bits 12-15 and the behaviour byte the
+# donor supplies is untouched.
+METATILE_LAYER_TYPE_NORMAL = 0
+METATILE_LAYER_TYPE_COVERED = 1
+TREE_ROW_LAYERS = {
+    0: METATILE_LAYER_TYPE_NORMAL,   # canopy - draws over the player
+    1: METATILE_LAYER_TYPE_NORMAL,   # canopy - draws over the player
+    2: METATILE_LAYER_TYPE_COVERED,  # trunk and shadow - draws under the player
+}
 STAIRS_TILES = (508, 509, 510, 511)  # make_woods_stairs.py owns these
 
 BG = (255, 255, 255)                 # the sheet has NO alpha; white is the key
@@ -247,9 +272,17 @@ def tile_bytes(t):
 
 
 def append_order():
-    """(label, 16-byte metatile entry, attribute donor) for append_rustboro."""
+    """(label, entry, attribute donor, layer type) for append_rustboro.
+
+    The layer type is carried separately from the donor because the donor is
+    right about behaviour and wrong about layers - see TREE_ROW_LAYERS.
+    """
     _, _, _, mts, _ = build()
-    return [(lbl, struct.pack('<8H', *e), TREE_ATTR_DONOR) for lbl, e in mts]
+    # The label ends in the metatile's row and column within its tree, which is
+    # how build() names them; the row is what picks the layer.
+    return [(lbl, struct.pack('<8H', *e), TREE_ATTR_DONOR,
+             TREE_ROW_LAYERS[int(lbl[-2])])
+            for lbl, e in mts]
 
 
 def tile_writes():

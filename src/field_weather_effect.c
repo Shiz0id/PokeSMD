@@ -1,6 +1,13 @@
 #include "global.h"
 #include "battle_anim.h"
 #include "event_object_movement.h"
+// For FieldEffectFreeTilesIfUnused / FieldEffectFreePaletteIfUnused, which
+// WEATHER_ZUBATS needs and no other weather does - it is the only one whose
+// sprites hold a sprite sheet and an OBJ palette it did not allocate itself.
+#include "field_effect.h"
+#include "constants/event_objects.h"
+#include "constants/event_object_movement.h"
+#include "constants/species.h"
 #include "fieldmap.h"
 #include "field_weather.h"
 #include "overworld.h"
@@ -949,7 +956,8 @@ static void InitSnowflakeSpriteMovement(struct Sprite *sprite)
 
     sprite->y = -3 - (gSpriteCoordOffsetY + sprite->centerToCornerVecY);
     sprite->x = x - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
-    sprite->tPosY = sprite->y * 128;
+    // A FRACTION, NOT A POSITION - zero, not y * 128. See UpdateSnowflakeSprite.
+    sprite->tPosY = 0;
     sprite->x2 = 0;
     rand = Random();
     sprite->tDeltaY = (rand & 3) * 5 + 64;
@@ -968,7 +976,7 @@ static void UNUSED WaitSnowflakeSprite(struct Sprite *sprite)
         sprite->invisible = FALSE;
         sprite->callback = UpdateSnowflakeSprite;
         sprite->y = 250 - (gSpriteCoordOffsetY + sprite->centerToCornerVecY);
-        sprite->tPosY = sprite->y * 128;
+        sprite->tPosY = 0;
         gWeatherPtr->snowflakeTimer = 0;
     }
 }
@@ -977,8 +985,24 @@ static void UpdateSnowflakeSprite(struct Sprite *sprite)
 {
     s16 x;
 
+    // WHOLE PIXELS INTO y, FRACTION KEPT IN tPosY. This used to be
+    // `tPosY = y * 128` in the init and `y = tPosY >> 7` here, carrying the
+    // POSITION in a Q7 s16 - and sprite->y is stored relative to
+    // gSpriteCoordOffsetY, which reaches ~600 on a 48x48 dungeon floor. The
+    // SEED alone is then -595 * 128 = -76160 and wraps before the first frame,
+    // so y came back as garbage that varied with where the camera happened to
+    // be. It never looked broken on a vanilla-sized route, where the offset is
+    // small enough that y * 128 fits, and it was never noticed here because
+    // the 8-bit OAM y wrap kept recycling the flakes anyway - just from the
+    // wrong row, shifting phase every time the player walked.
+    //
+    // Keeping only the remainder bounds tPosY to 0..127 forever and leaves
+    // sprite->y as the single authority the wraps below can rewrite. Same
+    // shape as the tSubX comment in UpdateBlizzardSprite, which had worked
+    // this out for the x axis and stated the y axis did it the other way.
     sprite->tPosY += sprite->tDeltaY;
-    sprite->y = sprite->tPosY >> 7;
+    sprite->y += sprite->tPosY >> 7;
+    sprite->tPosY &= 0x7F;
     sprite->tWaveIndex += sprite->tWaveDelta;
     sprite->tWaveIndex &= 0xFF;
     sprite->x2 = gSineTable[sprite->tWaveIndex] / 64;
@@ -991,6 +1015,29 @@ static void UpdateSnowflakeSprite(struct Sprite *sprite)
         sprite->x = 242 - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
     else if (x > 242)
         sprite->x = -3 - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
+
+    // OFF THE BOTTOM, BACK TO THE TOP - and vanilla snow had no vertical test
+    // at all. It did not need one: tPosY overflowed every few seconds and threw
+    // the flake back above the screen, and the 8-bit OAM y wrap caught whatever
+    // that missed. Both of those are accidents of the bug fixed above, and with
+    // the accumulator carrying only a fraction, sprite->y now grows without
+    // bound - so the recycling has to be stated rather than fallen into. This
+    // is the petals' and the blizzard's test, unchanged.
+    //
+    // SCREEN SPACE, not sprite space: sprite->y is relative to
+    // gSpriteCoordOffsetY and coordOffsetEnabled adds it back at draw time, so
+    // comparing it raw against a screen bound is only correct while the camera
+    // has not scrolled. The x wrap directly above already converts before it
+    // compares; this is the same conversion.
+    if (sprite->y + sprite->centerToCornerVecY + gSpriteCoordOffsetY > 163)
+    {
+        // A new entry lane, for the reason the petals re-roll theirs:
+        // tSnowflakeId picks the 30-pixel column a flake enters from and is
+        // otherwise fixed for the sprite's life, so keeping it would file every
+        // flake down the same stripe.
+        sprite->tSnowflakeId = Random() & 7;
+        InitSnowflakeSpriteMovement(sprite);
+    }
 }
 
 #undef tPosY
@@ -1200,7 +1247,8 @@ static void InitPetalSpriteMovement(struct Sprite *sprite)
 
     sprite->y = -3 - (gSpriteCoordOffsetY + sprite->centerToCornerVecY);
     sprite->x = x - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
-    sprite->tPosY = sprite->y * 128;
+    // A FRACTION, NOT A POSITION - zero, not y * 128. See UpdatePetalSprite.
+    sprite->tPosY = 0;
     sprite->x2 = 0;
     rand = Random();
     // Slower and more varied than snow, which falls at 64 to 79. A petal is
@@ -1237,8 +1285,13 @@ static void UpdatePetalSprite(struct Sprite *sprite)
         }
     }
 
+    // WHOLE PIXELS INTO y, FRACTION KEPT IN tPosY - see UpdateSnowflakeSprite
+    // for the full account. Carrying the position here overflowed on the very
+    // first frame of a dungeon floor, because the seed is y * 128 and y is
+    // relative to a gSpriteCoordOffsetY that reaches ~600.
     sprite->tPosY += sprite->tDeltaY;
-    sprite->y = sprite->tPosY >> 7;
+    sprite->y += sprite->tPosY >> 7;
+    sprite->tPosY &= 0x7F;
     sprite->tWaveIndex += sprite->tWaveDelta;
     sprite->tWaveIndex &= 0xFF;
     // The snow divides by 64, which is +/-4 pixels and reads as a wobble. This
@@ -1821,6 +1874,960 @@ static void UpdateLeafSprite(struct Sprite *sprite)
 #undef LEAF_GUST_PEAK
 
 //------------------------------------------------------------------------------
+// FLIERS: overworld Pokemon sprites driven as weather
+//------------------------------------------------------------------------------
+//
+// A FOLLOWER POKEMON'S OVERWORLD SPRITE, DRIVEN AS WEATHER. Every other effect
+// in this file owns a sprite sheet, declares an OamData, an anim table and a
+// SpriteTemplate, and ships art. These ship none of that: they ask
+// CreateObjectGraphicsSprite for an OBJ_EVENT_GFX_SPECIES(...) and drive the
+// result with a callback of their own.
+//
+// TWO WEATHERS RUN ON THIS ONE IMPLEMENTATION and the difference between them
+// is a TABLE, not code - WEATHER_ZUBATS in the cave and WEATHER_SEABIRDS over
+// the ocean. That is deliberate and it is the second time round: the zubats
+// were written standalone, and the moment a second flying weather existed the
+// choice was to generalise or to copy 250 lines. This file already records what
+// copying a weather costs - the Q7 accumulator bug reached three weathers that
+// way, because each was written by copying the one next to it.
+//
+// WHY A WEATHER AND NOT OBJECT EVENTS, which is the obvious way to put a bird
+// on a floor and is the wrong one three times over:
+//
+//   1. THE ENGINE DESTROYS OBJECT EVENTS OFF-SCREEN. A flier whose whole point
+//      is to leave the screen would be torn down mid-exit and never return.
+//      Plain sprites are not managed that way; these live exactly as long as
+//      the weather does.
+//   2. An object event is placed on a metatile and walks the grid. A bird
+//      should cross the screen in the air, ignoring both.
+//   3. Object events are a fixed, declared set per map. Fliers arrive and leave
+//      continuously, which is not a thing that set can express.
+//
+// WORLD SPACE, VIA coordOffsetEnabled = TRUE, AND THIS WAS WRONG ONCE. These
+// were first written with it left FALSE - which is what
+// CreateObjectGraphicsSprite hands back, and what the RAIN does - on the
+// reasoning that a weather belongs to the view rather than to a tile. On screen
+// that reads as the birds being glued to the player: a screen-space sprite holds
+// its screen position while the camera scrolls, so it travels with them.
+//
+// Every other weather sprite in this file is world-anchored. The clouds, the
+// snow, the petals, the leaves and the ash all set coordOffsetEnabled = TRUE;
+// the rain is the single exception, and it gets away with it because a drop is
+// small, fast and on screen for a handful of frames. A bird is large, slow and
+// visible for ten seconds, which is ample time for the camera to drag it about.
+// COPYING THE ONE OUTLIER IS WHAT WENT WRONG - count which way the rest of a
+// family goes before following one member of it.
+//
+// The consequence is that sprite->x and sprite->y are no longer screen
+// coordinates: coordOffsetEnabled adds gSpriteCoordOffset back at DRAW time, so
+// every bound test below converts before it compares. That is the same
+// correction the petals and the blizzard each needed for their respawn tests,
+// and their comments spell out the same trap.
+//
+// IT DOES NOT REINTRODUCE THE tPosY OVERFLOW that UpdateSnowflakeSprite
+// documents, and that is worth being explicit about because it is the obvious
+// worry. That bug was seeding a Q7 accumulator with the POSITION; these
+// accumulators hold only the sub-pixel FRACTION and are masked back to 0..127
+// every frame, so sprite->y growing to several hundred costs nothing.
+//
+// WHAT THIS COSTS. No art, no palette file, no EWRAM: the sprite pointers live
+// in the tail of snowflakeSprites[], which is 101 entries and whose largest
+// other user needs 16, and the counters are the snow's - one weather runs at a
+// time, so both are free whenever fliers are up. Per SPECIES aloft it is one
+// shared sheet and one OBJ palette, plus one more OBJ palette if that species
+// reflects.
+//
+// THE LIFETIME IS THE WHOLE RISK, so it is stated once here and asserted in
+// tools/rogue/check_flier_lifetime.py. CreateObjectGraphicsSprite allocates two
+// things this file does not otherwise own:
+//
+//   a sprite SHEET, tagged COMP_OW_TILE_TAG_BASE + graphicsId, because
+//   OW_GFX_COMPRESS is TRUE and compressed overworld graphics go through
+//   LoadSheetGraphicsInfo; and
+//
+//   an OBJ PALETTE, because a species' graphicsInfo carries
+//   OBJ_EVENT_PAL_TAG_DYNAMIC.
+//
+// A REFLECTION ADDS A THIRD: its own tinted palette. It adds no tiles, because
+// it draws the flier's own - see CreateFlierReflection.
+//
+// DestroySprite frees NONE of them. It frees tiles only for a sprite with
+// usingSheet == FALSE, and ours is TRUE, so destroying a flier and stopping
+// there leaks a sheet and one or two palette slots every time the weather ends
+// - sixteen OBJ palettes is not many, and a floor is left every ninety seconds.
+//
+// They are released with FieldEffectFree*IfUnused, which SCAN the live sprites
+// and free only if nothing else holds them. That is what makes this safe next
+// to a real follower: if the player is walking a Wingull of their own, it
+// shares this exact sheet and palette, and a blind FreeSpriteTilesByTag would
+// pull the graphics out from under it. The scans see the follower and decline.
+//
+// ORDER MATTERS AND IT IS THE OPPOSITE OF THE OBVIOUS ONE: destroy first, then
+// free. DestroySprite clears inUse, which is what takes the flier itself out of
+// the scan; freeing first would find the sprite still live and never free
+// anything at all. FollowerSetGraphics makes the same scan work by clearing
+// inUse by hand around the call, which is the same trick from the other side.
+
+// Slots reserved in snowflakeSprites[] for fliers. Their REFLECTIONS live in
+// the next FLIER_MAX slots, paired by index - sprite i's reflection is at
+// FLIER_MAX + i - so a reflection needs no back-pointer and no data[] slot, and
+// the two cannot get out of step. snowflakeSprites is 101 entries; this uses 16.
+#define FLIER_MAX             8
+#define FLIER_REFLECT_BASE    FLIER_MAX
+
+// Screen bounds, in sprite-centre coordinates. centerToCornerVecX is -16 for a
+// 32x32 object event sprite, so the sprite is fully off the left edge at -16
+// and fully off the right at 256. Spawn and despawn sit outside those, so a
+// flier is never seen appearing or vanishing.
+#define FLIER_SPAWN_LEFT      -28
+#define FLIER_SPAWN_RIGHT     268
+#define FLIER_GONE_LEFT       -44
+#define FLIER_GONE_RIGHT      284
+// Once inside this band the flier has finished entering.
+#define FLIER_ONSCREEN_LEFT    28
+#define FLIER_ONSCREEN_RIGHT  212
+
+// How often, during the wander, a flier may change its mind.
+#define FLIER_TURN_INTERVAL    45
+
+// Q7 change in horizontal speed per frame. A wander reversal is twice the
+// wander speed, so a turn takes tens of frames and reads as banking round.
+// Assigning the new speed outright reverses velocity inside ONE frame, which
+// no flying thing does - this weather shipped that way once and it was the
+// second of the two reasons it looked like it was bouncing.
+#define FLIER_ACCEL             4
+
+// Q7 vertical drift and the cap on it, plus how much one adjustment may change
+// that SPEED. The random walk is on the VELOCITY and never on the position:
+// jogging a speed is invisible because position is its integral, while
+// assigning a position is a step discontinuity and reads as a hop.
+#define FLIER_DRIFT_MAX        20
+#define FLIER_DRIFT_STEP        7
+
+// Drawn in front of the field's object events. A flier is in the air and
+// everything else on a dungeon floor is on the ground.
+#define FLIER_SUBPRIORITY       0
+// The reflection goes behind everything, like a cloud - see CreateFlierReflection.
+#define FLIER_REFLECT_SUBPRIORITY 0xFF
+
+// How far below a flier its reflection sits when the flier is at the BOTTOM of
+// its band, before the altitude term is added. 30 is vanilla's height - 2 for a
+// 32x32 sprite, which is where SetUpReflection puts the reflection of something
+// standing on water.
+#define FLIER_REFLECT_OFFSET      30
+
+// What one flying species does. ADDING A SPECIES IS A ROW HERE, NOT CODE.
+struct RogueFlierKind
+{
+    u16 graphicsId;
+    u8 maxAloft;            // how many of this species in the air at once
+    u16 spawnDelay;         // frames between arrivals of this species
+    s16 speedEnter;         // Q7 px/frame
+    s16 speedWander;
+    s16 speedLeave;
+    s16 bobAmplitude;       // pixels, drawn on y2
+    s16 bobSpeed;           // gSineTable steps per frame
+    s16 yMin;               // the flight band, in screen rows
+    s16 yMax;
+    u16 wanderFrames;
+    u16 reflectPalTag;      // TAG_NONE for a species that does not reflect
+};
+
+struct RogueFlierFlock
+{
+    const struct RogueFlierKind *kinds;
+    u8 kindCount;
+    bool8 clouds;           // does this weather also paint drifting clouds
+};
+
+// ---- the cave: zubats ------------------------------------------------------
+// Unchanged numbers from when this was WEATHER_ZUBATS' own implementation. The
+// bob is +/-4 over 256/3 = 85 frames; it was +/-10 to +/-17 over 26-37 frames
+// once, which is a 34 pixel swing on a 160 pixel screen twice a second, and it
+// read as bouncing on sight. gSineTable is Q8.8, so (gSineTable[i] * amp) >> 8
+// is EXACTLY +/-amp - it is easy to write an amplitude without picturing it.
+static const struct RogueFlierKind sZubatKinds[] =
+{
+    {
+        .graphicsId = OBJ_EVENT_GFX_SPECIES(ZUBAT),
+        .maxAloft = 3, .spawnDelay = 170,
+        .speedEnter = 176, .speedWander = 56, .speedLeave = 272,
+        .bobAmplitude = 4, .bobSpeed = 3,
+        .yMin = 26, .yMax = 104,
+        .wanderFrames = 180,
+        .reflectPalTag = TAG_NONE,   // a cave has nothing to reflect in
+    },
+};
+
+// ---- the ocean: gulls ------------------------------------------------------
+// A FLOCK AND A LONER, which is the whole reading. Wingull arrive four at a
+// time and often, cross fast, and wander briefly; a single Pelipper comes
+// through about every twelve seconds, slower and lower, and does not really
+// wander at all - it cruises. The size difference between the two sprites does
+// most of the work for free.
+static const struct RogueFlierKind sSeabirdKinds[] =
+{
+    {
+        .graphicsId = OBJ_EVENT_GFX_SPECIES(WINGULL),
+        .maxAloft = 4, .spawnDelay = 95,
+        .speedEnter = 208, .speedWander = 72, .speedLeave = 288,
+        .bobAmplitude = 5, .bobSpeed = 4,
+        // High, and a narrow band: a flock holds a rough altitude together.
+        .yMin = 20, .yMax = 68,
+        .wanderFrames = 150,
+        .reflectPalTag = PALTAG_FLIER_REFLECTION_1,
+    },
+    {
+        .graphicsId = OBJ_EVENT_GFX_SPECIES(PELIPPER),
+        .maxAloft = 1, .spawnDelay = 720,
+        // Slower everywhere, and its "wander" is barely slower than its cruise,
+        // so it crosses the screen in more or less a straight line.
+        .speedEnter = 152, .speedWander = 112, .speedLeave = 176,
+        // A big bird beats slowly. Larger amplitude, lower rate.
+        .bobAmplitude = 7, .bobSpeed = 2,
+        // LOWER THAN THE GULLS, deliberately - it passes beneath the flock, and
+        // its reflection is therefore tighter beneath it. See ReflectionOffset.
+        .yMin = 62, .yMax = 104,
+        .wanderFrames = 90,
+        .reflectPalTag = PALTAG_FLIER_REFLECTION_2,
+    },
+};
+
+static const struct RogueFlierFlock sZubatFlock   = { sZubatKinds,   ARRAY_COUNT(sZubatKinds),   FALSE };
+static const struct RogueFlierFlock sSeabirdFlock = { sSeabirdKinds, ARRAY_COUNT(sSeabirdKinds), TRUE  };
+
+// Which flock is aloft. Set by the weather's InitVars and read by Main, Finish
+// and every sprite update - one weather runs at a time, so a single pointer is
+// the whole of the dispatch.
+static const struct RogueFlierFlock *sFlierFlock = NULL;
+
+static void UpdateFlierSprite(struct Sprite *);
+static bool8 CreateFlierSprite(u32 kindIndex);
+static void DestroyFlierSprite(u32 index);
+static void InitFlierFlight(struct Sprite *, const struct RogueFlierKind *, bool32 fromLeft);
+static void SetFlierFacing(struct Sprite *);
+static void CreateFlierReflection(struct Sprite *, const struct RogueFlierKind *, u32 index);
+static void LoadFlierReflectionPalette(struct Sprite *, struct Sprite *,
+                                       const struct RogueFlierKind *);
+static void UpdateFlierReflection(struct Sprite *flier, struct Sprite *reflection,
+                                  const struct RogueFlierKind *kind);
+static void Fliers_InitVars(const struct RogueFlierFlock *flock);
+static void Fliers_Main(void);
+static bool8 Fliers_Finish(void);
+
+#define tSubX        data[0]   // Q7 remainder of horizontal travel
+#define tDeltaX      data[1]   // Q7 pixels per frame, SIGNED - the current speed
+#define tTargetDX    data[2]   // Q7, SIGNED - the speed tDeltaX is easing toward
+#define tSubY        data[3]   // Q7 remainder of vertical drift
+#define tDeltaY      data[4]   // Q7 pixels per frame, SIGNED - the slow climb
+#define tWaveIndex   data[5]   // phase of the drawn bob
+#define tPhaseKind   data[6]   // phase in the low nibble, kind index in the high
+#define tTimer       data[7]
+
+// PACKED, because eight data[] slots is all there is and the motion needs seven
+// of them. Phase is 0-2 and kind is 0-3, so a nibble each is generous. The
+// accessors exist so that no site ever open-codes the shift - which is the way
+// packing like this normally goes wrong.
+#define FLIER_PHASE(s)          ((s)->tPhaseKind & 0xF)
+#define FLIER_KIND_INDEX(s)     ((s)->tPhaseKind >> 4)
+#define FLIER_SET_PHASE(s, p)   ((s)->tPhaseKind = ((s)->tPhaseKind & 0xF0) | (p))
+#define FLIER_SET_KIND(s, k)    ((s)->tPhaseKind = ((s)->tPhaseKind & 0x0F) | ((k) << 4))
+
+// Where a flier is in its crossing. It ENTERS from one edge, WANDERS in view
+// for a few seconds, then LEAVES - "flies around a little bit then leaves the
+// screen" is three states, and writing it as three is what stops the wander
+// from either never ending or never starting.
+#define FLIER_PHASE_ENTER     0
+#define FLIER_PHASE_WANDER    1
+#define FLIER_PHASE_LEAVE     2
+
+static const struct RogueFlierKind *FlierKind(struct Sprite *sprite)
+{
+    return &sFlierFlock->kinds[FLIER_KIND_INDEX(sprite)];
+}
+
+// The flier's index in snowflakeSprites[], or FLIER_MAX if it is not there.
+// Searched rather than stored because the array is COMPACTED when a flier
+// leaves, so an index kept in data[] goes stale the first time any other flier
+// exits. Eight comparisons a frame is nothing.
+static u32 FlierIndexOf(struct Sprite *sprite)
+{
+    u32 i;
+
+    for (i = 0; i < gWeatherPtr->snowflakeSpriteCount; i++)
+    {
+        if (gWeatherPtr->sprites.s1.snowflakeSprites[i] == sprite)
+            return i;
+    }
+    return FLIER_MAX;
+}
+
+static u32 CountAloft(u32 kindIndex)
+{
+    u32 i, n = 0;
+
+    for (i = 0; i < gWeatherPtr->snowflakeSpriteCount; i++)
+    {
+        if (FLIER_KIND_INDEX(gWeatherPtr->sprites.s1.snowflakeSprites[i]) == kindIndex)
+            n++;
+    }
+    return n;
+}
+
+static void Fliers_InitVars(const struct RogueFlierFlock *flock)
+{
+    sFlierFlock = flock;
+    gWeatherPtr->initStep = 0;
+    gWeatherPtr->weatherGfxLoaded = FALSE;
+    gWeatherPtr->colorMapStepDelay = 20;
+    gWeatherPtr->snowflakeSpriteCount = 0;
+    gWeatherPtr->snowflakeTimer = 0;
+    gWeatherPtr->noShadows = FALSE;
+
+    if (flock->clouds)
+    {
+        // The CLOUDS' blend, not the usual one, and on a dungeon floor that is
+        // free. Every other weather here sets (8, BASE_SHADOW_INTENSITY) with
+        // the comment "preserve shadow darkness", because the second coefficient
+        // IS the darkness of an object event's shadow - there is one global
+        // BLDALPHA and the weather owns it. But CurrentMapHasShadows() returns
+        // mapType != MAP_TYPE_UNDERGROUND, and every dungeon floor is
+        // MAP_TYPE_UNDERGROUND, so no object on any of these maps casts one and
+        // there is nothing for these coefficients to spoil. Checked rather than
+        // assumed; on a surface map it would be a real trade.
+        gWeatherPtr->targetColorMapIndex = 0;
+        if (gWeatherPtr->cloudSpritesCreated == FALSE)
+            Weather_SetBlendCoeffs(0, 16);
+    }
+    else
+    {
+        gWeatherPtr->targetColorMapIndex = 0;
+        Weather_SetBlendCoeffs(8, BASE_SHADOW_INTENSITY); // preserve shadow darkness
+    }
+}
+
+// NOTE THE ABSENCE OF THE SPIN that every falling weather's InitAll does. Those
+// loop hundreds of times to spread their field before the floor is drawn,
+// because arriving to a screen with every flake in a line across the top is
+// worse than arriving to no flakes at all. Fliers are the opposite case: they
+// are events rather than a field, and the floor SHOULD open with none in view
+// and the first one arriving a second or two later. So this terminates on the
+// first pass and the spawn clock does the rest.
+//
+// The clouds are the exception and are created immediately - they are a field,
+// and a sea with no clouds that fades in is a different sea.
+static void Fliers_Main(void)
+{
+    u32 i;
+
+    if (gWeatherPtr->initStep == 0)
+    {
+        if (sFlierFlock->clouds)
+            CreateCloudSprites();
+        gWeatherPtr->initStep++;
+        return;
+    }
+    if (gWeatherPtr->initStep == 1)
+    {
+        if (sFlierFlock->clouds)
+        {
+            // The clouds' own target: 12/16 source over 8/16 destination, which
+            // is what makes a cloud read as painted onto what is under it rather
+            // than floating over it. The reflections ride the same blend.
+            Weather_SetTargetBlendCoeffs(12, 8, 1);
+            gWeatherPtr->initStep++;
+            return;
+        }
+        gWeatherPtr->weatherGfxLoaded = TRUE;
+        gWeatherPtr->initStep++;
+        return;
+    }
+    if (gWeatherPtr->initStep == 2 && sFlierFlock->clouds)
+    {
+        if (!Weather_UpdateBlend())
+            return;
+        gWeatherPtr->weatherGfxLoaded = TRUE;
+        gWeatherPtr->initStep++;
+        return;
+    }
+
+    // ONE CLOCK FOR EVERY SPECIES, each testing its own period against it,
+    // rather than a timer per kind. struct Weather has two spare counters and
+    // this would have fitted two species exactly - which is precisely the kind
+    // of ceiling that turns the third species into a refactor.
+    gWeatherPtr->snowflakeTimer++;
+    for (i = 0; i < sFlierFlock->kindCount; i++)
+    {
+        const struct RogueFlierKind *kind = &sFlierFlock->kinds[i];
+
+        if (gWeatherPtr->snowflakeTimer % kind->spawnDelay)
+            continue;
+        if (CountAloft(i) >= kind->maxAloft)
+            continue;
+        CreateFlierSprite(i);
+    }
+}
+
+static bool8 Fliers_Finish(void)
+{
+    // Torn down in ONE step rather than fading the field out the way the leaves
+    // and the petals do. Their sprites are anonymous and can be removed a few
+    // at a time without anyone noticing; three birds disappearing one per second
+    // would be watched. The weather change already fades the screen over this.
+    while (gWeatherPtr->snowflakeSpriteCount)
+        DestroyFlierSprite(gWeatherPtr->snowflakeSpriteCount - 1);
+
+    if (sFlierFlock != NULL && sFlierFlock->clouds)
+        DestroyCloudSprites();
+
+    return FALSE;
+}
+
+// Everything this function allocates is released in DestroyFlierSprite, and the
+// pairing is the subject of tools/rogue/check_flier_lifetime.py.
+static bool8 CreateFlierSprite(u32 kindIndex)
+{
+    const struct RogueFlierKind *kind = &sFlierFlock->kinds[kindIndex];
+    u32 index = gWeatherPtr->snowflakeSpriteCount;
+    u8 spriteId;
+    struct Sprite *sprite;
+    bool32 fromLeft = (Random() & 1);
+
+    if (index >= FLIER_MAX)
+        return FALSE;
+
+    // The one line this whole system is about. This resolves the species'
+    // overworldData, loads the compressed sheet under
+    // COMP_OW_TILE_TAG_BASE + graphicsId, allocates the dynamic palette, and
+    // hands back a plain sprite running our callback - no object event, no
+    // slot, no metatile.
+    spriteId = CreateObjectGraphicsSprite(kind->graphicsId, UpdateFlierSprite,
+                                          fromLeft ? FLIER_SPAWN_LEFT : FLIER_SPAWN_RIGHT,
+                                          kind->yMin, FLIER_SUBPRIORITY);
+    // MAX_SPRITES means the OAM is full, which on a dungeon floor with two
+    // dozen object events and a follower is a real possibility rather than a
+    // theoretical one. Returning quietly is right: a missing bird is invisible,
+    // and the next spawn tick will try again.
+    if (spriteId == MAX_SPRITES)
+        return FALSE;
+
+    sprite = &gSprites[spriteId];
+    // BEFORE InitFlierFlight, which positions in world coordinates, and before
+    // CreateFlierReflection, which copies the whole struct and would otherwise
+    // inherit a screen-space reflection of a world-space bird.
+    sprite->coordOffsetEnabled = TRUE;
+    FLIER_SET_KIND(sprite, kindIndex);
+    InitFlierFlight(sprite, kind, fromLeft);
+    gWeatherPtr->sprites.s1.snowflakeSprites[index] = sprite;
+    gWeatherPtr->sprites.s1.snowflakeSprites[FLIER_REFLECT_BASE + index] = NULL;
+    gWeatherPtr->snowflakeSpriteCount++;
+
+    // AFTER the flier is in the array, because the reflection is stored by the
+    // flier's index and CreateFlierReflection is allowed to fail quietly.
+    if (kind->reflectPalTag != TAG_NONE)
+        CreateFlierReflection(sprite, kind, index);
+
+    return TRUE;
+}
+
+// A BLUE TINT, the same shape as vanilla's ApplyPondFilter - which is static in
+// field_effect_helpers.c, so it is reproduced here rather than exposed: it is
+// nine lines, and exporting it would put a weather-only concern into a shared
+// header. Blue is pushed up and red and green are left alone, which is what
+// makes a reflection read as being IN water rather than merely dimmed.
+static void ApplyFlierPondFilter(u8 paletteNum, u16 *dest)
+{
+    u32 i;
+    s32 r, g, b;
+    const u16 *src = gPlttBufferUnfaded + OBJ_PLTT_ID(paletteNum);
+
+    *dest++ = *src++;   // copy transparency untouched
+    for (i = 0; i < 16 - 1; i++)
+    {
+        u32 color = *src++;
+
+        r = (color << 27) >> 27;
+        g = (color << 22) >> 27;
+        b = (color << 17) >> 27;
+        b += 10;
+        if (b > 31)
+            b = 31;
+        *dest++ = RGB2(r, g, b);
+    }
+}
+
+// ONE TINTED PALETTE PER SPECIES, not per sprite: the tag comes from the kind,
+// so four Wingull reflections share one slot. That matters, because sixteen OBJ
+// palettes is the whole budget and the birds already hold one each.
+//
+// Reads the flier's palette out of gPlttBufferUnfaded, so the tint is taken from
+// the species' true colours rather than from whatever the current weather fade
+// has done to them - and UpdateSpritePaletteWithWeather then puts the new
+// palette under the same fade as everything else.
+static void LoadFlierReflectionPalette(struct Sprite *reflection, struct Sprite *flier,
+                                       const struct RogueFlierKind *kind)
+{
+    u16 filtered[16];
+    struct SpritePalette pal = { .tag = kind->reflectPalTag, .data = filtered };
+    u32 paletteNum = IndexOfSpritePaletteTag(kind->reflectPalTag);
+
+    if (paletteNum == 0xFF)
+    {
+        ApplyFlierPondFilter(flier->oam.paletteNum, filtered);
+        paletteNum = LoadSpritePalette(&pal);
+        // Out of OBJ palette slots. The reflection then draws in the bird's own
+        // colours, which is wrong but not broken - an untinted reflection is a
+        // great deal less noticeable than a missing one, and this releases no
+        // resource it did not take.
+        if (paletteNum == 0xFF)
+            return;
+        UpdateSpritePaletteWithWeather(paletteNum, TRUE);
+    }
+    reflection->oam.paletteNum = paletteNum;
+}
+
+// A REFLECTION IS THE SAME SPRITE, DRAWN AGAIN. CreateCopySpriteAt is a whole
+// struct copy, so the reflection inherits the flier's sheet, its images and its
+// OAM - and its ANIMS, which is the one part that has to be undone; see below - and because it keeps sheetTileStart and usingSheet, it
+// draws the flier's own tiles. IT COSTS NO VRAM AT ALL. This is vanilla's
+// SetUpReflection stripped of its object event: the parts that matter are the
+// vertical flip, the tinted palette and the priority, and none of those need an
+// ObjectEvent to exist.
+//
+// PAINTED ON, LIKE A CLOUD. objMode = ST_OAM_OBJ_BLEND with priority 3 is
+// exactly what sCloudSpriteOamData carries, and it is what makes a cloud read as
+// lying on the sea rather than floating above it. A reflection wants the same
+// two things for the same reason, so it takes them from the same place.
+static void CreateFlierReflection(struct Sprite *flier, const struct RogueFlierKind *kind,
+                                  u32 index)
+{
+    u8 spriteId = CreateCopySpriteAt(flier, flier->x, flier->y, FLIER_REFLECT_SUBPRIORITY);
+    struct Sprite *reflection;
+
+    if (spriteId == MAX_SPRITES)
+        return;   // no reflection this time; the bird is still fine without one
+
+    reflection = &gSprites[spriteId];
+    // The copy brought UpdateFlierSprite with it, and a reflection that ran the
+    // flight logic would fly off on its own. It is driven from its flier's
+    // update instead - see UpdateFlierReflection - so it needs no callback and,
+    // more usefully, no back-pointer to find its flier with.
+    reflection->callback = SpriteCallbackDummy;
+    // ITS OWN ANIMATION HAS TO BE NEUTERED, and this is the line the first
+    // version of this function dropped from vanilla's SetUpReflection. Without
+    // it the reflection faced whichever way the bird happened to be flying when
+    // it was born, for ever, and its wings beat out of step with the bird's.
+    //
+    // AnimateSprites runs `sprite->callback(sprite)` and THEN
+    // `AnimateSprite(sprite)`. UpdateFlierSprite copies the flier's
+    // oam.tileNum onto the reflection from the FLIER'S slot - but the
+    // reflection is a whole-struct copy and still carries the flier's real anim
+    // table, so when the loop reaches the reflection's own slot AnimateSprite
+    // overwrites that tileNum from the reflection's own animation. Nothing ever
+    // advances that animation toward a new facing, because the callback above is
+    // a dummy: it just runs the walk cycle it was created mid-way through.
+    //
+    // gDummySpriteAnimTable is { ANIM_END } - an animation that finishes
+    // immediately - so AnimateSprite has nothing to write and the copied frame
+    // survives to the OAM. THE RULE IS GENERAL: a sprite whose frames are driven
+    // from outside must not also be animating itself.
+    reflection->anims = gDummySpriteAnimTable;
+    StartSpriteAnim(reflection, 0);
+    reflection->affineAnims = gDummySpriteAffineAnimTable;
+    reflection->affineAnimBeginning = TRUE;
+    reflection->oam.objMode = ST_OAM_OBJ_BLEND;
+    reflection->oam.priority = 3;
+    reflection->subspriteMode = SUBSPRITES_IGNORE_PRIORITY;
+    reflection->subspriteTableNum = 0;
+    reflection->usingSheet = TRUE;
+
+    LoadFlierReflectionPalette(reflection, flier, kind);
+    gWeatherPtr->sprites.s1.snowflakeSprites[FLIER_REFLECT_BASE + index] = reflection;
+}
+
+// DESTROY FIRST, THEN FREE. See the header comment: DestroySprite clears inUse,
+// and that is what takes these sprites out of the scans below. Freeing first
+// would find them still live and free nothing.
+static void DestroyFlierSprite(u32 index)
+{
+    struct Sprite *sprite = gWeatherPtr->sprites.s1.snowflakeSprites[index];
+    struct Sprite *reflection = gWeatherPtr->sprites.s1.snowflakeSprites[FLIER_REFLECT_BASE + index];
+    u16 tileStart;
+    u8 paletteNum;
+    bool32 usingSheet;
+
+    if (sprite == NULL)
+        return;
+
+    // THE REFLECTION FIRST, and it owns exactly one thing: its tinted palette.
+    // It holds no tiles of its own - it was drawing the flier's - so there is
+    // nothing here to free but the palette, and freeing tiles for it would be
+    // freeing the flier's out from under the flier.
+    if (reflection != NULL)
+    {
+        u8 reflectionPalette = reflection->oam.paletteNum;
+
+        DestroySprite(reflection);
+        FieldEffectFreePaletteIfUnused(reflectionPalette);
+        gWeatherPtr->sprites.s1.snowflakeSprites[FLIER_REFLECT_BASE + index] = NULL;
+    }
+
+    tileStart = sprite->sheetTileStart;
+    paletteNum = sprite->oam.paletteNum;
+    usingSheet = sprite->usingSheet;
+
+    DestroySprite(sprite);
+
+    // usingSheet is TRUE whenever OW_GFX_COMPRESS is on, and then DestroySprite
+    // frees nothing at all - its tile-freeing branch is the !usingSheet one.
+    // Guarded rather than assumed because the flag is a build config.
+    if (usingSheet)
+        FieldEffectFreeTilesIfUnused(tileStart);
+    FieldEffectFreePaletteIfUnused(paletteNum);
+
+    // Compact, so snowflakeSpriteCount stays the live count and every index
+    // below it is a live flier. The reflection half moves with its flier, which
+    // is the whole reason the pairing is positional.
+    gWeatherPtr->snowflakeSpriteCount--;
+    gWeatherPtr->sprites.s1.snowflakeSprites[index] =
+        gWeatherPtr->sprites.s1.snowflakeSprites[gWeatherPtr->snowflakeSpriteCount];
+    gWeatherPtr->sprites.s1.snowflakeSprites[FLIER_REFLECT_BASE + index] =
+        gWeatherPtr->sprites.s1.snowflakeSprites[FLIER_REFLECT_BASE + gWeatherPtr->snowflakeSpriteCount];
+    gWeatherPtr->sprites.s1.snowflakeSprites[gWeatherPtr->snowflakeSpriteCount] = NULL;
+    gWeatherPtr->sprites.s1.snowflakeSprites[FLIER_REFLECT_BASE + gWeatherPtr->snowflakeSpriteCount] = NULL;
+}
+
+static void InitFlierFlight(struct Sprite *sprite, const struct RogueFlierKind *kind,
+                            bool32 fromLeft)
+{
+    u16 rand = Random();
+
+    // WORLD COORDINATES: the screen position wanted, less the camera offset that
+    // coordOffsetEnabled adds back at draw time. Written this way round rather
+    // than as a raw number so the arithmetic states what it is doing.
+    sprite->x = (fromLeft ? FLIER_SPAWN_LEFT : FLIER_SPAWN_RIGHT) - gSpriteCoordOffsetX;
+    sprite->y = kind->yMin + (rand % (kind->yMax - kind->yMin)) - gSpriteCoordOffsetY;
+    sprite->y2 = 0;
+    sprite->tSubX = 0;
+    sprite->tSubY = 0;
+    // ARRIVES AT SPEED rather than accelerating from rest: tDeltaX is seeded
+    // equal to its target, so the easing has nothing to do until the first
+    // turn. Starting at zero would leave the bird crawling onto the screen over
+    // the forty frames it takes to reach cruise, off-screen for most of them.
+    sprite->tTargetDX = fromLeft ? kind->speedEnter : -kind->speedEnter;
+    sprite->tDeltaX = sprite->tTargetDX;
+    // A gentle climb or descent to begin with, so no two hold the same line
+    // even before the wander starts jogging it.
+    sprite->tDeltaY = ((rand >> 5) % (2 * FLIER_DRIFT_MAX + 1)) - FLIER_DRIFT_MAX;
+    // Out of phase with each other, so two birds on screen never bob together.
+    sprite->tWaveIndex = Random() & 0xFF;
+    FLIER_SET_PHASE(sprite, FLIER_PHASE_ENTER);
+    sprite->tTimer = 0;
+    SetFlierFacing(sprite);
+}
+
+// Face the way it is travelling. ANIM_STD_GO_WEST and GO_EAST are the two-frame
+// walking animations out of sAnimTable_Following, which on a bird is the wing
+// beat - the follower sheet has no idle-in-flight anim, and the walk is the
+// flap.
+//
+// StartSpriteAnimIfDifferent, NOT StartSpriteAnim, which is what lets this be
+// called every frame: the plain version restarts the animation from frame 0, so
+// calling it unconditionally would hold the wings on one frame forever. That
+// matters because tDeltaX EASES through zero on a turn rather than jumping
+// sign, so the frame the facing changes on is not something the caller knows.
+static void SetFlierFacing(struct Sprite *sprite)
+{
+    StartSpriteAnimIfDifferent(sprite,
+                               sprite->tDeltaX < 0 ? ANIM_STD_GO_WEST : ANIM_STD_GO_EAST);
+}
+
+// ALTITUDE DRIVES THE REFLECTION'S DISTANCE, and that is the whole trick for
+// selling height on a flat map. Vanilla's reflection sits a fixed height - 2
+// below its object, because that object is STANDING on the water. A bird is not:
+// the higher it flies, the further away its reflection should be, so the offset
+// grows as the bird climbs above the bottom of its band. A Pelipper cruising low
+// gets a tight reflection under it and a Wingull up near the top of the screen
+// gets a distant one, from one subtraction.
+static void UpdateFlierReflection(struct Sprite *flier, struct Sprite *reflection,
+                                  const struct RogueFlierKind *kind)
+{
+    // How far above the bottom of its band the bird currently is. SCREEN space,
+    // because the band is a screen band - flier->y is world space now and raw it
+    // would make the reflection distance wander with the camera.
+    s16 altitude = kind->yMax - (flier->y + gSpriteCoordOffsetY);
+
+    if (altitude < 0)
+        altitude = 0;
+
+    reflection->oam.shape = flier->oam.shape;
+    reflection->oam.size = flier->oam.size;
+    reflection->oam.tileNum = flier->oam.tileNum;   // the flier's own tiles
+    // ST_OAM_VFLIP through matrixNum, which is where the flip lives for a
+    // non-affine sprite. Copied from vanilla's UpdateObjectReflectionSprite.
+    reflection->oam.matrixNum = flier->oam.matrixNum | ST_OAM_VFLIP;
+    reflection->subspriteTables = flier->subspriteTables;
+    reflection->invisible = flier->invisible;
+    reflection->x = flier->x;
+    // HALF the altitude, and the halving is load-bearing rather than taste.
+    // A true mirror puts the reflection at 2*surface - y, which means the
+    // offset grows at TWICE the rate the bird climbs; that is physically right
+    // and unusable, because at the top of Pelipper's band it lands at row 176
+    // on a 160-row screen. At half, the relationship survives - a bird high up
+    // has a visibly more distant reflection than one skimming the water - and
+    // both species stay on screen across their whole band.
+    //
+    // Adding the altitude at the FULL rate is the trap next door: flier->y then
+    // cancels out of the sum entirely and the reflection pins itself to one
+    // screen row for ever, which looks like the feature simply not working.
+    reflection->y = flier->y + FLIER_REFLECT_OFFSET + (altitude >> 1);
+    reflection->centerToCornerVecX = flier->centerToCornerVecX;
+    reflection->centerToCornerVecY = flier->centerToCornerVecY;
+    reflection->x2 = flier->x2;
+    // THE BOB INVERTS, and it is free. Because the wingbeat rides on y2 rather
+    // than on y, negating it here makes the reflected wings beat the opposite
+    // way - which is what a reflection does, and which would have needed real
+    // work if the bob had been folded into the position.
+    reflection->y2 = -flier->y2;
+}
+
+static void UpdateFlierSprite(struct Sprite *sprite)
+{
+    const struct RogueFlierKind *kind = FlierKind(sprite);
+    s16 screenX, screenY;
+    u32 index;
+
+    // EASE THE SPEED TOWARD ITS TARGET rather than assigning it. Turning used
+    // to be tDeltaX = -tDeltaX, which reverses the velocity inside a single
+    // frame - the bird stopped dead and went back the way it came between one
+    // frame and the next.
+    if (sprite->tDeltaX < sprite->tTargetDX)
+    {
+        sprite->tDeltaX += FLIER_ACCEL;
+        if (sprite->tDeltaX > sprite->tTargetDX)
+            sprite->tDeltaX = sprite->tTargetDX;
+    }
+    else if (sprite->tDeltaX > sprite->tTargetDX)
+    {
+        sprite->tDeltaX -= FLIER_ACCEL;
+        if (sprite->tDeltaX < sprite->tTargetDX)
+            sprite->tDeltaX = sprite->tTargetDX;
+    }
+
+    // WHOLE PIXELS INTO x AND y, FRACTIONS KEPT IN tSubX AND tSubY, the same
+    // rule the blizzard and the leaves follow. The identity holds for NEGATIVE
+    // deltas, which is the case the other weathers never exercise: >> 7 floors
+    // toward negative infinity and & 0x7F yields the positive remainder, so
+    // (v >> 7) * 128 + (v & 0x7F) == v either way. A bird flies in both
+    // directions on both axes; a leaf only ever falls.
+    sprite->tSubX += sprite->tDeltaX;
+    sprite->x += sprite->tSubX >> 7;
+    sprite->tSubX &= 0x7F;
+
+    sprite->tSubY += sprite->tDeltaY;
+    sprite->y += sprite->tSubY >> 7;
+    sprite->tSubY &= 0x7F;
+
+    // CONVERT ONCE, COMPARE EVERYWHERE. sprite->x and sprite->y are world
+    // coordinates; coordOffsetEnabled adds the camera offset back at draw time,
+    // so every bound below is only meaningful against the converted value. The
+    // petals and the blizzard each shipped this comparison unconverted and each
+    // failed the same way - correct on a map that had not scrolled yet, wrong
+    // the moment the player walked.
+    screenX = sprite->x + gSpriteCoordOffsetX;
+    screenY = sprite->y + gSpriteCoordOffsetY;
+
+    // Stay in the flight band by STEERING, not by clamping the position. A
+    // clamp pins the sprite to the boundary and holds it there while the drift
+    // keeps pushing; turning the velocity round instead makes the bird level off
+    // and come back. Only reverse when it is actually heading further out, or a
+    // bird sitting on the edge flips every frame.
+    //
+    // The band is a SCREEN band on purpose: it is what keeps the birds up in the
+    // visible sky rather than at the player's feet, and a world band would have
+    // no meaning on a floor the camera roams over.
+    if (screenY < kind->yMin && sprite->tDeltaY < 0)
+        sprite->tDeltaY = -sprite->tDeltaY;
+    else if (screenY > kind->yMax && sprite->tDeltaY > 0)
+        sprite->tDeltaY = -sprite->tDeltaY;
+
+    // THE BOB IS DRAWN, NOT TRAVELLED - y2, and not y. Same split the leaves
+    // make between x and x2: y is where the bird IS and what the drift, the band
+    // test and the reflection's altitude all own; y2 is a wingbeat drawn on top.
+    sprite->tWaveIndex = (sprite->tWaveIndex + kind->bobSpeed) & 0xFF;
+    sprite->y2 = (gSineTable[sprite->tWaveIndex] * kind->bobAmplitude) >> 8;
+
+    // Idempotent, so it can run every frame - see SetFlierFacing.
+    SetFlierFacing(sprite);
+
+    // OUT OF RANGE IN ANY PHASE, not just while leaving. This used to sit inside
+    // the LEAVE case, which was sufficient while the birds were screen-anchored
+    // and could only exit under their own power. World-anchored, the PLAYER can
+    // now carry the screen away from a bird that is still entering or wandering,
+    // and one stranded in those phases would never reach LEAVE - it would fly
+    // straight on for ever, off-screen, holding a sprite slot and a palette.
+    if (screenX < FLIER_GONE_LEFT || screenX > FLIER_GONE_RIGHT)
+    {
+        index = FlierIndexOf(sprite);
+        if (index < FLIER_MAX)
+            DestroyFlierSprite(index);
+        return;
+    }
+
+    switch (FLIER_PHASE(sprite))
+    {
+    case FLIER_PHASE_ENTER:
+        // Fully in view: settle into the wander. Tested against the band rather
+        // than against a frame count so a bird that entered slowly still
+        // arrives before it starts wandering.
+        if (screenX > FLIER_ONSCREEN_LEFT && screenX < FLIER_ONSCREEN_RIGHT)
+        {
+            FLIER_SET_PHASE(sprite, FLIER_PHASE_WANDER);
+            sprite->tTimer = kind->wanderFrames + (Random() & 0x7F);
+            // The TARGET, not the speed. Slowing from the entry cruise to the
+            // wander drift is itself a change the easing should smooth out.
+            sprite->tTargetDX = sprite->tDeltaX < 0 ? -kind->speedWander : kind->speedWander;
+        }
+        break;
+
+    case FLIER_PHASE_WANDER:
+        if ((sprite->tTimer % FLIER_TURN_INTERVAL) == 0)
+        {
+            // Retarget and let the easing do the turn. SetFlierFacing is not
+            // called from here: tDeltaX has not changed yet, so this is exactly
+            // the frame on which it would be wrong.
+            if (Random() & 1)
+                sprite->tTargetDX = -sprite->tTargetDX;
+
+            // A RANDOM WALK ON THE VELOCITY, NOT ON THE POSITION, and that is
+            // the whole difference between a drift and a hop. Jogging the SPEED
+            // is invisible because position is its integral; assigning the
+            // position teleports the bird a few pixels and reads as bouncing.
+            sprite->tDeltaY += (Random() % (2 * FLIER_DRIFT_STEP + 1)) - FLIER_DRIFT_STEP;
+            if (sprite->tDeltaY > FLIER_DRIFT_MAX)
+                sprite->tDeltaY = FLIER_DRIFT_MAX;
+            else if (sprite->tDeltaY < -FLIER_DRIFT_MAX)
+                sprite->tDeltaY = -FLIER_DRIFT_MAX;
+        }
+
+        // Turned back out of the screen mid-wander: cut it short rather than
+        // letting the bird hover just off the edge where nobody can see it.
+        if (screenX < FLIER_SPAWN_LEFT || screenX > FLIER_SPAWN_RIGHT)
+            sprite->tTimer = 0;
+
+        if (sprite->tTimer)
+            sprite->tTimer--;
+        else
+        {
+            FLIER_SET_PHASE(sprite, FLIER_PHASE_LEAVE);
+            // Leave by the NEARER edge, so the exit is short and reads as the
+            // bird going somewhere rather than crossing the whole screen again.
+            sprite->tTargetDX = (screenX < DISPLAY_WIDTH / 2)
+                              ? -kind->speedLeave : kind->speedLeave;
+        }
+        break;
+
+    case FLIER_PHASE_LEAVE:
+        // Nothing to do: the range test above the switch reclaims it, in this
+        // phase and in every other.
+        break;
+    }
+
+    // LAST, so the reflection mirrors this frame's position rather than last
+    // frame's. Driven from here rather than from a callback of its own, which is
+    // what lets the reflection carry no state at all.
+    if (kind->reflectPalTag != TAG_NONE)
+    {
+        index = FlierIndexOf(sprite);
+        if (index < FLIER_MAX)
+        {
+            struct Sprite *reflection =
+                gWeatherPtr->sprites.s1.snowflakeSprites[FLIER_REFLECT_BASE + index];
+
+            if (reflection != NULL)
+                UpdateFlierReflection(sprite, reflection, kind);
+        }
+    }
+}
+
+// ---- the two weathers, which are now four lines each ------------------------
+
+void Zubats_InitVars(void)
+{
+    Fliers_InitVars(&sZubatFlock);
+}
+
+void Zubats_InitAll(void)
+{
+    Zubats_InitVars();
+    while (gWeatherPtr->weatherGfxLoaded == FALSE)
+        Zubats_Main();
+}
+
+void Zubats_Main(void)
+{
+    Fliers_Main();
+}
+
+bool8 Zubats_Finish(void)
+{
+    return Fliers_Finish();
+}
+
+void Seabirds_InitVars(void)
+{
+    Fliers_InitVars(&sSeabirdFlock);
+}
+
+void Seabirds_InitAll(void)
+{
+    Seabirds_InitVars();
+    while (gWeatherPtr->weatherGfxLoaded == FALSE)
+        Seabirds_Main();
+}
+
+void Seabirds_Main(void)
+{
+    Fliers_Main();
+}
+
+bool8 Seabirds_Finish(void)
+{
+    return Fliers_Finish();
+}
+
+#undef tSubX
+#undef tDeltaX
+#undef tTargetDX
+#undef tSubY
+#undef tDeltaY
+#undef tWaveIndex
+#undef tPhaseKind
+#undef tTimer
+#undef FLIER_PHASE
+#undef FLIER_KIND_INDEX
+#undef FLIER_SET_PHASE
+#undef FLIER_SET_KIND
+#undef FLIER_PHASE_ENTER
+#undef FLIER_PHASE_WANDER
+#undef FLIER_PHASE_LEAVE
+#undef FLIER_MAX
+#undef FLIER_REFLECT_BASE
+#undef FLIER_SPAWN_LEFT
+#undef FLIER_SPAWN_RIGHT
+#undef FLIER_GONE_LEFT
+#undef FLIER_GONE_RIGHT
+#undef FLIER_ONSCREEN_LEFT
+#undef FLIER_ONSCREEN_RIGHT
+#undef FLIER_TURN_INTERVAL
+#undef FLIER_ACCEL
+#undef FLIER_DRIFT_MAX
+#undef FLIER_DRIFT_STEP
+#undef FLIER_SUBPRIORITY
+#undef FLIER_REFLECT_SUBPRIORITY
+#undef FLIER_REFLECT_OFFSET
+
+//------------------------------------------------------------------------------
 // WEATHER_BLIZZARD
 //------------------------------------------------------------------------------
 //
@@ -1977,7 +2984,10 @@ static void InitBlizzardSpriteMovement(struct Sprite *sprite)
 
     sprite->y = -3 - (gSpriteCoordOffsetY + sprite->centerToCornerVecY);
     sprite->x = x - (gSpriteCoordOffsetX + sprite->centerToCornerVecX);
-    sprite->tPosY = sprite->y * 128;
+    // A FRACTION, NOT A POSITION - zero, not y * 128. See UpdateBlizzardSprite;
+    // it is the same rule the tSubX comment below states for the x axis, which
+    // this line spent a long time contradicting eight lines above it.
+    sprite->tPosY = 0;
     // Zeroed and never written again. x2 is how every other falling weather
     // moves sideways, and a blizzard must not use it: it is an offset applied at
     // draw time and takes no part in the wrap test below, so a flake carried out
@@ -2001,8 +3011,11 @@ static void UpdateBlizzardSprite(struct Sprite *sprite)
 {
     s16 x;
 
+    // WHOLE PIXELS INTO y, FRACTION KEPT IN tPosY - the same rule as tSubX
+    // below, which this axis did not follow. See UpdateSnowflakeSprite.
     sprite->tPosY += sprite->tDeltaY;
-    sprite->y = sprite->tPosY >> 7;
+    sprite->y += sprite->tPosY >> 7;
+    sprite->tPosY &= 0x7F;
 
     // WHOLE PIXELS INTO x, FRACTION KEPT IN tSubX - deliberately not the Q7
     // accumulator the y axis uses. sprite->x is stored relative to
@@ -3792,6 +4805,8 @@ static u8 TranslateWeatherNum(u8 weather)
     case WEATHER_MONSOON:            return WEATHER_MONSOON;
     case WEATHER_BLIZZARD:           return WEATHER_BLIZZARD;
     case WEATHER_LEAVES:             return WEATHER_LEAVES;
+    case WEATHER_ZUBATS:             return WEATHER_ZUBATS;
+    case WEATHER_SEABIRDS:           return WEATHER_SEABIRDS;
     case WEATHER_ROUTE119_CYCLE:     return sWeatherCycleRoute119[gSaveBlock1Ptr->weatherCycleStage];
     case WEATHER_ROUTE123_CYCLE:     return sWeatherCycleRoute123[gSaveBlock1Ptr->weatherCycleStage];
     case WEATHER_DYNAMIC:            return GetDynamicWeather();

@@ -1,5 +1,7 @@
 #include "global.h"
 #include "rogue_charms.h"
+#include "rogue_journal.h"
+#include "constants/rogue_dungeon.h"
 #include "battle.h"
 #include "pokemon.h"
 #include "string_util.h"
@@ -33,6 +35,8 @@ static const u8 sText_CharmRejuvenating[] = _("Rejuvenating");
 static const u8 sText_CharmRejuvenatingDesc[] = _("A gentle warmth lingers. Recovers a\nlittle health each battle.");
 static const u8 sText_CharmFrail[]       = _("Frail");
 static const u8 sText_CharmFrailDesc[]   = _("Forbidden training left scars. Its\nmaximum HP is reduced.");
+static const u8 sText_CharmAlpha[]           = _("Alpha");
+static const u8 sText_CharmAlphaDesc[]       = _("Born larger than its kind. Every stat\nstands one stage higher, all run.");
 static const u8 sText_CharmBrittle[]         = _("Brittle");
 static const u8 sText_CharmBrittleDesc[]     = _("Something was traded away for power.\nDefense falls each battle this run.");
 static const u8 sText_CharmOrbAwakened[]     = _("Orb-Awakened");
@@ -152,6 +156,43 @@ static const struct RogueCharmInfo sCharms[ROGUE_CHARM_COUNT] =
         .battleStringId = STRINGID_ROGUECHARM_EMBOLDENED,
     },
 
+    // THE ALPHA a player caught rather than knocked out, and the only charm in
+    // this table that is a PROPERTY OF THE POKEMON rather than something that
+    // happened to it.
+    //
+    // It exists because settotemboost cannot survive the battle it is set in.
+    // That command writes stat STAGES, which live on struct BattlePokemon and
+    // are thrown away with the battle; struct Pokemon has no such field, so a
+    // captured Alpha arrived in the party as an ordinary member of its species
+    // wearing none of what the player just fought. This charm is where the
+    // boost is kept instead, and charms are stored per Pokemon in SaveBlock3.
+    //
+    // RUN-SCOPED AND reapplyOnSwitchIn, BOTH AGAINST THE HOUSE STYLE, and both
+    // deliberate. Emboldened argues right above that a permanent stat boost
+    // compounds with the level curve - true of a blessing handed out by an
+    // event, which is what that note is about. This is not handed out. It is
+    // what the Pokemon IS, and it was already on the field at that strength
+    // when the player chose to catch it rather than knock it out.
+    //
+    // reapplyOnSwitchIn is the half that fails SILENTLY if forgotten:
+    // SwitchInClearSetData resets every stat stage, so without it the Alpha is
+    // correct on turn one of its first battle and plain for the rest of the
+    // run - visible only to a player who switches and then counts.
+    [ROGUE_CHARM_ALPHA] =
+    {
+        .name = sText_CharmAlpha,
+        .description = sText_CharmAlphaDesc,
+        .effect = ROGUE_CHARM_EFFECT_STAT_BOOST,
+        .magnitude = 1,
+        .param = ROGUE_CHARM_STAT_ATK | ROGUE_CHARM_STAT_DEF
+               | ROGUE_CHARM_STAT_SPEED | ROGUE_CHARM_STAT_SPATK
+               | ROGUE_CHARM_STAT_SPDEF,
+        .defaultDuration = ROGUE_CHARM_DURATION_RUN,
+        .partyWide = FALSE,
+        .reapplyOnSwitchIn = TRUE,
+        .battleStringId = STRINGID_ROGUECHARM_ALPHA,
+    },
+
     // Deliberately small. 8% a battle is a slow drip that rewards pushing one
     // more floor, not a substitute for the bag - a heal large enough to replace
     // potions would flatten the resource decisions the run is built on.
@@ -269,6 +310,7 @@ const u16 gRogueCharmStringIds[ROGUE_CHARM_COUNT] =
     [ROGUE_CHARM_ORB_AWAKENED] = STRINGID_ROGUECHARM_ORB_AWAKENED,
     [ROGUE_CHARM_ORB_BURDENED] = STRINGID_ROGUECHARM_ORB_BURDENED,
     [ROGUE_CHARM_BRITTLE]      = STRINGID_ROGUECHARM_BRITTLE,
+    [ROGUE_CHARM_ALPHA]        = STRINGID_ROGUECHARM_ALPHA,
 };
 
 bool32 RogueCharm_IsAffliction(u32 id)
@@ -378,6 +420,10 @@ void RogueCharm_ResetRun(void)
     RecalcParty();
 }
 
+// Defined below, beside InstallCharm which it needs. Declared here because
+// RogueCharm_SyncParty is the one caller and sits above both.
+static void EnsureAlphaCharms(struct RogueRunModifiers *data);
+
 // Returns slot's charm row, or NULL if the identity there is stale.
 //
 // THE PERSONALITY CHECK IS THE POINT OF THE WHOLE STORAGE DESIGN. If the player
@@ -458,6 +504,11 @@ void RogueCharm_SyncParty(void)
         for (i = 0; i < ROGUE_CHARMS_PER_MON; i++)
             data->mon[newSlot][i] = charms[newSlot][i];
     }
+
+    // AFTER the rows are re-pointed, never before: this writes INTO the slot a
+    // Pokemon now occupies, and doing it first would install against the old
+    // arrangement and then have the result overwritten by the loop above.
+    EnsureAlphaCharms(data);
 }
 
 // ---------------------------------------------------------------------------
@@ -900,6 +951,98 @@ static bool8 InstallCharm(struct RogueCharm *row, u32 count, u8 id, u8 duration)
     return FALSE;
 }
 
+// Re-installs ROGUE_CHARM_ALPHA on every registered Pokemon standing in the
+// party. Called from the tail of every sync.
+//
+// NOT CONSUMED ON FIRST USE, and that is the whole point of the registry.
+// Deposit an Alpha and withdraw it again and it is still an Alpha, because
+// being one is a property OF THE POKEMON rather than something that happened
+// to it. That is deliberately the opposite of how the afflictions behave - the
+// note on RogueCharm_SyncParty explains why a boxed mon comes back clean, and
+// that reasoning is about curses a player would otherwise park in a box. It
+// does not apply to a blessing the Pokemon was born with.
+//
+// IDEMPOTENT, because InstallCharm refreshes a row it already holds rather
+// than stacking a second copy. So running this on every sync costs one row
+// scan per occupied slot and can never double the boost.
+static void EnsureAlphaCharms(struct RogueRunModifiers *data)
+{
+    u32 slot, i;
+
+    for (slot = 0; slot < PARTY_SIZE; slot++)
+    {
+        if (data->personality[slot] == 0)
+            continue;
+
+        for (i = 0; i < ROGUE_ALPHA_SLOTS; i++)
+        {
+            if (data->alphaPersonality[i] != data->personality[slot])
+                continue;
+
+            InstallCharm(data->mon[slot], ROGUE_CHARMS_PER_MON,
+                         ROGUE_CHARM_ALPHA,
+                         RogueCharm_Info(ROGUE_CHARM_ALPHA)->defaultDuration);
+            break;
+        }
+    }
+}
+
+// How many Alphas the run has beaten or caught, and the counter that says so.
+//
+// A PAIR OF ACCESSORS RATHER THAN A REACH INTO THE STRUCT, because
+// rogue_charms.h states that everything outside this file goes through these
+// functions - and a run counter sharing the struct with the charms is not a
+// reason to make an exception, it is a reason the rule is worth having.
+//
+// SATURATING, not wrapping. Nothing reads an exact count above one, and a u8
+// that rolled over to zero would quietly put the Shiny Charm back out of reach
+// on the 256th Alpha of a run that will never happen - but the check is one
+// comparison and the alternative is a footnote nobody would ever confirm.
+u32 RogueCharm_AlphasBeaten(void)
+{
+    return RogueCharm_Data()->alphasBeaten;
+}
+
+void RogueCharm_NoteAlphaBeaten(void)
+{
+    struct RogueRunModifiers *data = RogueCharm_Data();
+
+    if (data->alphasBeaten < 255)
+        data->alphasBeaten++;
+}
+
+// Records that this Pokemon is an Alpha, WHEREVER IT CURRENTLY IS - party, box,
+// or still being handed over. TRUE if it is registered when this returns,
+// including when it already was; FALSE only if the registry is full.
+//
+// The sync at the end is what makes a catch into the party take effect
+// immediately rather than at the next entry point.
+bool32 RogueCharm_RegisterAlpha(u32 personality)
+{
+    struct RogueRunModifiers *data = RogueCharm_Data();
+    u32 i;
+
+    // Zero is this struct's empty marker, the same way it is for personality[].
+    if (personality == 0)
+        return FALSE;
+
+    for (i = 0; i < ROGUE_ALPHA_SLOTS; i++)
+        if (data->alphaPersonality[i] == personality)
+            return TRUE;
+
+    for (i = 0; i < ROGUE_ALPHA_SLOTS; i++)
+    {
+        if (data->alphaPersonality[i] == 0)
+        {
+            data->alphaPersonality[i] = personality;
+            RogueCharm_SyncParty();
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
 // VAR_RESULT = TRUE if the charm was installed. FALSE means every slot was
 // full, and the CALLER decides what that means - an event that has already
 // taken payment must not silently hand over nothing.
@@ -922,6 +1065,19 @@ void RogueCharm_ScriptGrantMon(void)
     gSpecialVar_Result = InstallCharm(data->mon[slot], ROGUE_CHARMS_PER_MON,
                                       id, ResolveDuration(id, gSpecialVar_0x8001));
 
+    // ONLY WHEN IT TOOK. InstallCharm declines a full row, and a journal line
+    // for a charm the Pokemon does not carry is worse than no line at all - the
+    // player would go looking for it in the charm list and find nothing.
+    //
+    // HERE RATHER THAN IN InstallCharm, which knows the row but not whose it is,
+    // and deliberately not in RogueCharm_DebugGrant: the debug menu must not be
+    // able to write the player's history.
+    if (gSpecialVar_Result)
+        RogueJournal_Append(ROGUE_JOURNAL_CHARM_MON,
+                            VarGet(VAR_ROGUE_DUNGEON_FLOOR) + 1,
+                            GetMonData(&gParties[B_TRAINER_PLAYER][slot], MON_DATA_SPECIES),
+                            id);
+
     RecalcParty();
 }
 
@@ -940,6 +1096,10 @@ void RogueCharm_ScriptGrantParty(void)
 
     gSpecialVar_Result = InstallCharm(data->party, ROGUE_PARTY_CHARM_SLOTS,
                                       id, ResolveDuration(id, gSpecialVar_0x8001));
+
+    if (gSpecialVar_Result)
+        RogueJournal_Append(ROGUE_JOURNAL_CHARM_PARTY,
+                            VarGet(VAR_ROGUE_DUNGEON_FLOOR) + 1, id, 0);
 
     RecalcParty();
 }

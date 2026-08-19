@@ -4799,6 +4799,7 @@ Music: Female
 Items: Potion / Potion
 Double Battle: No
 AI: Basic Trainer
+Mugshot: Purple
 
 Geodude
 Level: 12
@@ -4833,6 +4834,7 @@ Music: Male
 Items: Super Potion / Super Potion
 Double Battle: No
 AI: Basic Trainer
+Mugshot: Green
 
 Machop
 Level: 16
@@ -4867,6 +4869,7 @@ Music: Male
 Items: Super Potion / Super Potion
 Double Battle: No
 AI: Basic Trainer
+Mugshot: Pink
 
 Voltorb
 Level: 20
@@ -4909,6 +4912,7 @@ Music: Female
 Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer
+Mugshot: Blue
 
 Numel
 Level: 24
@@ -4951,6 +4955,7 @@ Music: Male
 Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer
+Mugshot: Yellow
 
 Spinda
 Level: 27
@@ -4993,6 +4998,7 @@ Music: Female
 Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer / Risky
+Mugshot: Purple
 
 Swablu
 Level: 29
@@ -5043,6 +5049,7 @@ Music: Female
 Items: Hyper Potion / Hyper Potion / Hyper Potion / Hyper Potion
 Double Battle: Yes
 AI: Basic Trainer
+Mugshot: Green
 
 Claydol
 Level: 41
@@ -5085,6 +5092,7 @@ Music: Male
 Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Basic Trainer
+Mugshot: Pink
 
 Luvdisc
 Level: 41
@@ -15866,6 +15874,7 @@ Music: Male
 Items: Full Restore / Full Restore / Full Restore / Full Restore
 Double Battle: No
 AI: Basic Trainer
+Mugshot: Purple
 
 Skarmory
 Level: 77
@@ -16886,6 +16895,7 @@ Gender: Female
 Music: Female
 Double Battle: No
 AI: Basic Trainer
+Mugshot: Green
 
 Tropius
 Level: 63
@@ -17040,6 +17050,7 @@ Gender: Male
 Music: Male
 Double Battle: No
 AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Purple
 
 Geodude
 Level: 12
@@ -17063,6 +17074,7 @@ Music: Female
 Items: Super Potion
 Double Battle: No
 AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Green
 
 Staryu
 Level: 18
@@ -17089,6 +17101,7 @@ Music: Male
 Items: Super Potion / Full Heal
 Double Battle: No
 AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Pink
 
 Voltorb
 Level: 21
@@ -17123,6 +17136,7 @@ Music: Female
 Items: Hyper Potion / Full Heal
 Double Battle: No
 AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Blue
 
 Victreebel
 Level: 29
@@ -17157,6 +17171,7 @@ Music: Male
 Items: Hyper Potion / Hyper Potion / Full Heal
 Double Battle: No
 AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Yellow
 
 Koffing
 Level: 37
@@ -17199,6 +17214,7 @@ Music: Female
 Items: Hyper Potion / Hyper Potion / Full Heal
 Double Battle: No
 AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Purple
 
 Kadabra
 Level: 38
@@ -17241,6 +17257,7 @@ Music: Male
 Items: Hyper Potion / Hyper Potion / Full Heal
 Double Battle: No
 AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Green
 
 Growlithe
 Level: 42
@@ -17283,6 +17300,7 @@ Music: Aqua
 Items: Hyper Potion / Hyper Potion / Full Heal
 Double Battle: No
 AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Pink
 
 Rhyhorn
 Level: 45
@@ -17586,3 +17604,1402 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 - Rain Dance
 - Skull Bash
 - Bite
+
+=== TRAINER_ROGUE_KANTO_RED ===
+Name: RED
+Class: Champion Frlg
+Pic: Red
+Gender: Male
+Music: Male
+Items: Full Restore / Full Restore / Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Purple
+
+Pikachu @ Light Ball
+Level: 81
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Iron Tail
+- Quick Attack
+- Thunder Wave
+
+Espeon
+Level: 73
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Psychic
+- Morning Sun
+- Reflect
+- Bite
+
+Snorlax
+Level: 75
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Body Slam
+- Earthquake
+- Curse
+- Rest
+
+Venusaur
+Level: 77
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Giga Drain
+- Sludge Bomb
+- Sleep Powder
+- Synthesis
+
+Charizard
+Level: 77
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Flamethrower
+- Aerial Ace
+- Earthquake
+- Dragon Claw
+
+Blastoise @ Sitrus Berry
+Level: 77
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hydro Pump
+- Ice Beam
+- Earthquake
+- Rain Dance
+
+=== TRAINER_ROGUE_JOHTO_FALKNER ===
+Name: FALKNER
+Class: Leader Frlg
+Pic: Rogue Johto Falkner
+Gender: Male
+Music: Male
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Purple
+
+Pidgey
+Level: 7
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Tackle
+- Sand Attack
+- Gust
+- Quick Attack
+
+Pidgeotto
+Level: 9
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Gust
+- Sand Attack
+- Quick Attack
+- Feather Dance
+
+
+=== TRAINER_ROGUE_JOHTO_BUGSY ===
+Name: BUGSY
+Class: Leader Frlg
+Pic: Rogue Johto Bugsy
+Gender: Male
+Music: Male
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Green
+
+Metapod
+Level: 14
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Tackle
+- Harden
+- String Shot
+- Bug Bite
+
+Kakuna
+Level: 14
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Poison Sting
+- Harden
+- String Shot
+- Bug Bite
+
+Scyther
+Level: 16
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Quick Attack
+- Leer
+- Fury Cutter
+- U-turn
+
+
+=== TRAINER_ROGUE_JOHTO_WHITNEY ===
+Name: WHITNEY
+Class: Leader Frlg
+Pic: Rogue Johto Whitney
+Gender: Female
+Music: Female
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Pink
+
+Clefairy
+Level: 18
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Doubleslap
+- Encore
+- Metronome
+- Wake-Up Slap
+
+Miltank
+Level: 20
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Rollout
+- Attract
+- Stomp
+- Milk Drink
+
+
+=== TRAINER_ROGUE_JOHTO_MORTY ===
+Name: MORTY
+Class: Leader Frlg
+Pic: Rogue Johto Morty
+Gender: Male
+Music: Male
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Blue
+
+Gastly
+Level: 21
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Lick
+- Spite
+- Mean Look
+- Curse
+
+Haunter
+Level: 21
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Lick
+- Mean Look
+- Hypnosis
+- Shadow Punch
+
+Haunter
+Level: 23
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Shadow Punch
+- Hypnosis
+- Dream Eater
+- Curse
+
+Gengar
+Level: 25
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Shadow Ball
+- Hypnosis
+- Dream Eater
+- Sucker Punch
+
+
+=== TRAINER_ROGUE_JOHTO_CHUCK ===
+Name: CHUCK
+Class: Leader Frlg
+Pic: Rogue Johto Chuck
+Gender: Male
+Music: Male
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Yellow
+
+Primeape
+Level: 27
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Karate Chop
+- Rock Slide
+- Focus Energy
+- Fury Swipes
+
+Poliwrath
+Level: 30
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Hypnosis
+- Dynamic Punch
+- Mind Reader
+
+
+=== TRAINER_ROGUE_JOHTO_JASMINE ===
+Name: JASMINE
+Class: Leader Frlg
+Pic: Rogue Johto Jasmine
+Gender: Female
+Music: Female
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Purple
+
+Magnemite
+Level: 30
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunder Wave
+- Sonic Boom
+- Supersonic
+- Spark
+
+Magnemite
+Level: 30
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunder Wave
+- Sonic Boom
+- Supersonic
+- Spark
+
+Steelix
+Level: 35
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Iron Tail
+- Rock Throw
+- Sunny Day
+- Screech
+
+
+=== TRAINER_ROGUE_JOHTO_PRYCE ===
+Name: PRYCE
+Class: Leader Frlg
+Pic: Rogue Johto Pryce
+Gender: Male
+Music: Male
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Green
+
+Seel
+Level: 40
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Aurora Beam
+- Rest
+- Icy Wind
+- Surf
+
+Dewgong
+Level: 42
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Aurora Beam
+- Rest
+- Sleep Talk
+- Surf
+
+Piloswine
+Level: 44
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Icy Wind
+- Blizzard
+- Earthquake
+- Rest
+
+
+=== TRAINER_ROGUE_JOHTO_CLAIR ===
+Name: CLAIR
+Class: Leader Frlg
+Pic: Rogue Johto Clair
+Gender: Female
+Music: Female
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Pink
+
+Dragonair
+Level: 42
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunder Wave
+- Dragon Rage
+- Slam
+- Aqua Tail
+
+Dragonair
+Level: 42
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunder Wave
+- Dragon Rage
+- Slam
+- Aqua Tail
+
+Dragonair
+Level: 42
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunder Wave
+- Dragon Rage
+- Slam
+- Aqua Tail
+
+Kingdra
+Level: 45
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Smokescreen
+- Hydro Pump
+- Dragon Pulse
+- Ice Beam
+
+
+=== TRAINER_ROGUE_JOHTO_WILL ===
+Name: WILL
+Class: Elite Four Frlg
+Pic: Rogue Johto Will
+Gender: Male
+Music: Male
+Items: Full Restore / Full Restore / Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Purple
+
+Xatu
+Level: 46
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Quick Attack
+- Confuse Ray
+- Night Shade
+- Psychic
+
+Jynx
+Level: 47
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Lovely Kiss
+- Ice Punch
+- Psychic
+- Doubleslap
+
+Exeggutor
+Level: 47
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Reflect
+- Egg Bomb
+- Psychic
+- Giga Drain
+
+Slowbro
+Level: 47
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Curse
+- Amnesia
+- Psychic
+- Surf
+
+Xatu
+Level: 48
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Quick Attack
+- Future Sight
+- Confuse Ray
+- Psychic
+
+
+=== TRAINER_ROGUE_JOHTO_KOGA ===
+Name: KOGA
+Class: Elite Four Frlg
+Pic: Leader Koga Frlg
+Gender: Male
+Music: Male
+Items: Full Restore / Full Restore / Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Green
+
+Ariados
+Level: 47
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Double Team
+- Sludge Bomb
+- Spider Web
+- Baton Pass
+
+Venomoth
+Level: 48
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Supersonic
+- Gust
+- Toxic
+- Sludge Bomb
+
+Forretress
+Level: 50
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Protect
+- Spikes
+- Swift
+- Explosion
+
+Muk
+Level: 49
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Minimize
+- Acid Armor
+- Sludge Bomb
+- Toxic
+
+Crobat
+Level: 51
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Double Team
+- Air Cutter
+- Toxic
+- Sludge Bomb
+
+
+=== TRAINER_ROGUE_JOHTO_BRUNO ===
+Name: BRUNO
+Class: Elite Four Frlg
+Pic: Elite Four Bruno Frlg
+Gender: Male
+Music: Male
+Items: Full Restore / Full Restore / Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Pink
+
+Hitmontop
+Level: 50
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Pursuit
+- Quick Attack
+- Dig
+- Detect
+
+Hitmonlee
+Level: 50
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Swagger
+- Double Kick
+- Hi Jump Kick
+- Foresight
+
+Hitmonchan
+Level: 50
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunder Punch
+- Ice Punch
+- Fire Punch
+- Mach Punch
+
+Onix
+Level: 51
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Rock Slide
+- Earthquake
+- Sandstorm
+- Iron Tail
+
+Machamp
+Level: 54
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Rock Slide
+- Foresight
+- Vital Throw
+- Cross Chop
+
+
+=== TRAINER_ROGUE_JOHTO_KAREN ===
+Name: KAREN
+Class: Elite Four Frlg
+Pic: Rogue Johto Karen
+Gender: Female
+Music: Female
+Items: Full Restore / Full Restore / Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Blue
+
+Umbreon
+Level: 51
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Sand Attack
+- Confuse Ray
+- Faint Attack
+- Mean Look
+
+Vileplume
+Level: 51
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Stun Spore
+- Acid
+- Moonlight
+- Petal Dance
+
+Gengar
+Level: 54
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Lick
+- Spite
+- Curse
+- Destiny Bond
+
+Murkrow
+Level: 53
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Faint Attack
+- Pursuit
+- Whirlwind
+- Drill Peck
+
+Houndoom
+Level: 56
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Roar
+- Faint Attack
+- Flamethrower
+- Crunch
+
+
+=== TRAINER_ROGUE_JOHTO_LANCE ===
+Name: LANCE
+Class: Champion Frlg
+Pic: Elite Four Lance Frlg
+Gender: Male
+Music: Male
+Items: Full Restore / Full Restore / Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Yellow
+
+Gyarados
+Level: 54
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Flail
+- Rain Dance
+- Surf
+- Dragon Dance
+
+Dragonite
+Level: 57
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunder Wave
+- Twister
+- Thunder
+- Dragon Rush
+
+Dragonite
+Level: 57
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunder Wave
+- Twister
+- Blizzard
+- Dragon Rush
+
+Aerodactyl
+Level: 56
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Wing Attack
+- Ancient Power
+- Rock Slide
+- Crunch
+
+Charizard
+Level: 56
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Flamethrower
+- Wing Attack
+- Slash
+- Dragon Claw
+
+Dragonite
+Level: 60
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Safeguard
+- Outrage
+- Hyper Beam
+
+
+=== TRAINER_ROGUE_JOHTO_ETHAN ===
+Name: ETHAN
+Class: Champion Frlg
+Pic: Rogue Johto Ethan
+Gender: Male
+Music: Male
+Items: Full Restore / Full Restore / Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Purple
+
+Meganium
+Level: 73
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Petal Dance
+- Body Slam
+- Light Screen
+- Synthesis
+
+Feraligatr
+Level: 75
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Ice Fang
+- Crunch
+- Screech
+
+Ampharos
+Level: 77
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Signal Beam
+- Light Screen
+- Thunder Wave
+
+Skarmory
+Level: 77
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Drill Peck
+- Steel Wing
+- Spikes
+- Toxic
+
+Donphan
+Level: 77
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Earthquake
+- Rollout
+- Rapid Spin
+- Iron Tail
+
+Typhlosion
+Level: 81
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Flamethrower
+- Thunder Punch
+- Earthquake
+- Swift
+
+
+=== TRAINER_ROGUE_JOHTO_SILVER ===
+Name: SILVER
+Class: Rival
+Pic: Rogue Johto Silver
+Gender: Male
+Music: Male
+Items: Full Restore / Full Restore / Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+
+Weavile
+Level: 63
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Faint Attack
+- Ice Punch
+- Screech
+- Swords Dance
+
+Magneton
+Level: 63
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Tri Attack
+- Screech
+- Thunder Wave
+
+Crobat
+Level: 64
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Air Cutter
+- Bite
+- Confuse Ray
+- Toxic
+
+Alakazam
+Level: 64
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Psychic
+- Future Sight
+- Reflect
+- Recover
+
+Gengar
+Level: 65
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Shadow Ball
+- Hypnosis
+- Dream Eater
+- Destiny Bond
+
+Feraligatr
+Level: 66
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Ice Fang
+- Crunch
+- Slash
+
+=== TRAINER_ROGUE_SINNOH_ROARK ===
+Name: ROARK
+Class: Leader Frlg
+Pic: Rogue Sinnoh Roark
+Gender: Male
+Music: Male
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Purple
+
+Geodude
+Level: 12
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Stealth Rock
+- Rock Throw
+- Rock Polish
+- Mud Sport
+
+Onix
+Level: 12
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Rock Throw
+- Screech
+- Rock Polish
+- Sand Tomb
+
+Cranidos
+Level: 14
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Headbutt
+- Leer
+- Pursuit
+- Take Down
+
+
+=== TRAINER_ROGUE_SINNOH_GARDENIA ===
+Name: GARDENIA
+Class: Leader Frlg
+Pic: Rogue Sinnoh Gardenia
+Gender: Female
+Music: Female
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Green
+
+Cherubi
+Level: 16
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Growth
+- Magical Leaf
+- Leech Seed
+- Grass Whistle
+
+Turtwig
+Level: 16
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Reflect
+- Razor Leaf
+- Curse
+- Bite
+
+Roserade
+Level: 18
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Poison Sting
+- Magical Leaf
+- Grass Whistle
+- Stun Spore
+
+
+=== TRAINER_ROGUE_SINNOH_FANTINA ===
+Name: FANTINA
+Class: Leader Frlg
+Pic: Rogue Sinnoh Fantina
+Gender: Female
+Music: Female
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Pink
+
+Drifloon
+Level: 20
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Astonish
+- Gust
+- Focus Energy
+- Minimize
+
+Gengar
+Level: 22
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Shadow Ball
+- Confuse Ray
+- Sucker Punch
+- Hypnosis
+
+Mismagius
+Level: 24
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Psybeam
+- Shadow Ball
+- Confuse Ray
+- Magical Leaf
+
+
+=== TRAINER_ROGUE_SINNOH_MAYLENE ===
+Name: MAYLENE
+Class: Leader Frlg
+Pic: Rogue Sinnoh Maylene
+Gender: Female
+Music: Female
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Blue
+
+Meditite
+Level: 24
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Drain Punch
+- Confusion
+- Detect
+- Bulk Up
+
+Machoke
+Level: 25
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Rock Tomb
+- Karate Chop
+- Foresight
+- Seismic Toss
+
+Lucario
+Level: 28
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Drain Punch
+- Bone Rush
+- Metal Claw
+- Screech
+
+
+=== TRAINER_ROGUE_SINNOH_CRASHER_WAKE ===
+Name: WAKE
+Class: Leader Frlg
+Pic: Rogue Sinnoh Crasher_wake
+Gender: Male
+Music: Male
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Yellow
+
+Gyarados
+Level: 27
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Bite
+- Dragon Rage
+- Rain Dance
+- Twister
+
+Quagsire
+Level: 28
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Water Pulse
+- Mud Bomb
+- Amnesia
+- Yawn
+
+Floatzel
+Level: 31
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Ice Fang
+- Crunch
+- Swift
+
+
+=== TRAINER_ROGUE_SINNOH_BYRON ===
+Name: BYRON
+Class: Leader Frlg
+Pic: Rogue Sinnoh Byron
+Gender: Male
+Music: Male
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Purple
+
+Magneton
+Level: 29
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Tri Attack
+- Screech
+- Supersonic
+
+Steelix
+Level: 29
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Iron Tail
+- Rock Slide
+- Screech
+- Sandstorm
+
+Bastiodon
+Level: 32
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Iron Defense
+- Metal Sound
+- Take Down
+- Ancient Power
+
+
+=== TRAINER_ROGUE_SINNOH_CANDICE ===
+Name: CANDICE
+Class: Leader Frlg
+Pic: Rogue Sinnoh Candice
+Gender: Female
+Music: Female
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Green
+
+Sneasel
+Level: 40
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Faint Attack
+- Icy Wind
+- Screech
+- Quick Attack
+
+Piloswine
+Level: 40
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Icy Wind
+- Take Down
+- Mud Bomb
+- Blizzard
+
+Abomasnow
+Level: 42
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Ice Punch
+- Wood Hammer
+- Swagger
+- Blizzard
+
+Froslass
+Level: 44
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Ice Punch
+- Shadow Ball
+- Confuse Ray
+- Blizzard
+
+
+=== TRAINER_ROGUE_SINNOH_VOLKNER ===
+Name: VOLKNER
+Class: Leader Frlg
+Pic: Rogue Sinnoh Volkner
+Gender: Male
+Music: Male
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Pink
+
+Jolteon
+Level: 41
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Quick Attack
+- Double Kick
+- Charge Beam
+
+Raichu
+Level: 41
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Quick Attack
+- Brick Break
+- Light Screen
+
+Luxray
+Level: 43
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunder Fang
+- Crunch
+- Charge
+- Scary Face
+
+Electivire
+Level: 45
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunder Punch
+- Ice Punch
+- Cross Chop
+- Light Screen
+
+
+=== TRAINER_ROGUE_SINNOH_AARON ===
+Name: AARON
+Class: Elite Four Frlg
+Pic: Rogue Sinnoh Aaron
+Gender: Male
+Music: Male
+Items: Full Restore / Full Restore / Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Purple
+
+Dustox
+Level: 46
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Silver Wind
+- Toxic
+- Light Screen
+- Psybeam
+
+Beautifly
+Level: 46
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Silver Wind
+- Stun Spore
+- Giga Drain
+- Aerial Ace
+
+Vespiquen
+Level: 47
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Power Gem
+- Attack Order
+- Defend Order
+- Heal Order
+
+Heracross
+Level: 47
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Aerial Ace
+- Brick Break
+- Megahorn
+- Endure
+
+Drapion
+Level: 50
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Toxic Spikes
+- Cross Poison
+- Aerial Ace
+- Night Slash
+
+
+=== TRAINER_ROGUE_SINNOH_BERTHA ===
+Name: BERTHA
+Class: Elite Four Frlg
+Pic: Rogue Sinnoh Bertha
+Gender: Female
+Music: Female
+Items: Full Restore / Full Restore / Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Green
+
+Quagsire
+Level: 48
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Earthquake
+- Surf
+- Yawn
+- Curse
+
+Sudowoodo
+Level: 49
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Sucker Punch
+- Rock Slide
+- Double Edge
+- Hammer Arm
+
+Golem
+Level: 49
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Earthquake
+- Rock Slide
+- Explosion
+- Rollout
+
+Whiscash
+Level: 48
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Earthquake
+- Surf
+- Zen Headbutt
+- Amnesia
+
+Hippowdon
+Level: 52
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Earthquake
+- Crunch
+- Yawn
+- Rock Slide
+
+
+=== TRAINER_ROGUE_SINNOH_FLINT ===
+Name: FLINT
+Class: Elite Four Frlg
+Pic: Rogue Sinnoh Flint
+Gender: Male
+Music: Male
+Items: Full Restore / Full Restore / Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Pink
+
+Rapidash
+Level: 51
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Flare Blitz
+- Bounce
+- Poison Jab
+- Sunny Day
+
+Steelix
+Level: 50
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fire Fang
+- Earthquake
+- Iron Tail
+- Sandstorm
+
+Drifblim
+Level: 51
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Will-O-Wisp
+- Shadow Ball
+- Baton Pass
+- Explosion
+
+Lopunny
+Level: 50
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fire Punch
+- Jump Kick
+- Charm
+- Sunny Day
+
+Infernape
+Level: 54
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Flare Blitz
+- Close Combat
+- Thunder Punch
+- Earthquake
+
+
+=== TRAINER_ROGUE_SINNOH_LUCIAN ===
+Name: LUCIAN
+Class: Elite Four Frlg
+Pic: Rogue Sinnoh Lucian
+Gender: Male
+Music: Male
+Items: Full Restore / Full Restore / Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Blue
+
+Mr. Mime
+Level: 52
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Psychic
+- Reflect
+- Light Screen
+- Baton Pass
+
+Girafarig
+Level: 52
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Psychic
+- Crunch
+- Agility
+- Baton Pass
+
+Medicham
+Level: 53
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Zen Headbutt
+- Drain Punch
+- Calm Mind
+- Recover
+
+Alakazam
+Level: 53
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Psychic
+- Future Sight
+- Recover
+- Shadow Ball
+
+Bronzong
+Level: 56
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Psychic
+- Gyro Ball
+- Earthquake
+- Calm Mind
+
+
+=== TRAINER_ROGUE_SINNOH_CYNTHIA ===
+Name: CYNTHIA
+Class: Champion Frlg
+Pic: Rogue Sinnoh Cynthia
+Gender: Female
+Music: Female
+Items: Full Restore / Full Restore / Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Yellow
+
+Spiritomb
+Level: 55
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Dark Pulse
+- Psychic
+- Silver Wind
+- Embargo
+
+Roserade
+Level: 55
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Energy Ball
+- Sludge Bomb
+- Shadow Ball
+- Extrasensory
+
+Togekiss
+Level: 57
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Air Slash
+- Aura Sphere
+- Shadow Ball
+- Water Pulse
+
+Lucario
+Level: 57
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Aura Sphere
+- Dragon Pulse
+- Psychic
+- Earthquake
+
+Milotic
+Level: 55
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Ice Beam
+- Mirror Coat
+- Recover
+
+Garchomp
+Level: 59
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Dragon Rush
+- Earthquake
+- Brick Break
+- Giga Impact
+
+
+=== TRAINER_ROGUE_SINNOH_DAWN ===
+Name: DAWN
+Class: Champion Frlg
+Pic: Rogue Sinnoh Dawn
+Gender: Female
+Music: Female
+Items: Full Restore / Full Restore / Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+Mugshot: Purple
+
+Ambipom
+Level: 73
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fake Out
+- Double Hit
+- Nasty Plot
+- Aerial Ace
+
+Lopunny
+Level: 75
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Return
+- Jump Kick
+- Ice Punch
+- Baton Pass
+
+Typhlosion
+Level: 77
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Eruption
+- Flamethrower
+- Thunder Punch
+- Earthquake
+
+Mamoswine
+Level: 77
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Earthquake
+- Ice Shard
+- Stone Edge
+- Icicle Crash
+
+Togekiss
+Level: 77
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Air Slash
+- Aura Sphere
+- Roost
+- Thunder Wave
+
+Empoleon
+Level: 81
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hydro Pump
+- Ice Beam
+- Flash Cannon
+- Grass Knot
+
+
+=== TRAINER_ROGUE_SINNOH_BARRY ===
+Name: BARRY
+Class: Rival
+Pic: Rogue Sinnoh Barry
+Gender: Male
+Music: Male
+Items: Full Restore / Full Restore / Full Restore / Full Restore
+Double Battle: No
+AI: Check Bad Move / Try To Faint / Check Viability
+
+Floatzel
+Level: 63
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Waterfall
+- Ice Fang
+- Crunch
+- Aqua Jet
+
+Roserade
+Level: 63
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Energy Ball
+- Sludge Bomb
+- Sleep Powder
+- Giga Drain
+
+Staraptor
+Level: 64
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Brave Bird
+- Close Combat
+- Double Edge
+- Quick Attack
+
+Heracross
+Level: 64
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Megahorn
+- Close Combat
+- Earthquake
+- Rock Slide
+
+Snorlax
+Level: 65
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Body Slam
+- Earthquake
+- Crunch
+- Rest
+
+Infernape
+Level: 66
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Flare Blitz
+- Close Combat
+- Thunder Punch
+- Stone Edge

@@ -44,7 +44,12 @@
 // is party-wide and lasts three battles, Sluggish is per-mon but act-scoped and
 // hits Speed. The mon that got the new ability is the one that carries the cost.
 #define ROGUE_CHARM_BRITTLE      11
-#define ROGUE_CHARM_COUNT        12
+// What a captured ALPHA carries. The only charm granted by winning rather
+// than by bargaining, and the only one whose whole point is that it PERSISTS -
+// see the row in sCharms for why it reapplies on switch-in when nothing else
+// positive does.
+#define ROGUE_CHARM_ALPHA        12
+#define ROGUE_CHARM_COUNT        13
 
 // Effect kinds. Every one of these must be applyable at battle start and
 // nowhere else - that is the invariant the whole scope rests on, and
@@ -96,10 +101,29 @@
 #define ROGUE_CHARMS_PER_MON   3
 #define ROGUE_PARTY_CHARM_SLOTS 6
 
+// How many Alphas one run can be carrying the record of. A charm row lives in
+// a PARTY slot, and an Alpha caught on a full party goes straight to a PC box
+// where there is no row to write to - so the personality is registered here
+// instead and the charm is installed whenever that Pokemon is in the party.
+//
+// Four rather than one: nothing stops a player catching an Alpha on floor 21
+// with a full party and another on floor 31. Four u32 is 16 bytes, and the
+// registry is not consumed on use - see EnsureAlphaCharms.
+#define ROGUE_ALPHA_SLOTS      4
+
 // Bumping this zeroes every player's charm state on next access. Bump it
 // whenever the LAYOUT of struct RogueRunModifiers changes - appending to
 // SaveBlock3 leaves old saves reading whatever was in the sector, and charms
 // that arrive holding garbage would apply garbage effects.
-#define ROGUE_CHARMS_SAVE_VERSION 1
+// BUMPED TO 2 when the Alpha registry was appended to the struct, and to 3 when
+// the beaten counter was. An existing save loses the charms its run was
+// holding, which is the documented cost of a layout change here and is why the
+// constant exists.
+//
+// BUMPED AGAIN RATHER THAN AMENDING 2 IN PLACE. Version 2 had almost certainly
+// never been written to a save - it was added minutes earlier in the same
+// session - and "almost certainly" is exactly the reasoning this constant
+// exists to make unnecessary. A wrong guess here reads garbage as a counter.
+#define ROGUE_CHARMS_SAVE_VERSION 3
 
 #endif // GUARD_CONSTANTS_ROGUE_CHARMS_H

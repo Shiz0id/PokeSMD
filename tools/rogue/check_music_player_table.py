@@ -156,7 +156,24 @@ def parse_popup_buffer(text):
             - got["MAP_POPUP_PREFIX_BUFFER_LENGTH"] - 1)
 
 
-def check(repo, table_text=None, popup_text=None):
+def function_body(src, name):
+    """The brace-matched body of a C function definition, or None."""
+    m = re.search(r"\n[\w \*]*\b%s\s*\([^;{]*\)\s*\{" % re.escape(name), src)
+    if m is None:
+        return None
+    depth = 0
+    start = m.end() - 1
+    for i in range(start, len(src)):
+        if src[i] == "{":
+            depth += 1
+        elif src[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return src[start:i + 1]
+    return None
+
+
+def check(repo, table_text=None, popup_text=None, player_text=None):
     """Returns a list of problem strings. Empty means the table is sound."""
     songs = parse_song_constants(read(repo, "include", "constants", "songs.h"))
     song_rows = parse_song_table(read(repo, "sound", "song_table.inc"))
@@ -402,6 +419,60 @@ def check(repo, table_text=None, popup_text=None):
                     % (name, n, max_rows)
                 )
 
+    # ----------------------------------------------------------------------
+    # HOW THE NESTING IS CONSUMED, not just how it is declared.
+    #
+    # Everything above proves the parent table is well formed. None of it can
+    # see the player READING that table to answer a question it does not
+    # answer, which is what shipped. The B handler asked
+    #
+    #     sRogueMusicPlaylistParent[sPlayer->playlist] != RMP_NO_PARENT
+    #
+    # meaning "is this playlist nested?", when the question B must answer is
+    # "did I arrive from a sublist?". The two disagree for exactly one entry --
+    # a sublist's first row is the PARENT'S OWN tracks, and a parent is by
+    # definition top level -- so opening GAME BOY, choosing its own tracks and
+    # pressing B dropped two levels, while PSG REMIXES beside it behaved. The
+    # same conflation picked the controls hint, which promised B would EXIT
+    # from a submenu where it goes back one level.
+    # ----------------------------------------------------------------------
+    if player_text is None:
+        player_text = read(repo, "src", "rogue_music_player.c")
+
+    if "sRogueMusicPlaylistParent[sPlayer->playlist]" in player_text:
+        problems.append(
+            "rogue_music_player.c decides back-navigation from"
+            " sRogueMusicPlaylistParent[sPlayer->playlist] -- that asks whether"
+            " the playlist is nested, not whether it was reached from a sublist."
+            " Use sPlayer->fromSublist."
+        )
+    if "sPlayer->fromSublist = (sPlayer->mode == MODE_SUBLISTS)" not in player_text:
+        problems.append(
+            "rogue_music_player.c never records fromSublist when entering"
+            " MODE_TRACKS -- B cannot then tell a sublist's own-tracks row from"
+            " the same playlist opened off the top level"
+        )
+    if "sPlayer->mode == MODE_TRACKS && sPlayer->fromSublist" not in player_text:
+        problems.append(
+            "rogue_music_player.c's back-navigation does not consult fromSublist"
+            " -- B would leave a submenu the way it leaves the top level"
+        )
+
+    info = function_body(player_text, "RogueMusicPlayer_DrawInfo")
+    if info is None:
+        problems.append(
+            "RogueMusicPlayer_DrawInfo not found in rogue_music_player.c"
+        )
+    elif "sText_ControlsSublists" not in info:
+        problems.append(
+            "the info panel has no distinct controls hint for MODE_SUBLISTS --"
+            " it falls through to the playlist hint, which says B EXITs when in"
+            " a submenu B goes back"
+        )
+    if re.search(r"sText_ControlsSublists\[\]\s*=\s*_\(\"[^\"]*\{B_BUTTON\}BACK",
+                 player_text) is None:
+        problems.append("sText_ControlsSublists does not label B as BACK")
+
     return problems
 
 
@@ -514,6 +585,40 @@ SELFTEST_POPUP_BREAKS = [
     ),
 ]
 
+# Breaks applied to src/rogue_music_player.c. The first two reconstruct the bug
+# exactly as it shipped -- B answering "is this playlist nested?" instead of "did
+# I come from a sublist?" -- which no amount of checking the parent TABLE could
+# ever have seen, because the table was correct the whole time.
+SELFTEST_PLAYER_BREAKS = [
+    (
+        "back-navigation reverted to asking the parent table",
+        lambda s: s.replace(
+            "if (sPlayer->mode == MODE_TRACKS && sPlayer->fromSublist)",
+            "if (sPlayer->mode == MODE_TRACKS\n"
+            "             && sRogueMusicPlaylistParent[sPlayer->playlist] != RMP_NO_PARENT)",
+            1),
+    ),
+    (
+        "fromSublist never recorded on the way in",
+        lambda s: s.replace(
+            "                sPlayer->fromSublist = (sPlayer->mode == MODE_SUBLISTS);\n",
+            "", 1),
+    ),
+    (
+        "the sublist controls hint dropped back to the playlist one",
+        lambda s: s.replace(
+            "        controls = sText_ControlsSublists;",
+            "        controls = sText_ControlsPlaylists;", 1),
+    ),
+    (
+        "the sublist hint stopped saying BACK",
+        lambda s: s.replace(
+            "static const u8 sText_ControlsSublists[] = _(\"{A_BUTTON}OPEN  {B_BUTTON}BACK",
+            "static const u8 sText_ControlsSublists[] = _(\"{A_BUTTON}OPEN  {B_BUTTON}EXIT",
+            1),
+    ),
+]
+
 
 def selftest(repo):
     clean = check(repo)
@@ -525,13 +630,18 @@ def selftest(repo):
 
     original = read(repo, "src", "data", "rogue_music_player.h")
     popup_original = read(repo, "include", "map_name_popup.h")
+    player_original = read(repo, "src", "rogue_music_player.c")
     failures = 0
 
+    sources = {"table": original, "popup": popup_original,
+               "player": player_original}
+
     cases = ([(n, b, "table") for n, b in SELFTEST_BREAKS]
-             + [(n, b, "popup") for n, b in SELFTEST_POPUP_BREAKS])
+             + [(n, b, "popup") for n, b in SELFTEST_POPUP_BREAKS]
+             + [(n, b, "player") for n, b in SELFTEST_PLAYER_BREAKS])
 
     for name, break_it, target in cases:
-        source = original if target == "table" else popup_original
+        source = sources[target]
         broken = break_it(source)
         if broken == source:
             print("  ?? %s -- the break did not apply, so it proves nothing" % name)
@@ -539,8 +649,10 @@ def selftest(repo):
             continue
         if target == "table":
             problems = check(repo, table_text=broken)
-        else:
+        elif target == "popup":
             problems = check(repo, popup_text=broken)
+        else:
+            problems = check(repo, player_text=broken)
         if problems:
             print("  ok %s -- caught: %s" % (name, problems[0]))
         else:

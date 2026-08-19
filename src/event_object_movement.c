@@ -512,6 +512,7 @@ static const struct SpritePalette sObjectEventSpritePalettes[] = {
     {gObjectEventPal_RogueDiver,            OBJ_EVENT_PAL_TAG_ROGUE_DIVER},
     {gObjectEventPal_RogueCrystal,          OBJ_EVENT_PAL_TAG_ROGUE_CRYSTAL},
     {gObjectEventPal_RogueGrave,            OBJ_EVENT_PAL_TAG_ROGUE_GRAVE},
+    {gObjectEventPal_RogueEgg,              OBJ_EVENT_PAL_TAG_ROGUE_EGG},
     {gObjectEventPal_RoguePc,               OBJ_EVENT_PAL_TAG_ROGUE_PC},
     {gObjectEventPal_RogueDiverJuan,        OBJ_EVENT_PAL_TAG_ROGUE_DIVER_JUAN},
     {gObjectEventPal_QuintyPlump,           OBJ_EVENT_PAL_TAG_QUINTY_PLUMP},
@@ -595,6 +596,45 @@ static const struct SpritePalette sObjectEventSpritePalettes[] = {
     {gObjectEventPaletteLight2,             OBJ_EVENT_PAL_TAG_LIGHT_2},
     {gObjectEventPaletteEmotes,             OBJ_EVENT_PAL_TAG_EMOTES},
     {gObjectEventPaletteNeonLight,          OBJ_EVENT_PAL_TAG_NEON_LIGHT},
+    // THE JOHTO AND SINNOH OVERWORLD PALETTES, APPENDED - NEVER PREPENDED.
+    //
+    // These 27 rows were originally added at the TOP of this table, which
+    // shifted OBJ_EVENT_PAL_TAG_NPC_1 through _4 from indices 0-3 to 27-30.
+    // SetBerryTreeGraphicsById is the ONE consumer that indexes this table by
+    // POSITION rather than by tag - sObjectEventSpritePalettes[slot - 2], with
+    // slots 2-5 from gBerryTreePaletteSlotTable_* - so every berry tree in the
+    // game drew with a Sinnoh rival palette. Nothing failed to build and
+    // check_ow_palette_tags.py passed throughout, because every tag still
+    // resolved; what moved was an index no tag is involved in.
+    //
+    // Anything added here goes at the END, above the sentinel and below this.
+    {gObjectEventPal_RogueSinnohBarry, OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_BARRY},
+    {gObjectEventPal_RogueSinnohDawn, OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_DAWN},
+    {gObjectEventPal_RogueJohtoSilver, OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_SILVER},
+    {gObjectEventPal_RogueJohtoEthan, OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_ETHAN},
+    {gObjectEventPal_RogueSinnohFlint, OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_FLINT},
+    {gObjectEventPal_RogueSinnohCandice, OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_CANDICE},
+    {gObjectEventPal_RogueSinnohGardenia, OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_GARDENIA},
+    {gObjectEventPal_RogueSinnohRoark, OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_ROARK},
+    {gObjectEventPal_RogueSinnohAaron, OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_AARON},
+    {gObjectEventPal_RogueSinnohCynthia, OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_CYNTHIA},
+    {gObjectEventPal_RogueSinnohLucian, OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_LUCIAN},
+    {gObjectEventPal_RogueSinnohBertha, OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_BERTHA},
+    {gObjectEventPal_RogueSinnohVolkner, OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_VOLKNER},
+    {gObjectEventPal_RogueSinnohByron, OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_BYRON},
+    {gObjectEventPal_RogueSinnohFantina, OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_FANTINA},
+    {gObjectEventPal_RogueSinnohCrasherWake, OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_CRASHER_WAKE},
+    {gObjectEventPal_RogueSinnohMaylene, OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_MAYLENE},
+    {gObjectEventPal_RogueJohtoKaren, OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_KAREN},
+    {gObjectEventPal_RogueJohtoWill, OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_WILL},
+    {gObjectEventPal_RogueJohtoClair, OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_CLAIR},
+    {gObjectEventPal_RogueJohtoPryce, OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_PRYCE},
+    {gObjectEventPal_RogueJohtoJasmine, OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_JASMINE},
+    {gObjectEventPal_RogueJohtoChuck, OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_CHUCK},
+    {gObjectEventPal_RogueJohtoMorty, OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_MORTY},
+    {gObjectEventPal_RogueJohtoWhitney, OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_WHITNEY},
+    {gObjectEventPal_RogueJohtoBugsy, OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_BUGSY},
+    {gObjectEventPal_RogueJohtoFalkner, OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_FALKNER},
 #ifdef BUGFIX
     {NULL,                                  OBJ_EVENT_PAL_TAG_NONE},
 #else

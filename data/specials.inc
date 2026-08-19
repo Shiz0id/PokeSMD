@@ -658,6 +658,9 @@ gSpecials::
 	def_special RogueDungeon_HideTakenFloorItem
 	def_special RogueDungeon_OnRunCompleted
 	def_special RogueDungeon_BufferRunSummary
+	def_special RogueJournal_OnRunStarted
+	def_special RogueDungeon_JournalBossDefeated
+	def_special RogueDungeon_JournalDungeonEntered
 	def_special RogueDungeon_BufferEventStake
 	def_special RogueDungeon_ResolveEventStake
 	def_special RogueDungeon_BufferEventWares
@@ -678,7 +681,9 @@ gSpecials::
 	def_special RogueDungeon_EventTransposerCheck
 	def_special RogueDungeon_EventTransposerApply
 	def_special RogueDungeon_EventPokerusInject
+	def_special RogueDungeon_EventNestApproach
 	def_special RogueDungeon_EventNestWave
+	def_special RogueDungeon_EventNestHoard
 	def_special RogueDungeon_PhantomBattle
 	def_special RogueDungeon_PhantomToll
 	def_special RogueDungeon_EventScoutApproach
@@ -699,12 +704,13 @@ gSpecials::
 	def_special RogueDungeon_EventCrystalOffer
 	def_special RogueDungeon_EventCrystalEvolve
 	def_special RogueDungeon_EventDittoAmbush
-	def_special RogueDungeon_EventTotemApproach
-	def_special RogueDungeon_EventTotemBattle
-	def_special RogueDungeon_EventTotemFeed
-	def_special RogueDungeon_EventTotemReward
+	def_special RogueDungeon_EventAlphaApproach
+	def_special RogueDungeon_EventAlphaBattle
+	def_special RogueDungeon_EventAlphaFeed
+	def_special RogueDungeon_EventAlphaReward
 	def_special RogueDungeon_EventBattleWon
-	def_special RogueDungeon_EventTotemSneak
+	def_special RogueDungeon_EventAlphaSneak
+	def_special RogueDungeon_EventAlphaKept
 	def_special Special_ViewVoltorbFlip
 	def_special StartFlappyBird
 	def_special StartSnake

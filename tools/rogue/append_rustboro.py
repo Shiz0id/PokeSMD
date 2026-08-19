@@ -43,6 +43,11 @@ GENERAL = REPO / 'data/tilesets/primary/general'
 
 TILES_PER_ROW = 16          # tiles.png is 128px wide
 
+# include/global.fieldmap.h. Emerald attributes are u16: behaviour in bits 0-7,
+# layer type in bits 12-15.
+METATILE_ATTR_LAYER_MASK = 0xF000
+METATILE_ATTR_LAYER_SHIFT = 12
+
 
 def write_tiles(mapping):
     """Blit 8x8 index blocks into tiles.png at their slot positions.
@@ -102,14 +107,21 @@ def main():
 
     gat = (GENERAL / 'metatile_attributes.bin').read_bytes()
     first = 0x200 + before
-    for label, entry, donor in trees.append_order():
+    for label, entry, donor, layer in trees.append_order():
         mt += entry
         # The ATTRIBUTE carries behaviour, and behaviour is what the engine
         # reads for encounters and collision. Copied from the vanilla woods
         # tree rather than synthesised, so these behave as trees have always
         # behaved; one invented constant here is the same class of bug as a
         # hard-coded per-theme metatile.
-        at += gat[donor * 2:donor * 2 + 2]
+        #
+        # THE LAYER TYPE IS THE ONE FIELD THE DONOR IS WRONG ABOUT, because our
+        # tree sits in the top half of the metatile and vanilla's sits in the
+        # bottom. make_woods_trees.py decides it per row and says why; here it
+        # only replaces bits 12-15, so the donor still owns the behaviour byte.
+        a = struct.unpack('<H', gat[donor * 2:donor * 2 + 2])[0]
+        at += struct.pack('<H', (a & ~METATILE_ATTR_LAYER_MASK)
+                                | (layer << METATILE_ATTR_LAYER_SHIFT))
     mt_path.write_bytes(bytes(mt))
     at_path.write_bytes(bytes(at))
     total_after_trees = len(mt) // 16

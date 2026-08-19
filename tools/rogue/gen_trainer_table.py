@@ -21,16 +21,34 @@ OUT = REPO / 'include/constants/rogue_dungeon_trainers.h'
 
 # Classes reserved for bosses, or that are frontier placeholders with a single
 # level-5 Beldum standing in for a dynamically built party.
+#
+# THE FRLG CLASSES ARE SEPARATE STRINGS AND THAT IS THE WHOLE TRAP. A ported
+# Kanto leader's class is "Leader Frlg", not "Leader", so the four stock class
+# names above do not exclude one of them - and this file is GENERATED, so the
+# leak does not appear when the trainers are added. It appears the next time
+# somebody runs this tool, which may be months later and for an unrelated
+# reason. Regenerating against the committed header is what caught it: all
+# thirteen Kanto leaders and Blue were about to join the random pool, so a
+# level-60 Champion could stand on a woods floor.
 EXCLUDE_CLASSES = {
     'Leader', 'Elite Four', 'Champion', 'Rival',
+    'Leader Frlg', 'Elite Four Frlg', 'Champion Frlg',
     'Salon Maiden', 'Dome Ace', 'Palace Maven', 'Arena Tycoon',
     'Factory Head', 'Pike Queen', 'Pyramid King',
     'Magma Leader', 'Aqua Leader', 'Magma Admin', 'Aqua Admin',
 }
 # Partner/multi-battle and link trainers that are not standalone opponents.
+#
+# ^TRAINER_ROGUE_ excludes this project's OWN trainers as a class, and it is a
+# prefix rather than a list on purpose: every one of them exists because some
+# table already owns it. The seven divers belong to sUnderwaterTrainers, the
+# rival to floor 110, the Kanto set to the boss tables. Excluding them by class
+# name would have missed the divers outright - "Rogue Diver" is a class this
+# project invented and nothing here would have known to name it.
 EXCLUDE_ID_PATTERNS = [
     r'_PARTNER', r'^TRAINER_STEVEN$', r'^TRAINER_NONE$',
     r'^TRAINER_LINK', r'_VR_\d+$', r'^TRAINER_RS_',
+    r'^TRAINER_ROGUE_',
 ]
 
 

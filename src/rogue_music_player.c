@@ -80,6 +80,21 @@ struct RogueMusicPlayerState
     // music strictly alone, because "restore the map's music" restarts the field
     // track from the top and doing that on every open-and-back-out is a bug.
     bool8 touchedMusic;
+    // HOW the current track list was reached, which is the only thing B needs to
+    // know on the way out and is NOT derivable from the playlist itself.
+    //
+    // This replaced a test on sRogueMusicPlaylistParent[playlist], which asks
+    // "is this playlist nested?" instead of "did I come from a sublist?" -- and
+    // the two disagree for exactly one entry, the parent's OWN tracks. GAME BOY
+    // is top level, so opening its sublist, choosing its own tracks and pressing
+    // B dropped the player two levels instead of one, while PSG REMIXES beside
+    // it behaved correctly.
+    //
+    // NOT INFERRED FROM playlist == parent either: parent comes from AllocZeroed
+    // and reads as 0 (RMP_PLAYLIST_DUNGEON) until a sublist is opened, so opening
+    // DUNGEON FLOORS directly would then bounce B into a sublist that was never
+    // entered.
+    bool8 fromSublist;
     u16 itemCount;
     u16 highlighted;                // list id under the cursor
     u16 scrollOffset[MODE_COUNT];   // remembered per level, so B returns home
@@ -137,6 +152,14 @@ static const u8 sText_PsgRemix[] = _("PSG, NOT GBS");
 static const u8 sText_QueueEmpty[] = _("QUEUE EMPTY");
 static const u8 sText_QueueFmt[] = _("QUEUE {STR_VAR_1}/{STR_VAR_2}");
 static const u8 sText_ControlsPlaylists[] = _("{A_BUTTON}OPEN  {B_BUTTON}EXIT\n{L_BUTTON}NEXT\n{SELECT_BUTTON}GB  {START_BUTTON}STOP");
+// A SUBLIST'S B GOES BACK, NOT OUT, and the hint used to say EXIT there because
+// the panel picked its string with `mode == MODE_TRACKS ? tracks : playlists` -
+// the same "not tracks means top level" conflation that sent B two levels up.
+//
+// THREE LINES, exactly like the two beside it. The info panel is full to within
+// 7px of its window, so this had to be a swap rather than an addition; see the
+// note on sInfoWindowTemplate's height.
+static const u8 sText_ControlsSublists[] = _("{A_BUTTON}OPEN  {B_BUTTON}BACK\n{L_BUTTON}NEXT\n{SELECT_BUTTON}GB  {START_BUTTON}STOP");
 static const u8 sText_ControlsTracks[] = _("{A_BUTTON}PLAY  {B_BUTTON}BACK\n{R_BUTTON}QUEUE {L_BUTTON}NEXT\n{SELECT_BUTTON}GB  {START_BUTTON}STOP");
 
 static void Task_RogueMusicPlayer(u8 taskId);
@@ -368,6 +391,7 @@ static void RogueMusicPlayer_MoveCursor(s32 itemIndex, bool8 onInit,
 static void RogueMusicPlayer_DrawInfo(void)
 {
     const struct RogueMusicTrack *track;
+    const u8 *controls;
     u8 windowId = sPlayer->infoWindowId;
 
     FillWindowPixelBuffer(windowId, PIXEL_FILL(1));
@@ -425,10 +449,17 @@ static void RogueMusicPlayer_DrawInfo(void)
                                     0, 57, TEXT_SKIP_DRAW, NULL);
     }
 
-    AddTextPrinterParameterized(windowId, FONT_SMALL,
-                                sPlayer->mode == MODE_TRACKS
-                                    ? sText_ControlsTracks
-                                    : sText_ControlsPlaylists,
+    // Three modes, three hints. Written out rather than nested ternaries because
+    // the two-way version is what got this wrong: MODE_SUBLISTS fell through to
+    // the playlist hint and told the player B would exit when it goes back.
+    if (sPlayer->mode == MODE_TRACKS)
+        controls = sText_ControlsTracks;
+    else if (sPlayer->mode == MODE_SUBLISTS)
+        controls = sText_ControlsSublists;
+    else
+        controls = sText_ControlsPlaylists;
+
+    AddTextPrinterParameterized(windowId, FONT_SMALL, controls,
                                 0, 69, TEXT_SKIP_DRAW, NULL);
 
     CopyWindowToVram(windowId, COPYWIN_GFX);
@@ -515,6 +546,11 @@ static void Task_RogueMusicPlayer(u8 taskId)
             }
             else
             {
+                // Recorded BEFORE mode is overwritten, and it is the whole of
+                // what B consults later. A sublist's first row is the parent's
+                // own tracks, so this is the only thing that distinguishes it
+                // from the same playlist opened straight off the top level.
+                sPlayer->fromSublist = (sPlayer->mode == MODE_SUBLISTS);
                 sPlayer->playlist = selection;
                 sPlayer->mode = MODE_TRACKS;
             }
@@ -540,10 +576,11 @@ static void Task_RogueMusicPlayer(u8 taskId)
         {
             PlaySE(SE_SELECT);
             RogueMusicPlayer_CloseList();
-            // Back one level: tracks reached through a nested playlist return
-            // to that submenu, not all the way out.
-            if (sPlayer->mode == MODE_TRACKS
-             && sRogueMusicPlaylistParent[sPlayer->playlist] != RMP_NO_PARENT)
+            // Back ONE level: tracks reached through a submenu return to that
+            // submenu, not all the way out. Keyed on how the list was reached
+            // (fromSublist) rather than on whether the playlist is nested -- see
+            // the note on that field for the entry where the two disagree.
+            if (sPlayer->mode == MODE_TRACKS && sPlayer->fromSublist)
                 sPlayer->mode = MODE_SUBLISTS;
             else
                 sPlayer->mode = MODE_PLAYLISTS;

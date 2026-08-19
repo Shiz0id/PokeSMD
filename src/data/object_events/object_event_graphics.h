@@ -34,6 +34,14 @@ const u32 gObjectEventPic_MayDecorating[] = INCGFX_U32("graphics/object_events/p
 // underwater player has no walk cycle and neither do these.
 const u32 gObjectEventPic_RogueGrave[] = INCGFX_U32("graphics/object_events/pics/misc/rogue_grave.png", ".4bpp", "-mwidth 2 -mheight 2");
 const u16 gObjectEventPal_RogueGrave[] = INCGFX_U16("graphics/object_events/palettes/rogue_grave.pal", ".gbapal");
+// The party-menu egg icon as an overworld object, for the floor event that
+// leaves one lying in the dirt. tools/rogue/make_egg_sprite.py - REGENERATE
+// rather than hand-edit, because the tool asserts the icon still matches
+// gMonIconPalettes[1], which is what the engine draws the party-menu egg in.
+// If those two ever diverge the egg on the floor and the egg in the party
+// become different colours, and nothing else in the build would say so.
+const u32 gObjectEventPic_RogueEgg[] = INCGFX_U32("graphics/object_events/pics/misc/rogue_egg.png", ".4bpp", "-mwidth 2 -mheight 2");
+const u16 gObjectEventPal_RogueEgg[] = INCGFX_U16("graphics/object_events/palettes/rogue_egg.pal", ".gbapal");
 // The Pokemon Center's PC, lifted out of gTileset_Building by
 // tools/rogue/make_pc_sprite.py. Regenerate rather than hand-edit: the tool
 // asserts the metatile still carries no wall or floor in its border ring.
@@ -670,3 +678,57 @@ const u16 gObjectEventPic_PidgeyOld[] = INCGFX_U16("graphics/object_events/pics/
 const u16 gObjectEventPic_ClefairyOld[] = INCGFX_U16("graphics/object_events/pics/pokemon_old/clefairy.png", ".4bpp", "-mwidth 2 -mheight 2");
 
 #endif // IS_FRLG
+const u32 gObjectEventPic_RogueJohtoFalkner[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_johto_falkner.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueJohtoFalkner[] = INCGFX_U16("graphics/object_events/palettes/rogue_johto_falkner.pal", ".gbapal");
+const u32 gObjectEventPic_RogueJohtoBugsy[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_johto_bugsy.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueJohtoBugsy[] = INCGFX_U16("graphics/object_events/palettes/rogue_johto_bugsy.pal", ".gbapal");
+const u32 gObjectEventPic_RogueJohtoWhitney[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_johto_whitney.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueJohtoWhitney[] = INCGFX_U16("graphics/object_events/palettes/rogue_johto_whitney.pal", ".gbapal");
+const u32 gObjectEventPic_RogueJohtoMorty[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_johto_morty.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueJohtoMorty[] = INCGFX_U16("graphics/object_events/palettes/rogue_johto_morty.pal", ".gbapal");
+const u32 gObjectEventPic_RogueJohtoChuck[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_johto_chuck.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueJohtoChuck[] = INCGFX_U16("graphics/object_events/palettes/rogue_johto_chuck.pal", ".gbapal");
+const u32 gObjectEventPic_RogueJohtoJasmine[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_johto_jasmine.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueJohtoJasmine[] = INCGFX_U16("graphics/object_events/palettes/rogue_johto_jasmine.pal", ".gbapal");
+const u32 gObjectEventPic_RogueJohtoPryce[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_johto_pryce.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueJohtoPryce[] = INCGFX_U16("graphics/object_events/palettes/rogue_johto_pryce.pal", ".gbapal");
+const u32 gObjectEventPic_RogueJohtoClair[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_johto_clair.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueJohtoClair[] = INCGFX_U16("graphics/object_events/palettes/rogue_johto_clair.pal", ".gbapal");
+const u32 gObjectEventPic_RogueJohtoWill[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_johto_will.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueJohtoWill[] = INCGFX_U16("graphics/object_events/palettes/rogue_johto_will.pal", ".gbapal");
+const u32 gObjectEventPic_RogueJohtoKaren[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_johto_karen.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueJohtoKaren[] = INCGFX_U16("graphics/object_events/palettes/rogue_johto_karen.pal", ".gbapal");
+const u32 gObjectEventPic_RogueSinnohMaylene[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_sinnoh_maylene.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueSinnohMaylene[] = INCGFX_U16("graphics/object_events/palettes/rogue_sinnoh_maylene.pal", ".gbapal");
+const u32 gObjectEventPic_RogueSinnohCrasherWake[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_sinnoh_crasher_wake.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueSinnohCrasherWake[] = INCGFX_U16("graphics/object_events/palettes/rogue_sinnoh_crasher_wake.pal", ".gbapal");
+const u32 gObjectEventPic_RogueSinnohFantina[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_sinnoh_fantina.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueSinnohFantina[] = INCGFX_U16("graphics/object_events/palettes/rogue_sinnoh_fantina.pal", ".gbapal");
+const u32 gObjectEventPic_RogueSinnohByron[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_sinnoh_byron.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueSinnohByron[] = INCGFX_U16("graphics/object_events/palettes/rogue_sinnoh_byron.pal", ".gbapal");
+const u32 gObjectEventPic_RogueSinnohVolkner[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_sinnoh_volkner.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueSinnohVolkner[] = INCGFX_U16("graphics/object_events/palettes/rogue_sinnoh_volkner.pal", ".gbapal");
+const u32 gObjectEventPic_RogueSinnohBertha[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_sinnoh_bertha.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueSinnohBertha[] = INCGFX_U16("graphics/object_events/palettes/rogue_sinnoh_bertha.pal", ".gbapal");
+const u32 gObjectEventPic_RogueSinnohLucian[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_sinnoh_lucian.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueSinnohLucian[] = INCGFX_U16("graphics/object_events/palettes/rogue_sinnoh_lucian.pal", ".gbapal");
+const u32 gObjectEventPic_RogueSinnohCynthia[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_sinnoh_cynthia.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueSinnohCynthia[] = INCGFX_U16("graphics/object_events/palettes/rogue_sinnoh_cynthia.pal", ".gbapal");
+const u32 gObjectEventPic_RogueSinnohAaron[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_sinnoh_aaron.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueSinnohAaron[] = INCGFX_U16("graphics/object_events/palettes/rogue_sinnoh_aaron.pal", ".gbapal");
+const u32 gObjectEventPic_RogueSinnohRoark[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_sinnoh_roark.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueSinnohRoark[] = INCGFX_U16("graphics/object_events/palettes/rogue_sinnoh_roark.pal", ".gbapal");
+const u32 gObjectEventPic_RogueSinnohGardenia[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_sinnoh_gardenia.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueSinnohGardenia[] = INCGFX_U16("graphics/object_events/palettes/rogue_sinnoh_gardenia.pal", ".gbapal");
+const u32 gObjectEventPic_RogueSinnohCandice[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_sinnoh_candice.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u16 gObjectEventPal_RogueSinnohCandice[] = INCGFX_U16("graphics/object_events/palettes/rogue_sinnoh_candice.pal", ".gbapal");
+const u32 gObjectEventPic_RogueSinnohFlint[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_sinnoh_flint.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueSinnohFlint[] = INCGFX_U16("graphics/object_events/palettes/rogue_sinnoh_flint.pal", ".gbapal");
+const u32 gObjectEventPic_RogueJohtoEthan[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_johto_ethan.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueJohtoEthan[] = INCGFX_U16("graphics/object_events/palettes/rogue_johto_ethan.pal", ".gbapal");
+const u32 gObjectEventPic_RogueJohtoSilver[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_johto_silver.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueJohtoSilver[] = INCGFX_U16("graphics/object_events/palettes/rogue_johto_silver.pal", ".gbapal");
+const u32 gObjectEventPic_RogueSinnohDawn[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_sinnoh_dawn.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueSinnohDawn[] = INCGFX_U16("graphics/object_events/palettes/rogue_sinnoh_dawn.pal", ".gbapal");
+const u32 gObjectEventPic_RogueSinnohBarry[] = INCGFX_U32("graphics/object_events/pics/people/rogue/rogue_sinnoh_barry.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPal_RogueSinnohBarry[] = INCGFX_U16("graphics/object_events/palettes/rogue_sinnoh_barry.pal", ".gbapal");

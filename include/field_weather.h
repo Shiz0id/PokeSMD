@@ -16,7 +16,15 @@ enum {
 };
 enum {
     PALTAG_WEATHER = TAG_WEATHER_START,
-    PALTAG_WEATHER_2
+    PALTAG_WEATHER_2,
+    // ONE PER REFLECTING SPECIES, not one per sprite - four Wingull reflections
+    // share a slot. These hold the pond-tinted copy of a flier species' own
+    // dynamic palette; see LoadFlierReflectionPalette. Unlike PALTAG_WEATHER_2,
+    // which is a single lazily-filled slot the clouds and the leaves contend
+    // for, these are ordinary tags and cost nothing until a reflecting weather
+    // is up.
+    PALTAG_FLIER_REFLECTION_1,
+    PALTAG_FLIER_REFLECTION_2
 };
 
 #define NUM_WEATHER_COLOR_MAPS 19
@@ -198,6 +206,14 @@ void Leaves_InitVars(void);
 void Leaves_Main(void);
 void Leaves_InitAll(void);
 bool8 Leaves_Finish(void);
+void Zubats_InitVars(void);
+void Zubats_Main(void);
+void Zubats_InitAll(void);
+bool8 Zubats_Finish(void);
+void Seabirds_InitVars(void);
+void Seabirds_Main(void);
+void Seabirds_InitAll(void);
+bool8 Seabirds_Finish(void);
 void Thunderstorm_InitVars(void);
 void Thunderstorm_Main(void);
 void Thunderstorm_InitAll(void);

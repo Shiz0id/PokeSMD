@@ -425,6 +425,42 @@ enum
     // tileset pair, and the shrine has to work in all fourteen themes.
     OBJ_EVENT_GFX_ROGUE_GRAVE,
     OBJ_EVENT_GFX_ROGUE_PC,
+    OBJ_EVENT_GFX_ROGUE_JOHTO_FALKNER,
+    OBJ_EVENT_GFX_ROGUE_JOHTO_BUGSY,
+    OBJ_EVENT_GFX_ROGUE_JOHTO_WHITNEY,
+    OBJ_EVENT_GFX_ROGUE_JOHTO_MORTY,
+    OBJ_EVENT_GFX_ROGUE_JOHTO_CHUCK,
+    OBJ_EVENT_GFX_ROGUE_JOHTO_JASMINE,
+    OBJ_EVENT_GFX_ROGUE_JOHTO_PRYCE,
+    OBJ_EVENT_GFX_ROGUE_JOHTO_CLAIR,
+    OBJ_EVENT_GFX_ROGUE_JOHTO_WILL,
+    OBJ_EVENT_GFX_ROGUE_JOHTO_KAREN,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_MAYLENE,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_CRASHER_WAKE,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_FANTINA,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_BYRON,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_VOLKNER,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_BERTHA,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_LUCIAN,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_CYNTHIA,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_AARON,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_ROARK,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_GARDENIA,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_CANDICE,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_FLINT,
+    OBJ_EVENT_GFX_ROGUE_JOHTO_ETHAN,
+    OBJ_EVENT_GFX_ROGUE_JOHTO_SILVER,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_DAWN,
+    OBJ_EVENT_GFX_ROGUE_SINNOH_BARRY,
+    // The party-menu egg icon, lifted into a 16x16 object sprite by
+    // tools/rogue/make_egg_sprite.py, for the floor event that leaves an
+    // egg lying in the dirt rather than having someone hand one over.
+    //
+    // APPENDED AT THE END rather than filed with the ROGUE_ block above,
+    // because a graphicsId is stored as a NUMBER in the object event
+    // templates the save block carries - inserting in the middle renames
+    // every sprite after it in a save that already exists.
+    OBJ_EVENT_GFX_ROGUE_EGG,
     NUM_OBJ_EVENT_GFX,
 };
 
@@ -638,6 +674,34 @@ enum
 #define OBJ_EVENT_PAL_TAG_NEON_LIGHT              0x8004
 // Not a real OW palette tag; used for the white flash applied to followers
 #define OBJ_EVENT_PAL_TAG_WHITE                   (OBJ_EVENT_PAL_TAG_NONE - 1)
+#define OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_FALKNER                    0x1170
+#define OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_BUGSY                      0x1171
+#define OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_WHITNEY                    0x1172
+#define OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_MORTY                      0x1173
+#define OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_CHUCK                      0x1174
+#define OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_JASMINE                    0x1175
+#define OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_PRYCE                      0x1176
+#define OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_CLAIR                      0x1177
+#define OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_WILL                       0x1178
+#define OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_KAREN                      0x1179
+#define OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_MAYLENE                   0x117A
+#define OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_CRASHER_WAKE              0x117B
+#define OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_FANTINA                   0x117C
+#define OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_BYRON                     0x117D
+#define OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_VOLKNER                   0x117E
+#define OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_BERTHA                    0x117F
+#define OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_LUCIAN                    0x1180
+#define OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_CYNTHIA                   0x1181
+#define OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_AARON                     0x1182
+#define OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_ROARK                     0x1183
+#define OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_GARDENIA                  0x1184
+#define OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_CANDICE                   0x1185
+#define OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_FLINT                     0x1186
+#define OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_ETHAN                      0x1187
+#define OBJ_EVENT_PAL_TAG_ROGUE_JOHTO_SILVER                     0x1188
+#define OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_DAWN                      0x1189
+#define OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_BARRY                     0x118A
+#define OBJ_EVENT_PAL_TAG_ROGUE_EGG                              0x118B
 #define OBJ_EVENT_PAL_TAG_NONE                    0x11FF
 
 // This + localId is used as the tileTag

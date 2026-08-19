@@ -1178,6 +1178,10 @@
     "RogueSafariNortheast",
     "RogueDungeonRain",
     "RogueDungeonBlizzard",
-    "RogueDungeonLeaves"
+    "RogueDungeonLeaves",
+    "RogueDungeonAsh",
+    "RogueDungeonSandstorm",
+    "RogueDungeonZubats",
+    "RogueDungeonSeabirds"
   ]
 }

@@ -71,7 +71,54 @@
 #define WEATHER_ROUTE123_CYCLE          21
 #define WEATHER_FOG                     22  // Aggregate of WEATHER_FOG_HORIZONTAL and WEATHER_FOG_DIAGONAL
 #define WEATHER_DYNAMIC                 23
-#define WEATHER_COUNT                   24
+// Zubats fluttering through the cave dungeon, and THE FIRST WEATHER PAST THE
+// 16-19 GAP - which is why it is here at 24 rather than in the tidy block with
+// the other four, and why WEATHER_COUNT moved for the first time.
+//
+// Appending was checked rather than assumed, and it is safe: nothing anywhere
+// range-tests the aggregates at 20-23, which appear only as case labels in
+// TranslateWeatherNum; sWeatherFuncs is designated-init and not sized by the
+// count; and the only two tables WEATHER_COUNT sizes are sWeatherNames and
+// gWeatherStartsStringIds, at 26 bytes a row. The aggregates did not have to
+// stay last. Cost of the sixth project weather: 52 bytes of ROM.
+//
+// THE ART IS A FOLLOWER POKEMON'S, NOT A WEATHER SHEET, and that is the whole
+// experiment. Every other weather in the game owns a sprite sheet;
+// UpdateZubatSprite drives gSpeciesInfo[SPECIES_ZUBAT].overworldData through
+// CreateObjectGraphicsSprite, so the effect ships with no new art, no new
+// palette and no new asset of any kind. See CreateZubatSprite.
+//
+// Purely cosmetic, like the petals and the leaves: deliberately absent from
+// the overworld-to-battle switch in battle_util.c. The cave is dungeon 2 and
+// had no weather before this, so there is no mechanical effect here to remove
+// by omission - the trap the blizzard had to avoid and this one does not.
+#define WEATHER_ZUBATS                  24
+// Gulls over the open ocean, and the most elaborate weather on this branch:
+// drifting clouds, a flock of Wingull, the occasional Pelipper cruising
+// through beneath them, and a REFLECTION of every bird painted on the sea.
+//
+// IT SHARES ITS WHOLE IMPLEMENTATION WITH WEATHER_ZUBATS. The difference
+// between the two is a table of struct RogueFlierKind - species, how many
+// aloft, speeds, flight band, whether it reflects - and not a line of code.
+// Adding a third flying weather should be a table entry; if it is turning into
+// new C, read the FLIERS block in field_weather_effect.c first.
+//
+// The reflections are vanilla's SetUpReflection with the object event taken
+// out: a whole-struct sprite copy that draws the BIRD'S OWN TILES (so it costs
+// no VRAM), vertically flipped, on a pond-tinted palette. What makes them sit
+// ON the water rather than float over it is the two settings they take from
+// sCloudSpriteOamData - ST_OAM_OBJ_BLEND and priority 3 - which is the same
+// pair that makes a cloud read as painted onto whatever is beneath it.
+//
+// Cosmetic, like the zubats and the leaves and unlike the sandstorm: absent
+// from battle_util.c's switch. The ocean had no weather before this, so there
+// is no mechanical effect here to remove by omission.
+//
+// THE SECOND ID PAST THE 16-19 GAP, and WEATHER_COUNT moves again for it. Same
+// price as the last one: 52 bytes, because sWeatherNames and
+// gWeatherStartsStringIds are the only two tables sized by the count.
+#define WEATHER_SEABIRDS                25
+#define WEATHER_COUNT                   26
 
 // These are used in maps' coord_weather_event entries.
 // They are not a one-to-one mapping with the engine's

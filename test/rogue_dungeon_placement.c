@@ -37,6 +37,29 @@
 // VAR_ROGUE_RUN_ORDER to 0 (no shuffle) - see the note in
 // RogueDungeon_Test_HashFloorPlacements.
 //
+// IT PINS VAR_ROGUE_RUN_REGION TO 0 AS WELL, for the same reason one step
+// further along: a boss floor's trainer id and sprite come from BossRowForSlot,
+// which reads the region word, so without that pin the boss-floor digests below
+// would depend on whatever the save block happened to hold. Zero is all-Hoenn,
+// which is the arrangement every digest here was taken under.
+//
+// THE DIGESTS WERE NOT REPINNED WHEN THE REGION WORD ARRIVED, and did not need
+// to be. At region 0 DungeonRegionOf answers HOENN for every identity, so
+// BossRowForSlot(slot) == DungeonForSlot(slot) and every table lookup is the
+// expression that was there before - unchanged by construction, which is a
+// proof about the code rather than a measurement of it.
+//
+// THEY HAVE NOW BEEN MEASURED TOO. For six commits this file could not be
+// built: `make check` failed to link, in src/ereader_screen.c, on symbols that
+// lived in src/mystery_gift_menu.c - deleted by c9c72c6f1c, "Remove the
+// wireless stack and everything that needed it". The e-reader screen was only
+// linked into the test ROM, so the ordinary build never noticed, because the
+// ordinary link passes --gc-sections and the test link passes no LDFLAGS at
+// all. src/ereader_screen.c was dead code by then - its one public symbol,
+// CreateEReaderTask, had no caller left anywhere - and was deleted, which is
+// what the wireless commit did to every other orphan. All seven tests below
+// pass on emulated hardware as of that fix.
+//
 // DUNGEON_GEN_FACILITY is deliberately absent: NO THEME IN sDungeonThemes
 // SELECTS IT, so no floor reaches it and there is nothing here to pin. That is
 // worth knowing rather than working around - the generator and its own check

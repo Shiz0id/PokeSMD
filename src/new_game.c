@@ -1,4 +1,5 @@
 #include "global.h"
+#include "m4a.h"
 #include "constants/rogue_dungeon.h"
 #include "rogue_dungeon.h"
 #include "clock.h"
@@ -101,22 +102,54 @@ static void InitPlayerTrainerId(void)
 }
 
 // L=A isnt set here for some reason.
+// NEW GAME ONLY. An existing save keeps whatever it holds - these fields live in
+// SaveBlock2 and nothing migrates them - so changing a default here moves the
+// starting position and never reaches a save already in progress.
+//
+// FOUR OF THESE ARE THIS PROJECT'S CHOICES rather than vanilla's, and they are
+// deliberate: a roguelike run is replayed from the top many times, so the
+// settings a player would change on their first visit to the menu every single
+// run are better as the starting position.
 static void SetDefaultOptions(void)
 {
-    gSaveBlock2Ptr->optionsTextSpeed = OPTIONS_TEXT_SPEED_MID;
+    // FAST, not MID. A run is read through many times over.
+    gSaveBlock2Ptr->optionsTextSpeed = OPTIONS_TEXT_SPEED_FAST;
     gSaveBlock2Ptr->optionsWindowFrameType = 0;
-    gSaveBlock2Ptr->optionsSound = OPTIONS_SOUND_MONO;
+
+    // STEREO. The imported music pack and the GBS player are both written for
+    // it - gbs.c reads this field directly at playback - and mono was vanilla
+    // hedging for the original hardware's single speaker.
+    gSaveBlock2Ptr->optionsSound = OPTIONS_SOUND_STEREO;
     gSaveBlock2Ptr->optionsBattleStyle = OPTIONS_BATTLE_STYLE_SHIFT;
     gSaveBlock2Ptr->optionsBattleSceneOff = FALSE;
     gSaveBlock2Ptr->regionMapZoom = FALSE;
-    gSaveBlock2Ptr->battleMode = BATTLE_MODE_MIXED;
+
+    // SINGLES, not MIXED, and this one is not only taste. The roguelike applies
+    // this preference to EVERY generated battle through
+    // ApplyBattleModePreference - a generated trainer never reaches
+    // BattleSetup_ConfigureTrainerBattle, so rogue_dungeon.c applies it by hand
+    // - which means the default here decides what a whole run looks like, boss
+    // floors included. MIXED reads as "keep the original type", and a boss
+    // authored TRAINER_BATTLE_TYPE_SINGLES is what these are.
+    gSaveBlock2Ptr->battleMode = BATTLE_MODE_SINGLES;
 #if OPT_BATTLE_SPEED == TRUE
     gSaveBlock2Ptr->optionsBattleSpeed = OPTIONS_BATTLE_SPEED_1X;  // Default to 1x (normal)
     VarSet(VAR_BATTLE_SPEED, gSaveBlock2Ptr->optionsBattleSpeed);  // Initialize runtime variable
 #endif
 #if OPT_AUTORUN == TRUE
-    gSaveBlock2Ptr->optionsAutoRun = FALSE;  // Default to OFF (classic behavior)
+    // ON. Stored the way the field reads - TRUE is on - and note the option
+    // menu inverts it again for DISPLAY, because selection 0 is the ON choice.
+    gSaveBlock2Ptr->optionsAutoRun = TRUE;
 #endif
+
+    // THE SOUND SETTING NEEDS APPLYING, NOT JUST STORING. Every other field
+    // here is read when something wants it; this one configures the sound
+    // engine, and the only calls are in intro.c and reload_save.c - both of
+    // which run BEFORE this does on a new game. Without this line a new game
+    // holds STEREO in the save and plays mono cries until the player either
+    // opens the options menu or reloads. Same shape as the VarSet the battle
+    // speed already does two lines up.
+    SetPokemonCryStereo(gSaveBlock2Ptr->optionsSound);
 }
 
 static void ClearPokedexFlags(void)

@@ -142,6 +142,59 @@ def registered_tags(repo, force_frlg_off):
     return tags
 
 
+ROW_RE = re.compile(r"\{\s*(\w+)\s*,\s*(OBJ_EVENT_PAL_TAG_[A-Z0-9_]+)\s*\}")
+BERRY_TABLES = "src/data/object_events/berry_tree_graphics_tables.h"
+
+
+def registered_rows(repo, force_frlg_off):
+    """The table's rows IN ORDER, which is what the berry trees depend on."""
+    lines = read(repo, TABLE)
+    start, end = table_region(lines)
+    rows = []
+    for _, line in scan_guarded(lines, repo, force_frlg_off, start, end):
+        m = ROW_RE.search(line)
+        if m:
+            rows.append(m.group(2))
+    return rows
+
+
+def berry_slots(repo):
+    """Every distinct slot number the berry tree palette tables name."""
+    src = "\n".join(read(repo, BERRY_TABLES))
+    slots = set()
+    for body in re.findall(r"gBerryTreePaletteSlotTable_\w+\[\]\s*=\s*\{([0-9,\s]*)\}", src):
+        for n in re.findall(r"\d+", body):
+            slots.add(int(n))
+    return sorted(slots)
+
+
+def berry_position_errors(repo, force_frlg_off):
+    """THE POSITIONAL CONTRACT, which tag resolution cannot see.
+
+    SetBerryTreeGraphicsById is the one consumer that indexes this table by
+    POSITION rather than by tag:
+
+        UpdateSpritePalette(&sObjectEventSpritePalettes[
+            gBerries[berryId].berryTreePaletteSlotTable[berryStage] - 2], sprite);
+
+    The slot numbers are 2..5, so it reads rows 0..3, and those rows must be the
+    four NPC palettes the berry sheets were drawn against. Insert anything at the
+    top of the table and every berry tree in the game silently repaints - which
+    is exactly what staging 27 Johto/Sinnoh sprites did, while every TAG still
+    resolved and this check went on passing. It is the same lesson the FRLG bug
+    taught in the other direction: the thing that broke was never a tag.
+    """
+    rows = registered_rows(repo, force_frlg_off)
+    bad = []
+    for slot in berry_slots(repo):
+        idx = slot - 2
+        want = "OBJ_EVENT_PAL_TAG_NPC_%d" % (slot - 1)
+        got = rows[idx] if idx < len(rows) else "<past the end of the table>"
+        if got != want:
+            bad.append((slot, idx, want, got))
+    return bad
+
+
 def referenced_tags(repo, force_frlg_off):
     """Every (sprite, field, tag) an active graphics info entry names."""
     lines = read(repo, INFOS)
@@ -198,6 +251,39 @@ def main():
         print("SELFTEST PASS: restoring the IS_FRLG guard breaks %d references "
               "across %d sprites; the check would fire."
               % (len(would_break), len(set(r[0] for r in would_break))))
+
+        # SECOND BREAK: the positional contract, reconstructed the way it really
+        # shipped - one row prepended to the table. Tag resolution is untouched
+        # by this, which is the whole point: the first half of this selftest
+        # cannot see it, and did not, for the entire time berry trees were drawing
+        # in a Sinnoh rival's colours.
+        if berry_position_errors(repo, force_frlg_off=False):
+            print("SELFTEST FAIL: the berry slots are already wrong; fix first")
+            return 1
+
+        lines = read(repo, TABLE)
+        start, _ = table_region(lines)
+        shifted = lines[:start] + ["    {gObjectEventPal_Npc1, OBJ_EVENT_PAL_TAG_INTRUDER},"] \
+                  + lines[start:]
+
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            (tmp / TABLE).parent.mkdir(parents=True, exist_ok=True)
+            (tmp / TABLE).write_text("\n".join(shifted), encoding="utf-8", newline="\n")
+            for rel in (INFOS, CONFIG, BERRY_TABLES):
+                (tmp / rel).parent.mkdir(parents=True, exist_ok=True)
+                (tmp / rel).write_text(
+                    (repo / rel).read_text(encoding="utf-8", errors="replace"),
+                    encoding="utf-8", newline="\n")
+            if not berry_position_errors(tmp, force_frlg_off=False):
+                print("SELFTEST FAIL: prepending a row did NOT move the berry "
+                      "slots - the positional rule is measuring nothing")
+                return 1
+
+        print("SELFTEST PASS: prepending one palette row moves all %d berry "
+              "slots off the NPC palettes; the check would fire."
+              % len(berry_slots(repo)))
         return 0
 
     broken, have, refs = run(repo, force_frlg_off=False)
@@ -211,9 +297,24 @@ def main():
             print("      ... and %d more" % (len(broken) - 20))
         return 1
 
+    misplaced = berry_position_errors(repo, force_frlg_off=False)
+    if misplaced:
+        print("FAIL: the berry trees' positional palette slots have moved.")
+        print("      SetBerryTreeGraphicsById indexes sObjectEventSpritePalettes")
+        print("      by POSITION, not by tag, so anything inserted at the top of")
+        print("      that table repaints every berry tree in the game.")
+        for slot, idx, want, got in misplaced:
+            print("      slot %d -> row %d: expected %s, found %s"
+                  % (slot, idx, want, got))
+        print("      Fix: move new rows to the END of the table, above the")
+        print("      OBJ_EVENT_PAL_TAG_NONE sentinel.")
+        return 1
+
     print("PASS: %d paletteTag references across %d sprites all resolve "
-          "against %d registered palettes."
-          % (len(refs), len(set(r[0] for r in refs)), len(have)))
+          "against %d registered palettes; berry slots %s still land on the "
+          "NPC palettes."
+          % (len(refs), len(set(r[0] for r in refs)), len(have),
+             ",".join(str(s) for s in berry_slots(repo))))
     return 0
 
 

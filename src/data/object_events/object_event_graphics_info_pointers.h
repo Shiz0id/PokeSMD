@@ -110,6 +110,7 @@ extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RivalMayFie
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Cameraman;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueCrystal;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueGrave;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueEgg;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RoguePc;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueDiverM;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueDiverF;
@@ -406,6 +407,33 @@ extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Giddy;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_UnusedMauvilleOldMan1;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_UnusedMauvilleOldMan2;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_ApricornTree;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueJohtoFalkner;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueJohtoBugsy;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueJohtoWhitney;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueJohtoMorty;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueJohtoChuck;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueJohtoJasmine;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueJohtoPryce;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueJohtoClair;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueJohtoWill;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueJohtoKaren;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueSinnohMaylene;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueSinnohCrasherWake;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueSinnohFantina;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueSinnohByron;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueSinnohVolkner;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueSinnohBertha;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueSinnohLucian;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueSinnohCynthia;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueSinnohAaron;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueSinnohRoark;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueSinnohGardenia;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueSinnohCandice;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueSinnohFlint;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueJohtoEthan;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueJohtoSilver;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueSinnohDawn;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueSinnohBarry;
 
 const struct ObjectEventGraphicsInfo *const gObjectEventGraphicsInfoPointers[NUM_OBJ_EVENT_GFX] = {
     [OBJ_EVENT_GFX_BRENDAN_NORMAL] =           &gObjectEventGraphicsInfo_BrendanNormal,
@@ -521,6 +549,7 @@ const struct ObjectEventGraphicsInfo *const gObjectEventGraphicsInfoPointers[NUM
     [OBJ_EVENT_GFX_CAMERAMAN] =                &gObjectEventGraphicsInfo_Cameraman,
     [OBJ_EVENT_GFX_ROGUE_CRYSTAL] = &gObjectEventGraphicsInfo_RogueCrystal,
     [OBJ_EVENT_GFX_ROGUE_GRAVE] = &gObjectEventGraphicsInfo_RogueGrave,
+    [OBJ_EVENT_GFX_ROGUE_EGG] = &gObjectEventGraphicsInfo_RogueEgg,
     [OBJ_EVENT_GFX_ROGUE_PC] = &gObjectEventGraphicsInfo_RoguePc,
     [OBJ_EVENT_GFX_ROGUE_DIVER_M] = &gObjectEventGraphicsInfo_RogueDiverM,
     [OBJ_EVENT_GFX_ROGUE_DIVER_F] = &gObjectEventGraphicsInfo_RogueDiverF,
@@ -815,6 +844,33 @@ const struct ObjectEventGraphicsInfo *const gObjectEventGraphicsInfoPointers[NUM
     [OBJ_EVENT_GFX_DEOXYS_N]                 = &gObjectEventGraphicsInfo_DeoxysN,
     [OBJ_EVENT_GFX_SS_ANNE]                  = &gObjectEventGraphicsInfo_SSAnne,
 #endif // IS_FRLG
+    [OBJ_EVENT_GFX_ROGUE_JOHTO_FALKNER] = &gObjectEventGraphicsInfo_RogueJohtoFalkner,
+    [OBJ_EVENT_GFX_ROGUE_JOHTO_BUGSY] = &gObjectEventGraphicsInfo_RogueJohtoBugsy,
+    [OBJ_EVENT_GFX_ROGUE_JOHTO_WHITNEY] = &gObjectEventGraphicsInfo_RogueJohtoWhitney,
+    [OBJ_EVENT_GFX_ROGUE_JOHTO_MORTY] = &gObjectEventGraphicsInfo_RogueJohtoMorty,
+    [OBJ_EVENT_GFX_ROGUE_JOHTO_CHUCK] = &gObjectEventGraphicsInfo_RogueJohtoChuck,
+    [OBJ_EVENT_GFX_ROGUE_JOHTO_JASMINE] = &gObjectEventGraphicsInfo_RogueJohtoJasmine,
+    [OBJ_EVENT_GFX_ROGUE_JOHTO_PRYCE] = &gObjectEventGraphicsInfo_RogueJohtoPryce,
+    [OBJ_EVENT_GFX_ROGUE_JOHTO_CLAIR] = &gObjectEventGraphicsInfo_RogueJohtoClair,
+    [OBJ_EVENT_GFX_ROGUE_JOHTO_WILL] = &gObjectEventGraphicsInfo_RogueJohtoWill,
+    [OBJ_EVENT_GFX_ROGUE_JOHTO_KAREN] = &gObjectEventGraphicsInfo_RogueJohtoKaren,
+    [OBJ_EVENT_GFX_ROGUE_SINNOH_MAYLENE] = &gObjectEventGraphicsInfo_RogueSinnohMaylene,
+    [OBJ_EVENT_GFX_ROGUE_SINNOH_CRASHER_WAKE] = &gObjectEventGraphicsInfo_RogueSinnohCrasherWake,
+    [OBJ_EVENT_GFX_ROGUE_SINNOH_FANTINA] = &gObjectEventGraphicsInfo_RogueSinnohFantina,
+    [OBJ_EVENT_GFX_ROGUE_SINNOH_BYRON] = &gObjectEventGraphicsInfo_RogueSinnohByron,
+    [OBJ_EVENT_GFX_ROGUE_SINNOH_VOLKNER] = &gObjectEventGraphicsInfo_RogueSinnohVolkner,
+    [OBJ_EVENT_GFX_ROGUE_SINNOH_BERTHA] = &gObjectEventGraphicsInfo_RogueSinnohBertha,
+    [OBJ_EVENT_GFX_ROGUE_SINNOH_LUCIAN] = &gObjectEventGraphicsInfo_RogueSinnohLucian,
+    [OBJ_EVENT_GFX_ROGUE_SINNOH_CYNTHIA] = &gObjectEventGraphicsInfo_RogueSinnohCynthia,
+    [OBJ_EVENT_GFX_ROGUE_SINNOH_AARON] = &gObjectEventGraphicsInfo_RogueSinnohAaron,
+    [OBJ_EVENT_GFX_ROGUE_SINNOH_ROARK] = &gObjectEventGraphicsInfo_RogueSinnohRoark,
+    [OBJ_EVENT_GFX_ROGUE_SINNOH_GARDENIA] = &gObjectEventGraphicsInfo_RogueSinnohGardenia,
+    [OBJ_EVENT_GFX_ROGUE_SINNOH_CANDICE] = &gObjectEventGraphicsInfo_RogueSinnohCandice,
+    [OBJ_EVENT_GFX_ROGUE_SINNOH_FLINT] = &gObjectEventGraphicsInfo_RogueSinnohFlint,
+    [OBJ_EVENT_GFX_ROGUE_JOHTO_ETHAN] = &gObjectEventGraphicsInfo_RogueJohtoEthan,
+    [OBJ_EVENT_GFX_ROGUE_JOHTO_SILVER] = &gObjectEventGraphicsInfo_RogueJohtoSilver,
+    [OBJ_EVENT_GFX_ROGUE_SINNOH_DAWN] = &gObjectEventGraphicsInfo_RogueSinnohDawn,
+    [OBJ_EVENT_GFX_ROGUE_SINNOH_BARRY] = &gObjectEventGraphicsInfo_RogueSinnohBarry,
 };
 
 const struct ObjectEventGraphicsInfo *const gMauvilleOldManGraphicsInfoPointers[] = {

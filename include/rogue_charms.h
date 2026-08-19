@@ -46,6 +46,17 @@ const struct RogueCharmInfo *RogueCharm_Info(u8 id);
 // current layout. Never returns NULL.
 struct RogueRunModifiers *RogueCharm_Data(void);
 
+// How many Alphas this run has beaten or caught, and the increment. Read before
+// the increment by RogueDungeon_EventAlphaReward, which is the only caller of
+// either - arriving there IS the definition of having beaten one.
+u32 RogueCharm_AlphasBeaten(void);
+void RogueCharm_NoteAlphaBeaten(void);
+
+// Records a Pokemon as an Alpha for the rest of the run, by personality, so the
+// charm can be installed whenever it is in the party - including after a spell
+// in a PC box, where there is no charm row to hold it. See the definition.
+bool32 RogueCharm_RegisterAlpha(u32 personality);
+
 // Wipes every charm. Called from RogueDungeon_ResetRun.
 void RogueCharm_ResetRun(void);
 

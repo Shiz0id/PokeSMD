@@ -1702,7 +1702,7 @@ struct RogueDungeonTheme
     // the same designated-initialiser default the field above relies on.
     //
     // THIS EXISTS BECAUSE THE MAP HEADER CANNOT EXPRESS IT. Music lives in the
-    // header, and eight themes share MAP_ROGUE_DUNGEON_FLOOR, so all eight
+    // header, and six themes share MAP_ROGUE_DUNGEON_FLOOR, so all of them
     // played that map's MUS_PETALBURG_WOODS -- nine dungeons of fourteen once
     // the woods itself is counted, with three more sharing MUS_ABNORMAL_WEATHER
     // through the snow, blizzard and petals maps. Five distinct tracks across
@@ -2042,6 +2042,16 @@ void RogueDungeon_HideTakenFloorItem(void);
 // ResetRun is shared with the whiteout and must not count a loss as a win.
 void RogueDungeon_OnRunCompleted(void);
 
+// The journal's dungeon-side hooks. Both are SPECIALS, called from the floor
+// script at once-per-event points - see the notes on their definitions for why
+// neither can live inside the C function it looks like it belongs to.
+void RogueDungeon_JournalBossDefeated(void);
+void RogueDungeon_JournalDungeonEntered(void);
+
+// Dungeons finished this run, which is the index of the one being stood in.
+// For the trainer card's badge row.
+u32 RogueDungeon_DungeonsClearedThisRun(void);
+
 // The anti-grind clock. Takes one wild knockout off the current floor's
 // allowance and returns the percentage that knockout pays - see
 // ROGUE_GRIND_FREE_KOS. One call site, in Cmd_getexp; it steps the counter, so
@@ -2064,7 +2074,9 @@ void RogueDungeon_BuyEventWares(void);       // Result: 1 bought, 0 no room
 void RogueDungeon_EventTraderCanTrade(void);  // Result: 0 on a party of one
 void RogueDungeon_EventTraderOffer(void);     // reads VAR_0x8004 from ChoosePartyMon
 void RogueDungeon_EventTraderDo(void);        // Result: 1 traded, 0 refused
-void RogueDungeon_EventEggTake(void);         // Result: 1 taken, 0 party full
+// Result: 1 taken, 0 party full. On 1 it also REMOVES the egg object - see the
+// note on the definition for why that is not a separate special.
+void RogueDungeon_EventEggTake(void);
 void RogueDungeon_EventInjuredApproach(void); // Result: 1 joins, 0 it was feigning
 void RogueDungeon_EventInjuredJoin(void);     // Result: 1 joined, 0 party full
 void RogueDungeon_EventInjuredAmbush(void);   // sets up the script's dowildbattle
@@ -2087,8 +2099,12 @@ void RogueDungeon_EventTransposerApply(void);  // VAR_0x8004: 0 money, 1 charm
 
 void RogueDungeon_EventPokerusInject(void);
 
-// One wave of the nest. VAR_0x8004 is the wave index.
+// The nest. Approach buffers the species the player can SEE, for the intro; the
+// wave builder takes VAR_0x8004 as the wave index; the hoard is the payout, and
+// it is also what takes the nest object off the map.
+void RogueDungeon_EventNestApproach(void);
 void RogueDungeon_EventNestWave(void);
+void RogueDungeon_EventNestHoard(void);   // Result: 1 item taken, 0 bag full
 
 // The phantom. NO OBJECT EVENT - PhantomShouldStrike is called once per step
 // from TryStartStepCountScript, beside egg hatching and the Regice puzzle, and
@@ -2106,6 +2122,15 @@ extern const u8 RogueDungeonFloor_EventScript_Phantom[];
 // Debug menu support. Describes a floor in one short line; see the debug warp
 // tool in src/debug.c.
 void RogueDungeon_GetDebugFloorInfo(u16 floor, u8 *dest);
+
+// The scrambler's debug tool. GetDebugRunState describes the gate - whether the
+// run has ever been cleared and how often; GetDebugRunSlot names the boss that
+// one slot resolves to, region included, through BossRowForSlot rather than off
+// the tables. Reroll re-rolls both the order and the region words in place,
+// which is what makes the scrambler testable without clearing the game first.
+void RogueDungeon_GetDebugRunState(u8 *dest);
+void RogueDungeon_GetDebugRunSlot(u16 slot, u8 *dest);
+void RogueDungeon_Debug_RerollRunOrder(void);
 
 // Object census. See ROGUE_DEBUG_OBJECT_CENSUS in constants/rogue_dungeon.h.
 //
@@ -2125,6 +2150,13 @@ void RogueDungeon_Debug_NoteSpriteExhausted(void);
 
 void RogueDungeon_Debug_NoteSpawnPass(u32 wanted);
 void RogueDungeon_Debug_ResetObjectCensus(void);
+
+// Force every floor that rolls an event at all to place the ALPHA, so it can be
+// reached without warping to floor 21+ and waiting for the weighting to land on
+// it. Toggled with SELECT on the debug floor warp screen. Applied AFTER the
+// weighted draw so the rest of the floor is byte-identical - see PlaceEvents.
+void RogueDungeon_Debug_SetForceAlphaEvent(bool8 on);
+bool8 RogueDungeon_Debug_GetForceAlphaEvent(void);
 
 // Fills dest with the census, ready for the debug menu. Safe to call anywhere,
 // including off a dungeon floor, where it reports zeroes rather than stale

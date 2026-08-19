@@ -154,6 +154,12 @@ static const struct WeatherCallbacks sWeatherFuncs[] =
     // the petals' with slower numbers, and if PALTAG_WEATHER_2 took its
     // contents as an argument this row could have been Petals_Main.
     [WEATHER_LEAVES]             = {Leaves_InitVars,        Leaves_Main,        Leaves_InitAll,        Leaves_Finish},
+    // Borrowed overworld Pokemon graphics rather than a weather sheet of its
+    // own. See constants/weather.h and CreateZubatSprite.
+    [WEATHER_ZUBATS]             = {Zubats_InitVars,        Zubats_Main,        Zubats_InitAll,        Zubats_Finish},
+    // Clouds, gulls and their reflections. Shares every line of its
+    // implementation with the zubats above; see constants/weather.h.
+    [WEATHER_SEABIRDS]           = {Seabirds_InitVars,      Seabirds_Main,      Seabirds_InitAll,      Seabirds_Finish},
 };
 
 // Every rain, asked in one place. Vanilla asks it in nine and answers by
@@ -1254,6 +1260,8 @@ static const u8 sWeatherNames[WEATHER_COUNT][24] = {
     [WEATHER_MONSOON]            = _("MONSOON"),
     [WEATHER_BLIZZARD]           = _("BLIZZARD"),
     [WEATHER_LEAVES]             = _("LEAVES"),
+    [WEATHER_ZUBATS]             = _("ZUBATS"),
+    [WEATHER_SEABIRDS]           = _("SEABIRDS"),
     [WEATHER_ABNORMAL]           = _("ABNORMAL(NOT WORKING)"),
     [WEATHER_ROUTE119_CYCLE]     = _("ROUTE119 CYCLE"),
     [WEATHER_ROUTE123_CYCLE]     = _("ROUTE123 CYCLE"),

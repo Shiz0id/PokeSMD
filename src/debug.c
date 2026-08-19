@@ -286,6 +286,8 @@ static void DebugAction_Util_RogueCharms(u8 taskId);
 static void DebugAction_Util_RogueCharms_Select(u8 taskId);
 static void DebugAction_Util_RogueObjects(u8 taskId);
 static void DebugAction_Util_RogueObjects_Watch(u8 taskId);
+static void DebugAction_Util_RogueRun(u8 taskId);
+static void DebugAction_Util_RogueRun_Select(u8 taskId);
 
 static void DebugAction_TimeMenu_ChangeTimeOfDay(u8 taskId);
 static void DebugAction_TimeMenu_ChangeWeekdays(u8 taskId);
@@ -450,8 +452,11 @@ static const u8 sDebugText_Util_WarpToMap_SelectWarp[] =     _("Warp:{CLEAR_TO 9
 static const u8 sDebugText_Util_WarpToMap_SelMax[] =         _("{STR_VAR_1} / {STR_VAR_2}");
 static const u8 sDebugText_Util_Weather_ID[] =               _("Weather ID: {STR_VAR_3}\n{STR_VAR_1}\n{STR_VAR_2}");
 static const u8 sDebugText_Util_RogueFloor[] =               _("Floor: {STR_VAR_1}\n{STR_VAR_2}\n{STR_VAR_3}");
+static const u8 sDebugText_Util_RogueFloor_Alpha[] =         _("{STR_VAR_3} SEL:ALPHA");
+static const u8 sDebugText_Util_RogueFloor_NoAlpha[] =       _("{STR_VAR_3} SEL:norm");
 static const u8 sDebugText_Util_RogueCharms[] =              _("{STR_VAR_1} -> {STR_VAR_2}\nA grant  SELECT wipe\n{STR_VAR_3}");
 static const u8 sDebugText_Util_RogueFloor_OfTotal[] =       _("{STR_VAR_1} / {STR_VAR_2}");
+static const u8 sDebugText_Util_RogueRun[] =                 _("{STR_VAR_1}\n{STR_VAR_2}\nA clear  SELECT reroll");
 
 //Time Menu
 
@@ -597,6 +602,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("Rogue floor warp…"), DebugAction_Util_RogueFloor },
     { COMPOUND_STRING("Rogue charms…"),     DebugAction_Util_RogueCharms },
     { COMPOUND_STRING("Rogue objects…"),    DebugAction_Util_RogueObjects },
+    { COMPOUND_STRING("Rogue run state…"),  DebugAction_Util_RogueRun },
     { COMPOUND_STRING("Set weather…"),      DebugAction_Util_Weather },
     { COMPOUND_STRING("Font Test…"),        DebugAction_ExecuteScript, Debug_EventScript_FontTest },
     { COMPOUND_STRING("Time Functions…"),   DebugAction_OpenSubMenu, sDebugMenu_Actions_TimeMenu, },
@@ -1736,12 +1742,24 @@ static void DebugRogueFloor_Redraw(u8 taskId)
 {
     u32 floor = gTasks[taskId].tInput;  // 1-based, the way the player sees it
 
+    // THE DIGIT LINE IS BUILT FIRST, and that ordering is the whole of the care
+    // needed here. It expands a template that itself contains {STR_VAR_3}, so it
+    // has to be finished and parked in gStringVar3 before the outer template -
+    // which also reads STR_VAR_1 and STR_VAR_2 - is given them. Building the
+    // floor numbers first and then using gStringVar1 as scratch for this would
+    // silently blank the floor readout.
+    StringCopy(gStringVar3, gText_DigitIndicator[gTasks[taskId].tDigit]);
+    StringExpandPlaceholders(gStringVar1,
+                             RogueDungeon_Debug_GetForceAlphaEvent()
+                                 ? sDebugText_Util_RogueFloor_Alpha
+                                 : sDebugText_Util_RogueFloor_NoAlpha);
+    StringCopy(gStringVar3, gStringVar1);
+
     ConvertIntToDecimalStringN(gStringVar1, floor, STR_CONV_MODE_LEADING_ZEROS, 3);
     ConvertIntToDecimalStringN(gStringVar2, DUNGEON_TOTAL_FLOORS, STR_CONV_MODE_LEADING_ZEROS, 3);
     StringExpandPlaceholders(gStringVar1, sDebugText_Util_RogueFloor_OfTotal);
 
     RogueDungeon_GetDebugFloorInfo(floor - 1, gStringVar2);
-    StringCopy(gStringVar3, gText_DigitIndicator[gTasks[taskId].tDigit]);
 
     StringExpandPlaceholders(gStringVar4, sDebugText_Util_RogueFloor);
     AddTextPrinterParameterized(gTasks[taskId].tSubWindowId, DEBUG_MENU_FONT, gStringVar4, 0, 0, 0, NULL);
@@ -1923,12 +1941,136 @@ static void DebugAction_Util_RogueCharms_Select(u8 taskId)
     }
 }
 
+// THE SCRAMBLER'S TEST HARNESS. The dungeon order and the boss region are only
+// rolled while the shuffle is switched on, so before this existed the only way
+// to see either of them was to clear a hundred and fifteen floors.
+//
+// A MOVES BOTH FLAGS TOGETHER, and that is what keeps this honest. The roll
+// reads FLAG_ROGUE_VANILLA_ORDER alone; FLAG_ROGUE_RUN_COMPLETED is the latch
+// that decides where that toggle STARTS. Simulating a first clear therefore
+// means setting one and clearing the other, exactly as OnRunCompleted does, and
+// putting the state back means the reverse. Moving only one would test a
+// combination the game cannot reach.
+//
+// Being able to put it back is the half that is easy to leave out and is the
+// half that matters, because "the scrambler is off before the first clear" is a
+// claim with no other way to check it.
+//
+// SELECT rerolls both words in place. That is the loop this tool exists for:
+// reroll, step the slots with the d-pad, read the lineup, reroll again. Fourteen
+// slots against 384 orders and 16384 region words is not something to sample by
+// clearing the game repeatedly.
+//
+// It deliberately does NOT warp anywhere. The floor warp tool next door already
+// does that, and a tool that both changed the run and moved the player would
+// make it ambiguous which of the two produced what turned up.
+static void DebugRogueRun_Redraw(u8 taskId)
+{
+    RogueDungeon_GetDebugRunState(gStringVar1);
+    RogueDungeon_GetDebugRunSlot(gTasks[taskId].tInput, gStringVar2);
+
+    StringExpandPlaceholders(gStringVar4, sDebugText_Util_RogueRun);
+    AddTextPrinterParameterized(gTasks[taskId].tSubWindowId, DEBUG_MENU_FONT, gStringVar4, 0, 0, 0, NULL);
+}
+
+static void DebugAction_Util_RogueRun(u8 taskId)
+{
+    u8 windowId;
+
+    ClearStdWindowAndFrame(gTasks[taskId].tWindowId, TRUE);
+    RemoveWindow(gTasks[taskId].tWindowId);
+
+    HideMapNamePopUpWindow();
+    LoadMessageBoxAndBorderGfx();
+    windowId = AddWindow(&sDebugMenuWindowTemplateWeather);
+    DrawStdWindowFrame(windowId, FALSE);
+
+    CopyWindowToVram(windowId, COPYWIN_FULL);
+
+    gTasks[taskId].func = DebugAction_Util_RogueRun_Select;
+    gTasks[taskId].tSubWindowId = windowId;
+
+    // tInput is the slot being inspected, the same borrowed task slot the floor
+    // and charm tools use. Starts at 0, the first gym.
+    gTasks[taskId].tInput = 0;
+
+    DebugRogueRun_Redraw(taskId);
+}
+
+static void DebugAction_Util_RogueRun_Select(u8 taskId)
+{
+    if (JOY_NEW(DPAD_RIGHT) || JOY_NEW(DPAD_UP))
+    {
+        PlaySE(SE_SELECT);
+        if (++gTasks[taskId].tInput >= DUNGEON_COUNT)
+            gTasks[taskId].tInput = 0;
+        DebugRogueRun_Redraw(taskId);
+    }
+    else if (JOY_NEW(DPAD_LEFT) || JOY_NEW(DPAD_DOWN))
+    {
+        PlaySE(SE_SELECT);
+        if (--gTasks[taskId].tInput < 0)
+            gTasks[taskId].tInput = DUNGEON_COUNT - 1;
+        DebugRogueRun_Redraw(taskId);
+    }
+
+    if (JOY_NEW(A_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+
+        // TOGGLE, not set, and BOTH flags. See the comment above
+        // DebugRogueRun_Redraw for why one alone is not a reachable state.
+        //
+        // Clearing them leaves the two words holding whatever they last rolled,
+        // which would be a shuffled run with the shuffle switched off - so the
+        // reroll is run unconditionally afterwards, and its own check is what
+        // zeroes them. That is the same path ResetRun takes and not a second
+        // copy of the rule.
+        if (FlagGet(FLAG_ROGUE_RUN_COMPLETED))
+        {
+            FlagClear(FLAG_ROGUE_RUN_COMPLETED);
+            FlagSet(FLAG_ROGUE_VANILLA_ORDER);
+        }
+        else
+        {
+            FlagSet(FLAG_ROGUE_RUN_COMPLETED);
+            FlagClear(FLAG_ROGUE_VANILLA_ORDER);
+        }
+
+        RogueDungeon_Debug_RerollRunOrder();
+        DebugRogueRun_Redraw(taskId);
+    }
+    else if (JOY_NEW(SELECT_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        RogueDungeon_Debug_RerollRunOrder();
+        DebugRogueRun_Redraw(taskId);
+    }
+    else if (JOY_NEW(B_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        DebugAction_DestroyExtraWindow(taskId);
+    }
+}
+
 static void DebugAction_Util_RogueFloor_SelectFloor(u8 taskId)
 {
     if (JOY_NEW(DPAD_ANY))
     {
         PlaySE(SE_SELECT);
         Debug_HandleInput_Numeric(taskId, 1, DUNGEON_TOTAL_FLOORS, 3);
+        DebugRogueFloor_Redraw(taskId);
+    }
+
+    // SELECT forces the ALPHA onto every floor that rolls an event at all, so
+    // it can be reached without warping to floor 21+ and waiting for the
+    // weighting. Toggled HERE rather than on its own menu screen because the
+    // warp is the other half of the same action - arm it, then press A.
+    if (JOY_NEW(SELECT_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        RogueDungeon_Debug_SetForceAlphaEvent(
+            !RogueDungeon_Debug_GetForceAlphaEvent());
         DebugRogueFloor_Redraw(taskId);
     }
 

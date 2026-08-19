@@ -387,7 +387,18 @@
 // whole point is a question about the party's DEPTH rather than its best mon.
 #define DUNGEON_NEST_WAVES        3
 #define DUNGEON_NEST_LEVEL_MALUS  4
-#define DUNGEON_NEST_REWARD_MONEY 5000
+
+// What the hoard pays, on top of the item rolled from the floor's loot table.
+//
+// SCALED, because a flat sum is the wrong shape here and the old flat 5000 is
+// what made this event feel unpaid. The waves climb with the floor, so a
+// constant reward is five times the pedlar's asking price on floor 11 and
+// pocket change by floor 115 - a jackpot for the easiest run of it and nothing
+// for the hardest. Pegged above the fossil's sale price, which is
+// 500 + 60/floor: that one is free and this one costs three fights with no heal
+// between them, so it has to be worth more at every depth.
+#define DUNGEON_NEST_REWARD_MIN       1500
+#define DUNGEON_NEST_REWARD_PER_FLOOR 100
 
 // What the transposer charges in money, for a player who would rather not carry
 // Brittle for the rest of the run.
@@ -474,13 +485,22 @@
 #define VAR_ROGUE_BEST_FLOOR     VAR_UNUSED_0x40FB
 #define VAR_ROGUE_LAST_RUN_FLOOR VAR_UNUSED_0x40FC
 
-// THE DUNGEON ORDER SHUFFLE, gated behind FLAG_ROGUE_RUN_COMPLETED so a first
-// playthrough walks vanilla's own progression - Petalburg Woods to Roxanne,
-// through to Steven - and the shuffle is what a clear unlocks.
+// THE DUNGEON ORDER SHUFFLE. A first playthrough walks vanilla's own
+// progression - Petalburg Woods to Roxanne, through to Steven - and the first
+// clear is what turns the shuffle on.
 //
-// The gate is not only flavour. A shuffle is allowed to be lumpy precisely
+// THAT IS A DEFAULT AND NOT A GATE, and the difference shipped as a bug.
+// RollDungeonOrder used to test FLAG_ROGUE_RUN_COMPLETED as well as the toggle,
+// which made the options entry a one-way switch - it could turn the shuffle off
+// but never on, so a player before their first clear saw a control reading ON
+// that did nothing, indistinguishable from a roll that came up identity. The
+// starting position now lives in ApplyNewGameUnlocks and the first clear moves
+// it once; the roll reads the toggle and nothing else.
+//
+// The default is not only flavour. A shuffle is allowed to be lumpy precisely
 // because the player has already won once, which is what lets this ship with no
-// boss scaling and no re-authored species pools.
+// boss scaling and no re-authored species pools - so turning it on early is a
+// choice the player is allowed to make and not one to make for them.
 //
 // TWO GROUPS, PERMUTED SEPARATELY AND NEVER ACROSS. DungeonIndexOf,
 // DungeonLengthOf and DungeonFloorWithin are pure functions of the dungeon SLOT,
@@ -520,6 +540,82 @@
 // defaults to enabled once unlocked, and a flag cannot default to set. Same
 // trick optionsAutoRun already plays in option_menu.c.
 #define FLAG_ROGUE_VANILLA_ORDER FLAG_UNUSED_0x91F
+
+// THE REGION ROLL, the second half of the scrambler and the one that changes
+// WHO a dungeon's boss is rather than WHERE it stands.
+//
+// TWO BITS per dungeon IDENTITY, so four regions. Rolled beside the order word,
+// from the same function, behind the same gate - a first playthrough is the
+// eight Hoenn leaders, the Hoenn Elite Four, Wallace and Steven, and a clear is
+// what unlocks both halves at once.
+//
+// IT WAS ONE BIT IN ONE VAR AND THAT HELD EXACTLY TWO REGIONS. Fourteen
+// identities at two bits is 28 bits and a var is 16, so this is TWO vars, low
+// then high, seven identities each. The alternative - a single var holding an
+// index into a table of whole rosters - was rejected because it throws away the
+// per-identity independence that makes the roll interesting: the point is that
+// one run can be Roxanne, Misty, Whitney, Erika.
+//
+// FOUR IS THE CEILING AND IT IS NOT AN ACCIDENT. Two bits is exactly the four
+// regions this project has sprites for. A fifth needs three bits, which is 42
+// bits, which is a third var - do that deliberately rather than discovering it
+// when a roll silently wraps.
+//
+// KEYED ON THE IDENTITY, NOT THE SLOT, and the distinction is the same one
+// DungeonForSlot draws. A slot is a position in the run; an identity is which
+// dungeon stands there. The region bit says "this dungeon is its Kanto
+// counterpart" - Norman becomes Koga, Wallace becomes Blue, Steven becomes Red -
+// and the order shuffle is then free to move that dungeon wherever it likes,
+// because the two compose. Keying it on the slot instead would build a fixed
+// per-position roster that the shuffle then permuted, which is a different and
+// much less interesting feature.
+//
+// THE PAIRING IS 1:1 AND THE FOURTEENTH IS AUTHORED. Kanto ships eight leaders,
+// four Elite Four and one Champion - thirteen, against Hoenn's fourteen, because
+// Steven has no Kanto counterpart. TRAINER_ROGUE_KANTO_RED fills it; see the
+// note on him in constants/opponents.h.
+//
+// TWO VARS OF THEIR OWN, and neither is free the way VAR_ROGUE_RUN_ORDER was:
+// the 0x40F* tail is fully claimed, so both come from the earlier part of the
+// unused pool. Checked against this file first rather than against vars.h,
+// because vars.h still calls every id this project holds "unused".
+//
+// LOW carries identities 0-6, HIGH carries 7-13. Split by identity rather than
+// by bit position so that DungeonRegionOf can pick a var and shift within it,
+// instead of a field straddling the boundary - identity 8 at bits 16-17 would
+// otherwise need reassembling from two reads.
+#define VAR_ROGUE_RUN_REGION_LO VAR_UNUSED_0x40E5
+#define VAR_ROGUE_RUN_REGION_HI VAR_UNUSED_0x40DC
+
+// Which region a dungeon identity's boss comes from. Named rather than written
+// as 0..3 because the boss tables are indexed by
+// `identity + region * DUNGEON_COUNT` and a bare 2 there reads as an
+// off-by-something.
+//
+// THE ORDER IS THE ORDER OF THE TABLE BLOCKS and nothing else may reorder it.
+// Hoenn is 0 because 0 must be the vanilla arrangement: a cleared region word
+// means a first playthrough, and every gate in RollDungeonOrder zeroes it.
+#define DUNGEON_REGION_HOENN  0
+#define DUNGEON_REGION_KANTO  1
+#define DUNGEON_REGION_JOHTO  2
+#define DUNGEON_REGION_SINNOH 3
+#define DUNGEON_REGION_COUNT  4
+
+// How many regions actually have a block in the boss tables. All four are wired
+// now, so this equals DUNGEON_REGION_COUNT - but it is a SEPARATE CONSTANT and
+// must stay one. It existed because Sinnoh had sprites and no parties, and the
+// next region added will be in exactly that state again; collapsing the two the
+// moment they agree is how the roll ends up producing a region with no rows and
+// indexing past the end of all five tables, silently, because the tables are
+// adjacent in ROM and the read succeeds.
+#define DUNGEON_REGION_WIRED 4
+
+// Bits per identity, and how many identities fit in one var. Derived rather
+// than written as 2 and 7, so that a fifth region raising the bit count moves
+// the split with it instead of silently overflowing the low word.
+#define DUNGEON_REGION_BITS      2
+#define DUNGEON_REGION_PER_VAR   (16 / DUNGEON_REGION_BITS)
+#define DUNGEON_REGION_MASK      ((1 << DUNGEON_REGION_BITS) - 1)
 
 // Run lifecycle. A run needs starters on a new game and again after a whiteout,
 // which is what makes a loss send the player back to the beginning.

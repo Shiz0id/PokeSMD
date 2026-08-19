@@ -294,6 +294,69 @@ struct RogueRunModifiers
     struct RogueCharm party[ROGUE_PARTY_CHARM_SLOTS];
     u8 version;      // ROGUE_CHARMS_SAVE_VERSION; a mismatch zeroes the struct
     u8 lastDungeon;  // dungeon index last seen, for expiring act-scoped charms
+    // Which Pokemon this run are Alphas, by personality. NOT a charm row and
+    // not consumed: a charm lives in a party slot, and this has to survive the
+    // Pokemon being in a box. See EnsureAlphaCharms in rogue_charms.c.
+    u32 alphaPersonality[ROGUE_ALPHA_SLOTS];
+    // How many Alphas this run has beaten or caught. Drives the Shiny Charm
+    // entering the reward pool - see RogueDungeon_EventAlphaReward. Lives here
+    // rather than in a claimed var because it is per-RUN state and this struct
+    // is already wiped by RogueCharm_ResetRun on exactly that boundary.
+    u8 alphasBeaten;
+};
+
+#include "constants/rogue_journal.h"
+
+// One thing that happened, six bytes. See constants/rogue_journal.h for why the
+// width was settled up front rather than grown later.
+//
+// PACKED IS LOAD BEARING AND WAS FOUND BY MEASURING, NOT BY READING. These
+// members total six bytes, and without PACKED the toolchain rounds every struct
+// up to a multiple of four - so the record silently occupied EIGHT, and the ring
+// cost 1028 bytes of EWRAM instead of 772. Two bytes per entry of pure padding,
+// 256 bytes in total, in the block this project's own notes call the ceiling.
+// Nothing failed; the linker's EWRAM figure moving by more than the struct
+// accounts for is what exposed it. rogue_journal.c STATIC_ASSERTs both sizes so
+// it cannot come back.
+//
+// The stride stays even (6 bytes), so every param1/param2 in the ring is really
+// 2-byte aligned and the byte-wise accesses PACKED generates cost only speed, on
+// a path that runs a handful of times per card page.
+struct PACKED RogueJournalEntry
+{
+    u8 kind;     // ROGUE_JOURNAL_*; ROGUE_JOURNAL_NONE means the slot is empty
+    u8 floor;    // DISPLAYED floor, 1..DUNGEON_TOTAL_FLOORS; 0 = not floor-scoped
+    u16 param1;
+    u16 param2;
+};
+
+// The journal ring. head is the OLDEST entry and count is how many are live, so
+// an empty journal and a full one are told apart by count rather than by any
+// sentinel in the entries - a zeroed entry is a valid ROGUE_JOURNAL_NONE row and
+// would be indistinguishable from an unwritten slot.
+//
+// RogueJournal_Append is the ONLY writer of head and count. See rogue_journal.h.
+//
+// ALIGNED(4) BECAUSE PACKING THE ENTRY DROPPED THIS STRUCT'S ALIGNMENT TO ONE.
+// Every member is then byte-aligned, so nothing stops the linker placing the
+// whole journal at an odd address - and RogueJournal_Data zeroes it with
+// CpuFill16, which is a 16-bit fill and needs at least 2. It happens to land
+// 4-aligned today because rogueCharms sits in front of it carrying a u32, which
+// is exactly the kind of accident that holds until someone reorders SaveBlock3.
+struct ALIGNED(4) RogueJournal
+{
+    struct RogueJournalEntry entries[ROGUE_JOURNAL_ENTRIES];
+    u8 head;      // index of the oldest live entry
+    u8 count;     // 0..ROGUE_JOURNAL_ENTRIES
+    // Runs BEGUN, for the RUN_STARTED line. Saturates rather than wrapping, the
+    // same way VAR_ROGUE_RUNS_COMPLETED does - a player on their 256th run
+    // should not be told they are on their first.
+    //
+    // Unused until the run hooks land, and stored anyway: it is part of the save
+    // FORMAT, and adding a field later is a version bump that discards every
+    // player's journal. That is the one cost this design is shaped to avoid.
+    u8 runIndex;
+    u8 version;   // ROGUE_JOURNAL_SAVE_VERSION; a mismatch zeroes the struct
 };
 
 struct SaveBlock3
@@ -316,6 +379,11 @@ struct SaveBlock3
 #endif
     struct Usm_SavedItems usmSaved;
     struct RogueRunModifiers rogueCharms;
+    // APPENDED, NEVER INSERTED. Anything placed before an existing member shifts
+    // every member after it, and an old save then reads the wrong bytes for real
+    // state - which is what the version guards in each of these blocks exist to
+    // survive, and not something to spend twice.
+    struct RogueJournal rogueJournal;
 }; /* max size 1624 bytes */
 
 extern struct SaveBlock3 *gSaveBlock3Ptr;

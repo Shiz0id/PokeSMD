@@ -906,6 +906,7 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ROGUECHARM_ORB_AWAKENED]              = COMPOUND_STRING("The orb's power surges through your party!"),
     [STRINGID_ROGUECHARM_ORB_BURDENED]              = COMPOUND_STRING("The orb drinks its due!"),
     [STRINGID_ROGUECHARM_BRITTLE]                   = COMPOUND_STRING("The traded-away flesh aches!"),
+    [STRINGID_ROGUECHARM_ALPHA]                     = COMPOUND_STRING("The Alpha towers over the field!"),
 };
 
 const u16 gTrainerUsedItemStringIds[] =
@@ -1325,6 +1326,13 @@ const u16 gWeatherStartsStringIds[WEATHER_COUNT] =
     [WEATHER_MONSOON]            = STRINGID_ITISRAINING,
     [WEATHER_BLIZZARD]           = (B_OVERWORLD_SNOW >= GEN_9 ? STRINGID_ITISSNOWING : STRINGID_ITISHAILING),
     [WEATHER_LEAVES]             = STRINGID_ITISRAINING,
+    // Never actually printed - this weather is absent from battle_util.c's
+    // switch, so it sets no gBattleWeather and nothing looks the row up. It is
+    // here because the table is sized by WEATHER_COUNT and a hole reads as
+    // STRINGID_INTROMSG, which is a defined 0 rather than out of bounds but is
+    // still the wrong string if anything ever does reach it.
+    [WEATHER_ZUBATS]             = STRINGID_ITISRAINING,
+    [WEATHER_SEABIRDS]           = STRINGID_ITISRAINING,
 };
 
 const u16 gTerrainStartsStringIds[] =

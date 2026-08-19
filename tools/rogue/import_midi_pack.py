@@ -45,6 +45,28 @@ MAX_DIRECTSOUND_CHANNELS = 12
 
 # --------------------------------------------------------------------------
 
+
+def tempo_off_conductor(path):
+    """Tracks carrying tempo events when track 0 carries none.
+
+    Imported rather than reimplemented: fix_midi_tempo_track.py owns the MIDI
+    walking, and a second copy of a variable-length-quantity parser in this
+    file is exactly the kind of drift this repo's notes keep warning about.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "_fix_tempo", os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                   "fix_midi_tempo_track.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    try:
+        found = mod.tempo_map(open(path, "rb").read())
+    except Exception:
+        return []
+    if not found or any(track == 0 for track, _, _ in found):
+        return []
+    return sorted(set(track for track, _, _ in found))
+
 def midi_census(path):
     with open(path, "rb") as f:
         d = f.read()
@@ -491,6 +513,25 @@ def main():
                 warnings.append("%s uses %d channels, over the %d DirectSound"
                                 " channels; m4a will steal the quietest"
                                 % (f, c["channels"], MAX_DIRECTSOUND_CHANNELS))
+
+            # TEMPO OFF THE CONDUCTOR TRACK, which is the quietest failure in
+            # this whole tool. mid2agb reads tempo from track 0 only; a
+            # sequencer that writes it onto the first MUSIC track instead makes
+            # a valid MIDI that every desktop player renders correctly, and
+            # mid2agb then emits no TEMPO command at all. The song converts
+            # cleanly, reports nothing, and plays at m4a's default speed.
+            #
+            # Caught on HGSS Champion Lance, whose three 184 BPM events sat on
+            # track 1 while track 0 was a 12-byte stub. It was found by
+            # comparing its .s against a known-good song's, not by anything
+            # here -- which is why this warning now exists.
+            stray = tempo_off_conductor(src)
+            if stray:
+                warnings.append("%s has its tempo on track(s) %s, not track 0;"
+                                " mid2agb will emit NO tempo and the song will"
+                                " play at the default speed. Fix with"
+                                " tools/rogue/fix_midi_tempo_track.py"
+                                % (f, stray))
 
             disp = display_name(stem, strip_words)
             d, n = disp, 2

@@ -4,6 +4,47 @@ Preparation for gap 16 in the roguelike state file: the Kanto gym leaders, the
 Elite Four and the Champion as post-game content behind
 `FLAG_ROGUE_RUN_COMPLETED`.
 
+> ## THEY ARE PLACED NOW — read this first
+>
+> Everything below is the staging record and is still accurate as history. What
+> it does not say is where the thirteen ended up, so: **they are the second
+> region of the dungeon boss tables, reached by a per-identity region roll.**
+>
+> - **`VAR_ROGUE_RUN_REGION`** holds one bit per dungeon identity, set = Kanto,
+>   rolled in `RollDungeonOrder` behind the same gate as the order word. Every
+>   identity rolls independently, so a run mixes the two regions freely.
+> - **All five boss tables are now two blocks of `DUNGEON_COUNT`**, and
+>   `BossRowForSlot` — `DungeonForSlot` composed with the region bit — is the
+>   only thing allowed to index them. `check_boss_regions.py` asserts that, with
+>   eleven `--selftest` breaks.
+> - **A fourteenth trainer had to be authored.** Kanto ships thirteen against
+>   Hoenn's fourteen, because Steven has no counterpart.
+>   `TRAINER_ROGUE_KANTO_RED` (876) fills the finale slot with the Mt. Silver
+>   team at its GSC levels — 76.7 average against Steven's 76.3, so the finale
+>   needed no scaling in either direction. **`TRAINER_RED` (851) is NOT this**:
+>   it is FRLG's intro placeholder holding one level-5 Charmander.
+> - **The levels are still stock FireRed**, which was a decision. Step 5 below
+>   proposed scaling them; the call was to leave them and give the Kanto rows
+>   their own tolerance in `verify_run_structure.py` (`KANTO_TOLERANCE`, 12)
+>   rather than widen `SHUFFLE_TOLERANCE` (9) and retire the check that guards
+>   the shuffle's band width. The worst case is **+10.5, Misty at slot 0** —
+>   not Koga, whose stock levels are what the arithmetic predicts, because the
+>   band swap moves other rows into slots that expose them.
+> - **A debug menu entry drives it**: Utility → `Rogue run state…`. A toggles
+>   `FLAG_ROGUE_RUN_COMPLETED` both ways, SELECT rerolls both words, the d-pad
+>   steps the slots and names who stands at each.
+> - Cost: **ROM +3,072 B, EWRAM and IWRAM unmoved.** 48 checks pass.
+>
+> **A latent defect was found on the way and is worth knowing about.**
+> `gen_trainer_table.py` excluded `Leader`, `Elite Four` and `Champion` but not
+> `Leader Frlg`, `Elite Four Frlg` and `Champion Frlg`, and had no rule for
+> `Rogue Diver` at all. The committed `rogue_dungeon_trainers.h` predated the
+> port so nothing had leaked yet — but the next regeneration, for any reason,
+> would have put all thirteen Kanto leaders and all seven seafloor divers into
+> the random opponent pool. **A generated file that is stale hides the bug in
+> its own generator.** Fixed by class and by a `^TRAINER_ROGUE_` prefix; the
+> tool now reproduces the committed header exactly, which is the real assertion.
+
 **Nothing here needs extracting from a FireRed ROM.** All thirteen trainers,
 their parties, their battle art and their overworld sprites are already vendored
 in this tree. The work is making them reachable from an Emerald build, not
@@ -173,3 +214,9 @@ bump** rather than spending two.
    way `gen_trainer_table.py` already reads the Emerald set.
 4. Un-guard the thirteen overworld rows only, and re-check the link map.
 5. Scale the parties to the curve, and only then decide where they stand.
+
+**Steps 1-4 were followed. Step 5 was NOT, deliberately** — see the box at the
+top. The parties are unscaled and the tolerance moved instead, which is cheaper
+and reversible; scaling remains the honest fix if the Kanto rows ever drift
+further, and the sweep in `verify_run_structure.py` prints exactly which rows
+would need it.
