@@ -8,6 +8,9 @@
 #include "pokemon_icon.h"
 #include "decompress.h"
 #include "graphics.h"
+#include "sound.h"
+#include "main_menu.h"
+#include "constants/songs.h"
 #include "malloc.h"
 #include "random.h"
 #include "constants/pokemon.h"
@@ -1520,6 +1523,46 @@ static void UpdateBanner(void)
     }
 }
 
+// ---------------------------------------------------------------------------
+// Leaving
+// ---------------------------------------------------------------------------
+
+// Dialga, not Rayquaza. Worth noting that nothing was swapped out to do this:
+// vanilla's title screen plays no cry at all -- START just fades the BGM and
+// leaves -- and the only Rayquaza cry in the tree belongs to the Sootopolis
+// cutscene in rayquaza_scene.c.
+#define MODE7_TITLE_CRY  SPECIES_DIALGA
+
+// Slower than vanilla's fade on purpose. Vanilla goes out over 16 frames, which
+// is under a third of a second and clips the cry; this gives it room to land.
+#define MODE7_EXIT_FADE_DELAY 2
+
+static EWRAM_DATA bool8 sExiting = FALSE;
+
+static void CB2_Mode7ToMainMenu(void)
+{
+    UpdatePaletteFade();
+    if (gPaletteFade.active)
+        return;
+
+    // Both of these have to go before anything else owns the screen. The VBlank
+    // handler re-arms DMA0 every frame, so leaving it running would keep
+    // rewriting BG2's affine registers on every scanline of the main menu --
+    // and the DMA itself would keep firing regardless of who is drawing.
+    SetVBlankCallback(NULL);
+    RogueMode7_Stop();
+    SetMainCallback2(CB2_InitMainMenu);
+}
+
+static void BeginExit(void)
+{
+    sExiting = TRUE;
+    PlayCry_Normal(MODE7_TITLE_CRY, 0);
+    FadeOutBGM(4);
+    BeginNormalPaletteFade(PALETTES_ALL, MODE7_EXIT_FADE_DELAY, 0, 16, RGB_BLACK);
+    SetMainCallback2(CB2_Mode7ToMainMenu);
+}
+
 static void VBlankCB_Mode7(void)
 {
     LoadOam();
@@ -1578,9 +1621,15 @@ static void MainCB2_Mode7(void)
             sCamera.height -= (1 << 8);
     }
 
-    // START and SELECT are deliberately unbound. START is the player's button
-    // now that PRESS START is on screen, and binding a debug action to it would
-    // train the wrong reflex.
+    if (!sExiting && JOY_NEW(START_BUTTON))
+    {
+        BeginExit();
+        return;
+    }
+
+    // SELECT stays unbound. A is still the double-size toggle while this is a
+    // testbed; vanilla accepts A as well as START to leave, and that belongs
+    // here once the debug controls go.
     //
     // Double-size doubles the sprite's on-screen WIDTH, and per-scanline OBJ
     // cost is charged per pixel of width -- so A is the direct test of whether
@@ -1702,6 +1751,12 @@ void CB2_RogueMode7Test(void)
                                     | DISPCNT_BG1_ON
                                     | DISPCNT_BG2_ON
                                     | DISPCNT_OBJ_ON);
+        // The intro cinematic's track runs on into this screen otherwise --
+        // nothing between the two issues another PlayBGM, so it simply keeps
+        // playing. Placeholder until something is chosen properly.
+        PlayBGM(MUS_DPPT_NATURAL_DISASTER);
+        sExiting = FALSE;
+
         EnableInterrupts(INTR_FLAG_VBLANK);
         SetVBlankCallback(VBlankCB_Mode7);
         SetMainCallback2(MainCB2_Mode7);
