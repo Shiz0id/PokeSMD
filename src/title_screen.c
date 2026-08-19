@@ -21,6 +21,7 @@
 #include "scanline_effect.h"
 #include "gpu_regs.h"
 #include "trig.h"
+#include "rogue_mode7.h"
 #include "graphics.h"
 #include "constants/rgb.h"
 #include "constants/songs.h"
@@ -563,6 +564,11 @@ static void VBlankCB(void)
 
 void CB2_InitTitleScreen(void)
 {
+    if (ROGUE_MODE7_TEST)
+    {
+        CB2_RogueMode7Test();
+        return;
+    }
     if (IS_FRLG)
     {
         CB2_InitTitleScreenFrlg();
