@@ -956,6 +956,222 @@ static void SetPlanePalette(void)
 }
 
 // ---------------------------------------------------------------------------
+// Atmosphere: horizon fog, vignette, stars
+// ---------------------------------------------------------------------------
+//
+// All three live on ONE text BG in front of the plane, drawn as DITHER and then
+// softened by the blend unit. That shape is forced by the DMA budget, not
+// chosen for elegance:
+//
+//   DMA0  the affine scanline transfer
+//   DMA1  sound, FIFO A          -- m4a owns it
+//   DMA2  sound, FIFO B          -- m4a owns it
+//   DMA3  every DmaCopy and DmaFill in the game
+//
+// There is no free channel, so a second per-scanline register write is not
+// available. A per-scanline BLDALPHA gradient -- the obvious way to fade the
+// plane into the sky -- would need an HBlank IRQ firing 160 times a frame, and
+// that competes with the OBJ renderer already measured out at 20 sprites.
+//
+// Dither costs none of that. Density carries the gradient and ONE global
+// BLDALPHA takes the harshness off. The blend unit is used once, statically,
+// and no scanline work happens at all.
+//
+// TWO THINGS THE FIRST ATTEMPT GOT WRONG, both visible in a host render:
+//
+//   * Five density levels banded badly. A tile has ONE dither pattern, so
+//     density is quantised to 8 px spatially no matter what -- the fix is not
+//     fewer steps but MORE of them spread over MORE tiles, so each step is
+//     small. Sixteen levels off a Bayer 8x8 threshold, over seven tiles.
+//   * Stars never appeared. A map entry is one tile id, so a tile cannot be
+//     both fog and star, and every sky tile already had some density. Stars now
+//     have their own tiles AT each low density.
+//
+// The layer does not scroll: the horizon travels only 8 px across the shot, so
+// the fog band is made tall enough to cover that, which keeps the vignette
+// screen-fixed as it must be.
+
+#define FOG_CHAR_BASE   3
+#define FOG_SCREEN_BASE 30
+#define FOG_PAL_BANK    2
+
+#define FOG_TILES_W     30      // the visible area, 240x160
+#define FOG_TILES_H     20
+
+#define FOG_LEVELS      16      // dither steps, tiles 1..16
+// Stars have to exist at most densities, not just clear sky. The vignette
+// reaches FOG_VIGNETTE_TILES in from every edge, and the screen is only 20
+// tiles tall, so every sky tile already carries some density -- capping star
+// tiles at low densities meant no star ever placed.
+#define FOG_STAR_LEVELS 8       // stars exist at density 0..7
+#define FTILE_EMPTY     0
+#define FTILE_STAR0     (FOG_LEVELS + 1)
+
+#define FOG_PAL_DARK    1
+#define FOG_PAL_STAR0   2       // entries 2..5 rotate for the twinkle
+
+// Vignette reach, in tiles. Wider and finer reads smoother than strong and
+// narrow, because the banding is spatial and cannot be removed, only made small.
+#define FOG_VIGNETTE_TILES 6
+
+// Fog density by tile row, out of FOG_LEVELS. The horizon sits at rows 6-7
+// across the shot, so the band covers both and falls away downward into clear
+// air. It fades the ground into the BACKDROP, which is why the fog colour is
+// near-black: the sky here is the backdrop, and the backdrop is black.
+static const u8 sFogByRow[FOG_TILES_H] =
+{
+    3, 3, 2, 2, 3, 7, 12, 10, 7, 5, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0,
+};
+
+// Ordered dither. Threshold per pixel; a pixel is set when its entry is below
+// density * 4, which gives sixteen even steps.
+static const u8 sBayer8[64] =
+{
+     0, 32,  8, 40,  2, 34, 10, 42,
+    48, 16, 56, 24, 50, 18, 58, 26,
+    12, 44,  4, 36, 14, 46,  6, 38,
+    60, 28, 52, 20, 62, 30, 54, 22,
+     3, 35, 11, 43,  1, 33,  9, 41,
+    51, 19, 59, 27, 49, 17, 57, 25,
+    15, 47,  7, 39, 13, 45,  5, 37,
+    63, 31, 55, 23, 61, 29, 53, 21,
+};
+
+static EWRAM_DATA u8 sTwinklePhase = 0;
+
+// Four brightnesses rotated among four palette entries, so groups of stars
+// twinkle out of phase. Four palette writes every twelfth frame, and nothing
+// per star.
+static const u16 sStarBrightness[4] =
+{
+    RGB(31, 31, 31), RGB(21, 21, 26), RGB(13, 13, 20), RGB(7, 7, 13),
+};
+
+static void PackTile(const u8 *px, u32 index)
+{
+    ALIGNED(4) u8 tile[32];
+    u32 i;
+
+    // 4bpp packs two pixels per byte, low nibble first.
+    for (i = 0; i < 32; i++)
+        tile[i] = px[i * 2] | (px[i * 2 + 1] << 4);
+    CpuCopy32(tile, (void *)(BG_CHAR_ADDR(FOG_CHAR_BASE) + index * 32), 32);
+}
+
+static void BuildFogTiles(void)
+{
+    ALIGNED(4) u8 px[64];
+    u32 i, d, g;
+
+    for (i = 0; i < 64; i++)
+        px[i] = 0;
+    PackTile(px, FTILE_EMPTY);
+
+    for (d = 1; d <= FOG_LEVELS; d++)
+    {
+        for (i = 0; i < 64; i++)
+            px[i] = (sBayer8[i] < d * 4) ? FOG_PAL_DARK : 0;
+        PackTile(px, d);
+    }
+
+    // A star at each low density, so a star tile can still carry fog. Offsets
+    // differ per group so a run of stars does not line up on a grid.
+    for (g = 0; g < 4; g++)
+    {
+        for (d = 0; d < FOG_STAR_LEVELS; d++)
+        {
+            for (i = 0; i < 64; i++)
+                px[i] = (d && sBayer8[i] < d * 4) ? FOG_PAL_DARK : 0;
+            px[((2 + g * 3) & 7) * 8 + ((1 + g * 2) & 7)] = FOG_PAL_STAR0 + g;
+            PackTile(px, FTILE_STAR0 + g * FOG_STAR_LEVELS + d);
+        }
+    }
+}
+
+static void SetFogPalette(void)
+{
+    u16 pal[16];
+    u32 i;
+
+    for (i = 0; i < 16; i++)
+        pal[i] = RGB(0, 0, 0);
+    // Near-black, matching the backdrop the ground has to fade into.
+    pal[FOG_PAL_DARK] = RGB(1, 1, 3);
+    for (i = 0; i < 4; i++)
+        pal[FOG_PAL_STAR0 + i] = sStarBrightness[i];
+
+    LoadPalette(pal, BG_PLTT_ID(FOG_PAL_BANK), sizeof(pal));
+}
+
+// Rotating which brightness sits in which entry is the whole twinkle.
+static void UpdateTwinkle(void)
+{
+    u16 pal[4];
+    u32 i;
+
+    if ((sFrame % 12) != 0)
+        return;
+
+    sTwinklePhase++;
+    for (i = 0; i < 4; i++)
+        pal[i] = sStarBrightness[(i + sTwinklePhase) & 3];
+    LoadPalette(pal, BG_PLTT_ID(FOG_PAL_BANK) + FOG_PAL_STAR0, sizeof(pal));
+}
+
+static void BuildFogMap(void)
+{
+    ALIGNED(4) u16 row[32];
+    s32 tx, ty;
+
+    for (ty = 0; ty < 32; ty++)
+    {
+        for (tx = 0; tx < 32; tx++)
+            row[tx] = FTILE_EMPTY | (FOG_PAL_BANK << 12);
+
+        if (ty < FOG_TILES_H)
+        {
+            for (tx = 0; tx < FOG_TILES_W; tx++)
+            {
+                s32 edge, density, fog;
+                u32 hash;
+
+                // Vignette: distance to the nearest screen edge, in tiles.
+                edge = tx;
+                if (FOG_TILES_W - 1 - tx < edge)
+                    edge = FOG_TILES_W - 1 - tx;
+                if (ty < edge)
+                    edge = ty;
+                if (FOG_TILES_H - 1 - ty < edge)
+                    edge = FOG_TILES_H - 1 - ty;
+
+                density = FOG_VIGNETTE_TILES - edge;
+                if (density < 0)
+                    density = 0;
+
+                fog = sFogByRow[ty];
+                if (fog > density)
+                    density = fog;
+                if (density > FOG_LEVELS)
+                    density = FOG_LEVELS;
+
+                hash = CellHash(tx * 3 + 1, ty * 7 + 5);
+                if (ty < 7 && density < FOG_STAR_LEVELS && hash > 208)
+                {
+                    row[tx] = (FTILE_STAR0 + (hash & 3) * FOG_STAR_LEVELS + density)
+                            | (FOG_PAL_BANK << 12);
+                }
+                else if (density > 0)
+                {
+                    row[tx] = density | (FOG_PAL_BANK << 12);
+                }
+            }
+        }
+
+        CpuCopy32(row, (void *)(BG_SCREEN_ADDR(FOG_SCREEN_BASE) + ty * 64), 64);
+    }
+}
+
+// ---------------------------------------------------------------------------
 // The shot
 // ---------------------------------------------------------------------------
 //
@@ -1206,6 +1422,7 @@ static void MainCB2_Mode7(void)
 
     sFrame++;
     UpdateSwarm();
+    UpdateTwinkle();
     UpdateMeters();
 
     RunTasks();
@@ -1243,6 +1460,9 @@ void CB2_RogueMode7Test(void)
         SetPlanePalette();
         BuildMeterTiles();
         SetMeterPalette();
+        BuildFogTiles();
+        SetFogPalette();
+        BuildFogMap();
         LoadSwarmGfx();
         CreateSwarm();
         sSwarmCount = 0;
@@ -1265,6 +1485,25 @@ void CB2_RogueMode7Test(void)
         RogueMode7_BuildScanlineTable(&sCamera);
         RogueMode7_ArmHBlankDma();
 
+        // In front of the plane, so the fog and vignette sit over the ground
+        // rather than under it. Priority ties break toward the lower BG, so the
+        // meters on BG0 still draw on top of all of it.
+        SetGpuReg(REG_OFFSET_BG1CNT, BGCNT_PRIORITY(0)
+                                   | BGCNT_CHARBASE(FOG_CHAR_BASE)
+                                   | BGCNT_SCREENBASE(FOG_SCREEN_BASE)
+                                   | BGCNT_16COLOR
+                                   | BGCNT_TXT256x256);
+        SetGpuReg(REG_OFFSET_BG1HOFS, 0);
+        SetGpuReg(REG_OFFSET_BG1VOFS, 0);
+
+        // The one place the blend unit is used, and it is static: BG1's dither
+        // blended over everything behind it. That is what turns a visible
+        // checkerboard into fog.
+        SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_BG1 | BLDCNT_EFFECT_BLEND
+                                   | BLDCNT_TGT2_BG2 | BLDCNT_TGT2_OBJ
+                                   | BLDCNT_TGT2_BD);
+        SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(11, 9));
+
         SetGpuReg(REG_OFFSET_BG0CNT, BGCNT_PRIORITY(0)
                                    | BGCNT_CHARBASE(METER_CHAR_BASE)
                                    | BGCNT_SCREENBASE(METER_SCREEN_BASE)
@@ -1274,6 +1513,7 @@ void CB2_RogueMode7Test(void)
         SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_MODE_1
                                     | DISPCNT_OBJ_1D_MAP
                                     | DISPCNT_BG0_ON
+                                    | DISPCNT_BG1_ON
                                     | DISPCNT_BG2_ON
                                     | DISPCNT_OBJ_ON);
         EnableInterrupts(INTR_FLAG_VBLANK);
