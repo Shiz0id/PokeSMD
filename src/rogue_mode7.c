@@ -6,6 +6,9 @@
 #include "scanline_effect.h"
 #include "sprite.h"
 #include "pokemon_icon.h"
+#include "decompress.h"
+#include "malloc.h"
+#include "constants/pokemon.h"
 #include "constants/species.h"
 #include "task.h"
 #include "trig.h"
@@ -220,16 +223,24 @@ static EWRAM_DATA u8 sSwarmDoubleSize = 0;
 static EWRAM_DATA u16 sFrame = 0;
 static EWRAM_DATA u8 sVBlankEndLine = 0;
 
-// Deliberately not the icon palette: the body goes dark violet and the eye
-// stays bright, which is what makes an Unown read at ten pixels. Recoloured
-// here rather than in the art, so the art stays the stock icon.
+// Indices here are the FRONT SPRITE's, which are not the icon's: 4-5 are the
+// eye, 6 the outline, 7-9 the body. Body goes dark violet and the eye stays
+// bright, because at ten pixels the silhouette is mush and the eye is the whole
+// read. Recoloured here rather than in the art, so the art stays stock.
 static const u16 sSwarmPalette[16] =
 {
-    RGB(0, 0, 0),      RGB(1, 1, 2),      RGB(4, 3, 7),      RGB(7, 5, 11),
-    RGB(10, 8, 15),    RGB(13, 11, 19),   RGB(16, 14, 23),   RGB(20, 27, 29),
-    RGB(29, 31, 31),   RGB(6, 4, 10),     RGB(9, 7, 14),     RGB(12, 10, 18),
-    RGB(15, 13, 22),   RGB(18, 16, 26),   RGB(22, 20, 28),   RGB(26, 28, 30),
+    [0] = RGB(0, 0, 0),         // transparent
+    [4] = RGB(21, 27, 29),      // eye edge
+    [5] = RGB(29, 31, 31),      // eye core
+    [6] = RGB(1, 1, 2),         // outline
+    [7] = RGB(10, 8, 15),       // body light
+    [8] = RGB(7, 5, 11),        // body mid
+    [9] = RGB(4, 3, 7),         // body dark
 };
+
+// GET_UNOWN_LETTER packs the letter across four 2-bit fields, so this is its
+// inverse: the smallest personality that yields letter L.
+#define UNOWN_PERSONALITY(L) (((L) & 3)                                             | ((((L) >> 2) & 3) << 8)                               | ((((L) >> 4) & 3) << 16)                              | ((((L) >> 6) & 3) << 24))
 
 static const struct OamData sSwarmOam =
 {
@@ -277,24 +288,53 @@ static void SetSwarmMatrices(void)
 
 static void LoadSwarmGfx(void)
 {
+    // Letters chosen because their ink fits the middle 32x32 of the 64x64 pic
+    // exactly: b c d e f h i k. The three tallest forms (a, g, !) reach 36 rows
+    // and would lose their top two rows to the crop, so they are left out.
+    static const u8 sLetters[MODE7_SWARM_FORMS] = { 1, 2, 3, 4, 5, 7, 8, 10 };
     struct SpritePalette pal = { sSwarmPalette, SWARM_PAL_TAG };
-    u32 i;
+    u8 *full = Alloc(MON_PIC_SIZE);
+    u8 *crop = Alloc(32 * 32 / 2);
+    u32 i, tx, ty;
 
     LoadSpritePalette(&pal);
 
-    // GetMonIconTiles resolves the Unown FORM from the personality, so eight
-    // different personalities give eight different letters without naming a
-    // single form symbol. Each icon is 32x64 (two animation frames); only the
-    // first 32x32 frame is wanted, hence 512 bytes.
     for (i = 0; i < MODE7_SWARM_FORMS; i++)
     {
         struct SpriteSheet sheet;
 
-        sheet.data = GetMonIconTiles(SPECIES_UNOWN, i * 0x1234567 + i);
-        sheet.size = 512;
+        // Decompresses the pic AND resolves the Unown letter from personality,
+        // the same way the icon path did.
+        LoadSpecialPokePic(full, SPECIES_UNOWN,
+                           UNOWN_PERSONALITY(sLetters[i]), TRUE);
+
+        // A 64x64 mon pic is 64 tiles in 1D order, so tile (tx, ty) sits at
+        // index ty * 8 + tx. Measured across every form, the ink never leaves
+        // the middle 32x32, so lift the 4x4 tile block at (2, 2) and repack it
+        // as a contiguous 32x32 sprite.
+        //
+        // This crop is the whole reason the swarm can use front sprites at all:
+        // a 64-wide affine sprite costs about 2 cycles per pixel of width plus
+        // overhead, so keeping the OBJ 32 wide keeps the per-scanline cost
+        // identical to the icons it replaces.
+        for (ty = 0; ty < 4; ty++)
+        {
+            for (tx = 0; tx < 4; tx++)
+            {
+                CpuCopy32(full + ((ty + 2) * 8 + (tx + 2)) * TILE_SIZE_4BPP,
+                          crop + (ty * 4 + tx) * TILE_SIZE_4BPP,
+                          TILE_SIZE_4BPP);
+            }
+        }
+
+        sheet.data = crop;
+        sheet.size = 32 * 32 / 2;
         sheet.tag = SWARM_GFX_TAG + i;
         LoadSpriteSheet(&sheet);
     }
+
+    Free(crop);
+    Free(full);
 }
 
 static void CreateSwarm(void)
