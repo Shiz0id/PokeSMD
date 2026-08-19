@@ -5,6 +5,13 @@
 // title screen. This is a development hook -- see CB2_RogueMode7Test.
 #define ROGUE_MODE7_TEST TRUE
 
+// Draw the VBlank meter on BG0: a bar showing how much of VBlank's 68 lines the
+// handler ate, which goes RED if it overruns into visible scanlines. That is a
+// live question -- the scanline table is single-buffered and built in VBlank,
+// so overrunning is the failure it was traded against -- but it has no business
+// on a title screen, so it is off unless something needs measuring.
+#define MODE7_SHOW_METERS FALSE
+
 // Lay a fresh floor every time the loop turns. There is only ONE dungeon on the
 // plane -- everything in the distance is a wrapped copy of it -- so with this
 // off, every cycle shows the same plan from a new angle.

@@ -495,9 +495,15 @@ static void DrawBar(u32 barRow, u32 filled, u32 fillTile)
               METER_WIDTH * 2);
 }
 
+// The swarm-count bar that used to sit under this one is gone. The count is
+// fixed at MODE7_SWARM_MAX now that START and SELECT belong to the player, so
+// the bar was permanently full and carried no information at all.
 static void UpdateMeters(void)
 {
     u32 used, filled;
+
+    if (!MODE7_SHOW_METERS)
+        return;
 
     if (sVBlankEndLine < VBLANK_FIRST_LINE)
     {
@@ -510,9 +516,6 @@ static void UpdateMeters(void)
         filled = (used * METER_WIDTH) / VBLANK_LINES;
         DrawBar(1, filled, 1);
     }
-
-    filled = (sSwarmCount * METER_WIDTH) / MODE7_SWARM_MAX;
-    DrawBar(3, filled, 4);
 }
 
 // ---------------------------------------------------------------------------
@@ -1632,8 +1635,11 @@ void CB2_RogueMode7Test(void)
     case 1:
         BuildPlane();
         SetPlanePalette();
-        BuildMeterTiles();
-        SetMeterPalette();
+        if (MODE7_SHOW_METERS)
+        {
+            BuildMeterTiles();
+            SetMeterPalette();
+        }
         BuildFogTiles();
         SetFogPalette();
         BuildFogMap();
@@ -1681,15 +1687,18 @@ void CB2_RogueMode7Test(void)
                                    | BLDCNT_TGT2_BD);
         SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(FOG_BLEND_EVA, FOG_BLEND_EVB));
 
-        SetGpuReg(REG_OFFSET_BG0CNT, BGCNT_PRIORITY(0)
-                                   | BGCNT_CHARBASE(METER_CHAR_BASE)
-                                   | BGCNT_SCREENBASE(METER_SCREEN_BASE)
-                                   | BGCNT_16COLOR
-                                   | BGCNT_TXT256x256);
+        if (MODE7_SHOW_METERS)
+        {
+            SetGpuReg(REG_OFFSET_BG0CNT, BGCNT_PRIORITY(0)
+                                       | BGCNT_CHARBASE(METER_CHAR_BASE)
+                                       | BGCNT_SCREENBASE(METER_SCREEN_BASE)
+                                       | BGCNT_16COLOR
+                                       | BGCNT_TXT256x256);
+        }
 
         SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_MODE_1
                                     | DISPCNT_OBJ_1D_MAP
-                                    | DISPCNT_BG0_ON
+                                    | (MODE7_SHOW_METERS ? DISPCNT_BG0_ON : 0)
                                     | DISPCNT_BG1_ON
                                     | DISPCNT_BG2_ON
                                     | DISPCNT_OBJ_ON);
