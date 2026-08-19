@@ -955,6 +955,150 @@ static void SetPlanePalette(void)
     LoadPalette(sPal, BG_PLTT_ID(0), sizeof(sPal));
 }
 
+// ---------------------------------------------------------------------------
+// The shot
+// ---------------------------------------------------------------------------
+//
+// The camera move from the host prototype, frame for frame: cruise forward low
+// and steady, lift and bleed off speed, then settle. Four seconds at 60fps.
+//
+// Altitudes are picked from the window the prototype measured. 88 is inside the
+// clean 64-96 band; the climb tops out at 128 rather than the 150 the landscape
+// version used, because at 150 REG_BG2PA starts clamping on the rows nearest
+// the horizon.
+//
+// Everything is Q8: t and the easing curves run 0..256 for 0..1, which keeps
+// the whole thing to shifts and one divide per phase.
+
+#define SHOT_FRAMES   240       // 4 seconds
+#define SHOT_PHASE_A  108       // 0.45 -- cruise ends
+#define SHOT_PHASE_B  192       // 0.80 -- climb ends, settle begins
+
+#define SHOT_H0       (88 << 8)
+#define SHOT_H1       (120 << 8)
+#define SHOT_H2       (128 << 8)
+
+#define SHOT_SPEED0   666       // 2.6 world px per frame, Q8
+#define SHOT_SPEED1   205       // 0.8
+#define SHOT_SPEED2   64        // 0.25
+
+#define SHOT_HORIZON0 48
+#define SHOT_HORIZON1 56
+
+#define MANUAL_KEYS (DPAD_UP | DPAD_DOWN | DPAD_LEFT | DPAD_RIGHT \
+                   | L_BUTTON | R_BUTTON)
+
+static EWRAM_DATA u16 sShotFrame = 0;
+static EWRAM_DATA bool8 sAutoCamera = FALSE;
+
+// Smoothstep, t and result both Q8 over 0..1. t*t*(3 - 2t).
+static s32 EaseInOut(s32 t)
+{
+    s32 t2;
+
+    if (t < 0)
+        t = 0;
+    if (t > 256)
+        t = 256;
+    t2 = (t * t) >> 8;
+    return (t2 * (768 - 2 * t)) >> 8;
+}
+
+// 1 - (1 - t)^3. Decelerates into the hold at the end of the shot.
+static s32 EaseOut(s32 t)
+{
+    s32 u, u2;
+
+    if (t < 0)
+        t = 0;
+    if (t > 256)
+        t = 256;
+    u = 256 - t;
+    u2 = (u * u) >> 8;
+    return 256 - ((u2 * u) >> 8);
+}
+
+static s32 Lerp8(s32 a, s32 b, s32 k)
+{
+    return a + (((b - a) * k) >> 8);
+}
+
+static void StartShot(void)
+{
+    sShotFrame = 0;
+    sAutoCamera = TRUE;
+    sCamera.x = 256 << 8;
+    sCamera.z = 0;
+    sCamera.yaw = 0;
+    sCamera.height = SHOT_H0;
+    sCamera.horizon = SHOT_HORIZON0;
+    // The prototype ramped the ground in over the first half second; a palette
+    // fade is the same read and costs nothing here.
+    BeginNormalPaletteFade(PALETTES_ALL, 1, 16, 0, RGB_BLACK);
+}
+
+// Where a looping stage goes. The shot hands over here once it reaches
+// SHOT_FRAMES, with the camera settled at SHOT_H2 and SHOT_HORIZON1, and this
+// runs from then on.
+//
+// For such a loop to cut seamlessly it has to return to exactly the state it
+// started in. Two things make that straightforward: yaw is a u8 and wraps at
+// 256, so any constant yaw rate closes its circle exactly; and the plane wraps
+// every 512 world px, so a forward drift covering a multiple of 512 closes too.
+// Holding still is just the degenerate case of both.
+static void AdvanceIdle(void)
+{
+    // Holds where the shot left it.
+}
+
+static void AdvanceShot(void)
+{
+    s32 k, speed;
+
+    if (sShotFrame >= SHOT_FRAMES)
+    {
+        AdvanceIdle();
+        return;
+    }
+    sShotFrame++;
+
+    if (sShotFrame < SHOT_PHASE_A)
+    {
+        sCamera.height = SHOT_H0;
+        speed = SHOT_SPEED0;
+    }
+    else if (sShotFrame < SHOT_PHASE_B)
+    {
+        k = EaseInOut(((sShotFrame - SHOT_PHASE_A) * 256)
+                      / (SHOT_PHASE_B - SHOT_PHASE_A));
+        sCamera.height = Lerp8(SHOT_H0, SHOT_H1, k);
+        speed = Lerp8(SHOT_SPEED0, SHOT_SPEED1, k);
+    }
+    else
+    {
+        k = EaseOut(((sShotFrame - SHOT_PHASE_B) * 256)
+                    / (SHOT_FRAMES - SHOT_PHASE_B));
+        sCamera.height = Lerp8(SHOT_H1, SHOT_H2, k);
+        speed = Lerp8(SHOT_SPEED1, SHOT_SPEED2, k);
+    }
+
+    // The horizon drifts down across the whole back half, which reads as the
+    // camera levelling out of the cruise.
+    if (sShotFrame <= SHOT_PHASE_A)
+    {
+        sCamera.horizon = SHOT_HORIZON0;
+    }
+    else
+    {
+        k = EaseInOut(((sShotFrame - SHOT_PHASE_A) * 256)
+                      / (SHOT_FRAMES - SHOT_PHASE_A));
+        sCamera.horizon = Lerp8(SHOT_HORIZON0, SHOT_HORIZON1, k);
+    }
+
+    sCamera.x += (speed * gSineTable[sCamera.yaw & 0xFF]) >> 8;
+    sCamera.z += (speed * gSineTable[(sCamera.yaw + 64) & 0xFF]) >> 8;
+}
+
 static void VBlankCB_Mode7(void)
 {
     LoadOam();
@@ -974,32 +1118,44 @@ static void VBlankCB_Mode7(void)
 
 static void MainCB2_Mode7(void)
 {
-    s32 cosYaw = gSineTable[(sCamera.yaw + 64) & 0xFF];
-    s32 sinYaw = gSineTable[sCamera.yaw & 0xFF];
-    s32 speed = 0;
+    // Touching the stick or the shoulders takes the camera off the rails, so
+    // the shot can be interrupted to go and look at something. B puts it back.
+    if (JOY_HELD(MANUAL_KEYS))
+        sAutoCamera = FALSE;
 
-    if (JOY_HELD(DPAD_UP))
-        speed = 3 << 8;
-    else if (JOY_HELD(DPAD_DOWN))
-        speed = -(3 << 8);
-
-    if (speed != 0)
+    if (sAutoCamera)
     {
-        sCamera.x += (speed * sinYaw) >> 8;
-        sCamera.z += (speed * cosYaw) >> 8;
+        AdvanceShot();
     }
+    else
+    {
+        s32 cosYaw = gSineTable[(sCamera.yaw + 64) & 0xFF];
+        s32 sinYaw = gSineTable[sCamera.yaw & 0xFF];
+        s32 speed = 0;
 
-    if (JOY_HELD(DPAD_LEFT))
-        sCamera.yaw--;
-    if (JOY_HELD(DPAD_RIGHT))
-        sCamera.yaw++;
+        if (JOY_HELD(DPAD_UP))
+            speed = 3 << 8;
+        else if (JOY_HELD(DPAD_DOWN))
+            speed = -(3 << 8);
 
-    // Altitude is the interesting axis to be able to sweep by hand: it is what
-    // decides how many rows near the horizon get parked.
-    if (JOY_HELD(R_BUTTON) && sCamera.height < (200 << 8))
-        sCamera.height += (1 << 8);
-    if (JOY_HELD(L_BUTTON) && sCamera.height > (8 << 8))
-        sCamera.height -= (1 << 8);
+        if (speed != 0)
+        {
+            sCamera.x += (speed * sinYaw) >> 8;
+            sCamera.z += (speed * cosYaw) >> 8;
+        }
+
+        if (JOY_HELD(DPAD_LEFT))
+            sCamera.yaw--;
+        if (JOY_HELD(DPAD_RIGHT))
+            sCamera.yaw++;
+
+        // Altitude is the interesting axis to sweep by hand: it decides how
+        // many rows near the horizon get parked.
+        if (JOY_HELD(R_BUTTON) && sCamera.height < (200 << 8))
+            sCamera.height += (1 << 8);
+        if (JOY_HELD(L_BUTTON) && sCamera.height > (8 << 8))
+            sCamera.height -= (1 << 8);
+    }
 
     if (JOY_NEW(START_BUTTON) && sSwarmCount <= MODE7_SWARM_MAX - 4)
         sSwarmCount += 4;
@@ -1011,10 +1167,14 @@ static void MainCB2_Mode7(void)
     // test of whether affine sprites really cost what the docs say.
     if (JOY_NEW(A_BUTTON))
         sSwarmDoubleSize ^= 1;
-    // A fresh floor on demand. The plane is 4 KB of map and nine tiles, which
-    // is what makes generating one per boot realistic rather than a stretch.
+    // A fresh floor and a fresh run of the shot. The plane is 4 KB of map and
+    // nine tiles built in code, which is what makes generating one per boot
+    // realistic rather than a stretch goal.
     if (JOY_NEW(B_BUTTON))
+    {
         BuildPlane();
+        StartShot();
+    }
 
     sFrame++;
     UpdateSwarm();
@@ -1061,11 +1221,7 @@ void CB2_RogueMode7Test(void)
         sSwarmDoubleSize = 0;
         sFrame = 0;
 
-        sCamera.x = 256 << 8;
-        sCamera.z = 0;
-        sCamera.height = 88 << 8;   // inside the clean window the proto measured
-        sCamera.yaw = 0;
-        sCamera.horizon = 48;
+        StartShot();
         gMain.state = 2;
         break;
     case 2:

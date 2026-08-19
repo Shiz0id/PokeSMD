@@ -36,7 +36,15 @@ listed as EXPECTED-PASS. The rule is still worth following in the C, and the
 host prototype measured its real cost, but do not believe this script is
 watching it.
 
---selftest breaks three things that ARE caught and fails if any still passes.
+THE SHOT IS TEST DATA
+
+The camera path in AdvanceShot is replayed here with the same integer easing the
+C uses, and every state it passes through is fed to the assertions above. So
+retuning SHOT_H2 or SHOT_HORIZON1 is checked automatically: push the altitude up
+and rows start parking near the horizon, and this says how many rather than
+leaving it to be noticed on a screen.
+
+--selftest breaks four things that ARE caught and fails if any still passes.
 
 Takes the repo positionally or as --repo, so it cannot end up on the wrong side
 of run_all_checks.sh's hand-maintained list.
@@ -157,6 +165,83 @@ def reference(cam, row, col):
             lam)
 
 
+def parse_shot(repo):
+    """Read the shot constants out of the C, including the (h << 8) forms."""
+    src = open(os.path.join(repo, "src", "rogue_mode7.c"), encoding="utf-8").read()
+    out = {}
+    for name in ("SHOT_FRAMES", "SHOT_PHASE_A", "SHOT_PHASE_B",
+                 "SHOT_SPEED0", "SHOT_SPEED1", "SHOT_SPEED2",
+                 "SHOT_HORIZON0", "SHOT_HORIZON1"):
+        m = re.search(rf"#define\s+{name}\s+(\d+)", src)
+        if not m:
+            return None
+        out[name] = int(m.group(1))
+    for name in ("SHOT_H0", "SHOT_H1", "SHOT_H2"):
+        m = re.search(rf"#define\s+{name}\s+\((\d+) << 8\)", src)
+        if not m:
+            return None
+        out[name] = int(m.group(1)) << 8
+    return out
+
+
+def ease_in_out(t):
+    t = max(0, min(256, t))
+    t2 = (t * t) >> 8
+    return (t2 * (768 - 2 * t)) >> 8
+
+
+def ease_out(t):
+    t = max(0, min(256, t))
+    u = 256 - t
+    u2 = (u * u) >> 8
+    return 256 - ((u2 * u) >> 8)
+
+
+def lerp8(a, b, k):
+    return a + (((b - a) * k) >> 8)
+
+
+def shot_cameras(repo, sine, step=8):
+    """
+    Replay AdvanceShot exactly and return the camera state every `step` frames.
+    Yaw stays 0 through the shot, so the forward axis is +z throughout.
+    """
+    d = parse_shot(repo)
+    if d is None:
+        return []
+
+    x, z, yaw = 256 << 8, 0, 0
+    cams = []
+    for frame in range(1, d["SHOT_FRAMES"] + 1):
+        if frame < d["SHOT_PHASE_A"]:
+            height = d["SHOT_H0"]
+            speed = d["SHOT_SPEED0"]
+        elif frame < d["SHOT_PHASE_B"]:
+            k = ease_in_out(((frame - d["SHOT_PHASE_A"]) * 256)
+                            // (d["SHOT_PHASE_B"] - d["SHOT_PHASE_A"]))
+            height = lerp8(d["SHOT_H0"], d["SHOT_H1"], k)
+            speed = lerp8(d["SHOT_SPEED0"], d["SHOT_SPEED1"], k)
+        else:
+            k = ease_out(((frame - d["SHOT_PHASE_B"]) * 256)
+                         // (d["SHOT_FRAMES"] - d["SHOT_PHASE_B"]))
+            height = lerp8(d["SHOT_H1"], d["SHOT_H2"], k)
+            speed = lerp8(d["SHOT_SPEED1"], d["SHOT_SPEED2"], k)
+
+        if frame <= d["SHOT_PHASE_A"]:
+            horizon = d["SHOT_HORIZON0"]
+        else:
+            k = ease_in_out(((frame - d["SHOT_PHASE_A"]) * 256)
+                            // (d["SHOT_FRAMES"] - d["SHOT_PHASE_A"]))
+            horizon = lerp8(d["SHOT_HORIZON0"], d["SHOT_HORIZON1"], k)
+
+        x += (speed * sine[yaw & 0xFF]) >> 8
+        z += (speed * sine[(yaw + 64) & 0xFF]) >> 8
+
+        if frame % step == 0 or frame == d["SHOT_FRAMES"]:
+            cams.append((x, z, height, yaw, horizon))
+    return cams
+
+
 CAMERAS = [
     # x, z, height (Q24.8), yaw (0-255), horizon
     (256 << 8, 0, 88 << 8, 0, 48),
@@ -180,8 +265,14 @@ def run(repo, sine, inv_h, break_mode=None, verbose=True):
     parked = 0
     compared = 0
 
+    # The shot is test data, not a separate concern: every state the camera
+    # actually passes through gets the same assertions as the hand-picked ones.
+    shot = shot_cameras(repo, sine)
+    cameras = CAMERAS + shot
+    worst_parked = 0
+
     dupes = 0
-    for cam in CAMERAS:
+    for cam in cameras:
         table, overflowed = build_table_c(cam, sine, inv_h, break_mode)
         if overflowed:
             problems.append(f"cam h={cam[2] / 256:.0f}: height * sInvH overflowed u32")
@@ -191,6 +282,11 @@ def run(repo, sine, inv_h, break_mode=None, verbose=True):
         # folded and the ground turns inside out on that row. This needs no
         # reference and no tolerance, and it is the failure that is actually
         # visible, so it is the assertion that matters most here.
+        cam_parked = sum(1 for row, e in enumerate(table)
+                         if e is None and row - cam[4] >= 1)
+        if cam_parked > worst_parked:
+            worst_parked = cam_parked
+
         lams = [e[5] for e in table if e is not None]
         for i in range(len(lams) - 1):
             if lams[i + 1] > lams[i]:
@@ -229,7 +325,9 @@ def run(repo, sine, inv_h, break_mode=None, verbose=True):
     ok = not problems and worst <= MAX_SCREEN_ERR
 
     if verbose:
-        print(f"  cameras            : {len(CAMERAS)}")
+        print(f"  cameras            : {len(CAMERAS)} fixed + {len(shot)} from the shot")
+        print(f"  worst parked rows  : {worst_parked} on a single camera"
+              f"  (rows lambda cannot express, hidden under the horizon)")
         print(f"  scanlines compared : {compared}  ({parked} parked: lambda > s16)")
         print(f"  rows sharing a lambda with the row above: {dupes}"
               f"  (blockiness, not an error)")
