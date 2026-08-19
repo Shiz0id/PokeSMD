@@ -8,6 +8,7 @@
 #include "pokemon_icon.h"
 #include "decompress.h"
 #include "malloc.h"
+#include "random.h"
 #include "constants/pokemon.h"
 #include "constants/species.h"
 #include "task.h"
@@ -513,47 +514,392 @@ static void UpdateMeters(void)
 // Testbed
 // ---------------------------------------------------------------------------
 
-// A checkerboard with a bordered tile and a coarse accent grid. Flat colour
-// hides shear; borders and a grid do not, which is the entire point of testing
-// against this rather than against art.
-static void BuildPlane(void)
+// ---------------------------------------------------------------------------
+// The dungeon plane
+// ---------------------------------------------------------------------------
+//
+// This is a PORT OF THE HOST PROTOTYPE in tools/mode7/mode7_proto.py, not a
+// view of the game's own maps, and that is deliberate. rogue_dungeon.c does
+// have a rooms-and-corridors generator -- CarveFloor, CarveCorridor,
+// FitPlaneRooms -- and murky cave is a THEME running through it rather than a
+// generator of its own. But that code emits u16 METATILES for a 48x48 play map
+// via theme tables, and what an affine BG needs is a 64x64 map of 8x8 tiles at
+// one byte per entry. The two formats do not meet, and the look wanted here is
+// the prototype's regardless.
+//
+// The whole vocabulary is NINE tiles, against the affine ceiling of 256. That
+// is why this theme was chosen over a landscape: an organic plane wanted 2466
+// distinct tiles, and fragmented platforms wanted 589.
+
+#define DUN_W           48      // matches DUNGEON_WIDTH in rogue_dungeon.h
+#define DUN_H           48
+#define DUN_MAX_ROOMS   10      // DUNGEON_ROOMS_DEFAULT
+#define DUN_ROOM_MIN    5
+#define DUN_ROOM_MAX    10
+#define DUN_PLACE_TRIES 400
+#define DUN_OFFSET      ((MODE7_PLANE_TILES - DUN_W) / 2)
+
+// Grid cell values. The two rock values differ only so the two dilation passes
+// cannot cascade into each other; both render as rock.
+#define DCELL_VOID    0
+#define DCELL_FLOOR   1
+#define DCELL_STAIRS  2
+#define DCELL_ROCK_A  3
+#define DCELL_ROCK_B  4
+
+// Tile ids in VRAM, in the order BuildDungeonTiles writes them.
+#define DTILE_VOID        0
+#define DTILE_FLOOR       1
+#define DTILE_FLOOR_LIT   2
+#define DTILE_STAIRS      3
+#define DTILE_WALL_FACE   4
+#define DTILE_WALL_TOP    5
+#define DTILE_WALL_HI     6
+#define DTILE_WALL_SPECK  7
+#define DTILE_WALL_HISPK  8
+
+// Palette indices, matching the prototype. Walls sit far below the floor in
+// value on purpose: the rock should read as the dark the floor is carved out
+// of, not as a surface of its own.
+#define DPAL_HI       1
+#define DPAL_TOP      2
+#define DPAL_TOP_DK   3
+#define DPAL_FACE_LT  4
+#define DPAL_FACE     5
+#define DPAL_FACE_DK  6
+#define DPAL_FLOOR_LT 7
+#define DPAL_FLOOR    8
+#define DPAL_GRID     9
+#define DPAL_STAIRS   10
+#define DPAL_ACCENT   11
+
+// Stable per-cell noise: a hash rather than Random(), so the speckle does not
+// crawl when the plane is rebuilt for the same floor.
+static u32 CellHash(u32 x, u32 y)
 {
-    ALIGNED(4) u8 tile[64];
-    ALIGNED(4) u8 row[MODE7_PLANE_TILES];
+    return ((x * 73) ^ (y * 151)) & 0xFF;
+}
+
+static void FillTile(u8 *t, u8 v)
+{
+    u32 i;
+
+    for (i = 0; i < 64; i++)
+        t[i] = v;
+}
+
+static void WriteTile(const u8 *t, u32 index)
+{
+    // VRAM rejects 8-bit writes, so tiles are assembled in RAM and copied as
+    // words. Writing a u8 straight to VRAM corrupts its neighbour rather than
+    // failing.
+    CpuCopy32(t, (void *)(BG_CHAR_ADDR(MODE7_CHAR_BASE) + index * 64), 64);
+}
+
+static void BuildDungeonTiles(void)
+{
+    ALIGNED(4) u8 t[64];
     u32 i, x, y;
 
-    // VRAM rejects 8-bit writes, so every tile and every map row is assembled
-    // in RAM and copied as words. Writing a u8 straight to VRAM here would
-    // corrupt the neighbouring byte instead of failing.
-    for (i = 0; i < 64; i++)
+    FillTile(t, 0);
+    WriteTile(t, DTILE_VOID);
+
+    // Floor carries a grid line along its top and left edges, so the plane
+    // reads as tiled rather than painted. That line is also what makes any
+    // shear in the projection visible.
+    FillTile(t, DPAL_FLOOR);
+    for (i = 0; i < 8; i++)
     {
-        bool32 edge = (i < 8) || (i >= 56) || ((i & 7) == 0) || ((i & 7) == 7);
-        tile[i] = edge ? 2 : 1;
+        t[i] = DPAL_GRID;
+        t[i * 8] = DPAL_GRID;
     }
-    CpuCopy32(tile, (void *)(BG_CHAR_ADDR(MODE7_CHAR_BASE) + 1 * 64), 64);
+    WriteTile(t, DTILE_FLOOR);
 
-    for (i = 0; i < 64; i++)
+    FillTile(t, DPAL_FLOOR_LT);
+    for (i = 0; i < 8; i++)
     {
-        bool32 edge = (i < 8) || (i >= 56) || ((i & 7) == 0) || ((i & 7) == 7);
-        tile[i] = edge ? 1 : 3;
+        t[i] = DPAL_GRID;
+        t[i * 8] = DPAL_GRID;
     }
-    CpuCopy32(tile, (void *)(BG_CHAR_ADDR(MODE7_CHAR_BASE) + 2 * 64), 64);
+    WriteTile(t, DTILE_FLOOR_LIT);
 
+    FillTile(t, DPAL_FLOOR);
+    for (y = 1; y < 7; y++)
+        for (x = 1; x < 7; x++)
+            t[y * 8 + x] = DPAL_STAIRS;
+    for (y = 2; y < 6; y++)
+        for (x = 2; x < 6; x++)
+            t[y * 8 + x] = DPAL_ACCENT;
+    WriteTile(t, DTILE_STAIRS);
+
+    // The face is the side of the rock the camera can see, so the top half is
+    // shadow and the bottom half is a lit wall front.
     for (i = 0; i < 64; i++)
-        tile[i] = 4;
-    CpuCopy32(tile, (void *)(BG_CHAR_ADDR(MODE7_CHAR_BASE) + 3 * 64), 64);
+        t[i] = (i < 32) ? DPAL_TOP_DK : DPAL_FACE;
+    for (i = 56; i < 64; i++)
+        t[i] = DPAL_FACE_DK;
+    WriteTile(t, DTILE_WALL_FACE);
 
-    // Affine map entries are ONE BYTE each -- no priority, no palette bank, no
-    // flip. That byte is why the plane is capped at 256 distinct tiles.
+    FillTile(t, DPAL_TOP);
+    WriteTile(t, DTILE_WALL_TOP);
+
+    FillTile(t, DPAL_TOP);
+    for (i = 0; i < 8; i++)
+        t[i] = DPAL_HI;
+    WriteTile(t, DTILE_WALL_HI);
+
+    FillTile(t, DPAL_TOP);
+    for (y = 3; y < 5; y++)
+        for (x = 3; x < 5; x++)
+            t[y * 8 + x] = DPAL_TOP_DK;
+    WriteTile(t, DTILE_WALL_SPECK);
+
+    FillTile(t, DPAL_TOP);
+    for (i = 0; i < 8; i++)
+        t[i] = DPAL_HI;
+    for (y = 3; y < 5; y++)
+        for (x = 3; x < 5; x++)
+            t[y * 8 + x] = DPAL_TOP_DK;
+    WriteTile(t, DTILE_WALL_HISPK);
+}
+
+static void CarveH(u8 *g, s32 y, s32 x0, s32 x1)
+{
+    s32 x;
+
+    if (x0 > x1)
+    {
+        s32 tmp = x0;
+
+        x0 = x1;
+        x1 = tmp;
+    }
+    for (x = x0; x <= x1; x++)
+        g[y * DUN_W + x] = DCELL_FLOOR;
+}
+
+static void CarveV(u8 *g, s32 x, s32 y0, s32 y1)
+{
+    s32 y;
+
+    if (y0 > y1)
+    {
+        s32 tmp = y0;
+
+        y0 = y1;
+        y1 = tmp;
+    }
+    for (y = y0; y <= y1; y++)
+        g[y * DUN_W + x] = DCELL_FLOOR;
+}
+
+static void CarveL(u8 *g, s32 ax, s32 ay, s32 bx, s32 by, bool32 horizFirst)
+{
+    if (horizFirst)
+    {
+        CarveH(g, ay, ax, bx);
+        CarveV(g, bx, ay, by);
+    }
+    else
+    {
+        CarveV(g, ax, ay, by);
+        CarveH(g, by, ax, bx);
+    }
+}
+
+// Rooms plus L corridors, the shape the run generator produces. A plain
+// reimplementation on purpose: what matters here is the SILHOUETTE of a floor,
+// not bit-compatibility with rogue_dungeon.c, which could not supply this
+// format anyway.
+static void GenerateFloorPlan(u8 *g)
+{
+    s32 rx[DUN_MAX_ROOMS], ry[DUN_MAX_ROOMS];
+    s32 rw[DUN_MAX_ROOMS], rh[DUN_MAX_ROOMS];
+    s32 order[DUN_MAX_ROOMS];
+    u32 count = 0;
+    u32 attempt, i, j;
+
+    CpuFill16(0, g, DUN_W * DUN_H);
+
+    for (attempt = 0; attempt < DUN_PLACE_TRIES && count < DUN_MAX_ROOMS; attempt++)
+    {
+        s32 w = DUN_ROOM_MIN + (Random() % (DUN_ROOM_MAX - DUN_ROOM_MIN + 1));
+        s32 h = DUN_ROOM_MIN + (Random() % (DUN_ROOM_MAX - DUN_ROOM_MIN + 1));
+        s32 x = 2 + (Random() % (DUN_W - w - 4));
+        s32 y = 2 + (Random() % (DUN_H - h - 4));
+        bool32 clash = FALSE;
+
+        // Two cells of gap, so rooms never end up sharing a wall.
+        for (i = 0; i < count; i++)
+        {
+            if (x < rx[i] + rw[i] + 2 && rx[i] < x + w + 2
+             && y < ry[i] + rh[i] + 2 && ry[i] < y + h + 2)
+            {
+                clash = TRUE;
+                break;
+            }
+        }
+        if (clash)
+            continue;
+
+        rx[count] = x;
+        ry[count] = y;
+        rw[count] = w;
+        rh[count] = h;
+        for (j = 0; j < (u32)h; j++)
+            CarveH(g, y + j, x, x + w - 1);
+        count++;
+    }
+
+    if (count == 0)
+        return;
+
+    // Order by centre x, then chain them, so corridors run across the plan
+    // rather than criss-crossing it.
+    for (i = 0; i < count; i++)
+        order[i] = i;
+    for (i = 1; i < count; i++)
+    {
+        s32 key = order[i];
+        s32 k = i;
+
+        while (k > 0 && rx[order[k - 1]] + rw[order[k - 1]] / 2
+                      > rx[key] + rw[key] / 2)
+        {
+            order[k] = order[k - 1];
+            k--;
+        }
+        order[k] = key;
+    }
+
+    for (i = 0; i + 1 < count; i++)
+    {
+        s32 a = order[i], b = order[i + 1];
+
+        CarveL(g, rx[a] + rw[a] / 2, ry[a] + rh[a] / 2,
+                  rx[b] + rw[b] / 2, ry[b] + rh[b] / 2, Random() & 1);
+    }
+
+    // A couple of extra links, so the plan reads as a network and not a chain.
+    if (count > 3)
+    {
+        for (i = 0; i < 2; i++)
+        {
+            s32 a = Random() % count;
+            s32 b = Random() % count;
+
+            if (a != b)
+                CarveL(g, rx[a] + rw[a] / 2, ry[a] + rh[a] / 2,
+                          rx[b] + rw[b] / 2, ry[b] + rh[b] / 2, Random() & 1);
+        }
+    }
+
+    j = order[count - 1];
+    g[(ry[j] + rh[j] / 2) * DUN_W + rx[j] + rw[j] / 2] = DCELL_STAIRS;
+}
+
+static bool32 IsWalkable(const u8 *g, s32 x, s32 y)
+{
+    if (x < 0 || y < 0 || x >= DUN_W || y >= DUN_H)
+        return FALSE;
+    return g[y * DUN_W + x] == DCELL_FLOOR || g[y * DUN_W + x] == DCELL_STAIRS;
+}
+
+static bool32 IsSolid(const u8 *g, s32 x, s32 y)
+{
+    if (x < 0 || y < 0 || x >= DUN_W || y >= DUN_H)
+        return FALSE;
+    return g[y * DUN_W + x] != DCELL_VOID;
+}
+
+// Two rings of rock around the floor, then nothing. The nothing is palette
+// index 0, which on an affine BG is TRANSPARENT -- so the void beyond the rock
+// is the backdrop showing through and costs no pixels at all. That is what
+// makes the plan hang in the dark instead of sitting in a slab.
+static void GrowRock(u8 *g)
+{
+    s32 x, y;
+
+    for (y = 0; y < DUN_H; y++)
+    {
+        for (x = 0; x < DUN_W; x++)
+        {
+            if (g[y * DUN_W + x] == DCELL_VOID
+             && (IsWalkable(g, x - 1, y) || IsWalkable(g, x + 1, y)
+              || IsWalkable(g, x, y - 1) || IsWalkable(g, x, y + 1)
+              || IsWalkable(g, x - 1, y - 1) || IsWalkable(g, x + 1, y - 1)
+              || IsWalkable(g, x - 1, y + 1) || IsWalkable(g, x + 1, y + 1)))
+                g[y * DUN_W + x] = DCELL_ROCK_A;
+        }
+    }
+
+    // The second pass writes a DIFFERENT value, so it cannot cascade off its
+    // own output and creep outward a cell per column.
+    for (y = 0; y < DUN_H; y++)
+    {
+        for (x = 0; x < DUN_W; x++)
+        {
+            if (g[y * DUN_W + x] == DCELL_VOID
+             && (IsSolid(g, x - 1, y) || IsSolid(g, x + 1, y)
+              || IsSolid(g, x, y - 1) || IsSolid(g, x, y + 1)
+              || IsSolid(g, x - 1, y - 1) || IsSolid(g, x + 1, y - 1)
+              || IsSolid(g, x - 1, y + 1) || IsSolid(g, x + 1, y + 1)))
+                g[y * DUN_W + x] = DCELL_ROCK_B;
+        }
+    }
+}
+
+static u8 TileForCell(const u8 *g, s32 x, s32 y)
+{
+    u8 c = g[y * DUN_W + x];
+    u32 hash = CellHash(x, y);
+
+    if (c == DCELL_STAIRS)
+        return DTILE_STAIRS;
+    if (c == DCELL_FLOOR)
+        return (hash > 184) ? DTILE_FLOOR_LIT : DTILE_FLOOR;
+    if (c == DCELL_VOID)
+        return DTILE_VOID;
+
+    // Rock with floor directly SOUTH of it is the face -- the side of the wall
+    // the camera can see. Everything else is the top of the rock.
+    if (IsWalkable(g, x, y + 1))
+        return DTILE_WALL_FACE;
+
+    {
+        bool32 hi = !IsSolid(g, x, y - 1);
+        bool32 speck = hash > 217;
+
+        if (hi && speck)
+            return DTILE_WALL_HISPK;
+        if (hi)
+            return DTILE_WALL_HI;
+        if (speck)
+            return DTILE_WALL_SPECK;
+        return DTILE_WALL_TOP;
+    }
+}
+
+static void RasteriseFloorPlan(const u8 *g)
+{
+    ALIGNED(4) u8 row[MODE7_PLANE_TILES];
+    s32 x, y;
+
     for (y = 0; y < MODE7_PLANE_TILES; y++)
     {
+        s32 dy = y - DUN_OFFSET;
+
         for (x = 0; x < MODE7_PLANE_TILES; x++)
         {
-            if ((x % 8) == 0 || (y % 8) == 0)
-                row[x] = 3;
+            s32 dx = x - DUN_OFFSET;
+
+            if (dx < 0 || dy < 0 || dx >= DUN_W || dy >= DUN_H)
+                row[x] = DTILE_VOID;
             else
-                row[x] = ((x ^ y) & 1) ? 1 : 2;
+                row[x] = TileForCell(g, dx, dy);
         }
+        // Affine map entries are ONE BYTE -- no palette bank, no priority, no
+        // flip. That byte is the whole reason the plane is capped at 256 tiles.
         CpuCopy32(row,
                   (void *)(BG_SCREEN_ADDR(MODE7_SCREEN_BASE)
                            + y * MODE7_PLANE_TILES),
@@ -561,14 +907,32 @@ static void BuildPlane(void)
     }
 }
 
+static void BuildPlane(void)
+{
+    u8 *grid = Alloc(DUN_W * DUN_H);
+
+    BuildDungeonTiles();
+    GenerateFloorPlan(grid);
+    GrowRock(grid);
+    RasteriseFloorPlan(grid);
+    Free(grid);
+}
+
 static void SetPlanePalette(void)
 {
     static const u16 sPal[] = {
-        RGB(0, 0, 0),        // 0 unused by the plane; the backdrop colour
-        RGB(24, 20, 14),     // 1 light check
-        RGB(14, 11, 8),      // 2 dark check / tile border
-        RGB(8, 7, 12),       // 3 accent grid
-        RGB(31, 28, 16),     // 4 marker
+        [0]  = RGB(0, 0, 0),        // transparent: the void beyond the rock
+        [1]  = RGB(9, 10, 11),      // wall top highlight
+        [2]  = RGB(6, 6, 7),        // wall top
+        [3]  = RGB(4, 4, 5),        // wall top shadow
+        [4]  = RGB(3, 3, 4),        // wall face light
+        [5]  = RGB(2, 2, 3),        // wall face
+        [6]  = RGB(1, 1, 2),        // wall face dark
+        [7]  = RGB(21, 18, 13),     // floor light
+        [8]  = RGB(16, 14, 10),     // floor
+        [9]  = RGB(11, 9, 7),       // floor grid
+        [10] = RGB(31, 28, 16),     // stairs glow
+        [11] = RGB(15, 12, 21),     // accent
     };
 
     LoadPalette(sPal, BG_PLTT_ID(0), sizeof(sPal));
@@ -630,8 +994,10 @@ static void MainCB2_Mode7(void)
     // test of whether affine sprites really cost what the docs say.
     if (JOY_NEW(A_BUTTON))
         sSwarmDoubleSize ^= 1;
+    // A fresh floor on demand. The plane is 4 KB of map and nine tiles, which
+    // is what makes generating one per boot realistic rather than a stretch.
     if (JOY_NEW(B_BUTTON))
-        sSwarmCount = sSwarmCount ? 0 : MODE7_SWARM_MAX;
+        BuildPlane();
 
     sFrame++;
     UpdateSwarm();
