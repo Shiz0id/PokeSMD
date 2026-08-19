@@ -5,6 +5,8 @@
 #include "palette.h"
 #include "scanline_effect.h"
 #include "sprite.h"
+#include "pokemon_icon.h"
+#include "constants/species.h"
 #include "task.h"
 #include "trig.h"
 #include "constants/rgb.h"
@@ -170,6 +172,304 @@ void RogueMode7_Stop(void)
 }
 
 // ---------------------------------------------------------------------------
+// Unown swarm -- the sprite budget testbed
+// ---------------------------------------------------------------------------
+//
+// The question this exists to answer is one no check can: where does the
+// per-scanline OBJ budget actually fall over, with the Mode 7 HBlank DMA
+// competing for the same HBlank?
+//
+// The documented numbers say roughly 1210 cycles of OBJ time per scanline, an
+// affine sprite costing about 2 cycles per pixel of width plus 10 overhead --
+// so on the order of 16 overlapping 32-px affine sprites per line. That is a
+// starting guess, not a measurement, and the DMA makes it worse by an unknown
+// amount. Hence a knob and a meter rather than a fixed number.
+//
+// Two limits are already hard and are NOT what is being measured:
+//   MAX_SPRITES      64  -- the engine's pool, half the hardware's 128 OAM slots
+//   OAM_MATRIX_COUNT 32  -- affine matrices, shared across every sprite onscreen
+//
+// The matrix limit is why depth is quantised into buckets below. With more
+// Unown than matrices, distinct depths MUST share a scale; that is not a
+// shortcut, it is the only thing the hardware allows.
+
+#define MODE7_SWARM_MAX     56          // MAX_SPRITES is 64; leave a margin
+#define MODE7_SWARM_FORMS   8
+#define MODE7_UNOWN_SIZE    7           // world units; sets the on-screen size
+#define MODE7_AHEAD_MIN     38
+#define MODE7_AHEAD_SPAN    152
+#define MODE7_SPRITE_BOX    32          // the OBJ is 32x32
+#define MODE7_MATRIX_MIN_PX 4           // bucket 0 renders the sprite this small
+
+#define SWARM_PAL_TAG  0x4D37
+#define SWARM_GFX_TAG  0x4D40           // eight consecutive tags, one per form
+
+struct SwarmMember
+{
+    u8 spriteId;
+    u8 ang;         // position around the helix
+    u8 spin;        // how fast it goes around
+    u8 rad;         // helix radius
+    u8 baseAhead;   // phase along the flight path
+    u8 hgt;         // height above the plane
+};
+
+static EWRAM_DATA struct SwarmMember sSwarm[MODE7_SWARM_MAX] = {0};
+static EWRAM_DATA u8 sSwarmCount = 0;
+static EWRAM_DATA u8 sSwarmDoubleSize = 0;
+static EWRAM_DATA u16 sFrame = 0;
+static EWRAM_DATA u8 sVBlankEndLine = 0;
+
+// Deliberately not the icon palette: the body goes dark violet and the eye
+// stays bright, which is what makes an Unown read at ten pixels. Recoloured
+// here rather than in the art, so the art stays the stock icon.
+static const u16 sSwarmPalette[16] =
+{
+    RGB(0, 0, 0),      RGB(1, 1, 2),      RGB(4, 3, 7),      RGB(7, 5, 11),
+    RGB(10, 8, 15),    RGB(13, 11, 19),   RGB(16, 14, 23),   RGB(20, 27, 29),
+    RGB(29, 31, 31),   RGB(6, 4, 10),     RGB(9, 7, 14),     RGB(12, 10, 18),
+    RGB(15, 13, 22),   RGB(18, 16, 26),   RGB(22, 20, 28),   RGB(26, 28, 30),
+};
+
+static const struct OamData sSwarmOam =
+{
+    .y = 0,
+    .affineMode = ST_OAM_AFFINE_NORMAL,
+    .objMode = ST_OAM_OBJ_NORMAL,
+    .shape = SPRITE_SHAPE(32x32),
+    .x = 0,
+    .size = SPRITE_SIZE(32x32),
+    .tileNum = 0,
+    .priority = 0,
+    .paletteNum = 0,
+};
+
+static const struct SpriteTemplate sSwarmSpriteTemplate =
+{
+    .tileTag = SWARM_GFX_TAG,
+    .paletteTag = SWARM_PAL_TAG,
+    .oam = &sSwarmOam,
+    .anims = gDummySpriteAnimTable,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy,
+};
+
+// One matrix per bucket: bucket b renders the 32x32 texture at
+// (MODE7_MATRIX_MIN_PX + b) pixels. The OBJ matrix maps SCREEN to TEXTURE, so
+// the entry is the reciprocal of the scale -- a bigger number is a smaller
+// sprite, which is the opposite of what it reads like.
+static void SetSwarmMatrices(void)
+{
+    u32 b;
+
+    for (b = 0; b < OAM_MATRIX_COUNT; b++)
+    {
+        s32 px = MODE7_MATRIX_MIN_PX + b;
+        s32 v = (MODE7_SPRITE_BOX << 8) / px;
+
+        gOamMatrices[b].a = v;
+        gOamMatrices[b].b = 0;
+        gOamMatrices[b].c = 0;
+        gOamMatrices[b].d = v;
+    }
+}
+
+static void LoadSwarmGfx(void)
+{
+    struct SpritePalette pal = { sSwarmPalette, SWARM_PAL_TAG };
+    u32 i;
+
+    LoadSpritePalette(&pal);
+
+    // GetMonIconTiles resolves the Unown FORM from the personality, so eight
+    // different personalities give eight different letters without naming a
+    // single form symbol. Each icon is 32x64 (two animation frames); only the
+    // first 32x32 frame is wanted, hence 512 bytes.
+    for (i = 0; i < MODE7_SWARM_FORMS; i++)
+    {
+        struct SpriteSheet sheet;
+
+        sheet.data = GetMonIconTiles(SPECIES_UNOWN, i * 0x1234567 + i);
+        sheet.size = 512;
+        sheet.tag = SWARM_GFX_TAG + i;
+        LoadSpriteSheet(&sheet);
+    }
+}
+
+static void CreateSwarm(void)
+{
+    u32 i;
+
+    SetSwarmMatrices();
+
+    for (i = 0; i < MODE7_SWARM_MAX; i++)
+    {
+        struct SwarmMember *m = &sSwarm[i];
+        u8 spriteId = CreateSprite(&sSwarmSpriteTemplate, 0, 0, 0);
+
+        m->spriteId = spriteId;
+        if (spriteId == MAX_SPRITES)
+            continue;
+
+        // Spread deterministically rather than randomly, so two runs of the
+        // same test are comparable.
+        m->ang = i * 37;
+        m->spin = 3 + (i % 5);
+        m->rad = 22 + (i * 7) % 44;
+        m->baseAhead = (i * 23) % MODE7_AHEAD_SPAN;
+        m->hgt = 34 + (i * 11) % 30;
+
+        gSprites[spriteId].oam.tileNum =
+            GetSpriteTileStartByTag(SWARM_GFX_TAG + (i % MODE7_SWARM_FORMS));
+        gSprites[spriteId].invisible = TRUE;
+    }
+}
+
+static void UpdateSwarm(void)
+{
+    u32 i;
+
+    for (i = 0; i < MODE7_SWARM_MAX; i++)
+    {
+        struct SwarmMember *m = &sSwarm[i];
+        struct Sprite *s;
+        s32 ahead, ang, lateral, wy, sx, sy, size, bucket;
+
+        if (m->spriteId == MAX_SPRITES)
+            continue;
+        s = &gSprites[m->spriteId];
+
+        if (i >= sSwarmCount)
+        {
+            s->invisible = TRUE;
+            continue;
+        }
+
+        // The swarm is anchored to the camera, so it is defined in CAMERA
+        // space directly. Going out to world space and projecting back would
+        // be the same numbers with two more chances to be wrong.
+        ahead = MODE7_AHEAD_MIN
+              + ((m->baseAhead + MODE7_AHEAD_SPAN
+                  - ((sFrame * 5 / 8) % MODE7_AHEAD_SPAN)) % MODE7_AHEAD_SPAN);
+        ang = (m->ang + sFrame * m->spin / 8) & 0xFF;
+
+        lateral = (gSineTable[(ang + 64) & 0xFF] * m->rad) >> 8;
+        wy = m->hgt + ((gSineTable[ang] * m->rad) >> 9);
+
+        sx = (DISPLAY_WIDTH / 2) + (lateral * MODE7_PROJ_D) / ahead;
+        sy = sCamera.horizon
+           + (((sCamera.height >> 8) - wy) * MODE7_PROJ_D) / ahead;
+
+        size = (MODE7_UNOWN_SIZE * MODE7_PROJ_D) / ahead;
+        bucket = size - MODE7_MATRIX_MIN_PX;
+        if (bucket < 0)
+            bucket = 0;
+        if (bucket >= OAM_MATRIX_COUNT)
+            bucket = OAM_MATRIX_COUNT - 1;
+
+        s->invisible = FALSE;
+        s->oam.affineMode = sSwarmDoubleSize ? ST_OAM_AFFINE_DOUBLE
+                                             : ST_OAM_AFFINE_NORMAL;
+        s->oam.matrixNum = bucket;
+        s->x = sx - MODE7_SPRITE_BOX / 2;
+        s->y = sy - MODE7_SPRITE_BOX / 2;
+        // Nearer Unown must draw over farther ones. Lower subpriority is in
+        // front, so subpriority tracks distance directly.
+        s->subpriority = ahead > 255 ? 255 : ahead;
+    }
+}
+
+
+// ---------------------------------------------------------------------------
+// Meters
+// ---------------------------------------------------------------------------
+//
+// No font and no text window: two bars of solid tiles on BG0. That keeps this
+// working on hardware and in any emulator, with no dependency on NDEBUG or
+// LOG_HANDLER, which is what DebugPrintf would have needed.
+
+#define METER_CHAR_BASE   2
+#define METER_SCREEN_BASE 28
+#define METER_WIDTH       30
+
+// VBlank has 68 scanlines, 160..227. Sampling REG_VCOUNT at the END of the
+// VBlank handler says how much of that budget the handler ate, for free and
+// with no timer. If it reads BELOW 160 the handler ran past VBlank entirely and
+// is now eating visible scanlines.
+#define VBLANK_FIRST_LINE 160
+#define VBLANK_LINES      68
+
+static void BuildMeterTiles(void)
+{
+    ALIGNED(4) u8 px[32];
+    u32 i;
+
+    // 4bpp: two pixels per byte.
+    for (i = 0; i < 32; i++)
+        px[i] = 0x11;
+    CpuCopy32(px, (void *)(BG_CHAR_ADDR(METER_CHAR_BASE) + 1 * 32), 32);
+    for (i = 0; i < 32; i++)
+        px[i] = 0x22;
+    CpuCopy32(px, (void *)(BG_CHAR_ADDR(METER_CHAR_BASE) + 2 * 32), 32);
+    for (i = 0; i < 32; i++)
+        px[i] = 0x33;
+    CpuCopy32(px, (void *)(BG_CHAR_ADDR(METER_CHAR_BASE) + 3 * 32), 32);
+    for (i = 0; i < 32; i++)
+        px[i] = 0x44;
+    CpuCopy32(px, (void *)(BG_CHAR_ADDR(METER_CHAR_BASE) + 4 * 32), 32);
+}
+
+static void SetMeterPalette(void)
+{
+    static const u16 sPal[] = {
+        RGB(0, 0, 0),        // 0 transparent
+        RGB(8, 24, 10),      // 1 bar filled, green
+        RGB(6, 6, 8),        // 2 bar empty
+        RGB(31, 8, 6),       // 3 overrun, red
+        RGB(28, 24, 6),      // 4 swarm count, amber
+    };
+
+    LoadPalette(sPal, BG_PLTT_ID(1), sizeof(sPal));
+}
+
+static void DrawBar(u32 barRow, u32 filled, u32 fillTile)
+{
+    ALIGNED(4) u16 row[METER_WIDTH];
+    u32 i;
+
+    for (i = 0; i < METER_WIDTH; i++)
+        row[i] = (i < filled ? fillTile : 2) | (1 << 12);   // palette bank 1
+
+    // CpuCopy16, not 32: the bar starts at tile column 1, so the destination is
+    // only 2-byte aligned and a 32-bit copy would land wrong.
+    CpuCopy16(row,
+              (void *)(BG_SCREEN_ADDR(METER_SCREEN_BASE)
+                       + (barRow * 32 + 1) * 2),
+              METER_WIDTH * 2);
+}
+
+static void UpdateMeters(void)
+{
+    u32 used, filled;
+
+    if (sVBlankEndLine < VBLANK_FIRST_LINE)
+    {
+        // Overran VBlank: the handler is now inside the visible frame.
+        DrawBar(1, METER_WIDTH, 3);
+    }
+    else
+    {
+        used = sVBlankEndLine - VBLANK_FIRST_LINE;
+        filled = (used * METER_WIDTH) / VBLANK_LINES;
+        DrawBar(1, filled, 1);
+    }
+
+    filled = (sSwarmCount * METER_WIDTH) / MODE7_SWARM_MAX;
+    DrawBar(3, filled, 4);
+}
+
+// ---------------------------------------------------------------------------
 // Testbed
 // ---------------------------------------------------------------------------
 
@@ -246,6 +546,9 @@ static void VBlankCB_Mode7(void)
     // buffer and build outside it, at 2,560 bytes more.
     RogueMode7_BuildScanlineTable(&sCamera);
     RogueMode7_ArmHBlankDma();
+
+    // Sampled last, so it measures everything this handler did.
+    sVBlankEndLine = REG_VCOUNT;
 }
 
 static void MainCB2_Mode7(void)
@@ -277,10 +580,22 @@ static void MainCB2_Mode7(void)
     if (JOY_HELD(L_BUTTON) && sCamera.height > (8 << 8))
         sCamera.height -= (1 << 8);
 
-    if (JOY_HELD(B_BUTTON) && sCamera.horizon > 8)
-        sCamera.horizon--;
-    if (JOY_HELD(A_BUTTON) && sCamera.horizon < DISPLAY_HEIGHT - 8)
-        sCamera.horizon++;
+    if (JOY_NEW(START_BUTTON) && sSwarmCount <= MODE7_SWARM_MAX - 4)
+        sSwarmCount += 4;
+    if (JOY_NEW(SELECT_BUTTON) && sSwarmCount >= 4)
+        sSwarmCount -= 4;
+
+    // Double-size doubles the sprite's on-screen WIDTH, and the per-scanline
+    // OBJ cost is charged per pixel of width -- so this toggle is the direct
+    // test of whether affine sprites really cost what the docs say.
+    if (JOY_NEW(A_BUTTON))
+        sSwarmDoubleSize ^= 1;
+    if (JOY_NEW(B_BUTTON))
+        sSwarmCount = sSwarmCount ? 0 : MODE7_SWARM_MAX;
+
+    sFrame++;
+    UpdateSwarm();
+    UpdateMeters();
 
     RunTasks();
     AnimateSprites();
@@ -315,6 +630,13 @@ void CB2_RogueMode7Test(void)
     case 1:
         BuildPlane();
         SetPlanePalette();
+        BuildMeterTiles();
+        SetMeterPalette();
+        LoadSwarmGfx();
+        CreateSwarm();
+        sSwarmCount = 0;
+        sSwarmDoubleSize = 0;
+        sFrame = 0;
 
         sCamera.x = 256 << 8;
         sCamera.z = 0;
@@ -336,8 +658,15 @@ void CB2_RogueMode7Test(void)
         RogueMode7_BuildScanlineTable(&sCamera);
         RogueMode7_ArmHBlankDma();
 
+        SetGpuReg(REG_OFFSET_BG0CNT, BGCNT_PRIORITY(0)
+                                   | BGCNT_CHARBASE(METER_CHAR_BASE)
+                                   | BGCNT_SCREENBASE(METER_SCREEN_BASE)
+                                   | BGCNT_16COLOR
+                                   | BGCNT_TXT256x256);
+
         SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_MODE_1
                                     | DISPCNT_OBJ_1D_MAP
+                                    | DISPCNT_BG0_ON
                                     | DISPCNT_BG2_ON
                                     | DISPCNT_OBJ_ON);
         EnableInterrupts(INTR_FLAG_VBLANK);
