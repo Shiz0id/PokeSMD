@@ -36,13 +36,23 @@ listed as EXPECTED-PASS. The rule is still worth following in the C, and the
 host prototype measured its real cost, but do not believe this script is
 watching it.
 
-THE SHOT IS TEST DATA
+THE SHOT IS TEST DATA, AND THE LOOP MUST CLOSE
 
 The camera path in AdvanceShot is replayed here with the same integer easing the
 C uses, and every state it passes through is fed to the assertions above. So
 retuning SHOT_H2 or SHOT_HORIZON1 is checked automatically: push the altitude up
 and rows start parking near the horizon, and this says how many rather than
 leaving it to be noticed on a screen.
+
+It also replays four whole cycles and asserts the loop CLOSES -- that height,
+horizon and speed return to the values SHOT_PHASE_A opens with, and that the
+quarter turn advances yaw by exactly SHOT_TURN_YAW so four cycles come back to
+the start.
+
+That last one is not hypothetical. Easing across SHOT_TURN_FRAMES rather than
+SHOT_TURN_FRAMES - 1 tops the curve out at 255 instead of 256, so the turn lands
+on +63 and the error does not cancel: yaw walks a step every cycle and the loop
+drifts out of true over minutes. Nothing about a single cycle looks wrong.
 
 --selftest breaks four things that ARE caught and fails if any still passes.
 
@@ -171,7 +181,8 @@ def parse_shot(repo):
     out = {}
     for name in ("SHOT_FRAMES", "SHOT_PHASE_A", "SHOT_PHASE_B",
                  "SHOT_SPEED0", "SHOT_SPEED1", "SHOT_SPEED2",
-                 "SHOT_HORIZON0", "SHOT_HORIZON1"):
+                 "SHOT_HORIZON0", "SHOT_HORIZON1",
+                 "SHOT_TURN_FRAMES", "SHOT_TURN_YAW"):
         m = re.search(rf"#define\s+{name}\s+(\d+)", src)
         if not m:
             return None
@@ -201,45 +212,105 @@ def lerp8(a, b, k):
     return a + (((b - a) * k) >> 8)
 
 
-def shot_cameras(repo, sine, step=8):
+def shot_state(d, frame, yaw, turn_start_yaw):
+    """One frame of AdvanceShot. Returns (height, horizon, speed, yaw)."""
+    if frame < d["SHOT_PHASE_A"]:
+        return d["SHOT_H0"], d["SHOT_HORIZON0"], d["SHOT_SPEED0"], yaw
+
+    if frame < d["SHOT_PHASE_B"]:
+        k = ease_in_out(((frame - d["SHOT_PHASE_A"]) * 256)
+                        // (d["SHOT_PHASE_B"] - d["SHOT_PHASE_A"]))
+        height = lerp8(d["SHOT_H0"], d["SHOT_H1"], k)
+        speed = lerp8(d["SHOT_SPEED0"], d["SHOT_SPEED1"], k)
+    elif frame < d["SHOT_FRAMES"]:
+        k = ease_out(((frame - d["SHOT_PHASE_B"]) * 256)
+                     // (d["SHOT_FRAMES"] - d["SHOT_PHASE_B"]))
+        height = lerp8(d["SHOT_H1"], d["SHOT_H2"], k)
+        speed = lerp8(d["SHOT_SPEED1"], d["SHOT_SPEED2"], k)
+    else:
+        t = frame - d["SHOT_FRAMES"]
+        k = ease_in_out((t * 256) // (d["SHOT_TURN_FRAMES"] - 1))
+        height = lerp8(d["SHOT_H2"], d["SHOT_H0"], k)
+        horizon = lerp8(d["SHOT_HORIZON1"], d["SHOT_HORIZON0"], k)
+        speed = lerp8(d["SHOT_SPEED2"], d["SHOT_SPEED0"], k)
+        return height, horizon, speed, (turn_start_yaw + ((d["SHOT_TURN_YAW"] * k) >> 8)) & 0xFF
+
+    k = ease_in_out(((frame - d["SHOT_PHASE_A"]) * 256)
+                    // (d["SHOT_FRAMES"] - d["SHOT_PHASE_A"]))
+    return height, lerp8(d["SHOT_HORIZON0"], d["SHOT_HORIZON1"], k), speed, yaw
+
+
+def replay_cycles(repo, sine, cycles=4, step=8):
     """
-    Replay AdvanceShot exactly and return the camera state every `step` frames.
-    Yaw stays 0 through the shot, so the forward axis is +z throughout.
+    Replay whole cycles of AdvanceShot. Returns (sampled cameras, cycle marks),
+    where a cycle mark is the (height, horizon, speed, yaw) at the last frame of
+    each cycle -- what the cut has to match.
     """
     d = parse_shot(repo)
     if d is None:
-        return []
+        return [], [], None
 
+    cyc = d["SHOT_FRAMES"] + d["SHOT_TURN_FRAMES"]
     x, z, yaw = 256 << 8, 0, 0
-    cams = []
-    for frame in range(1, d["SHOT_FRAMES"] + 1):
-        if frame < d["SHOT_PHASE_A"]:
-            height = d["SHOT_H0"]
-            speed = d["SHOT_SPEED0"]
-        elif frame < d["SHOT_PHASE_B"]:
-            k = ease_in_out(((frame - d["SHOT_PHASE_A"]) * 256)
-                            // (d["SHOT_PHASE_B"] - d["SHOT_PHASE_A"]))
-            height = lerp8(d["SHOT_H0"], d["SHOT_H1"], k)
-            speed = lerp8(d["SHOT_SPEED0"], d["SHOT_SPEED1"], k)
-        else:
-            k = ease_out(((frame - d["SHOT_PHASE_B"]) * 256)
-                         // (d["SHOT_FRAMES"] - d["SHOT_PHASE_B"]))
-            height = lerp8(d["SHOT_H1"], d["SHOT_H2"], k)
-            speed = lerp8(d["SHOT_SPEED1"], d["SHOT_SPEED2"], k)
+    turn_start_yaw = 0
+    cams, marks = [], []
 
-        if frame <= d["SHOT_PHASE_A"]:
-            horizon = d["SHOT_HORIZON0"]
-        else:
-            k = ease_in_out(((frame - d["SHOT_PHASE_A"]) * 256)
-                            // (d["SHOT_FRAMES"] - d["SHOT_PHASE_A"]))
-            horizon = lerp8(d["SHOT_HORIZON0"], d["SHOT_HORIZON1"], k)
+    for c in range(cycles):
+        for frame in range(cyc):
+            if frame == d["SHOT_FRAMES"]:
+                turn_start_yaw = yaw
+            height, horizon, speed, yaw = shot_state(d, frame, yaw, turn_start_yaw)
+            x += (speed * sine[yaw & 0xFF]) >> 8
+            z += (speed * sine[(yaw + 64) & 0xFF]) >> 8
+            if frame % step == 0:
+                cams.append((x, z, height, yaw, horizon))
+        marks.append((height, horizon, speed, yaw))
+    return cams, marks, d
 
-        x += (speed * sine[yaw & 0xFF]) >> 8
-        z += (speed * sine[(yaw + 64) & 0xFF]) >> 8
 
-        if frame % step == 0 or frame == d["SHOT_FRAMES"]:
-            cams.append((x, z, height, yaw, horizon))
+def shot_cameras(repo, sine, step=8):
+    cams, _, _ = replay_cycles(repo, sine, cycles=1, step=step)
     return cams
+
+
+def loop_closure_problems_broken(repo, sine):
+    """The original bug: ease across SHOT_TURN_FRAMES instead of FRAMES - 1."""
+    d = parse_shot(repo)
+    if d is None:
+        return ["shot constants not found"]
+    k = ease_in_out(((d["SHOT_TURN_FRAMES"] - 1) * 256) // d["SHOT_TURN_FRAMES"])
+    yaw_step = (d["SHOT_TURN_YAW"] * k) >> 8
+    if yaw_step != d["SHOT_TURN_YAW"]:
+        return [f"turn lands on +{yaw_step}, not +{d['SHOT_TURN_YAW']}"]
+    return []
+
+
+def loop_closure_problems(repo, sine):
+    """
+    The cut has to be invisible. Height, horizon and speed at the last frame of
+    a cycle must equal what the first frame of the next one sets, and the turn
+    must advance yaw by exactly SHOT_TURN_YAW so the cycles stack cleanly.
+    """
+    _, marks, d = replay_cycles(repo, sine, cycles=4)
+    if d is None:
+        return ["shot constants not found"]
+
+    out = []
+    for i, (height, horizon, speed, yaw) in enumerate(marks):
+        if height != d["SHOT_H0"]:
+            out.append(f"cycle {i}: ends at height {height}, "
+                       f"PHASE_A opens at {d['SHOT_H0']}")
+        if horizon != d["SHOT_HORIZON0"]:
+            out.append(f"cycle {i}: ends at horizon {horizon}, "
+                       f"PHASE_A opens at {d['SHOT_HORIZON0']}")
+        if speed != d["SHOT_SPEED0"]:
+            out.append(f"cycle {i}: ends at speed {speed}, "
+                       f"PHASE_A opens at {d['SHOT_SPEED0']}")
+        want = ((i + 1) * d["SHOT_TURN_YAW"]) & 0xFF
+        if yaw != want:
+            out.append(f"cycle {i}: yaw is {yaw}, expected {want} "
+                       f"-- the turn is not landing on SHOT_TURN_YAW")
+    return out
 
 
 CAMERAS = [
@@ -270,6 +341,10 @@ def run(repo, sine, inv_h, break_mode=None, verbose=True):
     shot = shot_cameras(repo, sine)
     cameras = CAMERAS + shot
     worst_parked = 0
+    if break_mode is None:
+        problems.extend(loop_closure_problems(repo, sine))
+    elif break_mode == "turndiv":
+        problems.extend(loop_closure_problems_broken(repo, sine))
 
     dupes = 0
     for cam in cameras:
@@ -326,6 +401,8 @@ def run(repo, sine, inv_h, break_mode=None, verbose=True):
 
     if verbose:
         print(f"  cameras            : {len(CAMERAS)} fixed + {len(shot)} from the shot")
+        print(f"  loop               : {len(shot)} sampled states, "
+              f"4 cycles replayed for closure")
         print(f"  worst parked rows  : {worst_parked} on a single camera"
               f"  (rows lambda cannot express, hidden under the horizon)")
         print(f"  scanlines compared : {compared}  ({parked} parked: lambda > s16)")
@@ -350,6 +427,7 @@ BREAKS = [
     ("pcsign", "flip the sign of pc", True),
     ("noshift", "drop the >> 8 when forming pa", True),
     ("jitter", "perturb lambda per row, folding the depth ramp", True),
+    ("turndiv", "ease the turn over FRAMES, not FRAMES - 1", True),
     ("typec", "derive BG2X from lambda, not the rounded pa", False),
 ]
 

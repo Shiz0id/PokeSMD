@@ -985,11 +985,32 @@ static void SetPlanePalette(void)
 #define SHOT_HORIZON0 48
 #define SHOT_HORIZON1 56
 
+// The turn that closes the loop: drift back down, swing right, wind the speed
+// back up into the cruise. Then the whole thing starts again.
+//
+// Position does NOT have to match across the cut. The plane wraps every 512
+// world px in both axes, so every position is equivalent to some other one and
+// there is nothing to line up. Height, horizon and speed DO have to match, and
+// this phase returns all three to exactly the values SHOT_PHASE_A opens with.
+//
+// Yaw is a u8, so 256 is a full circle and a quarter turn is 64. It wraps for
+// free, and four cycles bring it back to where it started exactly.
+#define SHOT_TURN_FRAMES 90     // 1.5s, so the whole cycle is 5.5s
+#define SHOT_TURN_YAW    64     // quarter turn right
+#define SHOT_CYCLE       (SHOT_FRAMES + SHOT_TURN_FRAMES)
+
+// Where in the turn to lay a fresh floor. There is only ONE dungeon on the
+// plane -- everything in the distance is a wrapped copy of it -- so without
+// this, turning to face "another dungeon" would show the same plan again.
+// Rebuilding mid-turn is the moment it is least likely to be noticed.
+#define SHOT_REGEN_AT    45
+
 #define MANUAL_KEYS (DPAD_UP | DPAD_DOWN | DPAD_LEFT | DPAD_RIGHT \
                    | L_BUTTON | R_BUTTON)
 
 static EWRAM_DATA u16 sShotFrame = 0;
 static EWRAM_DATA bool8 sAutoCamera = FALSE;
+static EWRAM_DATA u8 sTurnStartYaw = 0;
 
 // Smoothstep, t and result both Q8 over 0..1. t*t*(3 - 2t).
 static s32 EaseInOut(s32 t)
@@ -1029,7 +1050,7 @@ static void StartShot(void)
     sAutoCamera = TRUE;
     sCamera.x = 256 << 8;
     sCamera.z = 0;
-    sCamera.yaw = 0;
+    sCamera.yaw = 0;        // the turn phase owns yaw from here on
     sCamera.height = SHOT_H0;
     sCamera.horizon = SHOT_HORIZON0;
     // The prototype ramped the ground in over the first half second; a palette
@@ -1037,34 +1058,18 @@ static void StartShot(void)
     BeginNormalPaletteFade(PALETTES_ALL, 1, 16, 0, RGB_BLACK);
 }
 
-// Where a looping stage goes. The shot hands over here once it reaches
-// SHOT_FRAMES, with the camera settled at SHOT_H2 and SHOT_HORIZON1, and this
-// runs from then on.
-//
-// For such a loop to cut seamlessly it has to return to exactly the state it
-// started in. Two things make that straightforward: yaw is a u8 and wraps at
-// 256, so any constant yaw rate closes its circle exactly; and the plane wraps
-// every 512 world px, so a forward drift covering a multiple of 512 closes too.
-// Holding still is just the degenerate case of both.
-static void AdvanceIdle(void)
-{
-    // Holds where the shot left it.
-}
-
 static void AdvanceShot(void)
 {
-    s32 k, speed;
+    s32 k, speed, t;
 
-    if (sShotFrame >= SHOT_FRAMES)
-    {
-        AdvanceIdle();
-        return;
-    }
     sShotFrame++;
+    if (sShotFrame >= SHOT_CYCLE)
+        sShotFrame = 0;
 
     if (sShotFrame < SHOT_PHASE_A)
     {
         sCamera.height = SHOT_H0;
+        sCamera.horizon = SHOT_HORIZON0;
         speed = SHOT_SPEED0;
     }
     else if (sShotFrame < SHOT_PHASE_B)
@@ -1073,26 +1078,49 @@ static void AdvanceShot(void)
                       / (SHOT_PHASE_B - SHOT_PHASE_A));
         sCamera.height = Lerp8(SHOT_H0, SHOT_H1, k);
         speed = Lerp8(SHOT_SPEED0, SHOT_SPEED1, k);
+
+        // The horizon drifts down across the whole back half of the shot, which
+        // reads as the camera levelling out of the cruise.
+        k = EaseInOut(((sShotFrame - SHOT_PHASE_A) * 256)
+                      / (SHOT_FRAMES - SHOT_PHASE_A));
+        sCamera.horizon = Lerp8(SHOT_HORIZON0, SHOT_HORIZON1, k);
     }
-    else
+    else if (sShotFrame < SHOT_FRAMES)
     {
         k = EaseOut(((sShotFrame - SHOT_PHASE_B) * 256)
                     / (SHOT_FRAMES - SHOT_PHASE_B));
         sCamera.height = Lerp8(SHOT_H1, SHOT_H2, k);
         speed = Lerp8(SHOT_SPEED1, SHOT_SPEED2, k);
-    }
 
-    // The horizon drifts down across the whole back half, which reads as the
-    // camera levelling out of the cruise.
-    if (sShotFrame <= SHOT_PHASE_A)
-    {
-        sCamera.horizon = SHOT_HORIZON0;
-    }
-    else
-    {
         k = EaseInOut(((sShotFrame - SHOT_PHASE_A) * 256)
                       / (SHOT_FRAMES - SHOT_PHASE_A));
         sCamera.horizon = Lerp8(SHOT_HORIZON0, SHOT_HORIZON1, k);
+    }
+    else
+    {
+        // The turn. Everything runs backwards to where PHASE_A opens, and the
+        // camera swings a quarter turn right on the way.
+        t = sShotFrame - SHOT_FRAMES;
+        if (t == 0)
+            sTurnStartYaw = sCamera.yaw;
+
+        // Divided by FRAMES - 1, not FRAMES, so the last frame of the turn
+        // reaches k = 256 exactly. Dividing by FRAMES tops out at 255, which
+        // lands the quarter turn on +63 instead of +64 -- a rounding error that
+        // does not cancel, so yaw walks a step per cycle and the loop slowly
+        // stops closing. Height and horizon land short in the same way.
+        k = EaseInOut((t * 256) / (SHOT_TURN_FRAMES - 1));
+        sCamera.height = Lerp8(SHOT_H2, SHOT_H0, k);
+        sCamera.horizon = Lerp8(SHOT_HORIZON1, SHOT_HORIZON0, k);
+        speed = Lerp8(SHOT_SPEED2, SHOT_SPEED0, k);
+        sCamera.yaw = sTurnStartYaw + ((SHOT_TURN_YAW * k) >> 8);
+
+        // A new floor for the next pass. This rebuilds 4 KB of map and nine
+        // tiles from the main loop rather than in VBlank, so it costs a frame
+        // and can tear once, mid-turn. If that shows, the fix is to rasterise
+        // into a staging buffer here and blit it in VBlank, at 4 KB of EWRAM.
+        if (t == SHOT_REGEN_AT)
+            BuildPlane();
     }
 
     sCamera.x += (speed * gSineTable[sCamera.yaw & 0xFF]) >> 8;
