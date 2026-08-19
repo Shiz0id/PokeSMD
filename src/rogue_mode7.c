@@ -1679,6 +1679,23 @@ void CB2_RogueMode7Test(void)
         ResetPaletteFade();
         ResetTasks();
         ResetSpriteData();
+
+        // ResetSpriteData does NOT touch sprite palettes. It resets OAM, the
+        // sprite structs and the sprite TILE ranges, and stops there -- the
+        // palette tag table and gReservedSpritePaletteCount both survive it,
+        // carrying whatever the intro left behind.
+        //
+        // Without these two, AllocSpritePalette searches from wherever the last
+        // scene set the reserved count, through slots still tagged by that
+        // scene. When it finds nothing free it returns 0xFF, LoadSpritePalette
+        // quietly does nothing, and the sprites draw with somebody else colours.
+        // Nothing fails; the Unown simply come out wrong.
+        //
+        // This screen allocates everything by tag and reserves nothing, so the
+        // count goes to zero rather than to the 9 the vanilla title screen uses.
+        FreeAllSpritePalettes();
+        gReservedSpritePaletteCount = 0;
+
         gMain.state = 1;
         break;
     case 1:
