@@ -13,9 +13,18 @@ affine tilemap over a nine-tile vocabulary. Three ways that goes wrong quietly:
     still costs VRAM, and simply never appears. Nothing fails; the plane just
     looks slightly flatter than intended.
 
-  * FLOOR TOUCHING VOID. Rock is grown outward from the floor in two passes. If
-    that grows wrong, floor ends up adjacent to transparent nothing, and the
-    plane shows a lit floor with no wall edge -- it reads as a hole, not a room.
+  * ROCK THAT DOES NOT STOP. Rock is grown outward from the floor in two
+    passes. The second pass originally tested "anything not void", which
+    included the value that same pass was writing, so each cell seeded the next
+    and the rock flooded the entire grid -- a big square instead of a border
+    hugging the rooms.
+
+    THE FIRST VERSION OF THIS CHECK DID NOT CATCH THAT, because it replayed the
+    C's dilation, bug included, and then asserted things the flooded grid also
+    satisfied. So the rock test no longer replays anything: it computes the
+    Chebyshev distance from every cell to the nearest floor and asserts that a
+    cell is rock EXACTLY when that distance is 1..DUN_WALL_RING. That property
+    is independent of how the C chooses to grow it.
 
   * A DISCONNECTED PLAN. Rooms placed but never linked give an island the
     corridors do not reach. On a title screen that is only cosmetic, but it is
@@ -33,7 +42,7 @@ the host prototype. That needs Pillow and so only works where Pillow is
 installed -- the checks themselves are pure Python, because run_all_checks.sh
 runs under WSL where Pillow is not.
 
---selftest breaks the rock growth and confirms the adjacency check fires.
+--selftest reproduces the original flood bug and confirms the check fires.
 
 Takes the repo positionally or as --repo.
 """
@@ -59,7 +68,7 @@ def parse_defines(repo):
     src = open(os.path.join(repo, "src", "rogue_mode7.c"), encoding="utf-8").read()
     out = {}
     for name in ("DUN_W", "DUN_H", "DUN_MAX_ROOMS", "DUN_ROOM_MIN",
-                 "DUN_ROOM_MAX", "DUN_PLACE_TRIES"):
+                 "DUN_ROOM_MAX", "DUN_PLACE_TRIES", "DUN_WALL_RING"):
         m = re.search(rf"#define\s+{name}\s+(\d+)", src)
         if not m:
             raise SystemExit(f"could not find #define {name} in src/rogue_mode7.c")
@@ -138,25 +147,34 @@ def generate_plan(d, rng):
     return g, rooms
 
 
-def grow_rock(g, d, single_pass=False):
+def grow_rock(g, d, flood=False):
+    """
+    Models the C. With flood=True it reproduces the ORIGINAL bug -- pass two
+    testing "anything not void", including its own output -- so the selftest has
+    something real to fire on.
+    """
     W, H = d["DUN_W"], d["DUN_H"]
     N8 = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, -1), (-1, 1), (1, 1)]
 
     def walkable(x, y):
         return 0 <= x < W and 0 <= y < H and g[y][x] in (DCELL_FLOOR, DCELL_STAIRS)
 
-    def solid(x, y):
+    def floor_or_inner(x, y):
+        return (0 <= x < W and 0 <= y < H
+                and g[y][x] in (DCELL_FLOOR, DCELL_STAIRS, DCELL_ROCK_A))
+
+    def not_void(x, y):
         return 0 <= x < W and 0 <= y < H and g[y][x] != DCELL_VOID
 
     for y in range(H):
         for x in range(W):
             if g[y][x] == DCELL_VOID and any(walkable(x + dx, y + dy) for dx, dy in N8):
                 g[y][x] = DCELL_ROCK_A
-    if single_pass:
-        return
+
+    seed = not_void if flood else floor_or_inner
     for y in range(H):
         for x in range(W):
-            if g[y][x] == DCELL_VOID and any(solid(x + dx, y + dy) for dx, dy in N8):
+            if g[y][x] == DCELL_VOID and any(seed(x + dx, y + dy) for dx, dy in N8):
                 g[y][x] = DCELL_ROCK_B
 
 
@@ -191,20 +209,46 @@ def tile_for_cell(g, d, x, y):
     return T["WALL_TOP"]
 
 
-def floor_touches_void(g, d):
-    W, H = d["DUN_W"], d["DUN_H"]
+def rock_ring_errors(g, d):
+    """
+    Independent of how the C grows rock: BFS the Chebyshev distance from every
+    cell to the nearest floor, then assert rock is exactly the cells at
+    distance 1..DUN_WALL_RING.
+
+    Deliberately NOT a replay of the dilation. Replaying it is what let the
+    flood-fill bug through -- a check that reimplements the code it is checking
+    agrees with that code's mistakes.
+    """
+    W, H, ring = d["DUN_W"], d["DUN_H"], d["DUN_WALL_RING"]
     N8 = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, -1), (-1, 1), (1, 1)]
-    bad = 0
+
+    INF = 1 << 30
+    dist = [[INF] * W for _ in range(H)]
+    q = deque()
     for y in range(H):
         for x in range(W):
-            if g[y][x] not in (DCELL_FLOOR, DCELL_STAIRS):
-                continue
-            for dx, dy in N8:
-                nx, ny = x + dx, y + dy
-                if 0 <= nx < W and 0 <= ny < H and g[ny][nx] == DCELL_VOID:
-                    bad += 1
-                    break
-    return bad
+            if g[y][x] in (DCELL_FLOOR, DCELL_STAIRS):
+                dist[y][x] = 0
+                q.append((x, y))
+    while q:
+        x, y = q.popleft()
+        for dx, dy in N8:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < W and 0 <= ny < H and dist[ny][nx] > dist[y][x] + 1:
+                dist[ny][nx] = dist[y][x] + 1
+                q.append((nx, ny))
+
+    missing = 0   # should be rock, is void
+    extra = 0     # is rock, should be void
+    for y in range(H):
+        for x in range(W):
+            is_rock = g[y][x] in (DCELL_ROCK_A, DCELL_ROCK_B)
+            want_rock = 1 <= dist[y][x] <= ring
+            if want_rock and not is_rock:
+                missing += 1
+            elif is_rock and not want_rock:
+                extra += 1
+    return missing, extra
 
 
 def disconnected_floor(g, d):
@@ -226,31 +270,37 @@ def disconnected_floor(g, d):
     return len(cells) - len(seen)
 
 
-def run(repo, single_pass=False, verbose=True):
+def run(repo, flood=False, verbose=True):
     d = parse_defines(repo)
     seen_tiles = Counter()
-    touching = 0
+    missing = extra = 0
     orphaned = 0
+    rock_cells = 0
+    total_cells = 0
     rng = random.Random(20260819)
 
     for _ in range(PLANS):
         g, rooms = generate_plan(d, rng)
         if not rooms:
             continue
-        touching += floor_touches_void(g, d) if single_pass else 0
         orphaned += disconnected_floor(g, d)
-        grow_rock(g, d, single_pass)
-        if not single_pass:
-            touching += floor_touches_void(g, d)
+        grow_rock(g, d, flood)
+        m, e = rock_ring_errors(g, d)
+        missing += m
+        extra += e
         for y in range(d["DUN_H"]):
             for x in range(d["DUN_W"]):
+                total_cells += 1
+                if g[y][x] in (DCELL_ROCK_A, DCELL_ROCK_B):
+                    rock_cells += 1
                 seen_tiles[tile_for_cell(g, d, x, y)] += 1
 
     declared = set(d["TILES"].values())
     unused = sorted(declared - set(seen_tiles))
     stray = sorted(set(seen_tiles) - declared)
 
-    ok = not unused and not stray and touching == 0 and orphaned == 0
+    ok = (not unused and not stray
+          and missing == 0 and extra == 0 and orphaned == 0)
 
     if verbose:
         print(f"  plans generated    : {PLANS}  ({d['DUN_W']}x{d['DUN_H']}, "
@@ -264,8 +314,14 @@ def run(repo, single_pass=False, verbose=True):
                   f"  <-- declared, built, never emitted")
         if stray:
             print(f"  UNDECLARED TILES   : {stray}")
-        if touching:
-            print(f"  FLOOR TOUCHING VOID: {touching} cells  <-- floor with no wall edge")
+        print(f"  rock coverage      : {rock_cells * 100.0 / max(total_cells, 1):.1f}%"
+              f" of the grid (ring of {d['DUN_WALL_RING']})")
+        if extra:
+            print(f"  ROCK TOO FAR OUT   : {extra} cells beyond "
+                  f"{d['DUN_WALL_RING']} from any floor  <-- the border is not hugging")
+        if missing:
+            print(f"  ROCK MISSING       : {missing} cells within "
+                  f"{d['DUN_WALL_RING']} of floor that are void")
         if orphaned:
             print(f"  DISCONNECTED FLOOR : {orphaned} cells unreachable from the rest")
     return ok
@@ -348,12 +404,12 @@ def main():
     ok = run(repo)
 
     if args.selftest:
-        print("\n  --selftest: growing rock in ONE pass instead of two")
-        if run(repo, single_pass=True, verbose=False):
-            print("  SELFTEST FAILED: a one-ring plan passed")
+        print("\n  --selftest: pass two seeding off its own output (the flood bug)")
+        if run(repo, flood=True, verbose=False):
+            print("  SELFTEST FAILED: a flooded grid passed")
             ok = False
         else:
-            print("  selftest ok: the check fires when rock does not enclose the floor")
+            print("  selftest ok: the check fires when rock does not stop at the ring")
 
     if args.render:
         render(repo, args.render)

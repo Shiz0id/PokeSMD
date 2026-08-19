@@ -537,6 +537,7 @@ static void UpdateMeters(void)
 #define DUN_ROOM_MIN    5
 #define DUN_ROOM_MAX    10
 #define DUN_PLACE_TRIES 400
+#define DUN_WALL_RING   2       // rings of rock around the floor, then void
 #define DUN_OFFSET      ((MODE7_PLANE_TILES - DUN_W) / 2)
 
 // Grid cell values. The two rock values differ only so the two dilation passes
@@ -812,10 +813,28 @@ static bool32 IsSolid(const u8 *g, s32 x, s32 y)
     return g[y * DUN_W + x] != DCELL_VOID;
 }
 
-// Two rings of rock around the floor, then nothing. The nothing is palette
-// index 0, which on an affine BG is TRANSPARENT -- so the void beyond the rock
-// is the backdrop showing through and costs no pixels at all. That is what
-// makes the plan hang in the dark instead of sitting in a slab.
+// Pass 2 of GrowRock must test what existed BEFORE pass 2 started. Testing
+// "anything not void" would include DCELL_ROCK_B, which is what pass 2 is
+// writing -- so a cell written early in the scan seeds the cell to its right,
+// which seeds the next, and the rock floods the entire grid. That is the bug
+// that made the border a big square instead of hugging the rooms, and writing
+// pass 2 to a distinct value did NOT prevent it: the guard has to be on the
+// predicate, not on the value written.
+static bool32 IsFloorOrInnerRock(const u8 *g, s32 x, s32 y)
+{
+    u8 c;
+
+    if (x < 0 || y < 0 || x >= DUN_W || y >= DUN_H)
+        return FALSE;
+    c = g[y * DUN_W + x];
+    return c == DCELL_FLOOR || c == DCELL_STAIRS || c == DCELL_ROCK_A;
+}
+
+// DUN_WALL_RING rings of rock around the floor, then nothing. The nothing is
+// palette index 0, which on an affine BG is TRANSPARENT -- so the void beyond
+// the rock is the backdrop showing through and costs no pixels at all. That is
+// what makes the plan hang in the dark instead of sitting in a slab, and it
+// only works if the rock stops where it is told to.
 static void GrowRock(u8 *g)
 {
     s32 x, y;
@@ -833,17 +852,15 @@ static void GrowRock(u8 *g)
         }
     }
 
-    // The second pass writes a DIFFERENT value, so it cannot cascade off its
-    // own output and creep outward a cell per column.
     for (y = 0; y < DUN_H; y++)
     {
         for (x = 0; x < DUN_W; x++)
         {
             if (g[y * DUN_W + x] == DCELL_VOID
-             && (IsSolid(g, x - 1, y) || IsSolid(g, x + 1, y)
-              || IsSolid(g, x, y - 1) || IsSolid(g, x, y + 1)
-              || IsSolid(g, x - 1, y - 1) || IsSolid(g, x + 1, y - 1)
-              || IsSolid(g, x - 1, y + 1) || IsSolid(g, x + 1, y + 1)))
+             && (IsFloorOrInnerRock(g, x - 1, y) || IsFloorOrInnerRock(g, x + 1, y)
+              || IsFloorOrInnerRock(g, x, y - 1) || IsFloorOrInnerRock(g, x, y + 1)
+              || IsFloorOrInnerRock(g, x - 1, y - 1) || IsFloorOrInnerRock(g, x + 1, y - 1)
+              || IsFloorOrInnerRock(g, x - 1, y + 1) || IsFloorOrInnerRock(g, x + 1, y + 1)))
                 g[y * DUN_W + x] = DCELL_ROCK_B;
         }
     }
