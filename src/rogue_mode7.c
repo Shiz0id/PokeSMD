@@ -505,7 +505,7 @@ static void UpdateMeters(void)
 {
     u32 used, filled;
 
-    if (!MODE7_SHOW_METERS)
+    if (!MODE7_DEBUG)
         return;
 
     if (sVBlankEndLine < VBLANK_FIRST_LINE)
@@ -1582,9 +1582,9 @@ static void VBlankCB_Mode7(void)
 
 static void MainCB2_Mode7(void)
 {
-    // Touching the stick or the shoulders takes the camera off the rails, so
-    // the shot can be interrupted to go and look at something. B puts it back.
-    if (JOY_HELD(MANUAL_KEYS))
+    // Only the debug harness can take the camera off its rails. On a title
+    // screen a stray d-pad press must not stop the shot.
+    if (MODE7_DEBUG && JOY_HELD(MANUAL_KEYS))
         sAutoCamera = FALSE;
 
     if (sAutoCamera)
@@ -1621,28 +1621,28 @@ static void MainCB2_Mode7(void)
             sCamera.height -= (1 << 8);
     }
 
-    if (!sExiting && JOY_NEW(START_BUTTON))
+    // Both, as vanilla does. SELECT is left alone.
+    if (!sExiting && (JOY_NEW(A_BUTTON) || JOY_NEW(START_BUTTON)))
     {
         BeginExit();
         return;
     }
 
-    // SELECT stays unbound. A is still the double-size toggle while this is a
-    // testbed; vanilla accepts A as well as START to leave, and that belongs
-    // here once the debug controls go.
-    //
-    // Double-size doubles the sprite's on-screen WIDTH, and per-scanline OBJ
-    // cost is charged per pixel of width -- so A is the direct test of whether
-    // affine sprites really cost what the docs say.
-    if (JOY_NEW(A_BUTTON))
-        sSwarmDoubleSize ^= 1;
-    // A fresh floor and a fresh run of the shot. The plane is 4 KB of map and
-    // nine tiles built in code, which is what makes generating one per boot
-    // realistic rather than a stretch goal.
-    if (JOY_NEW(B_BUTTON))
+    if (MODE7_DEBUG)
     {
-        BuildPlane();
-        StartShot();
+        // Moved onto combinations, because every single button now belongs to
+        // the player. Double-size doubles the sprite's on-screen WIDTH, and
+        // per-scanline OBJ cost is charged per pixel of width, so this is the
+        // direct test of whether affine sprites cost what the docs say.
+        if (JOY_HELD(L_BUTTON) && JOY_NEW(R_BUTTON))
+            sSwarmDoubleSize ^= 1;
+
+        // A fresh floor and a fresh run of the shot.
+        if (JOY_HELD(L_BUTTON) && JOY_NEW(SELECT_BUTTON))
+        {
+            BuildPlane();
+            StartShot();
+        }
     }
 
     sFrame++;
@@ -1684,7 +1684,7 @@ void CB2_RogueMode7Test(void)
     case 1:
         BuildPlane();
         SetPlanePalette();
-        if (MODE7_SHOW_METERS)
+        if (MODE7_DEBUG)
         {
             BuildMeterTiles();
             SetMeterPalette();
@@ -1736,7 +1736,7 @@ void CB2_RogueMode7Test(void)
                                    | BLDCNT_TGT2_BD);
         SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(FOG_BLEND_EVA, FOG_BLEND_EVB));
 
-        if (MODE7_SHOW_METERS)
+        if (MODE7_DEBUG)
         {
             SetGpuReg(REG_OFFSET_BG0CNT, BGCNT_PRIORITY(0)
                                        | BGCNT_CHARBASE(METER_CHAR_BASE)
@@ -1747,7 +1747,7 @@ void CB2_RogueMode7Test(void)
 
         SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_MODE_1
                                     | DISPCNT_OBJ_1D_MAP
-                                    | (MODE7_SHOW_METERS ? DISPCNT_BG0_ON : 0)
+                                    | (MODE7_DEBUG ? DISPCNT_BG0_ON : 0)
                                     | DISPCNT_BG1_ON
                                     | DISPCNT_BG2_ON
                                     | DISPCNT_OBJ_ON);

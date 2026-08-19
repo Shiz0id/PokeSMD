@@ -5,12 +5,17 @@
 // title screen. This is a development hook -- see CB2_RogueMode7Test.
 #define ROGUE_MODE7_TEST TRUE
 
-// Draw the VBlank meter on BG0: a bar showing how much of VBlank's 68 lines the
-// handler ate, which goes RED if it overruns into visible scanlines. That is a
-// live question -- the scanline table is single-buffered and built in VBlank,
-// so overrunning is the failure it was traded against -- but it has no business
-// on a title screen, so it is off unless something needs measuring.
-#define MODE7_SHOW_METERS FALSE
+// The whole debug harness, in one switch: the VBlank meter on BG0, manual
+// camera control, and the swarm and floor toggles.
+//
+// The meter is worth turning back on now and then. It shows how much of
+// VBlank's 68 lines the handler ate and goes RED on an overrun, which is a live
+// question -- the scanline table is single-buffered and built in VBlank, so
+// overrunning is exactly the failure that trade was made against.
+//
+// With this off the screen behaves as a title screen: A and START both leave,
+// the camera stays on its rails, and BG0 is neither configured nor enabled.
+#define MODE7_DEBUG FALSE
 
 // Lay a fresh floor every time the loop turns. There is only ONE dungeon on the
 // plane -- everything in the distance is a wrapped copy of it -- so with this
