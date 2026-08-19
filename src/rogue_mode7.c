@@ -1010,6 +1010,14 @@ static void SetPlanePalette(void)
 #define FOG_PAL_DARK    1
 #define FOG_PAL_STAR0   2       // entries 2..5 rotate for the twinkle
 
+// Blend weights for the whole atmosphere layer. EVA is the fog's own weight, so
+// it sets how hard each dither dot reads -- lowering IT is what takes the crunch
+// out, not lowering the density. The two sum to 16 on purpose: above that the
+// blend brightens as well as mixing, which the first attempt at 11 and 9 did,
+// putting a little glare on top of the crunch.
+#define FOG_BLEND_EVA   6
+#define FOG_BLEND_EVB   10
+
 // Vignette reach, in tiles. Wider and finer reads smoother than strong and
 // narrow, because the banding is spatial and cannot be removed, only made small.
 #define FOG_VIGNETTE_TILES 6
@@ -1042,9 +1050,13 @@ static EWRAM_DATA u8 sTwinklePhase = 0;
 // Four brightnesses rotated among four palette entries, so groups of stars
 // twinkle out of phase. Four palette writes every twelfth frame, and nothing
 // per star.
+// Compressed upward from 31/21/13/7. The stars go through the same blend as the
+// fog, so at FOG_BLEND_EVA of 6 they keep only 6/16 of their value over a black
+// backdrop -- the old bottom step landed near 2 of 31 and simply vanished, which
+// stalls the twinkle on a quarter of the stars.
 static const u16 sStarBrightness[4] =
 {
-    RGB(31, 31, 31), RGB(21, 21, 26), RGB(13, 13, 20), RGB(7, 7, 13),
+    RGB(31, 31, 31), RGB(26, 26, 29), RGB(20, 20, 25), RGB(14, 14, 20),
 };
 
 static void PackTile(const u8 *px, u32 index)
@@ -1110,6 +1122,12 @@ static void UpdateTwinkle(void)
     u32 i;
 
     if ((sFrame % 12) != 0)
+        return;
+
+    // LoadPalette writes gPlttBufferFaded as well as unfaded, so writing star
+    // colours during a fade would snap them back to full brightness while
+    // everything else goes dark. Sit the fade out.
+    if (gPaletteFade.active)
         return;
 
     sTwinklePhase++;
@@ -1215,11 +1233,22 @@ static void BuildFogMap(void)
 #define SHOT_TURN_YAW    64     // quarter turn right
 #define SHOT_CYCLE       (SHOT_FRAMES + SHOT_TURN_FRAMES)
 
-// Where in the turn to lay a fresh floor. There is only ONE dungeon on the
-// plane -- everything in the distance is a wrapped copy of it -- so without
-// this, turning to face "another dungeon" would show the same plan again.
-// Rebuilding mid-turn is the moment it is least likely to be noticed.
-#define SHOT_REGEN_AT    45
+// Laying a fresh floor swaps 4 KB of map in one frame, and that POPS however
+// well it is timed -- the dungeon simply becomes a different dungeon. No camera
+// position hides it, because the plane wraps and copies are visible in every
+// direction, so the only fix is to do it in the dark.
+//
+// The turn already drifts downward, so a dip to black through the middle of it
+// reads as descending into the void and rising over somewhere else. That also
+// covers the tearing from writing VRAM outside VBlank, which would otherwise
+// need a 4 KB staging buffer to avoid.
+//
+// All of it is behind MODE7_REGEN_EACH_LOOP, which is currently off. Lower
+// SHOT_FADE_DEPTH toward 10 for a dip rather than a blackout.
+#define SHOT_FADE_OUT_AT 18
+#define SHOT_REGEN_AT    40     // well inside the black
+#define SHOT_FADE_IN_AT  46
+#define SHOT_FADE_DEPTH  16
 
 #define MANUAL_KEYS (DPAD_UP | DPAD_DOWN | DPAD_LEFT | DPAD_RIGHT \
                    | L_BUTTON | R_BUTTON)
@@ -1331,12 +1360,17 @@ static void AdvanceShot(void)
         speed = Lerp8(SHOT_SPEED2, SHOT_SPEED0, k);
         sCamera.yaw = sTurnStartYaw + ((SHOT_TURN_YAW * k) >> 8);
 
-        // A new floor for the next pass. This rebuilds 4 KB of map and nine
-        // tiles from the main loop rather than in VBlank, so it costs a frame
-        // and can tear once, mid-turn. If that shows, the fix is to rasterise
-        // into a staging buffer here and blit it in VBlank, at 4 KB of EWRAM.
-        if (t == SHOT_REGEN_AT)
-            BuildPlane();
+        // With the regen off there is nothing to hide, so the dip does not
+        // happen either -- an unmotivated fade would be worse than the repeat.
+        if (MODE7_REGEN_EACH_LOOP)
+        {
+            if (t == SHOT_FADE_OUT_AT)
+                BeginNormalPaletteFade(PALETTES_ALL, 1, 0, SHOT_FADE_DEPTH, RGB_BLACK);
+            else if (t == SHOT_REGEN_AT)
+                BuildPlane();
+            else if (t == SHOT_FADE_IN_AT)
+                BeginNormalPaletteFade(PALETTES_ALL, 1, SHOT_FADE_DEPTH, 0, RGB_BLACK);
+        }
     }
 
     sCamera.x += (speed * gSineTable[sCamera.yaw & 0xFF]) >> 8;
@@ -1502,7 +1536,7 @@ void CB2_RogueMode7Test(void)
         SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_BG1 | BLDCNT_EFFECT_BLEND
                                    | BLDCNT_TGT2_BG2 | BLDCNT_TGT2_OBJ
                                    | BLDCNT_TGT2_BD);
-        SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(11, 9));
+        SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(FOG_BLEND_EVA, FOG_BLEND_EVB));
 
         SetGpuReg(REG_OFFSET_BG0CNT, BGCNT_PRIORITY(0)
                                    | BGCNT_CHARBASE(METER_CHAR_BASE)

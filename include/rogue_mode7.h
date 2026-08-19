@@ -5,6 +5,16 @@
 // title screen. This is a development hook -- see CB2_RogueMode7Test.
 #define ROGUE_MODE7_TEST TRUE
 
+// Lay a fresh floor every time the loop turns. There is only ONE dungeon on the
+// plane -- everything in the distance is a wrapped copy of it -- so with this
+// off, every cycle shows the same plan from a new angle.
+//
+// It is off while that gets judged, because it is not free: swapping 4 KB of
+// map pops however well it is timed, so turning it on also turns on a dip to
+// black through the middle of the turn to hide the swap. B still lays a fresh
+// floor by hand either way.
+#define MODE7_REGEN_EACH_LOOP FALSE
+
 // Projection plane distance, in pixels. Sets the field of view:
 // half-FOV = atan(120 / D). 160 gives roughly 74 degrees across.
 #define MODE7_PROJ_D 160
