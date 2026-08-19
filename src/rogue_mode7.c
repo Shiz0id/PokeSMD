@@ -7,6 +7,7 @@
 #include "sprite.h"
 #include "pokemon_icon.h"
 #include "decompress.h"
+#include "graphics.h"
 #include "malloc.h"
 #include "random.h"
 #include "constants/pokemon.h"
@@ -197,7 +198,11 @@ void RogueMode7_Stop(void)
 // Unown than matrices, distinct depths MUST share a scale; that is not a
 // shortcut, it is the only thing the hardware allows.
 
-#define MODE7_SWARM_MAX     56          // MAX_SPRITES is 64; leave a margin
+// Forty, and the banner takes its ten slots FIRST. The engine's pool is 64, so
+// 40 + 10 leaves margin -- but the ordering is the real rule: if the pool ever
+// runs short it is Unown that go, never the title text. CreateSwarm tolerates
+// CreateSprite returning MAX_SPRITES and simply ends up with fewer.
+#define MODE7_SWARM_MAX     40
 #define MODE7_SWARM_FORMS   8
 #define MODE7_UNOWN_SIZE    7           // world units; sets the on-screen size
 #define MODE7_AHEAD_MIN     38
@@ -1190,6 +1195,119 @@ static void BuildFogMap(void)
 }
 
 // ---------------------------------------------------------------------------
+// PRESS START and the copyright line
+// ---------------------------------------------------------------------------
+//
+// Vanilla's own art and vanilla's own placement: one sheet of 32x8 sprites,
+// five making up PRESS START and five the copyright, centred on x = 128 at
+// y = 108 and y = 148.
+//
+// These are SPRITES, not a background. That is worth stating because it is what
+// leaves BG0 free -- the layer count never had to cover the title text.
+//
+// The anim tables in title_screen.c are static, so rather than duplicate them
+// the tile offsets are set directly: the sheet lays the ten frames out at tiles
+// 1, 5, 9 ... 37, four tiles each, which is what those ANIMCMD_FRAMEs encode.
+
+#define BANNER_TAG        0x4D60
+#define BANNER_SPRITES    5
+#define BANNER_TILES_EACH 4
+#define BANNER_FIRST_TILE 1         // the sheet starts one tile in
+#define BANNER_COPY_TILE  21
+#define BANNER_CENTRE_X   128
+#define BANNER_START_Y    108
+#define BANNER_COPY_Y     148
+
+// Vanilla blinks PRESS START on a 16-frame cycle and leaves the copyright
+// steady. Same here, driven off sFrame rather than a per-sprite timer.
+#define BANNER_BLINK_BIT  16
+
+// The pool is shared and finite. Getting this wrong does not fail, it silently
+// truncates PRESS START -- CreateSprite just returns MAX_SPRITES and the last
+// segments never appear. Catch it at build time instead.
+STATIC_ASSERT(MODE7_SWARM_MAX + BANNER_SPRITES * 2 <= MAX_SPRITES,
+              Mode7SpritePoolOverCommitted);
+
+static EWRAM_DATA u8 sBannerSprites[BANNER_SPRITES * 2] = {0};
+static EWRAM_DATA bool8 sBannerShown = FALSE;
+
+static const struct OamData sBannerOam =
+{
+    .y = DISPLAY_HEIGHT,
+    .affineMode = ST_OAM_AFFINE_OFF,
+    .objMode = ST_OAM_OBJ_NORMAL,
+    .mosaic = FALSE,
+    .bpp = ST_OAM_4BPP,
+    .shape = SPRITE_SHAPE(32x8),
+    .x = 0,
+    .matrixNum = 0,
+    .size = SPRITE_SIZE(32x8),
+    .tileNum = 0,
+    .priority = 0,
+    .paletteNum = 0,
+    .affineParam = 0,
+};
+
+static const struct SpriteTemplate sBannerSpriteTemplate =
+{
+    .tileTag = BANNER_TAG,
+    .paletteTag = BANNER_TAG,
+    .oam = &sBannerOam,
+    .anims = gDummySpriteAnimTable,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy,
+};
+
+static const struct CompressedSpriteSheet sBannerSheet[] =
+{
+    { gTitleScreenPressStartGfx, 0x520, BANNER_TAG },
+    {},
+};
+
+static const struct SpritePalette sBannerPalette[] =
+{
+    { gTitleScreenPressStartPal, BANNER_TAG },
+    {},
+};
+
+static void CreateBanner(void)
+{
+    u32 i;
+    u16 base;
+
+    LoadCompressedSpriteSheet(sBannerSheet);
+    LoadSpritePalette(sBannerPalette);
+    base = GetSpriteTileStartByTag(BANNER_TAG);
+
+    // sprite->x is the CENTRE, so five 32-wide sprites stepping from
+    // BANNER_CENTRE_X - 64 span 160 px centred on BANNER_CENTRE_X.
+    for (i = 0; i < BANNER_SPRITES; i++)
+    {
+        u8 id = CreateSprite(&sBannerSpriteTemplate,
+                             BANNER_CENTRE_X - 64 + i * 32, BANNER_START_Y, 0);
+
+        sBannerSprites[i] = id;
+        if (id == MAX_SPRITES)
+            continue;
+        gSprites[id].oam.tileNum = base + BANNER_FIRST_TILE + i * BANNER_TILES_EACH;
+        gSprites[id].invisible = TRUE;
+    }
+
+    for (i = 0; i < BANNER_SPRITES; i++)
+    {
+        u8 id = CreateSprite(&sBannerSpriteTemplate,
+                             BANNER_CENTRE_X - 64 + i * 32, BANNER_COPY_Y, 0);
+
+        sBannerSprites[BANNER_SPRITES + i] = id;
+        if (id == MAX_SPRITES)
+            continue;
+        gSprites[id].oam.tileNum = base + BANNER_COPY_TILE + i * BANNER_TILES_EACH;
+        gSprites[id].invisible = TRUE;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // The shot
 // ---------------------------------------------------------------------------
 //
@@ -1293,6 +1411,7 @@ static void StartShot(void)
 {
     sShotFrame = 0;
     sAutoCamera = TRUE;
+    sBannerShown = FALSE;
     sCamera.x = 256 << 8;
     sCamera.z = 0;
     sCamera.yaw = 0;        // the turn phase owns yaw from here on
@@ -1377,6 +1496,27 @@ static void AdvanceShot(void)
     sCamera.z += (speed * gSineTable[(sCamera.yaw + 64) & 0xFF]) >> 8;
 }
 
+static void UpdateBanner(void)
+{
+    bool32 blink;
+    u32 i;
+
+    // The text arrives as the shot settles, and then STAYS. Having it come and
+    // go once a cycle would read as a glitch rather than as a title screen.
+    if (sAutoCamera && sShotFrame >= SHOT_PHASE_B)
+        sBannerShown = TRUE;
+
+    blink = (sFrame & BANNER_BLINK_BIT) != 0;
+
+    for (i = 0; i < BANNER_SPRITES * 2; i++)
+    {
+        if (sBannerSprites[i] == MAX_SPRITES)
+            continue;
+        gSprites[sBannerSprites[i]].invisible =
+            !sBannerShown || (i < BANNER_SPRITES && !blink);
+    }
+}
+
 static void VBlankCB_Mode7(void)
 {
     LoadOam();
@@ -1435,14 +1575,13 @@ static void MainCB2_Mode7(void)
             sCamera.height -= (1 << 8);
     }
 
-    if (JOY_NEW(START_BUTTON) && sSwarmCount <= MODE7_SWARM_MAX - 4)
-        sSwarmCount += 4;
-    if (JOY_NEW(SELECT_BUTTON) && sSwarmCount >= 4)
-        sSwarmCount -= 4;
-
-    // Double-size doubles the sprite's on-screen WIDTH, and the per-scanline
-    // OBJ cost is charged per pixel of width -- so this toggle is the direct
-    // test of whether affine sprites really cost what the docs say.
+    // START and SELECT are deliberately unbound. START is the player's button
+    // now that PRESS START is on screen, and binding a debug action to it would
+    // train the wrong reflex.
+    //
+    // Double-size doubles the sprite's on-screen WIDTH, and per-scanline OBJ
+    // cost is charged per pixel of width -- so A is the direct test of whether
+    // affine sprites really cost what the docs say.
     if (JOY_NEW(A_BUTTON))
         sSwarmDoubleSize ^= 1;
     // A fresh floor and a fresh run of the shot. The plane is 4 KB of map and
@@ -1456,6 +1595,7 @@ static void MainCB2_Mode7(void)
 
     sFrame++;
     UpdateSwarm();
+    UpdateBanner();
     UpdateTwinkle();
     UpdateMeters();
 
@@ -1497,10 +1637,13 @@ void CB2_RogueMode7Test(void)
         BuildFogTiles();
         SetFogPalette();
         BuildFogMap();
+        // Banner first. It is fixed, it is always wanted, and it must never
+        // lose a slot to the swarm.
+        CreateBanner();
         LoadSwarmGfx();
         CreateSwarm();
-        sSwarmCount = 0;
-        sSwarmDoubleSize = 0;
+        sSwarmCount = MODE7_SWARM_MAX;
+        sSwarmDoubleSize = TRUE;
         sFrame = 0;
 
         StartShot();
