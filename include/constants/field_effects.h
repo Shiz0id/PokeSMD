@@ -159,6 +159,7 @@
 // 0x1001, 0x1002, 0x1006 and 0x100A-0x100C are also free.
 #define FLDEFF_PAL_TAG_ROGUE_FLOWERS      0x1015
 #define FLDEFF_PAL_TAG_ROGUE_WOODS_GRASS  0x1016
+#define FLDEFF_PAL_TAG_ROGUE_PORTRAIT     0x1017
 #define FLDEFF_PAL_TAG_FIELD_MOVE_MON     0x8400
 
 // tile tags, for field effects that may have many copies on screen at once

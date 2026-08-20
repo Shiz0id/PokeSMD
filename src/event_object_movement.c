@@ -20,6 +20,7 @@
 #include "fieldmap.h"
 #include "follower_npc.h"
 #include "follower_helper.h"
+#include "rogue_portrait.h"
 #include "gpu_regs.h"
 #include "graphics.h"
 #include "item.h"
@@ -2785,6 +2786,7 @@ void GetFollowerAction(struct ScriptContext *ctx) // Essentially a big switch fo
     {
         emotion = gFollowerConditionalMessages[multi].emotion;
         ObjectEventEmote(objEvent, emotion);
+        RoguePortrait_SetSpeakerMon(mon, emotion);
         ctx->data[0] = (u32) gFollowerConditionalMessages[multi].text;
         // text choices are spread across array; pick a random one
         if (gFollowerConditionalMessages[multi].textSpread)
@@ -2801,6 +2803,7 @@ void GetFollowerAction(struct ScriptContext *ctx) // Essentially a big switch fo
     }
     // otherwise, a basic or C-based message was picked
     ObjectEventEmote(objEvent, emotion);
+    RoguePortrait_SetSpeakerMon(mon, emotion);
     ctx->data[0] = (u32) gFollowerBasicMessages[emotion].messages[multi].text; // Load message text
     ScriptCall(ctx, gFollowerBasicMessages[emotion].messages[multi].script ?
                         gFollowerBasicMessages[emotion].messages[multi].script :

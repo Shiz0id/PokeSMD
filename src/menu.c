@@ -24,6 +24,7 @@
 #include "script.h"
 #include "task.h"
 #include "text_window.h"
+#include "rogue_portrait.h"
 #include "window.h"
 #include "constants/rogue_dungeon.h"
 #include "constants/songs.h"
@@ -142,6 +143,7 @@ static const struct MenuInfoIcon sMenuInfoIcons[] =
 void InitStandardTextBoxWindows(void)
 {
     ResetNameboxData();
+    RoguePortrait_ResetState();
     InitWindows(sStandardTextBox_WindowTemplates);
     sStartMenuWindowId = WINDOW_NONE;
     sMapNamePopupWindowId = WINDOW_NONE;

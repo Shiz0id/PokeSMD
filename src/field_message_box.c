@@ -8,6 +8,7 @@
 #include "text_window.h"
 #include "script.h"
 #include "field_name_box.h"
+#include "rogue_portrait.h"
 
 static EWRAM_DATA u8 sFieldMessageBoxMode = 0;
 EWRAM_DATA u8 gWalkAwayFromSignpostTimer = 0;
@@ -45,6 +46,7 @@ static void Task_DrawFieldMessage(u8 taskId)
         DrawDialogueFrame(0, TRUE);
         if (nameboxWinId != WINDOW_NONE)
             DrawNamebox(nameboxWinId, NAME_BOX_BASE_TILE_NUM - NAME_BOX_BASE_TILES_TOTAL, TRUE);
+        RoguePortrait_Draw();
         task->tState++;
         break;
     }
@@ -144,6 +146,7 @@ static void StartDrawFieldMessage(void)
 void HideFieldMessageBox(void)
 {
     DestroyTask_DrawFieldMessage();
+    RoguePortrait_Hide();
     ClearDialogWindowAndFrame(0, TRUE);
     DestroyNamebox();
     sFieldMessageBoxMode = FIELD_MESSAGE_BOX_HIDDEN;

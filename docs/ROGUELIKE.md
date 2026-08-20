@@ -27,7 +27,13 @@ and so an agent loads it automatically. The cost is that a checkout of this
 branch on its own is undocumented beyond this page — if you are reading this
 without the skill directory, that is what you are missing.
 
-One exception lives in this repo, because it is about a specific vanilla
+**`docs/SHATTERED_MYSTERY_DUNGEON.md` is the feature inventory**, and it does
+live in this repo: what the game is, every system that is in, what each one
+costs, and every known gap, in one pass. Read it first if you want to know what
+this branch *does*; read the skill if you want to know why any of it is built
+the way it is.
+
+One further exception lives here, because it is about a specific vanilla
 tileset and belongs beside the art: **`docs/NEWMAUVILLE_TILESET.md`** - how
 New Mauville's walls, decorations and set pieces are actually built, and which
 of the theme's current metatile choices are wrong. Findings and a validated
