@@ -635,14 +635,14 @@ gSongTable::
 	song mus_dppt_battle_team_galactic, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_dppt_battle_trainer, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_dppt_canalave_city, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_dppt_cynthias_theme, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dummy, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE  @ retired: was mus_dppt_cynthias_theme
 	song mus_dppt_encounter_black_belt, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_dppt_encounter_rival, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_dppt_eterna_city, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_dppt_eterna_forest, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_dppt_hearthome_city, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_dppt_intro_first_part, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_dppt_intro_second_part, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dummy, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE  @ retired: was mus_dppt_intro_first_part
+	song mus_dummy, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE  @ retired: was mus_dppt_intro_second_part
 	song mus_dppt_lake_theme, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_dppt_opening, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_dppt_route_201, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
@@ -651,7 +651,7 @@ gSongTable::
 	song mus_dppt_route_209, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_dppt_route_210, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_dppt_route_216, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_dppt_route_225, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dummy, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE  @ retired: was mus_dppt_route_225
 	song mus_dppt_sandgem_town, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_dppt_solaceon_town_night, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_dppt_sunyshore_city, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
@@ -820,7 +820,7 @@ gSongTable::
 	song mus_aqua_sadpop, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_aqua_turnabout_sisters, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_dppt_battle_gym_leader, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
-	song mus_dppt_eterna_city_alt, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
+	song mus_dummy, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE  @ retired: was mus_dppt_eterna_city_alt
 	song mus_hgss_champion_lance, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_dppt_route_201_night, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE
 	song mus_dppt_route_203_night, MUSIC_PLAYER_BGM, GBS_MUSIC_NONE

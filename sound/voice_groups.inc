@@ -322,3 +322,7 @@
 .include "sound/voicegroups/imported/aqua/jazzy_song/voicegroup192.inc"
 .include "sound/voicegroups/imported/aqua/sadpop/sadpop.inc"
 .include "sound/voicegroups/imported/aqua/turnabout_sisters/turnabout_sisters.inc"
+.include "sound/voicegroups/imported/ds/dp_dungeon.inc"
+.include "sound/voicegroups/imported/ds/dp_field.inc"
+.include "sound/voicegroups/imported/ds/dp_battle.inc"
+.include "sound/voicegroups/imported/ds/dp_basic.inc"
