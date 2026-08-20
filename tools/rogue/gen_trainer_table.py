@@ -36,6 +36,13 @@ EXCLUDE_CLASSES = {
     'Salon Maiden', 'Dome Ace', 'Palace Maven', 'Arena Tycoon',
     'Factory Head', 'Pike Queen', 'Pyramid King',
     'Magma Leader', 'Aqua Leader', 'Magma Admin', 'Aqua Admin',
+    # THE THIRD MISS OF THE SAME KIND, and it reached a screen. The two RS
+    # Protag entries are upstream placeholders whose party is one level-5
+    # GROUDON and one level-5 KYOGRE. Only seven pool entries sit at level 5 or
+    # below, so on floor 1 the level window landed on one of them constantly.
+    # The class is not "Rival" and the id is not TRAINER_RS_ -- which the
+    # pattern below was reaching for and missed -- so neither guard saw them.
+    'RS Protag',
 }
 # Partner/multi-battle and link trainers that are not standalone opponents.
 #
@@ -49,6 +56,10 @@ EXCLUDE_ID_PATTERNS = [
     r'_PARTNER', r'^TRAINER_STEVEN$', r'^TRAINER_NONE$',
     r'^TRAINER_LINK', r'_VR_\d+$', r'^TRAINER_RS_',
     r'^TRAINER_ROGUE_',
+    # Belt and braces on the RS Protag class above: a placeholder is a
+    # placeholder whatever class upstream files it under, and the next one to
+    # arrive will not announce itself either.
+    r'_PLACEHOLDER$',
 ]
 
 

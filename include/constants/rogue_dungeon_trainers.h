@@ -6,7 +6,7 @@
 // Stock trainers usable as random dungeon opponents, sorted by average
 // party level so a floor can pick one matching its target. Gym leaders,
 // the Elite Four, rivals, admins and frontier brains are excluded: they
-// are reserved for boss floors. 709 entries, levels 3-49.
+// are reserved for boss floors. 707 entries, levels 3-49.
 
 struct RogueDungeonTrainer
 {
@@ -20,9 +20,7 @@ static const struct RogueDungeonTrainer sRogueDungeonTrainers[] =
     { TRAINER_ALLEN, 4 },  // Youngster, 2 mons
     { TRAINER_RICK, 4 },  // Bug Catcher, 2 mons
     { TRAINER_TIANA, 4 },  // Lass, 2 mons
-    { TRAINER_BRENDAN_PLACEHOLDER, 5 },  // RS Protag, 1 mon
     { TRAINER_CALVIN_1, 5 },  // Youngster, 1 mon
-    { TRAINER_MAY_PLACEHOLDER, 5 },  // RS Protag, 1 mon
     { TRAINER_BILLY, 6 },  // Youngster, 2 mons
     { TRAINER_HALEY_1, 6 },  // Lass, 2 mons
     { TRAINER_IVAN, 6 },  // Fisherman, 3 mons

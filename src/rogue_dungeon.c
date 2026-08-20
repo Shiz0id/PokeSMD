@@ -6168,7 +6168,13 @@ static const struct RogueClassGfx sTrainerClassGfx[TRAINER_CLASS_COUNT] =
     // dungeon opponents and were falling through to a hiker.
     [TRAINER_CLASS_MAGMA_LEADER] = { OBJ_EVENT_GFX_MAXIE, OBJ_EVENT_GFX_MAXIE },
     [TRAINER_CLASS_AQUA_LEADER]  = { OBJ_EVENT_GFX_ARCHIE, OBJ_EVENT_GFX_ARCHIE },
-    [TRAINER_CLASS_RS_PROTAG]    = { OBJ_EVENT_GFX_RUBY, OBJ_EVENT_GFX_SAPPHIRE },
+    // NOT OBJ_EVENT_GFX_RUBY/SAPPHIRE, which this row named for a long time and
+    // which are the Ruby and Sapphire GEMSTONES from Mt Ember Ruby Path -- 16x16
+    // and inanimate, so the trainer stood there as a gem that never turned to
+    // face the player. The protagonist sprites are the LINK_RS pair, whose
+    // graphics infos are called gObjectEventGraphicsInfo_RubySapphire*, which is
+    // exactly why a search for "Ruby" hands you the wrong symbol first.
+    [TRAINER_CLASS_RS_PROTAG]    = { OBJ_EVENT_GFX_LINK_RS_BRENDAN, OBJ_EVENT_GFX_LINK_RS_MAY },
 };
 
 // -> the overworld sprite for this trainer, or 0 when the class has no entry.
