@@ -33,6 +33,17 @@ set is discovered rather than listed - a sixth weather map is covered the day
 it is added, without touching this file. The vanilla maps are deliberately out
 of scope; their weathers are vanilla's problem and are all long since correct.
 
+  6. A DYNAMIC POOL'S MEMBERS. WEATHER_DYNAMIC is not a weather, it is an
+     AGGREGATE: TranslateWeatherNum hands it to GetDynamicWeather(), which
+     picks one entry of a pool chosen by mapSec. So the aggregate itself has
+     no sWeatherFuncs row and no string id and must not be checked for one -
+     but every weather its pools can RETURN needs all of them, and needs an
+     INTENT entry of its own, because that is where the battle behaviour of a
+     dynamic floor actually comes from. A pool is also the easiest place in
+     the tree to change how a dungeon plays by accident: adding one line to an
+     array can hand a theme sandstorm chip damage with nothing else edited and
+     nothing to see in any map header.
+
 --selftest breaks each of the five in turn and confirms this fires, because a
 check that has never failed is worth nothing. It is not enough for the check to
 be wrong in the selftest: it has to be wrong in the specific way the real bug
@@ -100,7 +111,29 @@ INTENT = {
     # route the label suggests - if fog ever stops feeling like it does
     # something, that gate is where to look and not this table.
     'WEATHER_FOG_HORIZONTAL': 'mechanical',
+    # POOL MEMBERS. These four are reachable only through a dynamic pool - no
+    # map header names any of them - so nothing above would ever have asked
+    # about them. That is precisely why item 6 exists.
+    'WEATHER_RAIN':          'mechanical',  # B_WEATHER_RAIN_NORMAL, as monsoon
+    'WEATHER_SUNNY_CLOUDS':  'cosmetic',    # absent from the switch
+    'WEATHER_SHADE':         'cosmetic',    # absent from the switch
+    # The other half of the fog pair, and mechanical by the same indirect route
+    # spelled out under WEATHER_FOG_HORIZONTAL: not the GEN_4 gate its case body
+    # suggests, but the B_OVERWORLD_FOG >= GEN_8 branch that sets MISTY TERRAIN.
+    'WEATHER_FOG_DIAGONAL':  'mechanical',
+    # AN AGGREGATE, not a weather. It never reaches battle_util.c's switch
+    # itself and never should - what reaches battle is whatever its pool
+    # resolved to that floor, and every one of those carries its own row above.
+    # Declaring it mechanical or cosmetic would be stating something about a
+    # value that is never the current weather by the time anything looks.
+    'WEATHER_DYNAMIC':  'aggregate',
 }
+
+# Weathers that RESOLVE to another weather instead of being one. Their
+# TranslateWeatherNum case must NOT return themselves, and they are exempt from
+# the sWeatherFuncs and gWeatherStartsStringIds rows that a concrete weather
+# needs - the weather they resolve to is what gets indexed.
+AGGREGATES = {'WEATHER_DYNAMIC'}
 
 
 def read(repo, rel):
@@ -133,20 +166,56 @@ def designated_keys(text, table):
     return set(re.findall(r'\[\s*(WEATHER_[A-Z0-9_]+)\s*\]', m.group(1)))
 
 
-def translate_cases(text):
-    """Weathers TranslateWeatherNum returns as themselves.
+def translate_returns(text):
+    """{weather: the expression its TranslateWeatherNum case returns}.
 
-    A `case X: return Y;` where Y is not X is a cycle or an aggregate, not an
-    identity, so matching the pair rather than just the label is what stops
-    this passing on a case that quietly maps somewhere else.
+    Deliberately loose on the right-hand side: an aggregate returns a CALL
+    (GetDynamicWeather()) or a table lookup, not a WEATHER_ constant, and a
+    pattern that only matched constants would report the aggregate as having no
+    case at all - which is the same message a genuinely missing case produces
+    and would send the reader hunting for the wrong bug.
     """
     m = re.search(r'static u8 TranslateWeatherNum\(u8 weather\)\s*\{(.*?)\n\}',
                   text, re.S)
     if not m:
         sys.exit('could not find TranslateWeatherNum')
-    return {a for a, b in re.findall(
-        r'case\s+(WEATHER_[A-Z0-9_]+)\s*:\s*return\s+(WEATHER_[A-Z0-9_]+)\s*;',
-        m.group(1)) if a == b}
+    return {a: b.strip() for a, b in re.findall(
+        r'case\s+(WEATHER_[A-Z0-9_]+)\s*:\s*return\s+([^;]+);', m.group(1))}
+
+
+def translate_cases(text):
+    """Weathers TranslateWeatherNum returns as themselves."""
+    return {a for a, b in translate_returns(text).items() if a == b}
+
+
+def strip_comments(text):
+    """Comments name weathers in prose; counting those would be nonsense."""
+    text = re.sub(r'/\*.*?\*/', '', text, flags=re.S)
+    return re.sub(r'//[^\n]*', '', text)
+
+
+def dynamic_pools(text):
+    """{array symbol: [weathers it can return]}."""
+    out = {}
+    # Strip first, then scan. Upstream leaves sDynamicWeathers_DewfordTown in
+    # the file wrapped in a block comment as an example, and a regex over the
+    # raw text matches it happily - which reported a real-looking failure about
+    # a pool that does not exist.
+    for m in re.finditer(
+            r'static const u8 (sDynamicWeathers_\w+)\[\]\s*=\s*\{(.*?)\n\};',
+            strip_comments(text), re.S):
+        out[m.group(1)] = re.findall(r'\b(WEATHER_[A-Z0-9_]+)\b', m.group(2))
+    return out
+
+
+def pool_rows(text):
+    """[(mapSec, array symbol)] - which theme selects which pool."""
+    m = re.search(r'sDynamicWeatherPools\[\]\s*=\s*\{(.*?)\n\};', text, re.S)
+    if not m:
+        sys.exit('could not find sDynamicWeatherPools')
+    return re.findall(
+        r'\{\s*(MAPSEC_[A-Z0-9_]+)\s*,\s*DYNAMIC_WEATHER_POOL\(\s*(\w+)\s*\)',
+        strip_comments(m.group(1)))
 
 
 def battle_cases(text):
@@ -165,7 +234,10 @@ def check(src, quiet=False):
     names = designated_keys(src['field_weather.c'], 'sWeatherNames')
     strids = designated_keys(src['battle_message.c'], 'gWeatherStartsStringIds')
     translated = translate_cases(src['field_weather_effect.c'])
+    returns = translate_returns(src['field_weather_effect.c'])
     mechanical = battle_cases(src['battle_util.c'])
+    pools = dynamic_pools(src['field_weather_effect.c'])
+    rows = pool_rows(src['field_weather_effect.c'])
 
     problems = []
     for name, maps in sorted(src['weathers'].items()):
@@ -178,15 +250,30 @@ def check(src, quiet=False):
             problems.append(
                 f'{name} = {idn} is >= WEATHER_COUNT ({count}); the tables '
                 f'sized by it do not reach it (asked for by {where})')
-        if name not in translated:
-            problems.append(
-                f'{name}: no identity case in TranslateWeatherNum -- the map '
-                f'header falls through to WEATHER_NONE and nothing happens '
-                f'({where})')
-        if name not in funcs:
-            problems.append(f'{name}: no sWeatherFuncs row ({where})')
-        if name not in strids:
-            problems.append(f'{name}: no gWeatherStartsStringIds entry ({where})')
+        if name in AGGREGATES:
+            # An aggregate is exempt from the funcs row and the string id, but
+            # it still has to HAVE a case, and that case must not be an
+            # identity - one that returned itself would be an infinite
+            # indirection that resolves to nothing.
+            if name not in returns:
+                problems.append(
+                    f'{name}: no case in TranslateWeatherNum -- the map header '
+                    f'falls through to WEATHER_NONE and nothing happens ({where})')
+            elif name in translated:
+                problems.append(
+                    f'{name} is listed in AGGREGATES but its TranslateWeatherNum '
+                    f'case returns itself, so it resolves to no real weather '
+                    f'({where})')
+        else:
+            if name not in translated:
+                problems.append(
+                    f'{name}: no identity case in TranslateWeatherNum -- the map '
+                    f'header falls through to WEATHER_NONE and nothing happens '
+                    f'({where})')
+            if name not in funcs:
+                problems.append(f'{name}: no sWeatherFuncs row ({where})')
+            if name not in strids:
+                problems.append(f'{name}: no gWeatherStartsStringIds entry ({where})')
         if name not in names:
             problems.append(f'{name}: no sWeatherNames entry, debug menu only')
 
@@ -195,6 +282,15 @@ def check(src, quiet=False):
             problems.append(
                 f'{name} is used by {where} but has no INTENT entry in this '
                 f'check -- say whether it should be mechanical or cosmetic')
+        elif want == 'aggregate':
+            if name not in AGGREGATES:
+                problems.append(
+                    f'{name} is declared an aggregate in INTENT but is not in '
+                    f'AGGREGATES, so it is still being checked as a real weather')
+            if name in mechanical:
+                problems.append(
+                    f'{name} is an aggregate but appears in battle_util.c\'s '
+                    f'switch -- battle sees the RESOLVED weather, never this one')
         else:
             is_mech = name in mechanical
             if want == 'mechanical' and not is_mech:
@@ -206,7 +302,56 @@ def check(src, quiet=False):
                     f'{name} is declared cosmetic but IS in battle_util.c\'s '
                     f'switch -- it sets gBattleWeather ({where})')
 
+    # 6. Everything a pool can hand back is a REAL weather, fully wired, with a
+    # declared intent. This is the assertion the rest of the file cannot make:
+    # a pool member never appears in any map header, so project_weathers never
+    # sees it and none of the five checks above would ever look at it.
+    seen_pools = set()
+    for mapsec, sym in rows:
+        seen_pools.add(sym)
+        members = pools.get(sym)
+        if members is None:
+            problems.append(
+                f'{sym} is selected by {mapsec} but no such array exists')
+            continue
+        if not members:
+            problems.append(
+                f'{sym} ({mapsec}) is empty, so the theme gets WEATHER_NONE')
+        for w in members:
+            idn = consts.get(w)
+            if idn is None:
+                problems.append(f'{sym} ({mapsec}) lists {w}, which has no #define')
+                continue
+            if count is not None and idn >= count:
+                problems.append(
+                    f'{sym} ({mapsec}) lists {w} = {idn}, past WEATHER_COUNT ({count})')
+            if w not in translated:
+                problems.append(
+                    f'{sym} ({mapsec}) lists {w}, which has no identity case in '
+                    f'TranslateWeatherNum -- rolling it gives WEATHER_NONE')
+            if w not in funcs:
+                problems.append(
+                    f'{sym} ({mapsec}) lists {w}, which has no sWeatherFuncs row '
+                    f'-- rolling it indexes past the table')
+            if w not in strids:
+                problems.append(
+                    f'{sym} ({mapsec}) lists {w}, which has no '
+                    f'gWeatherStartsStringIds entry')
+            if w not in INTENT:
+                problems.append(
+                    f'{sym} ({mapsec}) lists {w}, which has no INTENT entry -- a '
+                    f'pool member decides how a dungeon PLAYS, so say whether it '
+                    f'is mechanical or cosmetic')
+
+    for sym in sorted(set(pools) - seen_pools):
+        problems.append(
+            f'{sym} is defined but no sDynamicWeatherPools row selects it -- '
+            f'the theme it was written for is getting WEATHER_NONE')
+
     if not quiet:
+        for mapsec, sym in rows:
+            ms = ', '.join(pools.get(sym, []))
+            print(f'  {mapsec:<26} {ms}')
         for name in sorted(src['weathers']):
             idn = consts.get(name)
             kind = 'mechanical' if name in mechanical else 'cosmetic'
@@ -241,6 +386,21 @@ BREAKS = [
                          '#define WEATHER_LEAVES                  99')),
     ('mechanical weather dropped from the battle switch', 'battle_util.c',
      lambda t: t.replace('            case WEATHER_BLIZZARD:\n', '')),
+    # Item 6. A pool member is invisible to every other check here, so these
+    # break the pool rather than the tables: an undeclared weather appearing in
+    # a pool is how a dungeon's battle behaviour changes with nothing in any map
+    # header to show for it.
+    ('undeclared weather added to a pool', 'field_weather_effect.c',
+     lambda t: t.replace('    WEATHER_SHADE,            // cosmetic\n    WEATHER_ZUBATS,',
+                         '    WEATHER_SHADE,            // cosmetic\n'
+                         '    WEATHER_DROUGHT,\n    WEATHER_ZUBATS,')),
+    ('pool member with no sWeatherFuncs row', 'field_weather.c',
+     lambda t: re.sub(r'\n\s*\[WEATHER_SHADE\]\s*=\s*\{[^}]*\},', '', t, count=1)),
+    ('a pool nothing selects', 'field_weather_effect.c',
+     lambda t: t.replace(
+         '    { MAPSEC_ROGUE_MURKYCAVE, DYNAMIC_WEATHER_POOL(sDynamicWeathers_MurkyCave) },\n', '')),
+    ('aggregate case removed from TranslateWeatherNum', 'field_weather_effect.c',
+     lambda t: t.replace('    case WEATHER_DYNAMIC:            return GetDynamicWeather();\n', '')),
 ]
 
 
@@ -286,7 +446,7 @@ def main():
         for p in problems:
             print('FAIL: ' + p)
         return 1
-    print('PASS: every project weather is in all five places and matches intent')
+    print('PASS: every project weather is in all five places, every dynamic\n      pool member is a real weather, and both match intent')
     return 0
 
 

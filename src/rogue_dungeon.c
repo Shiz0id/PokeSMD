@@ -1531,7 +1531,12 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
         // floors are fought in rain. Chosen rather than inherited - a new
         // weather reaches battle only if it is added to that switch, and
         // WEATHER_PETALS is the one deliberately left out.
-        .mapId = MAP_ROGUE_DUNGEON_RAIN,
+        // WAS MAP_ROGUE_DUNGEON_RAIN, a fixed WEATHER_MONSOON on every floor.
+        // Now the shared pool map: sDynamicWeathers_Jungle keeps monsoon as one
+        // of five, so a five-floor jungle is no longer five identical floors.
+        // Its music is unaffected - RogueDungeon_GetLocationMusic prefers
+        // theme->music over the map header.
+        .mapId = MAP_ROGUE_DUNGEON_DYNAMIC,
         // unchanged -- Route 119 is the jungle route, and it already had it
         .music = MUS_ROUTE119,
         .mapSecId = MAPSEC_ROGUE_JUNGLE,
@@ -2218,7 +2223,13 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
     [DUNGEON_THEME_MURKYCAVE] =
     {
         .layoutId = LAYOUT_ROGUE_DUNGEON_MURKYCAVE,
-        .mapId = MAP_ROGUE_DUNGEON_FLOOR,
+        // Had no weather at all: it shared MAP_ROGUE_DUNGEON_FLOOR with the
+        // three themes that are deliberately bare. It gets the pool map rather
+        // than a map of its own, because the rule on this branch is a map per
+        // WEATHER shared by every theme that wants it - and WHICH pool is chosen
+        // by mapSecId, which is already per theme. The three bare themes stay on
+        // MAP_ROGUE_DUNGEON_FLOOR and are untouched.
+        .mapId = MAP_ROGUE_DUNGEON_DYNAMIC,
         // vanilla uses it for Ancient Tomb, Desert Ruins and Island Cave -- the eerie one
         .music = MUS_SEALED_CHAMBER,
         .mapSecId = MAPSEC_ROGUE_MURKYCAVE,

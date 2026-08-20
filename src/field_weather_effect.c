@@ -8,6 +8,7 @@
 #include "constants/event_objects.h"
 #include "constants/event_object_movement.h"
 #include "constants/species.h"
+#include "event_data.h"
 #include "fieldmap.h"
 #include "field_weather.h"
 #include "overworld.h"
@@ -15,6 +16,7 @@
 #include "script.h"
 #include "constants/region_map_sections.h"
 #include "constants/weather.h"
+#include "constants/rogue_dungeon.h"
 #include "constants/songs.h"
 #include "constants/rgb.h"
 #include "sound.h"
@@ -4738,9 +4740,56 @@ static const u8 sDefaultDynamicWeathers[] =
     WEATHER_RAIN_THUNDERSTORM,
 };*/
 
+// THE JUNGLE. Every entry is something a rainforest actually does: rain in two
+// strengths, mist rising off the floor, canopy overcast, and humid sun breaking
+// through. No ash, no sandstorm, no snow - a pool is a statement about a PLACE,
+// not a list of the weathers that happen to be implemented.
+//
+// MOSTLY THIS CHANGES NOTHING IN BATTLE, and that is deliberate. The jungle has
+// carried WEATHER_MONSOON since it was built, so every floor already set
+// B_WEATHER_RAIN_NORMAL; WEATHER_RAIN sets the identical flag, so a floor that
+// rolls one instead of the other plays exactly the same. The two that are not
+// free are marked.
+static const u8 sDynamicWeathers_Jungle[] =
+{
+    WEATHER_MONSOON,          // mechanical, and what every jungle floor was
+    WEATHER_RAIN,             // mechanical, same B_WEATHER_RAIN_NORMAL as above
+    // NOT FREE. B_OVERWORLD_FOG is GEN_LATEST, so this takes the >= GEN_8 branch
+    // at battle_util.c:2751 and sets MISTY TERRAIN - halved Dragon damage and no
+    // status on grounded battlers - rather than the fog condition its case label
+    // suggests. Phoebe's floors already do this; the jungle did not until now.
+    // Delete this line to make the jungle pool purely a rain pool again.
+    WEATHER_FOG_HORIZONTAL,
+    WEATHER_SUNNY_CLOUDS,     // cosmetic
+    WEATHER_SHADE,            // cosmetic
+};
+
+// THE MURKY CAVE. Dark and wet, so: mist at two angles, gloom, and a bat flock.
+// Nothing here is sunlit and nothing falls from a sky the player cannot see.
+//
+// WEATHER_ZUBATS costs nothing to reuse - it is ours, it is already built for
+// DUNGEON_THEME_CAVE, and it draws follower Pokemon overworld sprites rather
+// than a weather sheet, so a second theme using it adds no art and no VRAM. It
+// appears on roughly one floor in four rather than every floor, which is the
+// pool doing the work a fixed header could not.
+static const u8 sDynamicWeathers_MurkyCave[] =
+{
+    WEATHER_FOG_HORIZONTAL,   // mechanical: Misty Terrain, see the jungle above
+    WEATHER_FOG_DIAGONAL,     // mechanical: the same pair of cases
+    WEATHER_SHADE,            // cosmetic
+    WEATHER_ZUBATS,           // cosmetic
+};
+
+// KEYED ON mapSec, WHICH THIS PROJECT ALREADY WRITES PER THEME.
+// RogueDungeon's generator puts theme->mapSecId into gMapHeader.regionMapSectionId
+// on every generate, so two themes sharing MAP_ROGUE_DUNGEON_DYNAMIC still get
+// completely different weather and neither needed a map of its own.
+//
+// A theme with no row here gets WEATHER_NONE - see GetDynamicWeatherPool.
 static const struct DynamicWeatherPool sDynamicWeatherPools[] =
 {
-    /*{ MAPSEC_DEWFORD_TOWN, DYNAMIC_WEATHER_POOL(sDynamicWeathers_DewfordTown) },*/
+    { MAPSEC_ROGUE_JUNGLE,    DYNAMIC_WEATHER_POOL(sDynamicWeathers_Jungle) },
+    { MAPSEC_ROGUE_MURKYCAVE, DYNAMIC_WEATHER_POOL(sDynamicWeathers_MurkyCave) },
 };
 
 static const u8 *GetDynamicWeatherPool(u8 *count)
@@ -4756,8 +4805,21 @@ static const u8 *GetDynamicWeatherPool(u8 *count)
         }
     }
 
-    *count = ARRAY_COUNT(sDefaultDynamicWeathers);
-    return sDefaultDynamicWeathers;
+    // DELIBERATE DIVERGENCE FROM UPSTREAM: no row means NO weather.
+    //
+    // Upstream falls back to sDefaultDynamicWeathers here, which is SUNNY, RAIN,
+    // SNOW, SANDSTORM, VOLCANIC_ASH, RAIN_THUNDERSTORM and DROUGHT - five of the
+    // seven are cases in battle_util.c. On this branch that fallback is a
+    // landmine: MAP_ROGUE_DUNGEON_DYNAMIC is shared by theme, so a theme pointed
+    // at it without a pool row would silently get random sandstorm chip damage
+    // and random drought sun on top of whatever its dungeon was balanced for.
+    //
+    // Returning 0 makes GetDynamicWeather answer WEATHER_NONE, so the feature is
+    // OPT-IN: a theme gets exactly the weather its pool row lists, or none.
+    // Nothing in the tree used WEATHER_DYNAMIC before this, so no behaviour
+    // regressed when this changed.
+    *count = 0;
+    return NULL;
 }
 
 static u8 GetDynamicWeather(void)
@@ -4765,6 +4827,20 @@ static u8 GetDynamicWeather(void)
     u8 count;
     const u8 *weathers = GetDynamicWeatherPool(&count);
     rng_value_t localRngState;
+    // THE UPSTREAM FIVE ARE ALL CONSTANT WITHIN ONE DUNGEON ON THIS BRANCH, so
+    // on their own they would make "dynamic" weather a fixed value.
+    //
+    // Every theme shares a map, so mapGroup and mapNum do not move; the dungeon
+    // map declares one layout, so mapLayoutId does not move; and mapSecId is per
+    // THEME, so it does not move between the floors of one dungeon either. That
+    // leaves dailySeed, which clock.c sets once per real-world DAY - so all five
+    // floors of a dungeon would share one weather, and so would every run played
+    // that day. The feature would look broken in exactly the way that is hardest
+    // to tell from "the roll came up the same".
+    //
+    // Adding the floor makes it vary down a dungeon; adding the run seed makes
+    // two runs of the same dungeon on the same day differ. Both are ordinary
+    // vars, so this costs nothing.
     const u32 hashPieces[] =
     {
         gSaveBlock1Ptr->dailySeed,
@@ -4772,6 +4848,8 @@ static u8 GetDynamicWeather(void)
         gSaveBlock1Ptr->location.mapNum,
         gMapHeader.mapLayoutId,
         gMapHeader.regionMapSectionId,
+        VarGet(VAR_ROGUE_DUNGEON_SEED),
+        VarGet(VAR_ROGUE_DUNGEON_FLOOR),
     };
 
     if (count == 0)
