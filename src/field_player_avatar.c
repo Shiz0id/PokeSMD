@@ -59,7 +59,12 @@ struct SpinData
     u32 VBlanksSpinning:11; //34,1 seconds
 };
 
+#define UNDERWATER_DASH_TILES     4
+#define UNDERWATER_DASH_COOLDOWN  60
+
 static EWRAM_DATA u8 sSpinStartFacingDir = 0;
+static EWRAM_DATA u8 sUnderwaterDashTiles = 0;
+static EWRAM_DATA u8 sUnderwaterDashCooldown = 0;
 EWRAM_DATA struct ObjectEvent gObjectEvents[OBJECT_EVENTS_COUNT] = {};
 EWRAM_DATA struct PlayerAvatar gPlayerAvatar = {};
 EWRAM_DATA struct SpinData gPlayerSpinData = {};
@@ -97,6 +102,8 @@ static bool8 ForcedMovement_SpinUp(void);
 static bool8 ForcedMovement_SpinDown(void);
 static void PlaySpinSound(void);
 
+static void UpdateUnderwaterDash(u16);
+static bool8 TrySpendUnderwaterDashTile(void);
 static void MovePlayerNotOnBike(enum Direction, u16);
 static u8 CheckMovementInputNotOnBike(enum Direction);
 static void PlayerNotOnBikeNotMoving(enum Direction, u16);
@@ -363,6 +370,7 @@ void PlayerStep(enum Direction direction, u16 newKeys, u16 heldKeys)
     struct ObjectEvent *playerObjEvent = &gObjectEvents[gPlayerAvatar.objectEventId];
 
     HideShowWarpArrow(playerObjEvent);
+    UpdateUnderwaterDash(newKeys);
     if (gPlayerAvatar.preventStep == FALSE && !TryUpdatePlayerSpinDirection())
     {
         Bike_TryAcroBikeHistoryUpdate(newKeys, heldKeys);
@@ -844,6 +852,38 @@ static void PlayerNotOnBikeTurningInPlace(enum Direction direction, u16 heldKeys
     PlayerTurnInPlace(direction);
 }
 
+// The underwater dash is a burst, not a speed. A fresh B press arms
+// UNDERWATER_DASH_TILES steps, each step spends one, and the last one starts a
+// cooldown that has to run out before another press takes. The burst may only
+// be live while the player is underwater, and this runs at the top of
+// PlayerStep, ahead of the frame movement, so surfacing or warping cannot
+// carry a live burst onto land.
+static void UpdateUnderwaterDash(u16 newKeys)
+{
+    if (!(gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_UNDERWATER))
+    {
+        sUnderwaterDashTiles = 0;
+        sUnderwaterDashCooldown = 0;
+        return;
+    }
+
+    if (sUnderwaterDashCooldown != 0)
+        sUnderwaterDashCooldown--;
+    else if (sUnderwaterDashTiles == 0 && (newKeys & B_BUTTON))
+        sUnderwaterDashTiles = UNDERWATER_DASH_TILES;
+}
+
+static bool8 TrySpendUnderwaterDashTile(void)
+{
+    if (sUnderwaterDashTiles == 0)
+        return FALSE;
+
+    if (--sUnderwaterDashTiles == 0)
+        sUnderwaterDashCooldown = UNDERWATER_DASH_COOLDOWN;
+
+    return TRUE;
+}
+
 static void PlayerNotOnBikeMoving(enum Direction direction, u16 heldKeys)
 {
     enum Collision collision = CheckForPlayerAvatarCollision(direction);
@@ -905,6 +945,18 @@ static void PlayerNotOnBikeMoving(enum Direction direction, u16 heldKeys)
             // speed 2 is fast, same speed as running
             PlayerWalkFast(direction);
         }
+        return;
+    }
+
+    if (gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_UNDERWATER)
+    {
+        // Speed 3, and never PlayerRun: the underwater graphics use
+        // sAnimTable_Standard, which ends at ANIM_STD_GO_FASTEST_EAST and has
+        // no ANIM_RUN_* entries to index.
+        if (TrySpendUnderwaterDashTile())
+            PlayerWalkFaster(direction);
+        else
+            PlayerWalkNormal(direction);
         return;
     }
 
