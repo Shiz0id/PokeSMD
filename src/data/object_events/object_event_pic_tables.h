@@ -1399,6 +1399,54 @@ static const struct SpriteFrameImage sPicTable_RubySapphireBrendan[] = {
     overworld_ascending_frames(gObjectEventPic_RubySapphireBrendanNormal, 2, 4),
 };
 
+// THE RS AVATAR SHEETS, WALKING AND RUNNING, as eighteen explicit frames.
+//
+// The running halves were declared in object_event_graphics.h from the day the
+// sprites were imported and referenced by NOTHING - sPicTable_RubySapphire*
+// above describes the walking sheet alone, which is all an NPC needs. The
+// player needs both: ANIM_RUN_* reads frames 9-17.
+static const struct SpriteFrameImage sPicTable_RSBrendanPlayer[] = {
+    overworld_frame(gObjectEventPic_RubySapphireBrendanNormal, 2, 4, 0),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanNormal, 2, 4, 1),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanNormal, 2, 4, 2),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanNormal, 2, 4, 3),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanNormal, 2, 4, 4),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanNormal, 2, 4, 5),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanNormal, 2, 4, 6),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanNormal, 2, 4, 7),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanNormal, 2, 4, 8),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanRunning, 2, 4, 0),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanRunning, 2, 4, 1),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanRunning, 2, 4, 2),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanRunning, 2, 4, 3),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanRunning, 2, 4, 4),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanRunning, 2, 4, 5),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanRunning, 2, 4, 6),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanRunning, 2, 4, 7),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanRunning, 2, 4, 8),
+};
+
+static const struct SpriteFrameImage sPicTable_RSMayPlayer[] = {
+    overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 0),
+    overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 1),
+    overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 2),
+    overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 3),
+    overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 4),
+    overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 5),
+    overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 6),
+    overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 7),
+    overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 8),
+    overworld_frame(gObjectEventPic_RubySapphireMayRunning, 2, 4, 0),
+    overworld_frame(gObjectEventPic_RubySapphireMayRunning, 2, 4, 1),
+    overworld_frame(gObjectEventPic_RubySapphireMayRunning, 2, 4, 2),
+    overworld_frame(gObjectEventPic_RubySapphireMayRunning, 2, 4, 3),
+    overworld_frame(gObjectEventPic_RubySapphireMayRunning, 2, 4, 4),
+    overworld_frame(gObjectEventPic_RubySapphireMayRunning, 2, 4, 5),
+    overworld_frame(gObjectEventPic_RubySapphireMayRunning, 2, 4, 6),
+    overworld_frame(gObjectEventPic_RubySapphireMayRunning, 2, 4, 7),
+    overworld_frame(gObjectEventPic_RubySapphireMayRunning, 2, 4, 8),
+};
+
 static const struct SpriteFrameImage sPicTable_KirliaOld[] = {
     overworld_ascending_frames(gObjectEventPic_KirliaOld, 2, 4),
 };

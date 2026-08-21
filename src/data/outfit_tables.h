@@ -137,14 +137,17 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
         },
         .avatarGfxIds = {
             [MALE] = {
-                [PLAYER_AVATAR_STATE_NORMAL]     = OBJ_EVENT_GFX_LINK_RS_BRENDAN,
+                // THE PLAYER SPRITE, not OBJ_EVENT_GFX_LINK_RS_BRENDAN. The NPC
+                // entry has no running or spinning anims, and the player has
+                // both - it hung the game on the first step.
+                [PLAYER_AVATAR_STATE_NORMAL]     = OBJ_EVENT_GFX_RS_BRENDAN_NORMAL,
                 [PLAYER_AVATAR_STATE_MACH_BIKE]  = PLAYER_AVATAR_GFX_MALE_MACH_BIKE,  // no RS art
                 [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_GFX_MALE_ACRO_BIKE,  // no RS art
                 [PLAYER_AVATAR_STATE_SURFING]    = PLAYER_AVATAR_GFX_MALE_SURFING,    // no RS art
                 [PLAYER_AVATAR_STATE_UNDERWATER] = PLAYER_AVATAR_GFX_MALE_UNDERWATER, // no RS art
             },
             [FEMALE] = {
-                [PLAYER_AVATAR_STATE_NORMAL]     = OBJ_EVENT_GFX_LINK_RS_MAY,
+                [PLAYER_AVATAR_STATE_NORMAL]     = OBJ_EVENT_GFX_RS_MAY_NORMAL,
                 [PLAYER_AVATAR_STATE_MACH_BIKE]  = PLAYER_AVATAR_GFX_FEMALE_MACH_BIKE,  // no RS art
                 [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_GFX_FEMALE_ACRO_BIKE,  // no RS art
                 [PLAYER_AVATAR_STATE_SURFING]    = PLAYER_AVATAR_GFX_FEMALE_SURFING,    // no RS art
@@ -235,7 +238,14 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
                 // and this project refused, kept here to the one row where the
                 // source art actually works that way.
                 [PLAYER_AVATAR_STATE_MACH_BIKE]  = OBJ_EVENT_GFX_RED_BIKE,
-                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = OBJ_EVENT_GFX_RED_BIKE,
+                // THE ACRO BIKE IS THE DEFAULT'S, and this is the same hang as
+                // the RS one above rather than an art preference. The acro bike
+                // state plays wheelie and hop anims at ids 20-39;
+                // OBJ_EVENT_GFX_RED_BIKE is on sAnimTable_Standard, which stops
+                // at 19. FRLG has no acro bike at all, so its own macro points
+                // the state at this sprite and never exercises it - here both
+                // bikes are granted on floor one.
+                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_GFX_MALE_ACRO_BIKE, // no FRLG art
                 [PLAYER_AVATAR_STATE_SURFING]    = OBJ_EVENT_GFX_RED_SURF,
                 // Kanto has no diving, so the surf sprite stands in - the same
                 // choice PLAYER_AVATAR_GFX_MALE_UNDERWATER makes on an FRLG build.
@@ -244,7 +254,7 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
             [FEMALE] = {
                 [PLAYER_AVATAR_STATE_NORMAL]     = OBJ_EVENT_GFX_GREEN_NORMAL,
                 [PLAYER_AVATAR_STATE_MACH_BIKE]  = OBJ_EVENT_GFX_GREEN_BIKE,
-                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = OBJ_EVENT_GFX_GREEN_BIKE,
+                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_GFX_FEMALE_ACRO_BIKE, // no FRLG art
                 [PLAYER_AVATAR_STATE_SURFING]    = OBJ_EVENT_GFX_GREEN_SURF,
                 [PLAYER_AVATAR_STATE_UNDERWATER] = OBJ_EVENT_GFX_GREEN_SURF,
             },
@@ -266,19 +276,24 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
             [MALE] = {
                 [PLAYER_AVATAR_ANIM_FIELD_MOVE] = OBJ_EVENT_GFX_RED_FIELD_MOVE,
                 [PLAYER_AVATAR_ANIM_FISHING]    = OBJ_EVENT_GFX_RED_FISH,
-                // No watering can and no decorating in Kanto. FIELD_MOVE is the
-                // arms-out pose and is what the FRLG branch of
-                // PLAYER_AVATAR_GFX_MALE_WATERING already picks; decorating
-                // follows it rather than falling back to Brendan, who would be a
-                // different person in the same outfit.
-                [PLAYER_AVATAR_ANIM_WATERING]   = OBJ_EVENT_GFX_RED_FIELD_MOVE,
+                // WATERING IS THE DEFAULT'S, and for the acro bike's reason, not
+                // for an artistic one. The watering sprite is played with the four
+                // facing anims; OBJ_EVENT_GFX_RED_FIELD_MOVE is on
+                // sAnimTable_FieldMove, which defines ANIM_FIELD_MOVE and nothing
+                // else, so facing any direction but south walks off the end of it.
+                // The FRLG branch of PLAYER_AVATAR_GFX_MALE_WATERING points there
+                // too and gets away with it because FireRed has no berries to
+                // water. This tree does.
+                [PLAYER_AVATAR_ANIM_WATERING]   = PLAYER_AVATAR_GFX_MALE_WATERING, // no FRLG art
+                // Decorating IS safe on the field move sprite: it is drawn with
+                // one anim, and ANIM_STAY_STILL and ANIM_FIELD_MOVE are both 0.
                 [PLAYER_AVATAR_ANIM_DECORATING] = OBJ_EVENT_GFX_RED_FIELD_MOVE,
                 [PLAYER_AVATAR_ANIM_VSSEEKER]   = OBJ_EVENT_GFX_RED_VS_SEEKER,
             },
             [FEMALE] = {
                 [PLAYER_AVATAR_ANIM_FIELD_MOVE] = OBJ_EVENT_GFX_GREEN_FIELD_MOVE,
                 [PLAYER_AVATAR_ANIM_FISHING]    = OBJ_EVENT_GFX_GREEN_FISH,
-                [PLAYER_AVATAR_ANIM_WATERING]   = OBJ_EVENT_GFX_GREEN_FIELD_MOVE,
+                [PLAYER_AVATAR_ANIM_WATERING]   = PLAYER_AVATAR_GFX_FEMALE_WATERING, // no FRLG art
                 [PLAYER_AVATAR_ANIM_DECORATING] = OBJ_EVENT_GFX_GREEN_FIELD_MOVE,
                 [PLAYER_AVATAR_ANIM_VSSEEKER]   = OBJ_EVENT_GFX_GREEN_VS_SEEKER,
             },

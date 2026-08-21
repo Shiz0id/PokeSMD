@@ -4496,6 +4496,50 @@ const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RubySapphireMay = 
     .images = sPicTable_RubySapphireMay,
 };
 
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RSBrendanPlayer = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_RS_BRENDAN,
+    // EVERY FIELD BUT THE PALETTE AND THE IMAGES IS COPIED FROM
+    // gObjectEventGraphicsInfo_BrendanNormal, deliberately and field for field.
+    // What makes a sprite wearable by the player is not one property but five,
+    // and the RS NPC entry differs in four of them: the anim table stops at
+    // ANIM_STD_GO_FASTEST_EAST, the size is one frame rather than two, the
+    // palette lands in an NPC slot instead of the player's, and it has no
+    // reflection - so the player would also have walked over water casting
+    // nothing. tools/rogue/check_player_sprite_anims.py asserts the anim half.
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 16,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_16x32,
+    .subspriteTables = sOamTables_16x32,
+    .anims = sAnimTable_BrendanMayNormal,
+    .images = sPicTable_RSBrendanPlayer,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RSMayPlayer = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_RS_MAY,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 16,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_16x32,
+    .subspriteTables = sOamTables_16x32,
+    .anims = sAnimTable_BrendanMayNormal,
+    .images = sPicTable_RSMayPlayer,
+};
+
 const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Lugia = {
     .tileTag = TAG_NONE,
     .paletteTag = OBJ_EVENT_PAL_TAG_LUGIA,

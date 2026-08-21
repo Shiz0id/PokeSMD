@@ -88,6 +88,8 @@ extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_PushableBou
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_MrBrineysBoat;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_MayNormal;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisNormal;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RSBrendanPlayer;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RSMayPlayer;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisMachBike;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisAcroBike;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisSurfing;
@@ -567,6 +569,8 @@ const struct ObjectEventGraphicsInfo *const gObjectEventGraphicsInfoPointers[NUM
     [OBJ_EVENT_GFX_KRIS_FISHING] =             &gObjectEventGraphicsInfo_KrisFishing,
     [OBJ_EVENT_GFX_KRIS_WATERING] =            &gObjectEventGraphicsInfo_KrisWatering,
     [OBJ_EVENT_GFX_KRIS_DECORATING] =          &gObjectEventGraphicsInfo_KrisDecorating,
+    [OBJ_EVENT_GFX_RS_BRENDAN_NORMAL] =        &gObjectEventGraphicsInfo_RSBrendanPlayer,
+    [OBJ_EVENT_GFX_RS_MAY_NORMAL] =            &gObjectEventGraphicsInfo_RSMayPlayer,
     [OBJ_EVENT_GFX_ROGUE_EGG] = &gObjectEventGraphicsInfo_RogueEgg,
     [OBJ_EVENT_GFX_ROGUE_PC] = &gObjectEventGraphicsInfo_RoguePc,
     [OBJ_EVENT_GFX_ROGUE_DIVER_M] = &gObjectEventGraphicsInfo_RogueDiverM,

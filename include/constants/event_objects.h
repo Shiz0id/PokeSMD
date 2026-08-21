@@ -490,6 +490,20 @@ enum
     OBJ_EVENT_GFX_KRIS_FISHING,
     OBJ_EVENT_GFX_KRIS_WATERING,
     OBJ_EVENT_GFX_KRIS_DECORATING,
+    // THE RS OUTFIT'S PLAYER SPRITE, which is NOT the same thing as
+    // OBJ_EVENT_GFX_LINK_RS_BRENDAN above. That one is an NPC: a nine-frame
+    // sheet on sAnimTable_Standard, which defines anim ids 0-19 and stops.
+    // The player on foot plays ANIM_RUN_* (20-23) when running and
+    // ANIM_SPIN_* (24-27) on a warp, so wearing the NPC sprite indexes one
+    // past the end of its anim table and the game hangs on the first step.
+    //
+    // Separate ids rather than a promotion of the NPC ones, following the
+    // FRLG pair: OBJ_EVENT_GFX_RED is the NPC and OBJ_EVENT_GFX_RED_NORMAL
+    // is the avatar. The NPC entries are still used by the contest hall and
+    // the link record corner, and a player-shaped info would put them on
+    // PALSLOT_PLAYER - the player's own palette slot.
+    OBJ_EVENT_GFX_RS_BRENDAN_NORMAL,
+    OBJ_EVENT_GFX_RS_MAY_NORMAL,
     NUM_OBJ_EVENT_GFX,
 };
 
