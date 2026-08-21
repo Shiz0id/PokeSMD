@@ -5264,6 +5264,13 @@ u16 GetBattleBGM(void)
         case TRAINER_CLASS_AQUA_ADMIN:
         case TRAINER_CLASS_MAGMA_ADMIN:
             return MUS_VS_AQUA_MAGMA;
+        // Gen 1 Rocket, and the track is HGSS rather than FRLG on purpose:
+        // FireRed never gave Rocket a battle theme of its own, so its grunts
+        // fight to the ordinary trainer music. Without this case they fall
+        // through to `default` and do exactly that here too -- a whole team
+        // added to the mini boss roster and nothing about the fight says so.
+        case TRAINER_CLASS_TEAM_ROCKET_FRLG:
+            return MUS_HGSS_BATTLE_TEAM_ROCKET;
         case TRAINER_CLASS_LEADER:
             return MUS_VS_GYM_LEADER;
         case TRAINER_CLASS_CHAMPION:

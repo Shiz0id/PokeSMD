@@ -573,6 +573,16 @@ enum TrainerClassID
 #define TRAINER_ENCOUNTER_MUSIC_HIKER       11 // Used for Hikers, Ruin Maniacs, Kindlers, and Fishermen
 #define TRAINER_ENCOUNTER_MUSIC_INTERVIEWER 12
 #define TRAINER_ENCOUNTER_MUSIC_RICH        13 // Used for Rich Boys and Gentlemen
+// Gen 1 Team Rocket, for the mini boss roster. The FRLG source files them under
+// AQUA, which is what the field is for in a game that has no Aqua -- it picks a
+// jingle, and Rocket had no jingle of its own to pick. Here it means the player
+// hears Team Aqua coming and Team Rocket arrives.
+//
+// FOURTEEN OF SIXTEEN. `encounterMusic` is a `u16 :4` in struct Trainer, so this
+// enum has exactly ONE value left after this one. Team Galactic should take 15;
+// anything after that needs the bitfield widened, which is a save-layout change
+// rather than a constant.
+#define TRAINER_ENCOUNTER_MUSIC_ROCKET      14
 
 #define TRAINER_GENDER_MALE   0
 #define TRAINER_GENDER_FEMALE 1

@@ -74,7 +74,14 @@ def rocket_source(repo):
         tail = tid.replace('TRAINER_TEAM_ROCKET_', '')
         if tail in ('GRUNT', 'ADMIN'):
             tail += '_1'
-        out.append((PREFIX + tail, body.strip('\n')))
+        # THE ONE LINE THAT IS NOT VERBATIM. FireRed files every Rocket under
+        # `Music: Aqua`, because that field picks an approach jingle and Gen 1
+        # Rocket had no jingle of its own in a game with no Team Aqua. Copied
+        # across unchanged it means the player hears Team Aqua coming and Team
+        # Rocket arrives. MUS_RG_ENCOUNTER_ROCKET is in the ROM and is theirs.
+        body = re.sub(r'^Music: Aqua$', 'Music: Rocket', body.strip('\n'),
+                      flags=re.M)
+        out.append((PREFIX + tail, body))
     return out
 
 
