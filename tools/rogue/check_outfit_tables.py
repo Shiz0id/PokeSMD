@@ -325,19 +325,42 @@ def check(repo, fail):
                             % (name, array, gender, slot)
                         )
 
-    # 2. no two NON-DEFAULT outfits draw the same thing in one slot
+    # 2. NO TWO NON-DEFAULT OUTFITS DRAW THE SAME THING IN ONE SLOT - unless
+    #    both of them say, on the line, that they have no art for it.
+    #
+    #    THE EXEMPTION IS THE WHOLE POINT OF THE ASSERTION, not a hole in it.
+    #    What this catches is two outfits that READ AS FINISHED and are the same
+    #    picture. Two rows that both carry a `no ... art` comment are not that:
+    #    they are two acknowledged holes that happen to fall back on the same
+    #    thing, which is what a fallback IS. The Kanto and RS outfits are
+    #    identical at the third look for exactly this reason - neither game ever
+    #    drew a Kris - and the alternative to allowing it is either inventing art
+    #    or making one of them silently borrow somebody else's person.
+    #
+    #    A duplicate where only ONE side is marked still fires, and that is the
+    #    case worth having: it means one row believes it has art and the other
+    #    knows it does not, so one of the two is wrong about itself.
     others = sorted(n for n in wearable if n != default)
     for i, a in enumerate(others):
         for b in others[i + 1 :]:
-            for key, (val, _) in slots[a].items():
+            for key, (val, line_a) in slots[a].items():
                 if key not in slots[b]:
                     continue
-                if resolve(val, macros) == resolve(slots[b][key][0], macros):
-                    fail(
-                        "%s and %s both draw %s for %s[%s][%s] - two outfits the "
-                        "player cannot tell apart in that state"
-                        % (a, b, resolve(val, macros), key[0], key[1], key[2])
+                other_val, line_b = slots[b][key]
+                if resolve(val, macros) != resolve(other_val, macros):
+                    continue
+                if FALLBACK_COMMENT.search(line_a) and FALLBACK_COMMENT.search(line_b):
+                    continue
+                fail(
+                    "%s and %s both draw %s for %s[%s][%s] - two outfits the "
+                    "player cannot tell apart in that state%s"
+                    % (
+                        a, b, resolve(val, macros), key[0], key[1], key[2],
+                        ", and only one of them admits it is a fallback"
+                        if FALLBACK_COMMENT.search(line_a) or FALLBACK_COMMENT.search(line_b)
+                        else "",
                     )
+                )
 
     # 3. a non-default row drawing the default's art must say so
     for name in others:
@@ -353,6 +376,22 @@ def check(repo, fail):
                     "work is exactly the bug this check exists for"
                     % (name, key[0], key[1], key[2], resolve(val, macros))
                 )
+
+    # 3b. NO DESCRIPTION MAY WRAP. The name prints at y=0 and the description
+    #     at y=16, both FONT_NORMAL, so a \n puts a second line at y=32 - the
+    #     row the new game picker draws its two gender hints on. The text does
+    #     not clip or reflow; it overprints, and only on a new game, so it is
+    #     invisible from the outfit menu the rest of the game opens.
+    for name, block in wearable.items():
+        m2 = re.search(r"\.desc\s*=\s*COMPOUND_STRING\(\"(.*?)\"\)", block, re.S)
+        if not m2:
+            fail("%s has no description" % name)
+        elif "\\n" in m2.group(1):
+            fail(
+                "%s: the description wraps onto a second line, which lands at y=32 "
+                "and overprints the new game picker's gender hints. One line only "
+                "- WIN_INFO_HINT_Y in src/outfit_menu.c is that row" % name
+            )
 
     # 4. the default row uses the IS_FRLG-carrying macros
     for key, (val, _) in slots[default].items():
@@ -830,6 +869,24 @@ BREAKS = [
         clone_rs_row,
     ),
     (
+        "a duplicate only one side admits is a fallback",
+        TABLE,
+        lambda s: s.replace(
+            "                [PLAYER_AVATAR_STATE_NORMAL]     = PLAYER_AVATAR_GFX_ANDRO_NORMAL,     // no FRLG art",
+            "                [PLAYER_AVATAR_STATE_NORMAL]     = PLAYER_AVATAR_GFX_ANDRO_NORMAL,",
+            1,
+        ),
+    ),
+    (
+        "a description that wraps onto the picker's hint row",
+        TABLE,
+        lambda s: s.replace(
+            'COMPOUND_STRING("From FIRE RED and LEAF GREEN.")',
+            'COMPOUND_STRING("From FIRE RED and\\nLEAF GREEN.")',
+            1,
+        ),
+    ),
+    (
         "default row naming a raw Emerald id",
         TABLE,
         lambda s: s.replace(
@@ -846,7 +903,12 @@ BREAKS = [
     (
         "OUTFIT_COUNT past what the save filler holds",
         CONSTANTS,
-        lambda s: s.replace("#define OUTFIT_COUNT       3", "#define OUTFIT_COUNT       80", 1),
+        # REGEX, NOT THE LITERAL LINE. This break NO-OPed the moment a third
+        # outfit changed the count and its alignment - the mutation matched
+        # nothing and the runner said so, which is the only reason anyone
+        # noticed. A break pinned to a value that is expected to change is a
+        # break with an expiry date on it.
+        lambda s: re.sub(r"#define OUTFIT_COUNT(\s+)\d+", r"#define OUTFIT_COUNT\g<1>80", s, count=1),
     ),
     (
         "ResetOutfitData choosing an outfit as well as unlocking them",

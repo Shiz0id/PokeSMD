@@ -29,16 +29,21 @@
 // header reachable from nearly every translation unit in the tree, are a
 // collision waiting for whoever next writes a local called gfx.
 
-#define OUTFIT_NONE        0
-#define OUTFIT_USUAL_GREEN 1
-#define OUTFIT_UNUSUAL_RED 2
-#define OUTFIT_COUNT       3
+#define OUTFIT_NONE          0
+#define OUTFIT_USUAL_GREEN   1
+#define OUTFIT_UNUSUAL_RED   2
+#define OUTFIT_KANTO_CLASSIC 3
+#define OUTFIT_COUNT         4
 
 // Inclusive. OUTFIT_NONE is not a wearable outfit - it is the zeroed row that
 // an out-of-range id lands on - so menu iteration starts at OUTFIT_BEGIN.
 #define OUTFIT_BEGIN OUTFIT_USUAL_GREEN
-#define OUTFIT_END   OUTFIT_UNUSUAL_RED
+#define OUTFIT_END   OUTFIT_KANTO_CLASSIC
 
+// THE UNLOCK BITS ARE ROUND_BITS_TO_BYTES(OUTFIT_COUNT) OF AN EIGHT-BYTE
+// FILLER, and filler_92 is sized against that, so growing this past a byte
+// boundary is a negative array size rather than a silent shift of every
+// SaveBlock2 field after it. Four outfits is still one byte.
 #define DEFAULT_OUTFIT OUTFIT_USUAL_GREEN
 
 #endif //! GUARD_CONSTANTS_OUTFITS_H
