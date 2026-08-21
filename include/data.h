@@ -14,8 +14,24 @@
 #define TRAINER_PIC_HEIGHT 64
 #define TRAINER_PIC_SIZE (TRAINER_PIC_WIDTH * TRAINER_PIC_HEIGHT / 2)
 
-// Red and Leaf's back pics have 5 frames, but this is presumably irrelevant in the places this is used.
-#define MAX_TRAINER_PIC_FRAMES 4
+// THE DATA DECIDES THIS, NOT US. A back pic's frame count is declared in
+// its own row - TRAINER_BACK_PIC's first argument, which is named yOffset
+// and is used as a frame count - and CopyTrainerBackspriteFramesToDest
+// copies exactly that many frames into whatever buffer it is handed. A
+// buffer sized smaller is a heap overflow with no error and no crash at
+// the point of damage.
+//
+// It said 4 here, with a comment reading `Red and Leaf's back pics have 5
+// frames, but this is presumably irrelevant in the places this is used.`
+// It was not irrelevant: the outfit picker draws a back pic every time the
+// cursor moves, so landing on the Kanto outfit wrote 10240 bytes into an
+// 8192-byte allocation, twice a second. The game froze with a stray sound
+// effect playing - the heap it had just walked over.
+//
+// tools/rogue/check_trainer_backpic_frames.py holds this against every row
+// in gTrainerPicInfo AND against the pixels behind them, so a sixth frame
+// fails a check rather than a console.
+#define MAX_TRAINER_PIC_FRAMES 5
 
 enum {
     BATTLER_AFFINE_NORMAL,

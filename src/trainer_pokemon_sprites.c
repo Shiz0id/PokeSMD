@@ -138,11 +138,19 @@ static u16 CreatePicSprite(u16 species, bool8 isShiny, u32 personality, bool8 is
     if (i == PICS_COUNT)
         return 0xFFFF;
 
-    framePics = Alloc(PIC_SPRITE_SIZE * MAX_PIC_FRAMES);
+    // PER KIND, NOT THE MAXIMUM OF THE TWO. A trainer back pic needs five
+    // frames and a mon pic needs two; one shared bound means either the
+    // trainer overflows or every mon pic on every screen pays 6 KB of heap
+    // for frames nothing will ever index. The anim tables are what read
+    // these - gAnims_Trainer and gAnims_MonPic - and neither asks past its
+    // own kind's count.
+    u32 maxFrames = isTrainer ? MAX_TRAINER_PIC_FRAMES : MAX_MON_PIC_FRAMES;
+
+    framePics = Alloc(PIC_SPRITE_SIZE * maxFrames);
     if (!framePics)
         return 0xFFFF;
 
-    images = Alloc(sizeof(struct SpriteFrameImage) * MAX_PIC_FRAMES);
+    images = Alloc(sizeof(struct SpriteFrameImage) * maxFrames);
     if (!images)
     {
         Free(framePics);
@@ -153,7 +161,7 @@ static u16 CreatePicSprite(u16 species, bool8 isShiny, u32 personality, bool8 is
         // debug trap?
         return 0xFFFF;
     }
-    for (j = 0; j < MAX_PIC_FRAMES; j ++)
+    for (j = 0; j < maxFrames; j ++)
     {
         images[j].data = framePics + PIC_SPRITE_SIZE * j;
         images[j].size = PIC_SPRITE_SIZE;

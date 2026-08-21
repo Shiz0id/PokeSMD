@@ -573,11 +573,24 @@ static inline void SetupOutfitMenu_Sprites_DrawTrainerSprite(bool32 update, bool
         FreeAndDestroyTrainerPicSprite(sOutfitMenu->spriteIds[GFX_BTS]);
     }
 
-    sOutfitMenu->spriteIds[GFX_FTS] = CreateTrainerPicSprite(picId, TRUE, 32+27, 32+32, frontPalSlot, TAG_NONE);
-    sOutfitMenu->spriteIds[GFX_BTS] = CreateTrainerPicSprite(picId, FALSE, 32+117, 32+32, backPalSlot, TAG_NONE);
+    // 0xFFFF IS A REAL ANSWER FROM BOTH OF THESE. CreateTrainerPicSprite
+    // allocates two heap buffers per pic and returns 0xFFFF if either fails,
+    // and this array is u8 - so a failure used to become sprite id 0xFF and
+    // the two lines below wrote through gSprites[255], on an array of 64.
+    // The pics are redrawn on every cursor move, so a heap that is merely
+    // tight rather than full corrupts on whichever move happens to lose.
+    u32 frontId = CreateTrainerPicSprite(picId, TRUE, 32+27, 32+32, frontPalSlot, TAG_NONE);
+    u32 backId = CreateTrainerPicSprite(picId, FALSE, 32+117, 32+32, backPalSlot, TAG_NONE);
+
+    sOutfitMenu->spriteIds[GFX_FTS] = (frontId < MAX_SPRITES) ? frontId : SPRITE_NONE;
+    sOutfitMenu->spriteIds[GFX_BTS] = (backId < MAX_SPRITES) ? backId : SPRITE_NONE;
+
     LoadPalette(GetTrainerBackPicPalette(picId), OBJ_PLTT_ID(backPalSlot), PLTT_SIZE_4BPP);
-    gSprites[sOutfitMenu->spriteIds[GFX_BTS]].anims = GetTrainerBackPicAnims(picId);
-    StartSpriteAnim(&gSprites[sOutfitMenu->spriteIds[GFX_BTS]], 0);
+    if (backId < MAX_SPRITES)
+    {
+        gSprites[backId].anims = GetTrainerBackPicAnims(picId);
+        StartSpriteAnim(&gSprites[backId], 0);
+    }
     if (!unlocked)
     {
         // bc we're directly tint to idx 1-15, skipping idx 0
