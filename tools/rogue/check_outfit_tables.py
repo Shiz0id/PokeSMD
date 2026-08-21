@@ -1252,7 +1252,7 @@ BREAKS = [
         # row is the one that cannot go away, so the break rides that instead.
         "a look with no label, printed as a NULL",
         OUTFIT_C,
-        lambda s: s.replace('    [PLAYER_LOOK_FEM]  = COMPOUND_STRING("GIRL"),\n', "", 1),
+        lambda s: s.replace('    [PLAYER_LOOK_FEM]  = COMPOUND_STRING("FEM"),\n', "", 1),
     ),
     (
         # THE HOLE THAT WENT UNSEEN LONGEST. iconsRM rows are braced pairs and

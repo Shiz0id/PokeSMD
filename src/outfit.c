@@ -9,19 +9,32 @@
 // THE PICKER'S LABELS, one table per axis. See include/outfit.h for why the
 // curated list of (identity, look) pairs this replaced was the wrong shape.
 //
-// THE TWO TABLES NO LONGER SPELL THE SAME WORDS, and that is the clearest
-// statement of what the split is for. Identity has three words because a
-// player may be any of three things; the look has two because this tree draws
-// two body templates. ENBY is an identity and never a look - a sprite labelled
+// THE TWO TABLES SPELL DIFFERENT WORDS, and that is the clearest statement of
+// what the split is for. Identity says BOY / GIRL / ENBY, because those are
+// things a person is. The look says MASC / FEM, because those describe a body
+// template the art was drawn to - and no more than that.
+//
+// THE WORDS ARE DELIBERATELY NOT THE SAME PAIR. When the look also said BOY
+// and GIRL, the two controls read as one question asked twice, and a player
+// stepping L/R was being told they were choosing who they are. MASC and FEM
+// describe the sprite instead, which leaves the whole of the identity question
+// to SELECT. ENBY remains an identity and never a look - a sprite labelled
 // ENBY would be telling somebody which body their identity comes in.
 //
-// Still not duplication to be factored out where the words do coincide: the
-// two are indexed by different enums, sized by different counts, and either
-// axis may gain a member the other never gets.
+// Not duplication to be factored out: the two are indexed by different enums,
+// sized by different counts, and either axis may gain a member the other never
+// gets.
+//
+// WIDTH IS MEASURED, NOT GUESSED. Both hints share the info window's third row,
+// the look left-aligned and the identity right-aligned, so the constraint is
+// their COMBINED width against WIN_INFO_WIDTH_PX. In FONT_SMALL the widest look
+// label went from GIRL at 19 px to MASC at 20 px, so the worst case moved by
+// one pixel, ~145 to ~146 of 182. Widening a label past that does not wrap or
+// clip - the two hints silently overprint.
 const u8 *const gPlayerLookNames[PLAYER_LOOK_COUNT] =
 {
-    [PLAYER_LOOK_MASC] = COMPOUND_STRING("BOY"),
-    [PLAYER_LOOK_FEM]  = COMPOUND_STRING("GIRL"),
+    [PLAYER_LOOK_MASC] = COMPOUND_STRING("MASC"),
+    [PLAYER_LOOK_FEM]  = COMPOUND_STRING("FEM"),
 };
 
 const u8 *const gPlayerIdentityNames[PLAYER_GENDER_COUNT] =
