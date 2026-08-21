@@ -1,6 +1,7 @@
 #include "global.h"
 #include "data.h"
 #include "outfit.h"
+#include "link.h"
 #include "main.h"
 #include "bike.h"
 #include "event_data.h"
@@ -1627,6 +1628,11 @@ u16 GetPlayerAvatarGraphicsIdByOutfitStateIdAndGender(u8 outfitId, u8 state, enu
 u16 GetPlayerAnimGraphicsIdByOutfitStateIdAndGender(u8 outfitId, u8 anim, enum Gender gender)
 {
     return gOutfits[SanitizeOutfitId(outfitId)].animGfxIds[gender][anim];
+}
+
+u16 GetLinkPlayerAvatarGraphicsIdByStateIdLinkIdAndGender(u8 state, u8 linkId, enum Gender gender)
+{
+    return GetPlayerAvatarGraphicsIdByOutfitStateIdAndGender(gLinkPlayers[linkId].currOutfitId, state, gender);
 }
 
 u16 GetPlayerAvatarGraphicsIdByStateIdAndGender(u8 state, enum Gender gender)

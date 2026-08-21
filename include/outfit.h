@@ -40,6 +40,9 @@ const u16 *GetPlayerHeadPal(void);
 bool32 IsOutfitUnlocked(u16 outfitId);
 void UnlockOutfit(u16 outfitId);
 void LockOutfit(u16 outfitId);
+void ToggleOutfit(u16 outfitId);
+bool32 IsPlayerWearingOutfit(u16 outfitId);
+u32 GetOutfitPrice(u16 outfitId);
 void ResetOutfitData(void);
 
 #endif // GUARD_OUTFIT_H

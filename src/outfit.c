@@ -71,6 +71,30 @@ void LockOutfit(u16 outfitId)
     gSaveBlock2Ptr->outfits[outfitId / 8] &= ~(1 << (outfitId % 8));
 }
 
+void ToggleOutfit(u16 outfitId)
+{
+    if (IsOutfitUnlocked(outfitId))
+        LockOutfit(outfitId);
+    else
+        UnlockOutfit(outfitId);
+}
+
+bool32 IsPlayerWearingOutfit(u16 outfitId)
+{
+    return gSaveBlock2Ptr->currOutfitId == outfitId;
+}
+
+// Bounds-checked, unlike upstream's, which indexes gOutfits with whatever id a
+// script hands it. Script commands are exactly the caller that can pass an id
+// nobody validated.
+u32 GetOutfitPrice(u16 outfitId)
+{
+    if (outfitId >= OUTFIT_COUNT)
+        return 0;
+
+    return gOutfits[outfitId].prices[gSaveBlock2Ptr->playerGender];
+}
+
 void ResetOutfitData(void)
 {
     memset(gSaveBlock2Ptr->outfits, 0, sizeof(gSaveBlock2Ptr->outfits));

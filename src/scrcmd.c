@@ -39,6 +39,8 @@
 #include "move.h"
 #include "move_relearner.h"
 #include "mystery_event_script.h"
+#include "outfit.h"
+#include "outfit_menu.h"
 #include "palette.h"
 #include "party_menu.h"
 #include "pokedex.h"
@@ -3115,6 +3117,52 @@ bool8 ScrCmd_warpwhitefade(struct ScriptContext *ctx)
     SetWarpDestination(mapGroup, mapNum, warpId, x, y);
     DoWhiteFadeWarp();
     ResetInitialPlayerAvatarState();
+    return TRUE;
+}
+
+bool8 ScrCmd_toggleoutfit(struct ScriptContext *ctx)
+{
+    u16 outfitId = VarGet(ScriptReadHalfword(ctx));
+    u8 type = ScriptReadByte(ctx);
+
+    switch (type)
+    {
+    default:
+    case OUTFIT_TOGGLE_UNLOCK:
+        UnlockOutfit(outfitId);
+        break;
+    case OUTFIT_TOGGLE_LOCK:
+        LockOutfit(outfitId);
+        break;
+    }
+    return TRUE;
+}
+
+bool8 ScrCmd_getoutfitstatus(struct ScriptContext *ctx)
+{
+    u16 outfitId = VarGet(ScriptReadHalfword(ctx));
+    u8 data = ScriptReadByte(ctx);
+
+    switch (data)
+    {
+    default:
+    case OUTFIT_CHECK_FLAG:
+        gSpecialVar_Result = IsOutfitUnlocked(outfitId);
+        break;
+    case OUTFIT_CHECK_USED:
+        gSpecialVar_Result = IsPlayerWearingOutfit(outfitId);
+        break;
+    }
+    return TRUE;
+}
+
+bool8 ScrCmd_bufferoutfitstr(struct ScriptContext *ctx)
+{
+    u8 strVarIdx = ScriptReadByte(ctx);
+    u16 outfit = VarGet(ScriptReadHalfword(ctx));
+    u8 type = ScriptReadByte(ctx);
+
+    BufferOutfitStrings(sScriptStringVars[strVarIdx], outfit, type);
     return TRUE;
 }
 

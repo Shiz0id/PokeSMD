@@ -42,6 +42,7 @@ u16 GetRivalAvatarGraphicsIdByStateIdAndGender(u8 state, enum Gender gender);
 u16 GetPlayerAvatarGraphicsIdByStateIdAndGender(u8 state, enum Gender gender);
 u16 GetPlayerAvatarGraphicsIdByOutfitStateIdAndGender(u8 outfitId, u8 state, enum Gender gender);
 u16 GetPlayerAnimGraphicsIdByOutfitStateIdAndGender(u8 outfitId, u8 anim, enum Gender gender);
+u16 GetLinkPlayerAvatarGraphicsIdByStateIdLinkIdAndGender(u8 state, u8 linkId, enum Gender gender);
 void SetPlayerAvatarFieldMove(void);
 u16 GetPlayerAvatarGraphicsIdByCurrentState(void);
 void SetPlayerAvatarStateMask(u8 flags);

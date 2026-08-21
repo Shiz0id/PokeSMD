@@ -1063,6 +1063,9 @@ enum __attribute__((packed)) Item
     // inserting would shift every id above it -- including the ten evolution
     // stones the STATIC_ASSERTs in rogue_dungeon.c pin.
     ITEM_CRAFT_BUNDLE = 876,
+    // Same rule again: upstream's outfit branch takes 829, which is occupied
+    // here.
+    ITEM_OUTFIT_BOX = 877,
 
     ITEMS_COUNT,
     ITEM_FIELD_ARROW = ITEMS_COUNT,
