@@ -95,9 +95,28 @@ u32 GetOutfitPrice(u16 outfitId)
     return gOutfits[outfitId].prices[gSaveBlock2Ptr->playerGender];
 }
 
+// AN OUTFIT THAT IS NOT HIDDEN IS AVAILABLE. isHidden is the whole of what
+// makes an outfit something to earn, so this unlocks every visible one and
+// leaves the hidden ones for whatever unlocks them later.
+//
+// IT DOES NOT TOUCH currOutfitId, and that is what lets the new game flow ask
+// which outfit to wear BEFORE the naming screen. NewGameInitData runs after
+// naming, so a reset that also chose the outfit would quietly overwrite the
+// player's pick with the default on the way into the first floor - the same
+// ordering that lets playerName survive, read the other way round. Nothing
+// needs a valid id from here anyway: every read goes through SanitizeOutfitId,
+// so a zeroed save renders as the default without this having to say so.
+//
+// Idempotent on purpose. It runs once before the new game picker and again
+// from NewGameInitData afterwards, and both times it must mean the same thing.
 void ResetOutfitData(void)
 {
+    u32 i;
+
     memset(gSaveBlock2Ptr->outfits, 0, sizeof(gSaveBlock2Ptr->outfits));
-    UnlockOutfit(DEFAULT_OUTFIT);
-    gSaveBlock2Ptr->currOutfitId = DEFAULT_OUTFIT;
+    for (i = OUTFIT_BEGIN; i < OUTFIT_COUNT; i++)
+    {
+        if (!gOutfits[i].isHidden)
+            UnlockOutfit(i);
+    }
 }

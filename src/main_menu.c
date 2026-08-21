@@ -1,6 +1,7 @@
 #include "global.h"
 #include "constants/rogue_dungeon.h"
 #include "outfit.h"
+#include "outfit_menu.h"
 #include "trainer_pokemon_sprites.h"
 #include "bg.h"
 #include "constants/rgb.h"
@@ -195,6 +196,7 @@ static void Task_HandleMainMenuAPressed(u8);
 static void Task_HandleMainMenuBPressed(u8);
 static void Task_NewGameBirchSpeech_Init(u8);
 void CB2_RogueSlimNewGame(void);
+static void CB2_RogueSlimNewGame_AfterOutfit(void);
 static void CB2_RogueSlimNewGame_AfterNaming(void);
 static void Task_DisplayMainMenuInvalidActionError(u8);
 static void AddBirchSpeechObjects(u8);
@@ -1313,15 +1315,30 @@ static void CB2_RogueSlimNewGame_AfterNaming(void)
 {
     // CB2_NewGame runs NewGameInitData, which clears SaveBlock1 but leaves
     // playerName in SaveBlock2 alone - the same ordering the Birch path relies
-    // on, so naming first is safe.
+    // on, so naming first is safe. currOutfitId rides that same property:
+    // ResetOutfitData deliberately does not choose an outfit, so the pick made
+    // two screens ago survives into the first floor.
     SetMainCallback2(CB2_NewGame);
 }
 
-void CB2_RogueSlimNewGame(void)
+static void CB2_RogueSlimNewGame_AfterOutfit(void)
 {
     DoNamingScreen(NAMING_SCREEN_PLAYER, gSaveBlock2Ptr->playerName,
                    gSaveBlock2Ptr->playerGender, 0, 0,
                    CB2_RogueSlimNewGame_AfterNaming);
+}
+
+void CB2_RogueSlimNewGame(void)
+{
+    // OUTFIT FIRST, THEN THE NAME. The naming screen draws the player's own
+    // overworld sprite, so choosing the outfit before it means the player is
+    // already looking at who they are while they name them.
+    //
+    // ResetOutfitData HERE rather than relying on NewGameInitData, which does
+    // not run until after both screens: without this the picker would be
+    // offering whatever the previous save had unlocked.
+    ResetOutfitData();
+    OpenOutfitMenuForNewGame(CB2_RogueSlimNewGame_AfterOutfit, CB2_InitMainMenu);
 }
 
 static void Task_NewGameBirchSpeech_Init(u8 taskId)

@@ -63,7 +63,7 @@ enum Windows {
 };
 
 enum Sprites {
-    GFX_OW = 0,
+    GFX_OW = 0, // reserved: the overworld preview, not built yet
     GFX_FTS, // front
     GFX_BTS, // back
     GFX_CURSOR,
@@ -99,10 +99,17 @@ typedef struct {
     u8 listCount;
     u8 currentOutfitSpriteIds[GRID_ROWS];
     u8 slotId:1; // flipped each time its used, for trainer sprites
-    u8 unused:7;
+    // The new game picker. Two things differ and both matter: A CONFIRMS AND
+    // LEAVES rather than dressing the player where they stand, and the on-foot
+    // test is skipped, because at this point in a new game there is no avatar
+    // to be on foot - gPlayerAvatar holds whatever the last save left there,
+    // so the ordinary path would answer "you cannot change here" every time.
+    u8 newGame:1;
+    u8 unused:6;
     u16 idx;
     u8 gfxState;
     MainCallback retCB;
+    MainCallback backCB; // new game only: where B goes
 } OutfitMenuResources;
 
 static void CB2_SetupOutfitMenu(void);
@@ -345,17 +352,29 @@ void OpenOutfitMenu(MainCallback retCB)
     }
 
     // A save written before outfits existed holds zero here, which is
-    // OUTFIT_NONE - the hidden row - so give it the default and the right to
-    // wear it. Everything else sanitizes read-side through SanitizeOutfitId;
-    // this is the one place the save itself is repaired, because it is a real
-    // migration rather than a redraw.
+    // OUTFIT_NONE - the hidden row. Repair it the same way a new game does,
+    // so an older save is not left owning one outfit with no way to earn the
+    // other. This is the one place the save itself is written on the way in,
+    // because it is a real migration rather than a redraw.
     if (gSaveBlock2Ptr->currOutfitId == OUTFIT_NONE)
     {
-        UnlockOutfit(DEFAULT_OUTFIT);
+        ResetOutfitData();
         gSaveBlock2Ptr->currOutfitId = DEFAULT_OUTFIT;
     }
     sOutfitMenu->retCB = retCB;
     SetMainCallback2(CB2_SetupOutfitMenu);
+}
+
+// The new game entry point. pickedCB is where A goes once an outfit is chosen;
+// backCB is where B goes, which is the main menu rather than the field.
+void OpenOutfitMenuForNewGame(MainCallback pickedCB, MainCallback backCB)
+{
+    OpenOutfitMenu(pickedCB);
+    if (sOutfitMenu != NULL)
+    {
+        sOutfitMenu->newGame = TRUE;
+        sOutfitMenu->backCB = backCB;
+    }
 }
 
 static void CB2_SetupOutfitMenu(void)
@@ -833,11 +852,18 @@ static void Task_PrintOutfitLocked(u8 taskId)
     PrintDialogueBoxWithDescWin(sText_OutfitLockedMsg, FALSE, taskId);
 }
 
+// Split from CloseOutfitMenu so that confirming a choice does not play the
+// cancel sound on top of the confirm one.
+static inline void FadeOutOutfitMenu(u8 taskId)
+{
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
+    gTasks[taskId].func = Task_CloseOutfitMenu;
+}
+
 static inline void CloseOutfitMenu(u8 taskId)
 {
     PlaySE(SE_RG_HELP_CLOSE);
-    BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
-    gTasks[taskId].func = Task_CloseOutfitMenu;
+    FadeOutOutfitMenu(taskId);
 }
 
 static void UpdateCursorPosition(void)
@@ -856,31 +882,53 @@ static void UpdateCursorPosition(void)
 static void Task_OutfitMenuHandleInput(u8 taskId)
 {
     GridMenu_HandleInput(sOutfitMenu->grid);
+
     if (JOY_NEW(CLOSE_BUTTONS))
+    {
+        if (sOutfitMenu->newGame)
+        {
+            // Back to the main menu rather than on into the new game. Backing
+            // out has to be a real way out, or the only exit from the picker
+            // is to start a game.
+            sOutfitMenu->retCB = sOutfitMenu->backCB;
+        }
         CloseOutfitMenu(taskId);
+        return;
+    }
 
     if (JOY_NEW(A_BUTTON))
     {
-        if (gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_ON_FOOT)
+        // LOCKED WINS OVER EVERY OTHER REASON, which is what the original
+        // nesting did too - it just said so in two places and left a note
+        // wondering whether the other order would be confusing. It would:
+        // "you cannot change while surfing" about an outfit you do not own
+        // answers a question nobody asked.
+        if (!IsOutfitUnlocked(sOutfitMenu->idx))
         {
-            if (IsOutfitUnlocked(sOutfitMenu->idx))
-            {
-                PlaySE(SE_SUCCESS);
-                gSaveBlock2Ptr->currOutfitId = sOutfitMenu->idx;
-            }
-            else
-            {
-                PlaySE(SE_BOO);
-                gTasks[taskId].func = Task_PrintOutfitLocked;
-            }
+            PlaySE(SE_BOO);
+            gTasks[taskId].func = Task_PrintOutfitLocked;
+        }
+        else if (sOutfitMenu->newGame)
+        {
+            // NO ON-FOOT TEST. There is no avatar yet on a new game, so
+            // gPlayerAvatar holds whatever the last save left in it and the
+            // ordinary path would refuse every pick. Confirming also leaves,
+            // because this screen is a step in a sequence rather than a place
+            // to stand.
+            PlaySE(SE_SUCCESS);
+            gSaveBlock2Ptr->currOutfitId = sOutfitMenu->idx;
+            FadeOutOutfitMenu(taskId);
+            return;
+        }
+        else if (gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_ON_FOOT)
+        {
+            PlaySE(SE_SUCCESS);
+            gSaveBlock2Ptr->currOutfitId = sOutfitMenu->idx;
         }
         else
         {
             PlaySE(SE_BOO);
-            if (IsOutfitUnlocked(sOutfitMenu->idx))
-                gTasks[taskId].func = Task_PrintCantChangeOutfit;
-            else
-                gTasks[taskId].func = Task_PrintOutfitLocked; //! might be confusing?
+            gTasks[taskId].func = Task_PrintCantChangeOutfit;
         }
     }
 
@@ -890,7 +938,11 @@ static void Task_OutfitMenuHandleInput(u8 taskId)
 static void FreeOutfitMenuResources(void)
 {
     u32 i;
-    DestroySprite(&gSprites[sOutfitMenu->spriteIds[GFX_OW]]);
+    // NOTHING EVER ASSIGNED spriteIds[GFX_OW]. Upstream tears it down here
+    // anyway, and since the struct is AllocZeroed that is
+    // DestroySprite(&gSprites[0]) - whichever sprite happened to take slot
+    // zero, belonging to somebody else. The overworld preview it was meant for
+    // was never wired up; the enum member is left in place for whoever does.
     FreeAndDestroyTrainerPicSprite(sOutfitMenu->spriteIds[GFX_FTS]);
     FreeAndDestroyTrainerPicSprite(sOutfitMenu->spriteIds[GFX_BTS]);
     for (i = 0; i < sOutfitMenu->grid->maxSize; i++)

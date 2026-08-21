@@ -49,6 +49,23 @@ WHAT IT ASSERTS.
   6. EVERY ARRAY IS SIZED BY GENDER_COUNT. That is the whole of what keeps a
      third gender a data edit rather than a refactor.
 
+  7. THE NEW GAME PICKER'S FUNNEL, all three parts. The picker runs before the
+     naming screen and therefore before NewGameInitData, which is what makes it
+     fragile in three separate ways, each silent and each different:
+
+       - ResetOutfitData must unlock by isHidden, or the picker has one row.
+       - ResetOutfitData must NOT write currOutfitId, because it runs a second
+         time from NewGameInitData - after the pick - and would overwrite the
+         player's choice with the default on the way into floor one.
+       - CB2_RogueSlimNewGame must call it BEFORE opening the picker, or the
+         picker is built from the previous save's unlock bits.
+       - The input handler's new game arm must come before the on-foot test.
+         There is no avatar yet, so gPlayerAvatar holds whatever the last save
+         left there and the ordinary path refuses every pick.
+
+     This is the jukebox-funnel shape: four sites, one rule, and missing any
+     one of them breaks the feature at a different moment with a clean build.
+
 COMPARISONS RUN ON VALUES, NOT SPELLINGS, and that was not true when this file
 was first written: the alias-shaped break below passed on its first run,
 because two different tokens naming one id compared as different. Every id is
@@ -68,6 +85,9 @@ CONSTANTS = Path("include/constants/outfits.h")
 STRUCT = Path("include/data.h")
 SAVE = Path("include/global.h")
 EVENT_OBJECTS = Path("include/constants/event_objects.h")
+OUTFIT_C = Path("src/outfit.c")
+MAIN_MENU = Path("src/main_menu.c")
+MENU_C = Path("src/outfit_menu.c")
 
 AVATAR_STATES = [
     "PLAYER_AVATAR_STATE_NORMAL",
@@ -264,6 +284,80 @@ def check(repo, fail):
             "silently once OUTFIT_COUNT passes what it holds"
         )
 
+    # 7. THE NEW GAME PICKER'S THREE-PART FUNNEL. Each of these fails silently
+    #    and differently: an empty picker, a pick that is overwritten on the
+    #    way to floor one, or a picker that refuses every choice.
+    outfit_c = read(repo, OUTFIT_C)
+    main_menu = read(repo, MAIN_MENU)
+    menu_c = read(repo, MENU_C)
+
+    reset = re.search(r"void ResetOutfitData\(void\)\s*\{(.*?)\n\}", outfit_c, re.S)
+    if not reset:
+        fail("ResetOutfitData not found in %s" % OUTFIT_C)
+    else:
+        if "isHidden" not in reset.group(1):
+            fail(
+                "ResetOutfitData does not consult isHidden - it is what decides "
+                "which outfits a new game starts with, and without it the picker "
+                "has one row to offer"
+            )
+        if "currOutfitId" in reset.group(1):
+            fail(
+                "ResetOutfitData writes currOutfitId. It runs AGAIN from "
+                "NewGameInitData, after the picker, so it would overwrite the "
+                "outfit the player just chose with the default on the way into "
+                "floor one - with nothing on screen having said so"
+            )
+
+    slim = re.search(r"void CB2_RogueSlimNewGame\(void\)\s*\{(.*?)\n\}", main_menu, re.S)
+    if not slim:
+        fail("CB2_RogueSlimNewGame not found in %s" % MAIN_MENU)
+    else:
+        body = slim.group(1)
+        if "ResetOutfitData()" not in body:
+            fail(
+                "CB2_RogueSlimNewGame does not call ResetOutfitData before opening "
+                "the picker - NewGameInitData does not run until after both "
+                "screens, so the picker would offer whatever the LAST save had "
+                "unlocked"
+            )
+        if "OpenOutfitMenuForNewGame" not in body:
+            fail("CB2_RogueSlimNewGame does not open the outfit picker")
+        elif "ResetOutfitData()" not in body:
+            pass  # already reported above; nothing to order against
+        elif body.index("ResetOutfitData()") > body.index("OpenOutfitMenuForNewGame"):
+            fail(
+                "CB2_RogueSlimNewGame unlocks outfits AFTER opening the picker, so "
+                "the picker is built from the previous save's unlock bits"
+            )
+
+    handler = re.search(
+        r"static void Task_OutfitMenuHandleInput\(u8 taskId\)\s*\{(.*?)\n\}", menu_c, re.S
+    )
+    if not handler:
+        fail("Task_OutfitMenuHandleInput not found in %s" % MENU_C)
+    else:
+        body = handler.group(1)
+        # THE A-BUTTON ARM SPECIFICALLY, not just the token anywhere in the
+        # function. The first version looked for "newGame" and found it in the
+        # B-button branch, so replacing the A-button arm with `else if (FALSE)`
+        # passed - the break that exists to catch exactly that went SILENT on
+        # its first run. Match the construct, not a word that appears near it.
+        arm = re.search(r"else\s+if\s*\(\s*sOutfitMenu->newGame\s*\)", body)
+        onfoot = body.find("PLAYER_AVATAR_FLAG_ON_FOOT")
+        if not arm:
+            fail(
+                "Task_OutfitMenuHandleInput has no `else if (sOutfitMenu->newGame)` "
+                "arm on the A button - the on-foot test reads gPlayerAvatar, which "
+                "on a new game holds whatever the last save left in it, so every "
+                "pick would be refused"
+            )
+        elif onfoot != -1 and arm.start() > onfoot:
+            fail(
+                "the on-foot test comes before the new game arm in "
+                "Task_OutfitMenuHandleInput, so the new game arm cannot be reached"
+            )
+
     # 6. the struct is sized by GENDER_COUNT throughout
     sm = re.search(r"struct Outfit\s*\{(.*?)\n\};", struct, re.S)
     if not sm:
@@ -365,6 +459,42 @@ BREAKS = [
         "OUTFIT_COUNT past what the save filler holds",
         CONSTANTS,
         lambda s: s.replace("#define OUTFIT_COUNT       3", "#define OUTFIT_COUNT       80", 1),
+    ),
+    (
+        "ResetOutfitData choosing an outfit as well as unlocking them",
+        OUTFIT_C,
+        lambda s: s.replace(
+            "        if (!gOutfits[i].isHidden)\n            UnlockOutfit(i);",
+            "        if (!gOutfits[i].isHidden)\n            UnlockOutfit(i);\n"
+            "    gSaveBlock2Ptr->currOutfitId = DEFAULT_OUTFIT;",
+            1,
+        ),
+    ),
+    (
+        "ResetOutfitData unlocking everything regardless of isHidden",
+        OUTFIT_C,
+        lambda s: s.replace("if (!gOutfits[i].isHidden)\n            ", "", 1),
+    ),
+    (
+        "the new game flow unlocking after it opens the picker",
+        MAIN_MENU,
+        lambda s: s.replace(
+            "    ResetOutfitData();\n"
+            "    OpenOutfitMenuForNewGame(CB2_RogueSlimNewGame_AfterOutfit, CB2_InitMainMenu);",
+            "    OpenOutfitMenuForNewGame(CB2_RogueSlimNewGame_AfterOutfit, CB2_InitMainMenu);\n"
+            "    ResetOutfitData();",
+            1,
+        ),
+    ),
+    (
+        "the new game flow not unlocking at all",
+        MAIN_MENU,
+        lambda s: s.replace("    ResetOutfitData();\n    OpenOutfitMenuForNewGame", "    OpenOutfitMenuForNewGame", 1),
+    ),
+    (
+        "the picker losing its new game arm to the on-foot test",
+        MENU_C,
+        lambda s: s.replace("        else if (sOutfitMenu->newGame)", "        else if (FALSE)", 1),
     ),
     (
         "struct sized by a literal instead of GENDER_COUNT",
