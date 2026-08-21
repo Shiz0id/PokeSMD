@@ -33,6 +33,12 @@ static const u16 sRegionMapPlayerIcon_RedGfx[]      = INCGFX_U16("graphics/poken
 static const u16 sRegionMapPlayerIcon_RedPal[]      = INCGFX_U16("graphics/pokenav/region_map/red_icon.pal", ".gbapal");
 static const u16 sRegionMapPlayerIcon_LeafGfx[]     = INCGFX_U16("graphics/pokenav/region_map/leaf_icon.png", ".4bpp");
 static const u16 sRegionMapPlayerIcon_LeafPal[]     = INCGFX_U16("graphics/pokenav/region_map/leaf_icon.pal", ".gbapal");
+// GOLD SHIPS HIS OWN HEAD, which Kris does not - hyo's set includes a 16x16
+// icon and its palette, and hyo's README says outright where they go. So
+// OUTFIT_JOHTO is the first row whose two halves differ on this: a real head
+// on one side and a fallback on the other.
+static const u16 sRegionMapPlayerIcon_GoldGfx[]     = INCGFX_U16("graphics/pokenav/region_map/gold_icon.png", ".4bpp");
+static const u16 sRegionMapPlayerIcon_GoldPal[]     = INCGFX_U16("graphics/pokenav/region_map/gold_icon.pal", ".gbapal");
 
 const struct Outfit gOutfits[OUTFIT_COUNT] =
 {
@@ -46,13 +52,12 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
     [OUTFIT_USUAL_GREEN] =
     {
         .isHidden = FALSE,
-        .prices = { 0, 0, 0 },
+        .prices = { 0, 0 },
         .name = COMPOUND_STRING("USUAL GREEN"),
         .desc = COMPOUND_STRING("The usual, but basic OUTFIT."),
         .trainerPics = {
-            [MALE]              = TRAINER_PIC_BRENDAN,
-            [FEMALE]            = TRAINER_PIC_MAY,
-            [PLAYER_LOOK_ANDRO] = TRAINER_PIC_KRIS,
+            [MALE]   = TRAINER_PIC_BRENDAN,
+            [FEMALE] = TRAINER_PIC_MAY,
         },
         .avatarGfxIds = {
             [MALE] = {
@@ -68,13 +73,6 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
                 [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_GFX_FEMALE_ACRO_BIKE,
                 [PLAYER_AVATAR_STATE_SURFING]    = PLAYER_AVATAR_GFX_FEMALE_SURFING,
                 [PLAYER_AVATAR_STATE_UNDERWATER] = PLAYER_AVATAR_GFX_FEMALE_UNDERWATER,
-            },
-            [PLAYER_LOOK_ANDRO] = {
-                [PLAYER_AVATAR_STATE_NORMAL]     = PLAYER_AVATAR_GFX_ANDRO_NORMAL,
-                [PLAYER_AVATAR_STATE_MACH_BIKE]  = PLAYER_AVATAR_GFX_ANDRO_MACH_BIKE,
-                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_GFX_ANDRO_ACRO_BIKE,
-                [PLAYER_AVATAR_STATE_SURFING]    = PLAYER_AVATAR_GFX_ANDRO_SURFING,
-                [PLAYER_AVATAR_STATE_UNDERWATER] = PLAYER_AVATAR_GFX_ANDRO_UNDERWATER,
             },
         },
         .animGfxIds = {
@@ -95,19 +93,10 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
                 [PLAYER_AVATAR_ANIM_DECORATING] = OBJ_EVENT_GFX_MAY_DECORATING,
                 [PLAYER_AVATAR_ANIM_VSSEEKER]   = PLAYER_AVATAR_GFX_FEMALE_VSSEEKER,
             },
-            [PLAYER_LOOK_ANDRO] = {
-                [PLAYER_AVATAR_ANIM_FIELD_MOVE] = PLAYER_AVATAR_GFX_ANDRO_FIELD_MOVE,
-                [PLAYER_AVATAR_ANIM_FISHING]    = PLAYER_AVATAR_GFX_ANDRO_FISHING,
-                [PLAYER_AVATAR_ANIM_WATERING]   = PLAYER_AVATAR_GFX_ANDRO_WATERING,
-                [PLAYER_AVATAR_ANIM_DECORATING] = PLAYER_AVATAR_GFX_ANDRO_DECORATING,
-                [PLAYER_AVATAR_ANIM_VSSEEKER]   = PLAYER_AVATAR_GFX_ANDRO_VSSEEKER,
-            },
         },
         .iconsRM = {
             [MALE]   = { sRegionMapPlayerIcon_BrendanGfx, sRegionMapPlayerIcon_BrendanPal },
             [FEMALE] = { sRegionMapPlayerIcon_MayGfx,     sRegionMapPlayerIcon_MayPal },
-            // no Kris region map head art
-            [PLAYER_LOOK_ANDRO] = { sRegionMapPlayerIcon_MayGfx, sRegionMapPlayerIcon_MayPal },
         },
     },
 
@@ -127,13 +116,12 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
     [OUTFIT_UNUSUAL_RED] =
     {
         .isHidden = FALSE,
-        .prices = { 200, 500, 350 },
+        .prices = { 200, 500 },
         .name = COMPOUND_STRING("UNUSUAL RED"),
         .desc = COMPOUND_STRING("Rather unusual, but still basic."),
         .trainerPics = {
-            [MALE]              = TRAINER_PIC_RS_BRENDAN,
-            [FEMALE]            = TRAINER_PIC_RS_MAY,
-            [PLAYER_LOOK_ANDRO] = TRAINER_PIC_KRIS, // no RS art
+            [MALE]   = TRAINER_PIC_RS_BRENDAN,
+            [FEMALE] = TRAINER_PIC_RS_MAY,
         },
         .avatarGfxIds = {
             [MALE] = {
@@ -153,18 +141,6 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
                 [PLAYER_AVATAR_STATE_SURFING]    = PLAYER_AVATAR_GFX_FEMALE_SURFING,    // no RS art
                 [PLAYER_AVATAR_STATE_UNDERWATER] = PLAYER_AVATAR_GFX_FEMALE_UNDERWATER, // no RS art
             },
-            // RUBY AND SAPPHIRE NEVER HAD A KRIS, so this whole column falls
-            // back - to Kris's OWN default-outfit art rather than to May's,
-            // because the player chose to look like Kris and an outfit with no
-            // art for that look should still be that person in the wrong
-            // clothes, not somebody else.
-            [PLAYER_LOOK_ANDRO] = {
-                [PLAYER_AVATAR_STATE_NORMAL]     = PLAYER_AVATAR_GFX_ANDRO_NORMAL,     // no RS art
-                [PLAYER_AVATAR_STATE_MACH_BIKE]  = PLAYER_AVATAR_GFX_ANDRO_MACH_BIKE,  // no RS art
-                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_GFX_ANDRO_ACRO_BIKE,  // no RS art
-                [PLAYER_AVATAR_STATE_SURFING]    = PLAYER_AVATAR_GFX_ANDRO_SURFING,    // no RS art
-                [PLAYER_AVATAR_STATE_UNDERWATER] = PLAYER_AVATAR_GFX_ANDRO_UNDERWATER, // no RS art
-            },
         },
         .animGfxIds = {
             [MALE] = {
@@ -181,19 +157,10 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
                 [PLAYER_AVATAR_ANIM_DECORATING] = OBJ_EVENT_GFX_MAY_DECORATING,        // no RS art
                 [PLAYER_AVATAR_ANIM_VSSEEKER]   = PLAYER_AVATAR_GFX_FEMALE_VSSEEKER,   // no RS art
             },
-            [PLAYER_LOOK_ANDRO] = {
-                [PLAYER_AVATAR_ANIM_FIELD_MOVE] = PLAYER_AVATAR_GFX_ANDRO_FIELD_MOVE, // no RS art
-                [PLAYER_AVATAR_ANIM_FISHING]    = PLAYER_AVATAR_GFX_ANDRO_FISHING,    // no RS art
-                [PLAYER_AVATAR_ANIM_WATERING]   = PLAYER_AVATAR_GFX_ANDRO_WATERING,   // no RS art
-                [PLAYER_AVATAR_ANIM_DECORATING] = PLAYER_AVATAR_GFX_ANDRO_DECORATING, // no RS art
-                [PLAYER_AVATAR_ANIM_VSSEEKER]   = PLAYER_AVATAR_GFX_ANDRO_VSSEEKER,   // no RS art
-            },
         },
         .iconsRM = {
             [MALE]   = { sRegionMapPlayerIcon_RSBrendanGfx, sRegionMapPlayerIcon_RSBrendanPal },
             [FEMALE] = { sRegionMapPlayerIcon_RSMayGfx,     sRegionMapPlayerIcon_RSMayPal },
-            // no Kris region map head art
-            [PLAYER_LOOK_ANDRO] = { sRegionMapPlayerIcon_RSMayGfx, sRegionMapPlayerIcon_RSMayPal },
         },
     },
 
@@ -218,7 +185,7 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
         // NOTHING READS THESE. There is no shop in this tree - see the note on
         // pokemartoutfit - so the price is a placeholder that exists to keep the
         // row the same shape as its neighbours.
-        .prices = { 300, 300, 300 },
+        .prices = { 300, 300 },
         .name = COMPOUND_STRING("KANTO CLASSIC"),
         // ONE LINE, LIKE EVERY OTHER DESCRIPTION, and this is not a style rule.
         // The description prints at y=16 in FONT_NORMAL, so a \n lands its
@@ -226,9 +193,8 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
         // two gender hints on. A two-line description silently overprints them.
         .desc = COMPOUND_STRING("From FIRE RED and LEAF GREEN."),
         .trainerPics = {
-            [MALE]              = TRAINER_PIC_RED,
-            [FEMALE]            = TRAINER_PIC_LEAF,
-            [PLAYER_LOOK_ANDRO] = TRAINER_PIC_KRIS, // no FRLG art
+            [MALE]   = TRAINER_PIC_RED,
+            [FEMALE] = TRAINER_PIC_LEAF,
         },
         .avatarGfxIds = {
             [MALE] = {
@@ -258,19 +224,6 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
                 [PLAYER_AVATAR_STATE_SURFING]    = OBJ_EVENT_GFX_GREEN_SURF,
                 [PLAYER_AVATAR_STATE_UNDERWATER] = OBJ_EVENT_GFX_GREEN_SURF,
             },
-            // KANTO NEVER HAD A KRIS, so this column falls back to Kris's own
-            // default-outfit art rather than to Leaf - the same reasoning the RS
-            // row states: an outfit with no art for a look should still be that
-            // person in the wrong clothes, not somebody else. It does mean this
-            // outfit and the RS one are indistinguishable at the third look, and
-            // the duplicate check allows that only because BOTH sides say so.
-            [PLAYER_LOOK_ANDRO] = {
-                [PLAYER_AVATAR_STATE_NORMAL]     = PLAYER_AVATAR_GFX_ANDRO_NORMAL,     // no FRLG art
-                [PLAYER_AVATAR_STATE_MACH_BIKE]  = PLAYER_AVATAR_GFX_ANDRO_MACH_BIKE,  // no FRLG art
-                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_GFX_ANDRO_ACRO_BIKE,  // no FRLG art
-                [PLAYER_AVATAR_STATE_SURFING]    = PLAYER_AVATAR_GFX_ANDRO_SURFING,    // no FRLG art
-                [PLAYER_AVATAR_STATE_UNDERWATER] = PLAYER_AVATAR_GFX_ANDRO_UNDERWATER, // no FRLG art
-            },
         },
         .animGfxIds = {
             [MALE] = {
@@ -297,21 +250,84 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
                 [PLAYER_AVATAR_ANIM_DECORATING] = OBJ_EVENT_GFX_GREEN_FIELD_MOVE,
                 [PLAYER_AVATAR_ANIM_VSSEEKER]   = OBJ_EVENT_GFX_GREEN_VS_SEEKER,
             },
-            [PLAYER_LOOK_ANDRO] = {
-                [PLAYER_AVATAR_ANIM_FIELD_MOVE] = PLAYER_AVATAR_GFX_ANDRO_FIELD_MOVE, // no FRLG art
-                [PLAYER_AVATAR_ANIM_FISHING]    = PLAYER_AVATAR_GFX_ANDRO_FISHING,    // no FRLG art
-                [PLAYER_AVATAR_ANIM_WATERING]   = PLAYER_AVATAR_GFX_ANDRO_WATERING,   // no FRLG art
-                [PLAYER_AVATAR_ANIM_DECORATING] = PLAYER_AVATAR_GFX_ANDRO_DECORATING, // no FRLG art
-                [PLAYER_AVATAR_ANIM_VSSEEKER]   = PLAYER_AVATAR_GFX_ANDRO_VSSEEKER,   // no FRLG art
-            },
         },
         .iconsRM = {
             [MALE]   = { sRegionMapPlayerIcon_RedGfx,  sRegionMapPlayerIcon_RedPal },
             [FEMALE] = { sRegionMapPlayerIcon_LeafGfx, sRegionMapPlayerIcon_LeafPal },
-            // KRIS HAS NO REGION MAP HEAD IN ANY OUTFIT - the art does not exist
-            // at all, unlike the avatar sprites - so this follows the outfit
-            // instead of the person, exactly as the other two rows do.
-            [PLAYER_LOOK_ANDRO] = { sRegionMapPlayerIcon_LeafGfx, sRegionMapPlayerIcon_LeafPal },
+        },
+    },
+
+    // GOLD AND KRIS. This is where Kris lives now: she was the third LOOK, a
+    // column every outfit had to fill and only one had art for, and she is a
+    // character instead - the feminine half of one outfit, reachable at any
+    // identity, exactly like Leaf or May.
+    //
+    // THE MOST COMPLETE NON-DEFAULT ROW IN THE TABLE. Every slot on both sides
+    // is that character's own art, with two admitted exceptions below. Gold
+    // comes from hyo's set, which ships all ten overworld sheets - including
+    // the RUNNING one, whose absence is what makes the RS row four fallbacks
+    // wide. Kris was already here.
+    //
+    // GOLD IS NOT OBJ_EVENT_GFX_ROGUE_JOHTO_ETHAN. That id is a boss NPC:
+    // sAnimTable_Standard, a nine-frame walking sheet, PALSLOT_NPC_1, and no
+    // back pic anywhere in the tree. Wearing it builds cleanly and hangs on
+    // the first step, which is the RS bug exactly.
+    [OUTFIT_JOHTO] =
+    {
+        .isHidden = FALSE,
+        // Placeholder, like every other row - there is no shop in this tree.
+        .prices = { 300, 300 },
+        .name = COMPOUND_STRING("JOHTO CLASSIC"),
+        // ONE LINE. A \n puts the second line at y=32, which is where the new
+        // game picker draws its two hints - it overprints them rather than
+        // clipping, and only on a new game.
+        .desc = COMPOUND_STRING("From GOLD, SILVER and CRYSTAL."),
+        .trainerPics = {
+            [MALE]   = TRAINER_PIC_GOLD,
+            [FEMALE] = TRAINER_PIC_KRIS,
+        },
+        .avatarGfxIds = {
+            [MALE] = {
+                [PLAYER_AVATAR_STATE_NORMAL]     = OBJ_EVENT_GFX_GOLD_NORMAL,
+                [PLAYER_AVATAR_STATE_MACH_BIKE]  = OBJ_EVENT_GFX_GOLD_MACH_BIKE,
+                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = OBJ_EVENT_GFX_GOLD_ACRO_BIKE,
+                [PLAYER_AVATAR_STATE_SURFING]    = OBJ_EVENT_GFX_GOLD_SURFING,
+                [PLAYER_AVATAR_STATE_UNDERWATER] = OBJ_EVENT_GFX_GOLD_UNDERWATER,
+            },
+            [FEMALE] = {
+                [PLAYER_AVATAR_STATE_NORMAL]     = OBJ_EVENT_GFX_KRIS_NORMAL,
+                [PLAYER_AVATAR_STATE_MACH_BIKE]  = OBJ_EVENT_GFX_KRIS_MACH_BIKE,
+                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = OBJ_EVENT_GFX_KRIS_ACRO_BIKE,
+                [PLAYER_AVATAR_STATE_SURFING]    = OBJ_EVENT_GFX_KRIS_SURFING,
+                [PLAYER_AVATAR_STATE_UNDERWATER] = OBJ_EVENT_GFX_KRIS_UNDERWATER,
+            },
+        },
+        .animGfxIds = {
+            [MALE] = {
+                [PLAYER_AVATAR_ANIM_FIELD_MOVE] = OBJ_EVENT_GFX_GOLD_FIELD_MOVE,
+                [PLAYER_AVATAR_ANIM_FISHING]    = OBJ_EVENT_GFX_GOLD_FISHING,
+                [PLAYER_AVATAR_ANIM_WATERING]   = OBJ_EVENT_GFX_GOLD_WATERING,
+                [PLAYER_AVATAR_ANIM_DECORATING] = OBJ_EVENT_GFX_GOLD_DECORATING,
+                // The field move sprite doubles as the VS Seeker one, which is
+                // the same pairing the Kris rows make and what the vanilla
+                // Emerald branch of PLAYER_AVATAR_GFX_MALE_VSSEEKER does.
+                [PLAYER_AVATAR_ANIM_VSSEEKER]   = OBJ_EVENT_GFX_GOLD_FIELD_MOVE,
+            },
+            [FEMALE] = {
+                [PLAYER_AVATAR_ANIM_FIELD_MOVE] = OBJ_EVENT_GFX_KRIS_FIELD_MOVE,
+                [PLAYER_AVATAR_ANIM_FISHING]    = OBJ_EVENT_GFX_KRIS_FISHING,
+                [PLAYER_AVATAR_ANIM_WATERING]   = OBJ_EVENT_GFX_KRIS_WATERING,
+                [PLAYER_AVATAR_ANIM_DECORATING] = OBJ_EVENT_GFX_KRIS_DECORATING,
+                [PLAYER_AVATAR_ANIM_VSSEEKER]   = OBJ_EVENT_GFX_KRIS_FIELD_MOVE,
+            },
+        },
+        // KRIS HAS NO HEAD ART in this tree or in any asset repo searched, so
+        // her half falls to the DEFAULT outfit's feminine head - the only
+        // direction a fallback is allowed to go. The marker has to sit on the
+        // line itself, because that is what the check reads.
+        .iconsRM = {
+            [MALE]   = { sRegionMapPlayerIcon_GoldGfx, sRegionMapPlayerIcon_GoldPal },
+            [FEMALE] = { sRegionMapPlayerIcon_MayGfx,  sRegionMapPlayerIcon_MayPal }, // no Kris art
         },
     },
 };

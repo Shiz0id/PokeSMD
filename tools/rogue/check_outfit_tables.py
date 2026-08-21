@@ -110,7 +110,7 @@ WHAT IT ASSERTS.
 
      enum PlayerGender is WHO the player is and drives text. enum PlayerLook is
      WHAT THEY LOOK LIKE and indexes every art table. They are two fields
-     because an androgynous player may present as any of the three looks - the
+     because an androgynous player may present as either look - the
      alternative is telling somebody their identity picks their sprite.
 
      enum Gender must stay TWO WIDE. Its MALE/FEMALE tokens are also what
@@ -118,10 +118,15 @@ WHAT IT ASSERTS.
      truncates silently: a trainer who is neither becomes male, with a clean
      build and nothing to see.
 
-     And no table indexed by a look may be sized GENDER_COUNT or by a literal,
-     because a look of PLAYER_LOOK_ANDRO then reads one past the end - not a
-     crash, just whatever the next symbol happens to be, read as a palette
-     pointer or a colour.
+     PLAYER_LOOK_COUNT IS ALSO TWO NOW, and that is the dangerous part. A third
+     look (Kris) existed briefly and is gone - she is OUTFIT_JOHTO's feminine
+     half instead - so the sizing rule below no longer has a live case to fail
+     on. It is still asserted, because the two counts being equal is a
+     coincidence of arity and not a licence to fold them together: no table
+     indexed by a look may be sized GENDER_COUNT or by a literal. Add a look
+     back with a table still sized the old way and the read runs one past the
+     end - not a crash, just whatever the next symbol happens to be, read as a
+     palette pointer or a colour.
 
 COMPARISONS RUN ON VALUES, NOT SPELLINGS, and that was not true when this file
 was first written: the alias-shaped break below passed on its first run,
@@ -146,6 +151,9 @@ OUTFIT_C = Path("src/outfit.c")
 MAIN_MENU = Path("src/main_menu.c")
 MENU_C = Path("src/outfit_menu.c")
 GLOBAL_CONSTANTS = Path("include/constants/global.h")
+# gTrainerPicInfo lives here, and it is where a TRAINER_PIC_* either has a
+# .backPic or silently does not.
+TRAINER_GRAPHICS = Path("src/data/graphics/trainers.h")
 
 # Every file that indexes a table by the player's LOOK. Each one is a place
 # where a two-wide table would read out of bounds the moment the player picks
@@ -172,7 +180,7 @@ ANIM_SLOTS = [
     "PLAYER_AVATAR_ANIM_DECORATING",
     "PLAYER_AVATAR_ANIM_VSSEEKER",
 ]
-GENDERS = ["MALE", "FEMALE", "PLAYER_LOOK_ANDRO"]
+GENDERS = ["MALE", "FEMALE"]
 
 # Slots with a PLAYER_AVATAR_GFX_* macro carrying the IS_FRLG ternary.
 # DECORATING deliberately has none - FRLG has no such sprite - so it is the one
@@ -257,8 +265,23 @@ def split_outfit_blocks(text):
 
 
 def parse_all_slots(block):
-    """{(array, gender, slot): (value, line)} for avatarGfxIds and animGfxIds."""
+    """{(array, gender, slot): (value, line)} for the per-look art arrays.
+
+    ICONSRM IS PARSED HERE TOO, and it was not for a long time. Its rows are
+    a BRACED PAIR - [FEMALE] = { gfx, pal } - and the slot regex below wants a
+    bare identifier after the `=`, so every region map head fell out of the
+    parse and assertions 2 and 3 never saw one. That is not a small hole: it is
+    exactly the table where a row is most likely to quietly borrow somebody
+    else's art, because a 16x16 head is the asset nobody draws for a new
+    character. Found by breaking the Johto row's head fallback on purpose and
+    watching the check stay silent.
+
+    The pair is folded into one comparable value, "gfx+pal", so that two rows
+    sharing a head compare equal and a row that mixes one character's gfx with
+    another's palette does not read as either of them.
+    """
     out = {}
+    gender_re = r"\[(MALE|FEMALE|PLAYER_LOOK_MASC|PLAYER_LOOK_FEM)\]\s*=\s*\{"
     for array in ("avatarGfxIds", "animGfxIds"):
         am = re.search(re.escape("." + array) + r"\s*=\s*\{", block)
         if not am:
@@ -268,13 +291,29 @@ def parse_all_slots(block):
             continue
         gender = None
         for line in block[am.end() - 1 : end + 1].splitlines():
-            gm = re.search(r"\[(MALE|FEMALE|PLAYER_LOOK_MASC|PLAYER_LOOK_FEM|PLAYER_LOOK_ANDRO)\]\s*=\s*\{", line)
+            gm = re.search(gender_re, line)
             if gm:
                 gender = gm.group(1)
                 continue
             sm = re.search(r"\[([A-Z0-9_]+)\]\s*=\s*([A-Za-z0-9_]+)", line)
             if sm and gender:
                 out[(array, gender, sm.group(1))] = (sm.group(2), line)
+
+    am = re.search(r"\.iconsRM\s*=\s*\{", block)
+    if am:
+        end = matching_brace(block, am.end() - 1)
+        if end is not None:
+            for line in block[am.end() - 1 : end + 1].splitlines():
+                im = re.search(
+                    r"\[(MALE|FEMALE|PLAYER_LOOK_MASC|PLAYER_LOOK_FEM)\]\s*=\s*\{"
+                    r"\s*([A-Za-z0-9_]+)\s*,\s*([A-Za-z0-9_]+)\s*\}",
+                    line,
+                )
+                if im:
+                    out[("iconsRM", im.group(1), "REGION_MAP_HEAD")] = (
+                        im.group(2) + "+" + im.group(3),
+                        line,
+                    )
     return out
 
 
@@ -314,14 +353,23 @@ def check(repo, fail):
     slots = {n: parse_all_slots(b) for n, b in wearable.items()}
 
     # 1. every slot of every wearable row is filled
+    #
+    #    ICONSRM COUNTS, and its failure is worse than the others rather than
+    #    milder: an unfilled graphics id is 0 and draws Brendan, but an
+    #    unfilled head is a NULL the region map dereferences on open.
     for name, got in slots.items():
-        for array, names in (("avatarGfxIds", AVATAR_STATES), ("animGfxIds", ANIM_SLOTS)):
+        for array, names in (
+            ("avatarGfxIds", AVATAR_STATES),
+            ("animGfxIds", ANIM_SLOTS),
+            ("iconsRM", ["REGION_MAP_HEAD"]),
+        ):
             for gender in GENDERS:
                 for slot in names:
                     if (array, gender, slot) not in got:
                         fail(
                             "%s: %s[%s][%s] is not filled - a missing initializer is "
-                            "graphics id 0, which draws Brendan standing there"
+                            "graphics id 0, which draws Brendan standing there; for a "
+                            "region map head it is a NULL the map opens on"
                             % (name, array, gender, slot)
                         )
 
@@ -392,6 +440,55 @@ def check(repo, fail):
                 "and overprints the new game picker's gender hints. One line only "
                 "- WIN_INFO_HINT_Y in src/outfit_menu.c is that row" % name
             )
+
+    # 3c. EVERY TRAINER PIC AN OUTFIT NAMES MUST HAVE A BACK PIC.
+    #
+    #     The player is drawn from behind in every single battle, and .backPic
+    #     is a designated initializer in gTrainerPicInfo - a row that omits it
+    #     is not a compile error, it is a zeroed struct. Most of this tree's
+    #     TRAINER_PIC_* ids are BOSSES, which legitimately have a front pic and
+    #     nothing else, so the wrong id here is a NULL sprite pointer on the
+    #     first turn of the first fight and nothing before it.
+    #
+    #     THE NEAR MISS THAT PROMPTED THIS: TRAINER_PIC_ROGUE_JOHTO_ETHAN and
+    #     TRAINER_PIC_GOLD are the same character, one is a boss's front pic and
+    #     one is the wearable pair, and their names do not say which is which.
+    #     Breaking OUTFIT_JOHTO onto the boss id was silent across every check
+    #     in this file and both of the sprite ones.
+    trainers_h = read(repo, TRAINER_GRAPHICS)
+    has_back = set()
+    for pm in re.finditer(r"\[(TRAINER_PIC_[A-Z0-9_]+)\]\s*=\s*\{", trainers_h):
+        pend = matching_brace(trainers_h, pm.end() - 1)
+        if pend is None:
+            continue
+        if ".backPic" in trainers_h[pm.end() - 1 : pend + 1]:
+            has_back.add(pm.group(1))
+
+    if not has_back:
+        fail("no TRAINER_PIC_* rows with a .backPic found in %s" % TRAINER_GRAPHICS)
+    else:
+        for name, block in wearable.items():
+            pm = re.search(r"\.trainerPics\s*=\s*\{", block)
+            if not pm:
+                fail("%s has no trainerPics" % name)
+                continue
+            pend = matching_brace(block, pm.end() - 1)
+            if pend is None:
+                continue
+            for line in block[pm.end() - 1 : pend + 1].splitlines():
+                tm = re.search(
+                    r"\[(MALE|FEMALE|PLAYER_LOOK_MASC|PLAYER_LOOK_FEM)\]\s*=\s*"
+                    r"(TRAINER_PIC_[A-Z0-9_]+)",
+                    line,
+                )
+                if tm and tm.group(2) not in has_back:
+                    fail(
+                        "%s: trainerPics[%s] is %s, which has no .backPic in %s. The "
+                        "player is drawn from behind in every battle, so this is a "
+                        "NULL sprite pointer - and it is almost always a boss's "
+                        "front-pic-only id whose name looks like the right one"
+                        % (name, tm.group(1), tm.group(2), TRAINER_GRAPHICS)
+                    )
 
     # 4. the default row uses the IS_FRLG-carrying macros
     for key, (val, _) in slots[default].items():
@@ -601,9 +698,17 @@ def check(repo, fail):
             )
 
     # 9b. THE SETTERS. One axis, one field, and the two-wide GENDER_COUNT is
-    #     never what either wraps on - that count sizes trainer tables, and
-    #     wrapping a look on it makes PLAYER_LOOK_ANDRO unreachable from the
-    #     picker while every table that holds it stays perfectly correct.
+    #     never what either wraps on - that count sizes trainer tables, and a
+    #     look wrapped on it is a look whose extra values are unreachable from
+    #     the picker while every table that holds them stays perfectly correct.
+    #
+    #     BE HONEST ABOUT WHAT THE GENDER_COUNT ARM IS WORTH TODAY. With the
+    #     third look gone, PLAYER_LOOK_COUNT and GENDER_COUNT are both 2, so
+    #     swapping one for the other in StepPlayerLook changes no behaviour and
+    #     the --selftest break for it proves a SPELLING, not a bug. It is kept
+    #     deliberately: the day a look is added back, that spelling is the
+    #     difference between the new look being reachable and it silently not
+    #     existing, and nobody will think to add the assertion then.
     for fn, field, other_field, count, other_count in (
         ("StepPlayerLook", r"->playerGender\b", r"->playerGenderIdentity\b",
          "PLAYER_LOOK_COUNT", "PLAYER_GENDER_COUNT"),
@@ -630,17 +735,18 @@ def check(repo, fail):
             fail("%s wraps on %s, the other axis's count" % (fn, other_count))
         if re.search(r"\bGENDER_COUNT\b", fn_body):
             fail(
-                "%s wraps on GENDER_COUNT, which is TWO WIDE and sizes trainer "
-                "tables. The third value is then unreachable from the picker while "
-                "every table that holds it stays correct - nothing fails, the "
-                "option simply is not there" % fn
+                "%s wraps on GENDER_COUNT, which sizes trainer tables rather than "
+                "this axis. The two counts are equal today, so this costs nothing "
+                "now and costs a whole option the day either axis grows: the extra "
+                "value is unreachable from the picker while every table that holds "
+                "it stays correct - nothing fails, the option simply is not there" % fn
             )
 
     # 9c. EVERY VALUE OF EITHER AXIS HAS A LABEL. A missing row is a NULL that
     #     the hint prints straight through.
     for table_name, count, members in (
         ("gPlayerLookNames", "PLAYER_LOOK_COUNT",
-         ("PLAYER_LOOK_MASC", "PLAYER_LOOK_FEM", "PLAYER_LOOK_ANDRO")),
+         ("PLAYER_LOOK_MASC", "PLAYER_LOOK_FEM")),
         ("gPlayerIdentityNames", "PLAYER_GENDER_COUNT",
          ("GENDER_MASCULINE", "GENDER_FEMININE", "GENDER_ANDROGYNOUS")),
     ):
@@ -721,7 +827,7 @@ def check(repo, fail):
 
     for name, members in (
         ("PlayerGender", ("GENDER_MASCULINE", "GENDER_FEMININE", "GENDER_ANDROGYNOUS")),
-        ("PlayerLook", ("PLAYER_LOOK_MASC", "PLAYER_LOOK_FEM", "PLAYER_LOOK_ANDRO")),
+        ("PlayerLook", ("PLAYER_LOOK_MASC", "PLAYER_LOOK_FEM")),
     ):
         m2 = re.search(r"enum " + name + r"\s*\{(.*?)\}", consts, re.S)
         if not m2:
@@ -779,8 +885,9 @@ def check(repo, fail):
             width = decl.group(1)
             if width in ("GENDER_COUNT", "2"):
                 fail(
-                    "%s: %s is indexed by playerGender but declared [%s] - a look "
-                    "of PLAYER_LOOK_ANDRO reads one past the end. Size it "
+                    "%s: %s is indexed by playerGender but declared [%s]. The two "
+                    "counts are equal today, so this reads in bounds and will "
+                    "silently stop doing so the moment a look is added. Size it "
                     "[PLAYER_LOOK_COUNT]" % (path, name, width)
                 )
 
@@ -797,8 +904,9 @@ def check(repo, fail):
             elif fm.group(1).strip() != "PLAYER_LOOK_COUNT":
                 fail(
                     "struct Outfit.%s is sized [%s], not [PLAYER_LOOK_COUNT] - this "
-                    "table is indexed by the player's LOOK, and a literal or a "
-                    "two-wide count reads out of bounds at PLAYER_LOOK_ANDRO"
+                    "table is indexed by the player's LOOK. GENDER_COUNT and a "
+                    "literal 2 both happen to be right today and stop being right "
+                    "without warning the day the look axis grows"
                     % (field, fm.group(1).strip())
                 )
 
@@ -869,11 +977,18 @@ BREAKS = [
         clone_rs_row,
     ),
     (
+        # WAS PINNED TO THE ANDRO ROW, which no longer exists - the third look
+        # went away and this mutation silently matched nothing, which is a
+        # no-op break dressed as a passing one. Re-pointed at the acro bike,
+        # where the RS and Kanto rows still both fall back to the default's
+        # sprite and both say so. Stripping ONE side's comment is the case
+        # assertion 2 exists for: a value two non-default outfits share, where
+        # only one of them believes it is a fallback.
         "a duplicate only one side admits is a fallback",
         TABLE,
         lambda s: s.replace(
-            "                [PLAYER_AVATAR_STATE_NORMAL]     = PLAYER_AVATAR_GFX_ANDRO_NORMAL,     // no FRLG art",
-            "                [PLAYER_AVATAR_STATE_NORMAL]     = PLAYER_AVATAR_GFX_ANDRO_NORMAL,",
+            "                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_GFX_MALE_ACRO_BIKE, // no FRLG art",
+            "                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_GFX_MALE_ACRO_BIKE,",
             1,
         ),
     ),
@@ -1119,7 +1234,12 @@ BREAKS = [
         ),
     ),
     (
-        "the look wrapping on the two-wide count, so ENBY is unreachable",
+        # THIS ONE PROVES A SPELLING, not a behaviour, and says so rather than
+        # being quietly retired. PLAYER_LOOK_COUNT and GENDER_COUNT are both 2
+        # today, so the mutated wrap is numerically identical - the check still
+        # fires because it reads the token, which is the whole point: the
+        # assertion has to already be in place on the day a look is added back.
+        "the look wrapping on the count that sizes trainer tables",
         OUTFIT_C,
         lambda s: s.replace(
             "(look + PLAYER_LOOK_COUNT + delta) % PLAYER_LOOK_COUNT",
@@ -1128,9 +1248,42 @@ BREAKS = [
         ),
     ),
     (
+        # Was pinned to the ANDRO label and stopped matching with it. The FEM
+        # row is the one that cannot go away, so the break rides that instead.
         "a look with no label, printed as a NULL",
         OUTFIT_C,
-        lambda s: s.replace('    [PLAYER_LOOK_ANDRO] = COMPOUND_STRING("ENBY"),\n', "", 1),
+        lambda s: s.replace('    [PLAYER_LOOK_FEM]  = COMPOUND_STRING("GIRL"),\n', "", 1),
+    ),
+    (
+        # THE HOLE THAT WENT UNSEEN LONGEST. iconsRM rows are braced pairs and
+        # the slot parser wanted a bare identifier, so no region map head was
+        # ever compared against anything.
+        "a region map head borrowed from the default with nothing saying so",
+        TABLE,
+        lambda s: s.replace(
+            "[FEMALE] = { sRegionMapPlayerIcon_MayGfx,  sRegionMapPlayerIcon_MayPal }, // no Kris art",
+            "[FEMALE] = { sRegionMapPlayerIcon_MayGfx,  sRegionMapPlayerIcon_MayPal },",
+            1,
+        ),
+    ),
+    (
+        "a region map head left unfilled, which the map opens on as a NULL",
+        TABLE,
+        lambda s: s.replace(
+            "            [MALE]   = { sRegionMapPlayerIcon_GoldGfx, sRegionMapPlayerIcon_GoldPal },\n",
+            "",
+            1,
+        ),
+    ),
+    (
+        # A boss's front-pic-only id wearing a name that looks right.
+        "an outfit wearing a trainer pic that has no back sprite",
+        TABLE,
+        lambda s: s.replace(
+            "[MALE]   = TRAINER_PIC_GOLD,",
+            "[MALE]   = TRAINER_PIC_ROGUE_JOHTO_ETHAN,",
+            1,
+        ),
     ),
     (
         "an identity with no label, printed as a NULL",

@@ -72,6 +72,23 @@ const u32 gObjectEventPic_KrisFieldMove[] = INCGFX_U32("graphics/object_events/p
 const u32 gObjectEventPic_KrisFishing[] = INCGFX_U32("graphics/object_events/pics/people/kris/fishing.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u32 gObjectEventPic_KrisWatering[] = INCGFX_U32("graphics/object_events/pics/people/kris/watering.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u32 gObjectEventPic_KrisDecorating[] = INCGFX_U32("graphics/object_events/pics/people/kris/decorating.png", ".4bpp");
+
+// Gold, the masculine half of OUTFIT_JOHTO. hyo's set, which ships its own
+// palette and its own region map head - so unlike Kris, nothing here falls
+// back to somebody else's colours. No reflection palette for the same reason
+// hers has none: this tree builds those at runtime with ApplyPondFilter, so a
+// *_reflection.pal would be dead data. hyo's folder ships one; it is
+// deliberately not vendored.
+const u32 gObjectEventPic_GoldNormalRunning[] = INCBIN_U32("graphics/object_events/pics/people/gold/walking.4bpp", "graphics/object_events/pics/people/gold/running.4bpp");
+const u16 gObjectEventPal_Gold[] = INCGFX_U16("graphics/object_events/palettes/gold.pal", ".gbapal");
+const u32 gObjectEventPic_GoldMachBike[] = INCGFX_U32("graphics/object_events/pics/people/gold/mach_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_GoldAcroBike[] = INCGFX_U32("graphics/object_events/pics/people/gold/acro_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_GoldSurfing[] = INCGFX_U32("graphics/object_events/pics/people/gold/surfing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_GoldUnderwater[] = INCGFX_U32("graphics/object_events/pics/people/gold/underwater.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_GoldFieldMove[] = INCGFX_U32("graphics/object_events/pics/people/gold/field_move.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_GoldFishing[] = INCGFX_U32("graphics/object_events/pics/people/gold/fishing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_GoldWatering[] = INCGFX_U32("graphics/object_events/pics/people/gold/watering.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_GoldDecorating[] = INCGFX_U32("graphics/object_events/pics/people/gold/decorating.png", ".4bpp");
 const u16 gObjectEventPal_MayReflection[] = INCGFX_U16("graphics/object_events/palettes/may_reflection.pal", ".gbapal");
 const u32 gObjectEventPic_RubySapphireMayNormal[] = INCGFX_U32("graphics/object_events/pics/people/ruby_sapphire_may/walking.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u32 gObjectEventPic_RubySapphireMayRunning[] = INCGFX_U32("graphics/object_events/pics/people/ruby_sapphire_may/running.png", ".4bpp", "-mwidth 2 -mheight 4");

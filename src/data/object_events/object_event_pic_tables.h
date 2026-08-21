@@ -3329,3 +3329,73 @@ static const struct SpriteFrameImage sPicTable_KrisWatering[] = {
 static const struct SpriteFrameImage sPicTable_KrisDecorating[] = {
     obj_frame_tiles(gObjectEventPic_KrisDecorating),
 };
+
+// Gold, the masculine half of OUTFIT_JOHTO. Every table is BRENDAN's frame
+// layout with the pointers repointed - the same move Kris makes against May
+// above, and it carries the same precondition: the hand-ordered surfing,
+// underwater and watering lists are only correct if the sheet they index is
+// laid out the same way. hyo ships this set beside a brendan/ set in the
+// identical directory shape, and all ten sheets measure byte-for-byte the same
+// dimensions as vanilla Brendan's, which is what was actually checked.
+static const struct SpriteFrameImage sPicTable_GoldNormal[] = {
+    overworld_ascending_frames(gObjectEventPic_GoldNormalRunning, 2, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_GoldMachBike[] = {
+    overworld_ascending_frames(gObjectEventPic_GoldMachBike, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_GoldAcroBike[] = {
+    overworld_ascending_frames(gObjectEventPic_GoldAcroBike, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_GoldSurfing[] = {
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 1),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 3),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 5),
+};
+
+static const struct SpriteFrameImage sPicTable_GoldUnderwater[] = {
+    overworld_frame(gObjectEventPic_GoldUnderwater, 4, 4, 0),
+    overworld_frame(gObjectEventPic_GoldUnderwater, 4, 4, 1),
+    overworld_frame(gObjectEventPic_GoldUnderwater, 4, 4, 2),
+    overworld_frame(gObjectEventPic_GoldUnderwater, 4, 4, 0),
+    overworld_frame(gObjectEventPic_GoldUnderwater, 4, 4, 0),
+    overworld_frame(gObjectEventPic_GoldUnderwater, 4, 4, 1),
+    overworld_frame(gObjectEventPic_GoldUnderwater, 4, 4, 1),
+    overworld_frame(gObjectEventPic_GoldUnderwater, 4, 4, 2),
+    overworld_frame(gObjectEventPic_GoldUnderwater, 4, 4, 2),
+};
+
+static const struct SpriteFrameImage sPicTable_GoldFieldMove[] = {
+    overworld_ascending_frames(gObjectEventPic_GoldFieldMove, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_GoldFishing[] = {
+    overworld_ascending_frames(gObjectEventPic_GoldFishing, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_GoldWatering[] = {
+    overworld_frame(gObjectEventPic_GoldWatering, 4, 4, 0),
+    overworld_frame(gObjectEventPic_GoldWatering, 4, 4, 2),
+    overworld_frame(gObjectEventPic_GoldWatering, 4, 4, 4),
+    overworld_frame(gObjectEventPic_GoldWatering, 4, 4, 1),
+    overworld_frame(gObjectEventPic_GoldWatering, 4, 4, 1),
+    overworld_frame(gObjectEventPic_GoldWatering, 4, 4, 3),
+    overworld_frame(gObjectEventPic_GoldWatering, 4, 4, 3),
+    overworld_frame(gObjectEventPic_GoldWatering, 4, 4, 5),
+    overworld_frame(gObjectEventPic_GoldWatering, 4, 4, 5),
+};
+
+static const struct SpriteFrameImage sPicTable_GoldDecorating[] = {
+    obj_frame_tiles(gObjectEventPic_GoldDecorating),
+};

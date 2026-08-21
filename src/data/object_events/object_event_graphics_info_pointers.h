@@ -98,6 +98,15 @@ extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisFieldMo
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisFishing;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisWatering;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisDecorating;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldNormal;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldMachBike;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldAcroBike;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldSurfing;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldUnderwater;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldFieldMove;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldFishing;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldWatering;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldDecorating;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_MayMachBike;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_MayAcroBike;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_MaySurfing;
@@ -569,6 +578,15 @@ const struct ObjectEventGraphicsInfo *const gObjectEventGraphicsInfoPointers[NUM
     [OBJ_EVENT_GFX_KRIS_FISHING] =             &gObjectEventGraphicsInfo_KrisFishing,
     [OBJ_EVENT_GFX_KRIS_WATERING] =            &gObjectEventGraphicsInfo_KrisWatering,
     [OBJ_EVENT_GFX_KRIS_DECORATING] =          &gObjectEventGraphicsInfo_KrisDecorating,
+    [OBJ_EVENT_GFX_GOLD_NORMAL] =              &gObjectEventGraphicsInfo_GoldNormal,
+    [OBJ_EVENT_GFX_GOLD_MACH_BIKE] =           &gObjectEventGraphicsInfo_GoldMachBike,
+    [OBJ_EVENT_GFX_GOLD_ACRO_BIKE] =           &gObjectEventGraphicsInfo_GoldAcroBike,
+    [OBJ_EVENT_GFX_GOLD_SURFING] =             &gObjectEventGraphicsInfo_GoldSurfing,
+    [OBJ_EVENT_GFX_GOLD_UNDERWATER] =          &gObjectEventGraphicsInfo_GoldUnderwater,
+    [OBJ_EVENT_GFX_GOLD_FIELD_MOVE] =          &gObjectEventGraphicsInfo_GoldFieldMove,
+    [OBJ_EVENT_GFX_GOLD_FISHING] =             &gObjectEventGraphicsInfo_GoldFishing,
+    [OBJ_EVENT_GFX_GOLD_WATERING] =            &gObjectEventGraphicsInfo_GoldWatering,
+    [OBJ_EVENT_GFX_GOLD_DECORATING] =          &gObjectEventGraphicsInfo_GoldDecorating,
     [OBJ_EVENT_GFX_RS_BRENDAN_NORMAL] =        &gObjectEventGraphicsInfo_RSBrendanPlayer,
     [OBJ_EVENT_GFX_RS_MAY_NORMAL] =            &gObjectEventGraphicsInfo_RSMayPlayer,
     [OBJ_EVENT_GFX_ROGUE_EGG] = &gObjectEventGraphicsInfo_RogueEgg,

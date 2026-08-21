@@ -9,14 +9,19 @@
 // THE PICKER'S LABELS, one table per axis. See include/outfit.h for why the
 // curated list of (identity, look) pairs this replaced was the wrong shape.
 //
-// The two tables spell the same three words and that is not duplication to be
-// factored out: they are indexed by different enums, sized by different
-// counts, and either axis may gain a member the other never gets.
+// THE TWO TABLES NO LONGER SPELL THE SAME WORDS, and that is the clearest
+// statement of what the split is for. Identity has three words because a
+// player may be any of three things; the look has two because this tree draws
+// two body templates. ENBY is an identity and never a look - a sprite labelled
+// ENBY would be telling somebody which body their identity comes in.
+//
+// Still not duplication to be factored out where the words do coincide: the
+// two are indexed by different enums, sized by different counts, and either
+// axis may gain a member the other never gets.
 const u8 *const gPlayerLookNames[PLAYER_LOOK_COUNT] =
 {
-    [PLAYER_LOOK_MASC]  = COMPOUND_STRING("BOY"),
-    [PLAYER_LOOK_FEM]   = COMPOUND_STRING("GIRL"),
-    [PLAYER_LOOK_ANDRO] = COMPOUND_STRING("ENBY"),
+    [PLAYER_LOOK_MASC] = COMPOUND_STRING("BOY"),
+    [PLAYER_LOOK_FEM]  = COMPOUND_STRING("GIRL"),
 };
 
 const u8 *const gPlayerIdentityNames[PLAYER_GENDER_COUNT] =

@@ -371,7 +371,7 @@ def check(repo, fail):
 
     # 2. THE ON-FOOT FLOOR, checked directly. If the default row lost these, the
     #    comparison above would go quiet at the moment it mattered most.
-    for look in ("PLAYER_LOOK_MASC", "PLAYER_LOOK_FEM", "PLAYER_LOOK_ANDRO"):
+    for look in ("PLAYER_LOOK_MASC", "PLAYER_LOOK_FEM"):
         token = slots.get((DEFAULT_ROW, "avatarGfxIds", look, "PLAYER_AVATAR_STATE_NORMAL"))
         if token is None:
             fail("the default outfit has no on-foot sprite for %s" % look)

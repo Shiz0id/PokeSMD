@@ -443,12 +443,20 @@ static inline const u16 *GetTrainerBackPicPalette(enum TrainerPicID trainerPic)
 // One outfit: everything about how the player looks, in one row.
 //
 // EVERY ARRAY HERE IS SIZED BY PLAYER_LOOK_COUNT, and no site may write a
-// literal 2 or pair MALE with FEMALE by hand.
+// literal 2 or pair MALE with FEMALE by hand. PLAYER_LOOK_COUNT happens to
+// equal GENDER_COUNT again, which is exactly when that rule stops being
+// enforced by the compiler and starts needing to be followed on purpose.
 //
 // THE LOOK, NOT THE IDENTITY. These pick which sprite and which trainer pic to
 // draw; who the player IS lives in gSaveBlock2Ptr->playerGenderIdentity and
 // never reaches this table. Keeping them apart is what lets an androgynous
-// player present as any of the three looks - see enum PlayerLook.
+// player present as either look - see enum PlayerLook.
+//
+// A CHARACTER IS AN OUTFIT, NOT A LOOK. There was briefly a third look holding
+// Kris; she is now the feminine half of OUTFIT_JOHTO. The difference matters
+// because a look is a body template every outfit must fill, so a third one
+// made every row carry a column it had no art for - while an outfit is free to
+// be whoever it likes, reachable at any identity.
 //
 // (This comment used to say GENDER_COUNT and that adding a gender was an enum
 // insert plus a row. That was wrong in a way worth recording: enum Gender's

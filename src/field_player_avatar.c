@@ -293,18 +293,19 @@ static const u8 sRivalAvatarGfxIds[][GENDER_COUNT] =
 // named, so the vanilla look is unchanged by construction rather than by
 // having been copied across correctly.
 
+// BOTH OF THESE CARRIED A THIRD ROW that fell back on the feminine one,
+// because Kris had no FRLG and no RS art to name. The third look is gone and
+// so are the fallbacks: every row here is now the art it says it is.
 static const u8 sFRLGAvatarGfxIds[PLAYER_LOOK_COUNT] =
 {
-    [PLAYER_LOOK_MASC]  = OBJ_EVENT_GFX_RED,
-    [PLAYER_LOOK_FEM]   = OBJ_EVENT_GFX_LEAF,
-    [PLAYER_LOOK_ANDRO] = OBJ_EVENT_GFX_LEAF, // no FRLG Kris art
+    [PLAYER_LOOK_MASC] = OBJ_EVENT_GFX_RED,
+    [PLAYER_LOOK_FEM]  = OBJ_EVENT_GFX_LEAF,
 };
 
 static const u8 sRSAvatarGfxIds[PLAYER_LOOK_COUNT] =
 {
-    [PLAYER_LOOK_MASC]  = OBJ_EVENT_GFX_LINK_RS_BRENDAN,
-    [PLAYER_LOOK_FEM]   = OBJ_EVENT_GFX_LINK_RS_MAY,
-    [PLAYER_LOOK_ANDRO] = OBJ_EVENT_GFX_LINK_RS_MAY, // no RS Kris art
+    [PLAYER_LOOK_MASC] = OBJ_EVENT_GFX_LINK_RS_BRENDAN,
+    [PLAYER_LOOK_FEM]  = OBJ_EVENT_GFX_LINK_RS_MAY,
 };
 
 // THE GRAPHICS ID HALF OF THIS TABLE IS GONE, and only the state-to-flag

@@ -223,19 +223,29 @@ enum PlayerGender
 
 // WHAT THE PLAYER LOOKS LIKE. Indexes every art table - avatar graphics,
 // trainer pics, head icons, mugshot palettes. Stored in
-// gSaveBlock2Ptr->playerGender, which is why the first two are pinned to the
-// values that field has always held: every existing [MALE] and [FEMALE]
-// designator in a player art table still means exactly what it meant, and
-// every save written before this still reads correctly.
+// gSaveBlock2Ptr->playerGender, which is why both are pinned to the values
+// that field has always held: every existing [MALE] and [FEMALE] designator in
+// a player art table still means exactly what it meant, and every save written
+// before this still reads correctly.
 //
 // IT IS A SEPARATE AXIS FROM IDENTITY ON PURPOSE. An androgynous player may
-// present as any of the three, which is the whole point - the alternative is
+// present as either look, which is the whole point - the alternative is
 // telling somebody their identity dictates their sprite.
+//
+// THERE WAS A THIRD LOOK HERE AND REMOVING IT IS THE POINT, not a retreat.
+// PLAYER_LOOK_ANDRO carried Kris's art and existed only because identity had
+// nowhere else to live; once PlayerGender above became its own field, a third
+// LOOK meant "the enby sprite", which is the exact sentence these two enums
+// were split apart to avoid. Kris is now the feminine half of OUTFIT_JOHTO -
+// a character an outfit offers, reachable at any identity, like every other.
+//
+// So this enum is two wide and equals GENDER_COUNT again. That is a coincidence
+// of arity, not a merge: this one indexes art and enum Gender also types
+// struct Trainer's one-bit field. Do not fold them together.
 enum PlayerLook
 {
     PLAYER_LOOK_MASC = MALE,
     PLAYER_LOOK_FEM = FEMALE,
-    PLAYER_LOOK_ANDRO,
     PLAYER_LOOK_COUNT,
 };
 

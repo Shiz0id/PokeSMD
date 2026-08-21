@@ -772,12 +772,12 @@ static void CreateCableCarSprites(void)
     u8 i;
 
     // SIZED BY THE LOOK, not by a literal 2. Indexed with
-    // gSaveBlock2Ptr->playerGender below, so at PLAYER_LOOK_ANDRO the old
-    // version read one u16 past the end of a stack array.
+    // gSaveBlock2Ptr->playerGender below, so the size and the index have to
+    // come from the same enum - a literal 2 here read one u16 past the end of
+    // a stack array for as long as a third look existed.
     u16 playerGraphicsIds[PLAYER_LOOK_COUNT] = {
-        [PLAYER_LOOK_MASC]  = OBJ_EVENT_GFX_RIVAL_BRENDAN_NORMAL,
-        [PLAYER_LOOK_FEM]   = OBJ_EVENT_GFX_RIVAL_MAY_NORMAL,
-        [PLAYER_LOOK_ANDRO] = OBJ_EVENT_GFX_KRIS_NORMAL,
+        [PLAYER_LOOK_MASC] = OBJ_EVENT_GFX_RIVAL_BRENDAN_NORMAL,
+        [PLAYER_LOOK_FEM]  = OBJ_EVENT_GFX_RIVAL_MAY_NORMAL,
     };
     u16 rval = Random();
     u16 hikerGraphicsIds[4] = {

@@ -216,6 +216,10 @@ enum __attribute__((packed)) TrainerPicID
     TRAINER_PIC_ROGUE_SINNOH_BARRY,
     // Appended, not inserted - see the note by TRAINER_PIC_BRENDAN.
     TRAINER_PIC_KRIS,
+    // OUTFIT_JOHTO's masculine half, and NOT the same thing as
+    // TRAINER_PIC_ROGUE_JOHTO_ETHAN above: that is a boss's front pic with no
+    // back pic at all, and a player needs both.
+    TRAINER_PIC_GOLD,
     TRAINER_PIC_COUNT,
 };
 
@@ -342,6 +346,7 @@ enum
     FACILITY_CLASS_LASS_FRLG,
     // Appended for the same reason as TRAINER_PIC_KRIS.
     FACILITY_CLASS_KRIS,
+    FACILITY_CLASS_GOLD,
     FACILITY_CLASSES_COUNT,
 };
 

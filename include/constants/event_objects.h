@@ -23,20 +23,16 @@
 #define PLAYER_AVATAR_GFX_FEMALE_WATERING   (IS_FRLG ? OBJ_EVENT_GFX_GREEN_FIELD_MOVE : OBJ_EVENT_GFX_MAY_WATERING)
 #define PLAYER_AVATAR_GFX_FEMALE_VSSEEKER   (IS_FRLG ? OBJ_EVENT_GFX_GREEN_VS_SEEKER  : OBJ_EVENT_GFX_MAY_FIELD_MOVE)
 
-// The third player look. NO IS_FRLG TERNARY, unlike the two above: Kris is
-// Hoenn-style art with no FireRed counterpart, so there is nothing for a
-// ternary to choose between and pretending otherwise would put Brendan on the
-// other side of it.
-#define PLAYER_AVATAR_GFX_ANDRO_NORMAL      OBJ_EVENT_GFX_KRIS_NORMAL
-#define PLAYER_AVATAR_GFX_ANDRO_MACH_BIKE   OBJ_EVENT_GFX_KRIS_MACH_BIKE
-#define PLAYER_AVATAR_GFX_ANDRO_ACRO_BIKE   OBJ_EVENT_GFX_KRIS_ACRO_BIKE
-#define PLAYER_AVATAR_GFX_ANDRO_SURFING     OBJ_EVENT_GFX_KRIS_SURFING
-#define PLAYER_AVATAR_GFX_ANDRO_UNDERWATER  OBJ_EVENT_GFX_KRIS_UNDERWATER
-#define PLAYER_AVATAR_GFX_ANDRO_FIELD_MOVE  OBJ_EVENT_GFX_KRIS_FIELD_MOVE
-#define PLAYER_AVATAR_GFX_ANDRO_FISHING     OBJ_EVENT_GFX_KRIS_FISHING
-#define PLAYER_AVATAR_GFX_ANDRO_WATERING    OBJ_EVENT_GFX_KRIS_WATERING
-#define PLAYER_AVATAR_GFX_ANDRO_DECORATING  OBJ_EVENT_GFX_KRIS_DECORATING
-#define PLAYER_AVATAR_GFX_ANDRO_VSSEEKER    OBJ_EVENT_GFX_KRIS_FIELD_MOVE
+// THERE WAS A PLAYER_AVATAR_GFX_ANDRO_* BLOCK HERE, pointing at Kris, and it
+// is gone with the third look. Kris now reaches the player through
+// OUTFIT_JOHTO's feminine row in src/data/outfit_tables.h, which names
+// OBJ_EVENT_GFX_KRIS_* directly.
+//
+// A MACRO WOULD BE THE WRONG SHAPE FOR HER NOW. These two blocks exist to
+// carry the IS_FRLG ternary, so that the DEFAULT outfit is the vanilla look on
+// both builds by construction. An outfit that is one game's art has no
+// ternary to hide and belongs in the table, where a raw id is correct - the
+// same call outfit_tables.h already makes for the RS and Kanto rows.
 
 enum
 {
@@ -490,6 +486,21 @@ enum
     OBJ_EVENT_GFX_KRIS_FISHING,
     OBJ_EVENT_GFX_KRIS_WATERING,
     OBJ_EVENT_GFX_KRIS_DECORATING,
+    // Gold, OUTFIT_JOHTO's masculine half. Appended for the reason Kris's
+    // block above is, and note the name: this is the AVATAR set, distinct from
+    // OBJ_EVENT_GFX_ROGUE_JOHTO_ETHAN, which is an NPC boss on
+    // sAnimTable_Standard with a nine-frame walking sheet. Wearing that one is
+    // the hang described below. Two ids for one region's boy, exactly as FRLG
+    // ships OBJ_EVENT_GFX_RED beside OBJ_EVENT_GFX_RED_NORMAL.
+    OBJ_EVENT_GFX_GOLD_NORMAL,
+    OBJ_EVENT_GFX_GOLD_MACH_BIKE,
+    OBJ_EVENT_GFX_GOLD_ACRO_BIKE,
+    OBJ_EVENT_GFX_GOLD_SURFING,
+    OBJ_EVENT_GFX_GOLD_UNDERWATER,
+    OBJ_EVENT_GFX_GOLD_FIELD_MOVE,
+    OBJ_EVENT_GFX_GOLD_FISHING,
+    OBJ_EVENT_GFX_GOLD_WATERING,
+    OBJ_EVENT_GFX_GOLD_DECORATING,
     // THE RS OUTFIT'S PLAYER SPRITE, which is NOT the same thing as
     // OBJ_EVENT_GFX_LINK_RS_BRENDAN above. That one is an NPC: a nine-frame
     // sheet on sAnimTable_Standard, which defines anim ids 0-19 and stops.
@@ -751,6 +762,14 @@ enum
 // OBJ_EVENT_PAL_TAG_KRIS_REFLECTION is both unnecessary and, pointed at
 // may_reflection.pal as it is there, the wrong colours.
 #define OBJ_EVENT_PAL_TAG_ROGUE_KRIS                             0x118C
+// Gold's own palette, and it must be registered in sObjectEventSpritePalettes
+// in src/event_object_movement.c as well as declared here. A tag the table
+// does not carry resolves to 0xFF, ObjectEventSetGraphics guards on that and
+// simply loads NO palette, and the sprite then draws through whatever colours
+// its OAM slot last held - corruption that changes with what else is on the
+// map, from a clean build. The two halves live in different files and nothing
+// connects them.
+#define OBJ_EVENT_PAL_TAG_ROGUE_GOLD                             0x118D
 #define OBJ_EVENT_PAL_TAG_NONE                    0x11FF
 
 // This + localId is used as the tileTag

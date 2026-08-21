@@ -40,7 +40,12 @@ const u16 *GetPlayerHeadPal(void);
 
 // WHAT THE NEW GAME PICKER STEPS: TWO AXES, TWO CONTROLS. L and R step the
 // LOOK, SELECT steps the IDENTITY, and neither control can see the other
-// field, so all nine pairings the model permits are reachable.
+// field, so all six pairings the model permits are reachable.
+//
+// SIX AND NOT NINE, because the look axis is two wide now. That is a change in
+// the art, not in the model: the third look was Kris, and she is the feminine
+// half of OUTFIT_JOHTO instead. The identity axis is untouched and still three
+// wide, which is the half of this that was ever load-bearing.
 //
 // THIS REPLACED A CURATED LIST OF (identity, look) PAIRS, and the list is
 // worth knowing about because its shape was the trap. Five stops - BOY, GIRL,
