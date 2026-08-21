@@ -504,7 +504,94 @@ def check(repo, fail):
             )
 
 
+    # 4. A WALKING ANIM TABLE THE PLAYER WEARS MUST BE IN sStepAnimTables.
+    #
+    #    GetStepAnimTable matches on the anims POINTER, and SetStepAnim only
+    #    seeks when it finds a match:
+    #
+    #        sprite->animNum = animNum;
+    #        if (stepTable != NULL)
+    #            SeekSpriteAnim(sprite, animPos);
+    #
+    #    An unregistered table therefore takes the new anim NUMBER and keeps
+    #    the OLD animCmdIndex. FaceDirection goes through SetStepAnim, so
+    #    stopping after a run leaves the sprite on whichever running frame it
+    #    reached - a standing player stuck mid-stride, with the right anim
+    #    selected and nothing wrong in any table anyone would think to open.
+    #
+    #    THIS IS HOW THE CHECK ABOVE LET A REGRESSION THROUGH. Assertion 3
+    #    demanded that the FRLG avatars stop sharing sAnimTable_BrendanMayNormal;
+    #    the new table was correct in every respect except that nothing added
+    #    it to a second list in the same file. Fixing one silent pairing
+    #    created another.
+    #
+    #    SCOPED TO WHAT THE PLAYER WEARS, deliberately. Three vanilla tables
+    #    (Groudon, Rayquaza, Ho-Oh) define the walking family and are not
+    #    registered, and they are not wrong - nothing ever asks them to stop
+    #    out of a run. Asserting over every graphics info would fire on all
+    #    three, which is the too-loud failure this file has hit before.
+    step_registered = set()
+    anims_text = strip_comments(read(repo, ANIMS))
+    idx = anims_text.find("sStepAnimTables")
+    if idx == -1:
+        fail("sStepAnimTables not found in %s" % ANIMS)
+    else:
+        step_registered = set(
+            re.findall(r"\.anims\s*=\s*(sAnimTable_\w+)", anims_text[idx:])
+        )
+
+    walking = set()
+    for m in re.finditer(r"(sAnimTable_\w+)\[\]\s*=\s*\{(.*?)\n\};", anims_text, re.S):
+        if "ANIM_STD_GO_SOUTH" in m.group(2):
+            walking.add(m.group(1))
+
+    if step_registered:
+        seen_tables = set()
+        for key, token in sorted(slots.items()):
+            gid, info, covered, _ = resolve(token)
+            if info is None:
+                continue
+            fields = infos.get(info, {})
+            anim_sym = fields.get("anims")
+            if not anim_sym or anim_sym in seen_tables:
+                continue
+            seen_tables.add(anim_sym)
+            if anim_sym not in walking:
+                continue
+            if anim_sym not in step_registered:
+                fail(
+                    "%s (%s, worn for %s) uses %s, which defines the walking anims "
+                    "but is NOT in sStepAnimTables. GetStepAnimTable matches on the "
+                    "pointer and SetStepAnim only seeks on a hit, so the sprite will "
+                    "keep the animCmdIndex it had - stopping after a run freezes it "
+                    "mid-stride" % (info, gid, key[3], anim_sym)
+                )
+
+
 BREAKS = [
+    (
+        # THE REGRESSION THIS FILE'S OWN ASSERTION 3 CAUSED. Splitting the FRLG
+        # avatars onto their own anim table was right; the table then had to be
+        # registered in a second list, and nothing paired the two.
+        "the FRLG player table missing from sStepAnimTables",
+        ANIMS,
+        lambda s: s.replace(
+            "    {\n        .anims = sAnimTable_RedGreenNormal,\n"
+            "        .animPos = {1, 3, 0, 2},\n    },\n",
+            "",
+            1,
+        ),
+    ),
+    (
+        "the Hoenn player table missing from sStepAnimTables",
+        ANIMS,
+        lambda s: s.replace(
+            "    {\n        .anims = sAnimTable_BrendanMayNormal,\n"
+            "        .animPos = {1, 3, 0, 2},\n    },\n",
+            "",
+            1,
+        ),
+    ),
     (
         # THE SHIPPED BUG, restored exactly. Red kept a working anim table, a
         # working sheet and in-range frame indices, and ran backwards.

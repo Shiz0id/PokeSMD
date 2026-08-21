@@ -1686,6 +1686,29 @@ static const struct StepAnimTable sStepAnimTables[] = {
         .anims = sAnimTable_BrendanMayNormal,
         .animPos = {1, 3, 0, 2},
     },
+    // REGISTERING A NEW ANIM TABLE IS NOT OPTIONAL, and a miss here is silent
+    // in a way that looks nothing like its cause. GetStepAnimTable matches on
+    // the anims POINTER, and SetStepAnim only calls SeekSpriteAnim when it
+    // finds a match:
+    //
+    //     sprite->animNum = animNum;
+    //     if (stepTable != NULL)
+    //         SeekSpriteAnim(sprite, animPos);
+    //
+    // so an unregistered table gets the new anim NUMBER and keeps the old
+    // animCmdIndex. FaceDirection goes through SetStepAnim, so stopping after
+    // a run left Red and Green frozen on whichever running frame they were on
+    // - a standing player in a mid-stride pose, with the correct anim
+    // selected and nothing wrong in any table.
+    //
+    // This shipped for exactly one commit: splitting the FRLG avatars onto
+    // their own anim table moved them off sAnimTable_BrendanMayNormal, which
+    // IS registered, and nothing pairs the two lists. pokefirered has this
+    // same entry in this same position.
+    {
+        .anims = sAnimTable_RedGreenNormal,
+        .animPos = {1, 3, 0, 2},
+    },
     {
         .anims = sAnimTable_AcroBike,
         .animPos = {1, 3, 0, 2},
