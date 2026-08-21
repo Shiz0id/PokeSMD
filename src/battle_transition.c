@@ -882,10 +882,13 @@ static const u16 *const sOpponentMugshotsPals[MUGSHOT_COLOR_COUNT] =
     [MUGSHOT_COLOR_YELLOW] = sMugshotPal_Yellow
 };
 
-static const u16 *const sPlayerMugshotsPals[GENDER_COUNT] =
+static const u16 *const sPlayerMugshotsPals[PLAYER_LOOK_COUNT] =
 {
-    [MALE] = sMugshotPal_Brendan,
-    [FEMALE] = sMugshotPal_May
+    [PLAYER_LOOK_MASC] = sMugshotPal_Brendan,
+    [PLAYER_LOOK_FEM] = sMugshotPal_May,
+    // No Kris mugshot palette exists - the mugshot art is a separate asset
+    // from the trainer pic. May's is the nearer of the two.
+    [PLAYER_LOOK_ANDRO] = sMugshotPal_May,
 };
 
 static const u16 sUnusedTrainerPalette[] = INCGFX_U16("graphics/battle_transitions/unused_trainer.pal", ".gbapal");

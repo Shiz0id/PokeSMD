@@ -268,6 +268,10 @@ static bool8 (*const sArrowWarpMetatileBehaviorChecks[])(u8) =
     [DIR_EAST - 1]  = MetatileBehavior_IsEastArrowWarp,
 };
 
+// TWO WIDE ON PURPOSE, and not converted to PLAYER_LOOK_COUNT: this is the
+// RIVAL's gender, which is a different thing from the player's look. (It also
+// has no callers left - the naming screen used to draw a rival on the player's
+// own screen and no longer does.)
 static const u8 sRivalAvatarGfxIds[][GENDER_COUNT] =
 {
     [PLAYER_AVATAR_STATE_NORMAL]     = {OBJ_EVENT_GFX_RIVAL_BRENDAN_NORMAL,     OBJ_EVENT_GFX_RIVAL_MAY_NORMAL},
@@ -289,16 +293,18 @@ static const u8 sRivalAvatarGfxIds[][GENDER_COUNT] =
 // named, so the vanilla look is unchanged by construction rather than by
 // having been copied across correctly.
 
-static const u8 sFRLGAvatarGfxIds[GENDER_COUNT] =
+static const u8 sFRLGAvatarGfxIds[PLAYER_LOOK_COUNT] =
 {
-    [MALE]   = OBJ_EVENT_GFX_RED,
-    [FEMALE] = OBJ_EVENT_GFX_LEAF
+    [PLAYER_LOOK_MASC]  = OBJ_EVENT_GFX_RED,
+    [PLAYER_LOOK_FEM]   = OBJ_EVENT_GFX_LEAF,
+    [PLAYER_LOOK_ANDRO] = OBJ_EVENT_GFX_LEAF, // no FRLG Kris art
 };
 
-static const u8 sRSAvatarGfxIds[GENDER_COUNT] =
+static const u8 sRSAvatarGfxIds[PLAYER_LOOK_COUNT] =
 {
-    [MALE]   = OBJ_EVENT_GFX_LINK_RS_BRENDAN,
-    [FEMALE] = OBJ_EVENT_GFX_LINK_RS_MAY
+    [PLAYER_LOOK_MASC]  = OBJ_EVENT_GFX_LINK_RS_BRENDAN,
+    [PLAYER_LOOK_FEM]   = OBJ_EVENT_GFX_LINK_RS_MAY,
+    [PLAYER_LOOK_ANDRO] = OBJ_EVENT_GFX_LINK_RS_MAY, // no RS Kris art
 };
 
 // THE GRAPHICS ID HALF OF THIS TABLE IS GONE, and only the state-to-flag
@@ -1823,7 +1829,6 @@ void SetPlayerAvatarFishing(enum Direction direction)
 {
     EndORASDowsing();
     SetPlayerAvatarAnimation(PLAYER_AVATAR_ANIM_FISHING, GetFishingDirectionAnimNum(direction));
-    StartSpriteAnim(&gSprites[gPlayerAvatar.spriteId], GetFishingDirectionAnimNum(direction));
 }
 
 void PlayerUseAcroBikeOnBumpySlope(enum Direction direction)

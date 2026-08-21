@@ -20,7 +20,12 @@
 enum __attribute__((packed)) TrainerPicID
 {
     TRAINER_PIC_NONE,
-    TRAINER_PIC_BRENDAN, // The player back pics are assumed to alternate according to the gender values (MALE/FEMALE)
+    // NOTE: this used to say the player back pics are assumed to alternate
+    // according to the gender values. Nothing does that arithmetic any more -
+    // GetPlayerTrainerPic in src/trainer.c is the only consumer and it is a
+    // switch - which is why TRAINER_PIC_KRIS is appended at the end of this
+    // enum rather than inserted here.
+    TRAINER_PIC_BRENDAN,
     TRAINER_PIC_MAY,
     TRAINER_PIC_RED,
     TRAINER_PIC_LEAF,
@@ -209,6 +214,8 @@ enum __attribute__((packed)) TrainerPicID
     TRAINER_PIC_ROGUE_JOHTO_SILVER,
     TRAINER_PIC_ROGUE_SINNOH_DAWN,
     TRAINER_PIC_ROGUE_SINNOH_BARRY,
+    // Appended, not inserted - see the note by TRAINER_PIC_BRENDAN.
+    TRAINER_PIC_KRIS,
     TRAINER_PIC_COUNT,
 };
 
@@ -333,6 +340,8 @@ enum
     FACILITY_CLASS_SCIENTIST_FRLG,
     FACILITY_CLASS_BEAUTY_FRLG,
     FACILITY_CLASS_LASS_FRLG,
+    // Appended for the same reason as TRAINER_PIC_KRIS.
+    FACILITY_CLASS_KRIS,
     FACILITY_CLASSES_COUNT,
 };
 

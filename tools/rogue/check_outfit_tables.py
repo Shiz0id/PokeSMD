@@ -79,11 +79,29 @@ WHAT IT ASSERTS.
      grid. The gender switch rebuilds on every press, which is what turns a
      dormant leak into an empty palette table in about four seconds.
 
-  9. THE GENDER SWITCH IS NEW GAME ONLY, cycles through GENDER_COUNT rather
-     than flipping between two named values, and rebuilds the GRID as well as
-     the trainer pics - every cell draws its outfit at the current gender, so
+  9. THE GENDER SWITCH IS NEW GAME ONLY, steps a TABLE of (identity, look)
+     pairs rather than flipping named values, and rebuilds the GRID as well as
+     the trainer pics - every cell draws its outfit at the current look, so
      redrawing only the pics leaves a row of who the player just stopped
      being.
+
+ 10. IDENTITY AND LOOK STAY SEPARATE, and this is the assertion that matters
+     most in this file.
+
+     enum PlayerGender is WHO the player is and drives text. enum PlayerLook is
+     WHAT THEY LOOK LIKE and indexes every art table. They are two fields
+     because an androgynous player may present as any of the three looks - the
+     alternative is telling somebody their identity picks their sprite.
+
+     enum Gender must stay TWO WIDE. Its MALE/FEMALE tokens are also what
+     struct Trainer's one-bit `gender` field holds, so a third value there
+     truncates silently: a trainer who is neither becomes male, with a clean
+     build and nothing to see.
+
+     And no table indexed by a look may be sized GENDER_COUNT or by a literal,
+     because a look of PLAYER_LOOK_ANDRO then reads one past the end - not a
+     crash, just whatever the next symbol happens to be, read as a palette
+     pointer or a colour.
 
 COMPARISONS RUN ON VALUES, NOT SPELLINGS, and that was not true when this file
 was first written: the alias-shaped break below passed on its first run,
@@ -107,6 +125,18 @@ EVENT_OBJECTS = Path("include/constants/event_objects.h")
 OUTFIT_C = Path("src/outfit.c")
 MAIN_MENU = Path("src/main_menu.c")
 MENU_C = Path("src/outfit_menu.c")
+GLOBAL_CONSTANTS = Path("include/constants/global.h")
+
+# Every file that indexes a table by the player's LOOK. Each one is a place
+# where a two-wide table would read out of bounds the moment the player picks
+# the third look.
+LOOK_INDEXED = [
+    Path("src/mail.c"),
+    Path("src/battle_transition.c"),
+    Path("src/trainer_card.c"),
+    Path("src/cable_car.c"),
+    Path("src/field_player_avatar.c"),
+]
 
 AVATAR_STATES = [
     "PLAYER_AVATAR_STATE_NORMAL",
@@ -122,7 +152,7 @@ ANIM_SLOTS = [
     "PLAYER_AVATAR_ANIM_DECORATING",
     "PLAYER_AVATAR_ANIM_VSSEEKER",
 ]
-GENDERS = ["MALE", "FEMALE"]
+GENDERS = ["MALE", "FEMALE", "PLAYER_LOOK_ANDRO"]
 
 # Slots with a PLAYER_AVATAR_GFX_* macro carrying the IS_FRLG ternary.
 # DECORATING deliberately has none - FRLG has no such sprite - so it is the one
@@ -135,6 +165,9 @@ MACRO_DEF = (
     r"#define\s+(PLAYER_AVATAR_GFX_[A-Z0-9_]+)\s+\(IS_FRLG\s*\?\s*"
     r"([A-Za-z0-9_]+)\s*:\s*([A-Za-z0-9_]+)\)"
 )
+
+
+PLAIN_MACRO_DEF = r"#define\s+(PLAYER_AVATAR_GFX_[A-Z0-9_]+)\s+([A-Za-z0-9_]+)\s*$"
 
 
 def read(repo, path):
@@ -157,9 +190,17 @@ def strip_comments(text):
 
 def macro_map(repo):
     """PLAYER_AVATAR_GFX_* -> the OBJ_EVENT_GFX_* id it means on an Emerald build."""
+    text = read(repo, EVENT_OBJECTS)
     out = {}
-    for m in re.finditer(MACRO_DEF, read(repo, EVENT_OBJECTS)):
+    for m in re.finditer(MACRO_DEF, text):
         out[m.group(1)] = m.group(3)  # the Emerald arm of the ternary
+
+    # THE PLAIN FORM TOO. The androgynous look points straight at Kris ids with
+    # no ternary, because there is no FireRed Kris for one to choose between -
+    # so a macro without an IS_FRLG is correct there, and a resolver that only
+    # knew the ternary form reported every one of them as a raw id.
+    for m in re.finditer(PLAIN_MACRO_DEF, text, re.M):
+        out.setdefault(m.group(1), m.group(2))
     return out
 
 
@@ -207,7 +248,7 @@ def parse_all_slots(block):
             continue
         gender = None
         for line in block[am.end() - 1 : end + 1].splitlines():
-            gm = re.search(r"\[(MALE|FEMALE)\]\s*=\s*\{", line)
+            gm = re.search(r"\[(MALE|FEMALE|PLAYER_LOOK_MASC|PLAYER_LOOK_FEM|PLAYER_LOOK_ANDRO)\]\s*=\s*\{", line)
             if gm:
                 gender = gm.group(1)
                 continue
@@ -454,11 +495,11 @@ def check(repo, fail):
         else:
             arm = body[gender_arm.start() :]
             arm = arm[: arm.index("\n    }") + 6] if "\n    }" in arm else arm
-            if "GENDER_COUNT" not in arm:
+            if "GetPlayerGenderStopCount" not in arm or "ApplyPlayerGenderStop" not in arm:
                 fail(
-                    "the gender switch does not cycle through GENDER_COUNT - a flip "
-                    "between two named values is the one thing that makes adding a "
-                    "third gender a code change rather than a data change"
+                    "the gender switch does not step gPlayerGenderStops - setting "
+                    "the identity and look fields directly here is what puts the "
+                    "list of pairings in the input handler instead of in the data"
                 )
             if "RebuildOutfitGrid" not in arm:
                 fail(
@@ -466,6 +507,85 @@ def check(repo, fail):
                     "its outfit's overworld sprite AT THE CURRENT GENDER, so "
                     "redrawing only the trainer pics leaves the grid showing the "
                     "gender the player just stopped being"
+                )
+
+    # 10. identity and look stay separate, and enum Gender stays two wide
+    consts = read(repo, GLOBAL_CONSTANTS)
+
+    gender_enum = re.search(r"enum Gender\s*\{(.*?)\}", consts, re.S)
+    if not gender_enum:
+        fail("enum Gender not found in %s" % GLOBAL_CONSTANTS)
+    elif "GENDER_ANDROGYNOUS" in gender_enum.group(1) or gender_enum.group(1).count(",") > 3:
+        fail(
+            "enum Gender has grown past MALE/FEMALE/GENDER_COUNT. Its tokens are "
+            "also what struct Trainer's one-bit gender field holds, so a third "
+            "value truncates silently there - which is why enum PlayerGender "
+            "exists separately"
+        )
+
+    for name, members in (
+        ("PlayerGender", ("GENDER_MASCULINE", "GENDER_FEMININE", "GENDER_ANDROGYNOUS")),
+        ("PlayerLook", ("PLAYER_LOOK_MASC", "PLAYER_LOOK_FEM", "PLAYER_LOOK_ANDRO")),
+    ):
+        m2 = re.search(r"enum " + name + r"\s*\{(.*?)\}", consts, re.S)
+        if not m2:
+            fail("enum %s not found in %s" % (name, GLOBAL_CONSTANTS))
+            continue
+        for member in members:
+            if member not in m2.group(1):
+                fail("enum %s has no %s" % (name, member))
+
+    # The look enum has to keep the values the save already holds.
+    look_enum = re.search(r"enum PlayerLook\s*\{(.*?)\}", consts, re.S)
+    if look_enum:
+        body = look_enum.group(1)
+        if "PLAYER_LOOK_MASC = MALE" not in body or "PLAYER_LOOK_FEM = FEMALE" not in body:
+            fail(
+                "enum PlayerLook does not pin its first two members to MALE and "
+                "FEMALE. It is stored in gSaveBlock2Ptr->playerGender, so every "
+                "existing save and every [MALE]/[FEMALE] designator in a player art "
+                "table depends on those values not moving"
+            )
+
+    # Identity must have a reader that is not the picker itself, or it is a
+    # field the game stores and never consults.
+    identity_readers = []
+    for path in sorted((repo / "src").glob("*.c")):
+        if path.name in ("outfit.c", "outfit_menu.c"):
+            continue
+        if "playerGenderIdentity" in path.read_text(encoding="utf-8"):
+            identity_readers.append(path.name)
+    if not identity_readers:
+        fail(
+            "nothing outside the picker reads playerGenderIdentity - a stored "
+            "identity that no screen consults is a save field pretending to be a "
+            "feature"
+        )
+
+    # NO LOOK-INDEXED TABLE MAY BE TWO WIDE.
+    #
+    # FIND THE INDEXERS FIRST, then check only those declarations. The first
+    # version of this flagged every [2] in the files it scanned - stickers,
+    # monSpecies, hikerCoords, gFieldEffectArguments - none of which has
+    # anything to do with the player's look. A check that fires on things that
+    # are obviously fine trains everyone to ignore it, so it asks the narrower
+    # question: which arrays are indexed by playerGender, and are THOSE wide
+    # enough.
+    for path in LOOK_INDEXED:
+        text = strip_comments(read(repo, path))
+        indexed = set(re.findall(r"(\w+)\s*\[[^\]]*playerGender[^\]]*\]", text))
+        for name in sorted(indexed):
+            decl = re.search(
+                re.escape(name) + r"\s*\[\s*([A-Za-z0-9_]+)\s*\]", text
+            )
+            if not decl:
+                continue
+            width = decl.group(1)
+            if width in ("GENDER_COUNT", "2"):
+                fail(
+                    "%s: %s is indexed by playerGender but declared [%s] - a look "
+                    "of PLAYER_LOOK_ANDRO reads one past the end. Size it "
+                    "[PLAYER_LOOK_COUNT]" % (path, name, width)
                 )
 
     # 6. the struct is sized by GENDER_COUNT throughout
@@ -478,11 +598,12 @@ def check(repo, fail):
             fm = re.search(re.escape(field) + r"\s*\[([^\]]+)\]", body)
             if not fm:
                 fail("struct Outfit has no %s" % field)
-            elif fm.group(1).strip() != "GENDER_COUNT":
+            elif fm.group(1).strip() != "PLAYER_LOOK_COUNT":
                 fail(
-                    "struct Outfit.%s is sized [%s], not [GENDER_COUNT] - a literal "
-                    "width is what makes a third gender a refactor instead of a "
-                    "data edit" % (field, fm.group(1).strip())
+                    "struct Outfit.%s is sized [%s], not [PLAYER_LOOK_COUNT] - this "
+                    "table is indexed by the player's LOOK, and a literal or a "
+                    "two-wide count reads out of bounds at PLAYER_LOOK_ANDRO"
+                    % (field, fm.group(1).strip())
                 )
 
 
@@ -657,18 +778,6 @@ BREAKS = [
         ),
     ),
     (
-        "the gender switch flipping two names instead of cycling GENDER_COUNT",
-        MENU_C,
-        lambda s: s.replace(
-            "        if (JOY_NEW(R_BUTTON))\n"
-            "            gSaveBlock2Ptr->playerGender = (gSaveBlock2Ptr->playerGender + 1) % GENDER_COUNT;\n"
-            "        else\n"
-            "            gSaveBlock2Ptr->playerGender = (gSaveBlock2Ptr->playerGender + GENDER_COUNT - 1) % GENDER_COUNT;",
-            "        gSaveBlock2Ptr->playerGender = (gSaveBlock2Ptr->playerGender == MALE) ? FEMALE : MALE;",
-            1,
-        ),
-    ),
-    (
         "the gender switch redrawing the pics but not the grid",
         MENU_C,
         lambda s: s.replace(
@@ -678,13 +787,46 @@ BREAKS = [
         ),
     ),
     (
-        "struct sized by a literal instead of GENDER_COUNT",
+        "struct sized by a literal instead of the look count",
         STRUCT,
         lambda s: s.replace(
-            "u16 avatarGfxIds[GENDER_COUNT][PLAYER_AVATAR_STATE_COUNT];",
+            "u16 avatarGfxIds[PLAYER_LOOK_COUNT][PLAYER_AVATAR_STATE_COUNT];",
             "u16 avatarGfxIds[2][PLAYER_AVATAR_STATE_COUNT];",
             1,
         ),
+    ),
+    (
+        "a third value pushed into enum Gender, where trainers keep theirs",
+        GLOBAL_CONSTANTS,
+        lambda s: s.replace(
+            "enum Gender\n{\n    MALE,\n    FEMALE,\n    GENDER_COUNT,\n};",
+            "enum Gender\n{\n    MALE,\n    FEMALE,\n    GENDER_ANDROGYNOUS,\n    GENDER_COUNT,\n};",
+            1,
+        ),
+    ),
+    (
+        "the look enum unpinned from the values the save holds",
+        GLOBAL_CONSTANTS,
+        lambda s: s.replace("    PLAYER_LOOK_MASC = MALE,", "    PLAYER_LOOK_MASC,", 1),
+    ),
+    (
+        "a look-indexed table left two wide",
+        Path("src/mail.c"),
+        lambda s: s.replace(
+            "static const u16 sBgColors[PLAYER_LOOK_COUNT][2] = {",
+            "static const u16 sBgColors[GENDER_COUNT][2] = {",
+            1,
+        ),
+    ),
+    (
+        "identity stored but read by nothing outside the picker",
+        Path("src/start_menu.c"),
+        lambda s: s.replace("gSaveBlock2Ptr->playerGenderIdentity", "gSaveBlock2Ptr->playerGender", 1),
+    ),
+    (
+        "the picker setting the fields itself instead of stepping the table",
+        MENU_C,
+        lambda s: s.replace("ApplyPlayerGenderStop(stop);", "gSaveBlock2Ptr->playerGender = stop;", 1),
     ),
 ]
 

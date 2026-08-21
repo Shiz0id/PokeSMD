@@ -23,6 +23,21 @@
 #define PLAYER_AVATAR_GFX_FEMALE_WATERING   (IS_FRLG ? OBJ_EVENT_GFX_GREEN_FIELD_MOVE : OBJ_EVENT_GFX_MAY_WATERING)
 #define PLAYER_AVATAR_GFX_FEMALE_VSSEEKER   (IS_FRLG ? OBJ_EVENT_GFX_GREEN_VS_SEEKER  : OBJ_EVENT_GFX_MAY_FIELD_MOVE)
 
+// The third player look. NO IS_FRLG TERNARY, unlike the two above: Kris is
+// Hoenn-style art with no FireRed counterpart, so there is nothing for a
+// ternary to choose between and pretending otherwise would put Brendan on the
+// other side of it.
+#define PLAYER_AVATAR_GFX_ANDRO_NORMAL      OBJ_EVENT_GFX_KRIS_NORMAL
+#define PLAYER_AVATAR_GFX_ANDRO_MACH_BIKE   OBJ_EVENT_GFX_KRIS_MACH_BIKE
+#define PLAYER_AVATAR_GFX_ANDRO_ACRO_BIKE   OBJ_EVENT_GFX_KRIS_ACRO_BIKE
+#define PLAYER_AVATAR_GFX_ANDRO_SURFING     OBJ_EVENT_GFX_KRIS_SURFING
+#define PLAYER_AVATAR_GFX_ANDRO_UNDERWATER  OBJ_EVENT_GFX_KRIS_UNDERWATER
+#define PLAYER_AVATAR_GFX_ANDRO_FIELD_MOVE  OBJ_EVENT_GFX_KRIS_FIELD_MOVE
+#define PLAYER_AVATAR_GFX_ANDRO_FISHING     OBJ_EVENT_GFX_KRIS_FISHING
+#define PLAYER_AVATAR_GFX_ANDRO_WATERING    OBJ_EVENT_GFX_KRIS_WATERING
+#define PLAYER_AVATAR_GFX_ANDRO_DECORATING  OBJ_EVENT_GFX_KRIS_DECORATING
+#define PLAYER_AVATAR_GFX_ANDRO_VSSEEKER    OBJ_EVENT_GFX_KRIS_FIELD_MOVE
+
 enum
 {
     OBJ_EVENT_GFX_BRENDAN_NORMAL,
@@ -461,6 +476,20 @@ enum
     // templates the save block carries - inserting in the middle renames
     // every sprite after it in a save that already exists.
     OBJ_EVENT_GFX_ROGUE_EGG,
+    // Kris, the third player look. APPENDED for the same reason the egg above
+    // is - the reference commit this came from inserts these next to May so
+    // that TRAINER_BACK_PIC_BRENDAN + gender keeps working, but nothing in this
+    // tree does that arithmetic any more (the only consumer is a ternary in
+    // trainer.c), so there is no reason to pay for a renumber.
+    OBJ_EVENT_GFX_KRIS_NORMAL,
+    OBJ_EVENT_GFX_KRIS_MACH_BIKE,
+    OBJ_EVENT_GFX_KRIS_ACRO_BIKE,
+    OBJ_EVENT_GFX_KRIS_SURFING,
+    OBJ_EVENT_GFX_KRIS_UNDERWATER,
+    OBJ_EVENT_GFX_KRIS_FIELD_MOVE,
+    OBJ_EVENT_GFX_KRIS_FISHING,
+    OBJ_EVENT_GFX_KRIS_WATERING,
+    OBJ_EVENT_GFX_KRIS_DECORATING,
     NUM_OBJ_EVENT_GFX,
 };
 
@@ -702,6 +731,12 @@ enum
 #define OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_DAWN                      0x1189
 #define OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_BARRY                     0x118A
 #define OBJ_EVENT_PAL_TAG_ROGUE_EGG                              0x118B
+// NO REFLECTION TAG. reflectionPaletteTag is never read in this tree -
+// LoadObjectRegularReflectionPalette computes the reflection at runtime with
+// ApplyPondFilter over the sprite's LIVE palette - so the reference commit's
+// OBJ_EVENT_PAL_TAG_KRIS_REFLECTION is both unnecessary and, pointed at
+// may_reflection.pal as it is there, the wrong colours.
+#define OBJ_EVENT_PAL_TAG_ROGUE_KRIS                             0x118C
 #define OBJ_EVENT_PAL_TAG_NONE                    0x11FF
 
 // This + localId is used as the tileTag

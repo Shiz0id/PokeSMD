@@ -736,12 +736,22 @@ struct SaveBlock2
              // there is no shortage of room here to pay for that risk.
     /*0x90*/ u8 currOutfitId;
     /*0x91*/ u8 outfits[NUM_OUTFIT_OWNED_BYTES]; // Bitfield: which outfits are unlocked
+             // WHO the player is, as opposed to what they look like. The look
+             // is playerGender above, which every art table indexes and which
+             // therefore could not be widened without moving art around; this
+             // is the other axis, and it drives text. enum PlayerGender.
+             //
+             // Zero is GENDER_MASCULINE, so a save written before this reads as
+             // masculine rather than as something out of range - which is the
+             // same graceful arrival every other field taken out of this filler
+             // has had.
              // Sized from what the two fields above took, so that raising
              // OUTFIT_COUNT past a byte boundary cannot silently shift
              // localTimeOffset and everything after it. When the filler is
              // exhausted this is a negative array size and the build stops,
              // which is the whole point of writing it this way.
-    /*0x92*/ u8 filler_92[0x8 - 1 - NUM_OUTFIT_OWNED_BYTES];
+             u8 playerGenderIdentity;
+    /*0x93*/ u8 filler_93[0x8 - 2 - NUM_OUTFIT_OWNED_BYTES];
     /*0x98*/ struct Time localTimeOffset;
     /*0xA0*/ struct Time lastBerryTreeUpdate;
     /*0xA8*/ u32 gcnLinkFlags; // Read by Pokémon Colosseum/XD

@@ -59,6 +59,19 @@ const u32 gObjectEventPic_MayUnderwater[] = INCGFX_U32("graphics/object_events/p
 const u16 gObjectEventPal_PlayerUnderwater[] = INCGFX_U16("graphics/object_events/palettes/player_underwater.pal", ".gbapal");
 const u32 gObjectEventPic_MayNormalRunning[] = INCBIN_U32("graphics/object_events/pics/people/may/walking.4bpp", "graphics/object_events/pics/people/may/running.4bpp");
 const u16 gObjectEventPal_May[] = INCGFX_U16("graphics/object_events/palettes/may.pal", ".gbapal");
+
+// Kris, the third player look. No reflection palette: this tree computes those
+// at runtime, see the note by OBJ_EVENT_PAL_TAG_ROGUE_KRIS.
+const u32 gObjectEventPic_KrisNormalRunning[] = INCBIN_U32("graphics/object_events/pics/people/kris/walking.4bpp", "graphics/object_events/pics/people/kris/running.4bpp");
+const u16 gObjectEventPal_Kris[] = INCGFX_U16("graphics/object_events/palettes/kris.pal", ".gbapal");
+const u32 gObjectEventPic_KrisMachBike[] = INCGFX_U32("graphics/object_events/pics/people/kris/mach_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_KrisAcroBike[] = INCGFX_U32("graphics/object_events/pics/people/kris/acro_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_KrisSurfing[] = INCGFX_U32("graphics/object_events/pics/people/kris/surfing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_KrisUnderwater[] = INCGFX_U32("graphics/object_events/pics/people/kris/underwater.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_KrisFieldMove[] = INCGFX_U32("graphics/object_events/pics/people/kris/field_move.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_KrisFishing[] = INCGFX_U32("graphics/object_events/pics/people/kris/fishing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_KrisWatering[] = INCGFX_U32("graphics/object_events/pics/people/kris/watering.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_KrisDecorating[] = INCGFX_U32("graphics/object_events/pics/people/kris/decorating.png", ".4bpp");
 const u16 gObjectEventPal_MayReflection[] = INCGFX_U16("graphics/object_events/palettes/may_reflection.pal", ".gbapal");
 const u32 gObjectEventPic_RubySapphireMayNormal[] = INCGFX_U32("graphics/object_events/pics/people/ruby_sapphire_may/walking.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u32 gObjectEventPic_RubySapphireMayRunning[] = INCGFX_U32("graphics/object_events/pics/people/ruby_sapphire_may/running.png", ".4bpp", "-mwidth 2 -mheight 4");

@@ -37,6 +37,29 @@ u16 GetPlayerDecoratingGfxId(void);
 const u16 *GetPlayerHeadGfx(void);
 const u16 *GetPlayerHeadPal(void);
 
+// WHAT THE NEW GAME PICKER CYCLES THROUGH. Identity and look are independent
+// fields - see enum PlayerGender and enum PlayerLook - but not all nine
+// combinations are worth walking a player past, so the picker offers a curated
+// list rather than two separate controls.
+//
+// The MODEL is what matters and the list is not part of it: anything may set
+// the two fields to any pair, and everything downstream will do the right
+// thing. This is only the order one button steps through.
+struct PlayerGenderStop
+{
+    u8 identity; // enum PlayerGender
+    u8 look;     // enum PlayerLook
+    const u8 *label;
+};
+
+extern const struct PlayerGenderStop gPlayerGenderStops[];
+u32 GetPlayerGenderStopCount(void);
+
+// Which stop the save currently sits on. Answers 0 for a pairing that is not in
+// the list, which is a legal state - it just is not one this button reaches.
+u32 FindPlayerGenderStop(void);
+void ApplyPlayerGenderStop(u32 index);
+
 bool32 IsOutfitUnlocked(u16 outfitId);
 void UnlockOutfit(u16 outfitId);
 void LockOutfit(u16 outfitId);

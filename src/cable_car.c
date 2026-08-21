@@ -771,9 +771,13 @@ static void CreateCableCarSprites(void)
     u8 spriteId;
     u8 i;
 
-    u16 playerGraphicsIds[2] = {
-        [MALE]   = OBJ_EVENT_GFX_RIVAL_BRENDAN_NORMAL,
-        [FEMALE] = OBJ_EVENT_GFX_RIVAL_MAY_NORMAL
+    // SIZED BY THE LOOK, not by a literal 2. Indexed with
+    // gSaveBlock2Ptr->playerGender below, so at PLAYER_LOOK_ANDRO the old
+    // version read one u16 past the end of a stack array.
+    u16 playerGraphicsIds[PLAYER_LOOK_COUNT] = {
+        [PLAYER_LOOK_MASC]  = OBJ_EVENT_GFX_RIVAL_BRENDAN_NORMAL,
+        [PLAYER_LOOK_FEM]   = OBJ_EVENT_GFX_RIVAL_MAY_NORMAL,
+        [PLAYER_LOOK_ANDRO] = OBJ_EVENT_GFX_KRIS_NORMAL,
     };
     u16 rval = Random();
     u16 hikerGraphicsIds[4] = {

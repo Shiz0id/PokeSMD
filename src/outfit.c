@@ -6,6 +6,45 @@
 
 // See include/outfit.h for why this is not part of outfit_menu.c.
 
+const struct PlayerGenderStop gPlayerGenderStops[] =
+{
+    { GENDER_MASCULINE,   PLAYER_LOOK_MASC,  COMPOUND_STRING("BOY") },
+    { GENDER_FEMININE,    PLAYER_LOOK_FEM,   COMPOUND_STRING("GIRL") },
+    { GENDER_ANDROGYNOUS, PLAYER_LOOK_ANDRO, COMPOUND_STRING("ENBY") },
+    // AN ENBY PLAYER MAY PRESENT AS EITHER OF THE OTHER TWO. That is the whole
+    // reason identity and look are separate fields rather than one - the
+    // alternative is telling somebody their identity picks their sprite.
+    { GENDER_ANDROGYNOUS, PLAYER_LOOK_MASC,  COMPOUND_STRING("ENBY/BOY") },
+    { GENDER_ANDROGYNOUS, PLAYER_LOOK_FEM,   COMPOUND_STRING("ENBY/GIRL") },
+};
+
+u32 GetPlayerGenderStopCount(void)
+{
+    return ARRAY_COUNT(gPlayerGenderStops);
+}
+
+u32 FindPlayerGenderStop(void)
+{
+    u32 i;
+
+    for (i = 0; i < ARRAY_COUNT(gPlayerGenderStops); i++)
+    {
+        if (gPlayerGenderStops[i].identity == gSaveBlock2Ptr->playerGenderIdentity
+         && gPlayerGenderStops[i].look == gSaveBlock2Ptr->playerGender)
+            return i;
+    }
+    return 0;
+}
+
+void ApplyPlayerGenderStop(u32 index)
+{
+    if (index >= ARRAY_COUNT(gPlayerGenderStops))
+        return;
+
+    gSaveBlock2Ptr->playerGenderIdentity = gPlayerGenderStops[index].identity;
+    gSaveBlock2Ptr->playerGender = gPlayerGenderStops[index].look;
+}
+
 u8 SanitizeOutfitId(u8 outfitId)
 {
     if (outfitId == OUTFIT_NONE || outfitId >= OUTFIT_COUNT)

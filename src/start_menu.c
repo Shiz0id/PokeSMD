@@ -1,4 +1,5 @@
 #include "global.h"
+#include "outfit.h"
 #include "config/save.h"
 #include "battle_pike.h"
 #include "battle_pyramid.h"
@@ -1429,7 +1430,6 @@ static void Task_SaveAfterLinkBattle(u8 taskId)
 static void ShowSaveInfoWindow(void)
 {
     struct WindowTemplate saveInfoWindow = sSaveInfoWindowTemplate;
-    enum Gender gender;
     u8 color;
     u32 xOffset;
     u32 yOffset;
@@ -1442,11 +1442,24 @@ static void ShowSaveInfoWindow(void)
     sSaveInfoWindowId = AddWindow(&saveInfoWindow);
     DrawStdWindowFrame(sSaveInfoWindowId, FALSE);
 
-    gender = gSaveBlock2Ptr->playerGender;
-    color = TEXT_COLOR_RED;  // Red when female, blue when male.
-
-    if (gender == MALE)
+    // THE IDENTITY, NOT THE LOOK. Everything else in this tree keyed on
+    // gender is choosing art and correctly follows gSaveBlock2Ptr->playerGender;
+    // this is a colour beside the player's NAME, so it follows who they are
+    // rather than which sprite they present as. An enby player who presents as
+    // Brendan still gets their own colour here.
+    switch (gSaveBlock2Ptr->playerGenderIdentity)
+    {
+    case GENDER_MASCULINE:
         color = TEXT_COLOR_BLUE;
+        break;
+    case GENDER_ANDROGYNOUS:
+        color = TEXT_COLOR_GREEN;
+        break;
+    case GENDER_FEMININE:
+    default:
+        color = TEXT_COLOR_RED;
+        break;
+    }
 
     // Print region name
     yOffset = 1;

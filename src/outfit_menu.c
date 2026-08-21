@@ -841,15 +841,14 @@ static void SetupOutfitMenu_Grids(void)
 // player picks their gender, so it cannot be left to be discovered.
 static void PrintGenderHint(void)
 {
-    const u8 *name = (gSaveBlock2Ptr->playerGender == MALE) ? gText_Boy : gText_Girl;
-    u8 str[24];
+    u8 str[32];
     u8 *end;
 
     if (!sOutfitMenu->newGame)
         return;
 
     end = StringCopy(str, gText_OutfitGenderHint);
-    StringCopy(end, name);
+    StringCopy(end, gPlayerGenderStops[FindPlayerGenderStop()].label);
     PrintTexts(WIN_INFO, FONT_SMALL,
                GetStringRightAlignXOffset(FONT_SMALL, str, WIN_INFO_WIDTH_PX - 2), 2,
                COLORID_NORMAL, str);
@@ -980,13 +979,17 @@ static void Task_OutfitMenuHandleInput(u8 taskId)
     // this project does not run.
     if (sOutfitMenu->newGame && JOY_NEW(L_BUTTON | R_BUTTON))
     {
-        // CYCLED, not toggled, and through GENDER_COUNT rather than a flip
-        // between two named values - so a third gender is an enum member and
-        // one more art row, with nothing here to revisit.
+        // STEPS THE STOP LIST, which carries an identity AND a look. Cycled
+        // rather than toggled, and over a table rather than named values, so
+        // adding a pairing is a row in gPlayerGenderStops and nothing here.
+        u32 count = GetPlayerGenderStopCount();
+        u32 stop = FindPlayerGenderStop();
+
         if (JOY_NEW(R_BUTTON))
-            gSaveBlock2Ptr->playerGender = (gSaveBlock2Ptr->playerGender + 1) % GENDER_COUNT;
+            stop = (stop + 1) % count;
         else
-            gSaveBlock2Ptr->playerGender = (gSaveBlock2Ptr->playerGender + GENDER_COUNT - 1) % GENDER_COUNT;
+            stop = (stop + count - 1) % count;
+        ApplyPlayerGenderStop(stop);
 
         // The grid too, not only the big pics: every cell draws that outfit's
         // overworld sprite for the current gender, so leaving them alone shows

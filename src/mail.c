@@ -128,9 +128,12 @@ static const u8 sTextColors[] = {
 
 // Background is alternating bars of a dark/light color.
 // Either blue or red depending on player's gender
-static const u16 sBgColors[GENDER_COUNT][2] = {
-    [MALE]   = { RGB(13, 22, 26), RGB(5, 13, 20) },
-    [FEMALE] = { RGB(28, 15, 17), RGB(20, 6, 14) }
+static const u16 sBgColors[PLAYER_LOOK_COUNT][2] = {
+    [PLAYER_LOOK_MASC]  = { RGB(13, 22, 26), RGB(5, 13, 20) },
+    [PLAYER_LOOK_FEM]   = { RGB(28, 15, 17), RGB(20, 6, 14) },
+    // Kris has no mail scheme of her own. Between the blue and the red, the
+    // blue is the closer match to her sprite's palette.
+    [PLAYER_LOOK_ANDRO] = { RGB(13, 22, 26), RGB(5, 13, 20) },
 };
 
 static const struct MailGraphics sMailGraphics[] = {

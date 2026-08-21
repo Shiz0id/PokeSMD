@@ -38,12 +38,13 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
     [OUTFIT_USUAL_GREEN] =
     {
         .isHidden = FALSE,
-        .prices = { 0, 0 },
+        .prices = { 0, 0, 0 },
         .name = COMPOUND_STRING("USUAL GREEN"),
         .desc = COMPOUND_STRING("The usual, but basic OUTFIT."),
         .trainerPics = {
-            [MALE]   = TRAINER_PIC_BRENDAN,
-            [FEMALE] = TRAINER_PIC_MAY,
+            [MALE]              = TRAINER_PIC_BRENDAN,
+            [FEMALE]            = TRAINER_PIC_MAY,
+            [PLAYER_LOOK_ANDRO] = TRAINER_PIC_KRIS,
         },
         .avatarGfxIds = {
             [MALE] = {
@@ -59,6 +60,13 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
                 [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_GFX_FEMALE_ACRO_BIKE,
                 [PLAYER_AVATAR_STATE_SURFING]    = PLAYER_AVATAR_GFX_FEMALE_SURFING,
                 [PLAYER_AVATAR_STATE_UNDERWATER] = PLAYER_AVATAR_GFX_FEMALE_UNDERWATER,
+            },
+            [PLAYER_LOOK_ANDRO] = {
+                [PLAYER_AVATAR_STATE_NORMAL]     = PLAYER_AVATAR_GFX_ANDRO_NORMAL,
+                [PLAYER_AVATAR_STATE_MACH_BIKE]  = PLAYER_AVATAR_GFX_ANDRO_MACH_BIKE,
+                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_GFX_ANDRO_ACRO_BIKE,
+                [PLAYER_AVATAR_STATE_SURFING]    = PLAYER_AVATAR_GFX_ANDRO_SURFING,
+                [PLAYER_AVATAR_STATE_UNDERWATER] = PLAYER_AVATAR_GFX_ANDRO_UNDERWATER,
             },
         },
         .animGfxIds = {
@@ -79,10 +87,19 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
                 [PLAYER_AVATAR_ANIM_DECORATING] = OBJ_EVENT_GFX_MAY_DECORATING,
                 [PLAYER_AVATAR_ANIM_VSSEEKER]   = PLAYER_AVATAR_GFX_FEMALE_VSSEEKER,
             },
+            [PLAYER_LOOK_ANDRO] = {
+                [PLAYER_AVATAR_ANIM_FIELD_MOVE] = PLAYER_AVATAR_GFX_ANDRO_FIELD_MOVE,
+                [PLAYER_AVATAR_ANIM_FISHING]    = PLAYER_AVATAR_GFX_ANDRO_FISHING,
+                [PLAYER_AVATAR_ANIM_WATERING]   = PLAYER_AVATAR_GFX_ANDRO_WATERING,
+                [PLAYER_AVATAR_ANIM_DECORATING] = PLAYER_AVATAR_GFX_ANDRO_DECORATING,
+                [PLAYER_AVATAR_ANIM_VSSEEKER]   = PLAYER_AVATAR_GFX_ANDRO_VSSEEKER,
+            },
         },
         .iconsRM = {
             [MALE]   = { sRegionMapPlayerIcon_BrendanGfx, sRegionMapPlayerIcon_BrendanPal },
             [FEMALE] = { sRegionMapPlayerIcon_MayGfx,     sRegionMapPlayerIcon_MayPal },
+            // no Kris region map head art
+            [PLAYER_LOOK_ANDRO] = { sRegionMapPlayerIcon_MayGfx, sRegionMapPlayerIcon_MayPal },
         },
     },
 
@@ -102,12 +119,13 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
     [OUTFIT_UNUSUAL_RED] =
     {
         .isHidden = FALSE,
-        .prices = { 200, 500 },
+        .prices = { 200, 500, 350 },
         .name = COMPOUND_STRING("UNUSUAL RED"),
         .desc = COMPOUND_STRING("Rather unusual, but still basic\nOUTFIT."),
         .trainerPics = {
-            [MALE]   = TRAINER_PIC_RS_BRENDAN,
-            [FEMALE] = TRAINER_PIC_RS_MAY,
+            [MALE]              = TRAINER_PIC_RS_BRENDAN,
+            [FEMALE]            = TRAINER_PIC_RS_MAY,
+            [PLAYER_LOOK_ANDRO] = TRAINER_PIC_KRIS, // no RS art
         },
         .avatarGfxIds = {
             [MALE] = {
@@ -123,6 +141,18 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
                 [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_GFX_FEMALE_ACRO_BIKE,  // no RS art
                 [PLAYER_AVATAR_STATE_SURFING]    = PLAYER_AVATAR_GFX_FEMALE_SURFING,    // no RS art
                 [PLAYER_AVATAR_STATE_UNDERWATER] = PLAYER_AVATAR_GFX_FEMALE_UNDERWATER, // no RS art
+            },
+            // RUBY AND SAPPHIRE NEVER HAD A KRIS, so this whole column falls
+            // back - to Kris's OWN default-outfit art rather than to May's,
+            // because the player chose to look like Kris and an outfit with no
+            // art for that look should still be that person in the wrong
+            // clothes, not somebody else.
+            [PLAYER_LOOK_ANDRO] = {
+                [PLAYER_AVATAR_STATE_NORMAL]     = PLAYER_AVATAR_GFX_ANDRO_NORMAL,     // no RS art
+                [PLAYER_AVATAR_STATE_MACH_BIKE]  = PLAYER_AVATAR_GFX_ANDRO_MACH_BIKE,  // no RS art
+                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_GFX_ANDRO_ACRO_BIKE,  // no RS art
+                [PLAYER_AVATAR_STATE_SURFING]    = PLAYER_AVATAR_GFX_ANDRO_SURFING,    // no RS art
+                [PLAYER_AVATAR_STATE_UNDERWATER] = PLAYER_AVATAR_GFX_ANDRO_UNDERWATER, // no RS art
             },
         },
         .animGfxIds = {
@@ -140,10 +170,19 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
                 [PLAYER_AVATAR_ANIM_DECORATING] = OBJ_EVENT_GFX_MAY_DECORATING,        // no RS art
                 [PLAYER_AVATAR_ANIM_VSSEEKER]   = PLAYER_AVATAR_GFX_FEMALE_VSSEEKER,   // no RS art
             },
+            [PLAYER_LOOK_ANDRO] = {
+                [PLAYER_AVATAR_ANIM_FIELD_MOVE] = PLAYER_AVATAR_GFX_ANDRO_FIELD_MOVE, // no RS art
+                [PLAYER_AVATAR_ANIM_FISHING]    = PLAYER_AVATAR_GFX_ANDRO_FISHING,    // no RS art
+                [PLAYER_AVATAR_ANIM_WATERING]   = PLAYER_AVATAR_GFX_ANDRO_WATERING,   // no RS art
+                [PLAYER_AVATAR_ANIM_DECORATING] = PLAYER_AVATAR_GFX_ANDRO_DECORATING, // no RS art
+                [PLAYER_AVATAR_ANIM_VSSEEKER]   = PLAYER_AVATAR_GFX_ANDRO_VSSEEKER,   // no RS art
+            },
         },
         .iconsRM = {
             [MALE]   = { sRegionMapPlayerIcon_RSBrendanGfx, sRegionMapPlayerIcon_RSBrendanPal },
             [FEMALE] = { sRegionMapPlayerIcon_RSMayGfx,     sRegionMapPlayerIcon_RSMayPal },
+            // no Kris region map head art
+            [PLAYER_LOOK_ANDRO] = { sRegionMapPlayerIcon_RSMayGfx, sRegionMapPlayerIcon_RSMayPal },
         },
     },
 };
