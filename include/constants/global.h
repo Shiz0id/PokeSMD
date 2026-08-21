@@ -194,12 +194,64 @@ enum ContestCategories
 
 #define MAX_STAMP_CARD_STAMPS 7
 
+// enum Gender is TWO THINGS in this tree and it is worth knowing which before
+// touching either. It types the player-facing graphics signatures, and its
+// MALE/FEMALE tokens are ALSO what struct Trainer's `gender:1` bitfield holds.
+// A Pokemon's gender is a different scheme entirely (MON_MALE/MON_FEMALE/
+// MON_GENDERLESS, 0x00/0xFE/0xFF, in constants/pokemon.h).
+//
+// SO THIS ENUM IS NOT WHERE A THIRD PLAYER GENDER GOES. Widening it to three
+// would hand the third value to struct Trainer.gender, which is one bit wide
+// and would truncate it silently - a trainer that is neither male nor female
+// becoming male, with a clean build. The two enums below exist for that reason.
 enum Gender
 {
     MALE,
     FEMALE,
     GENDER_COUNT,
 };
+
+// WHO THE PLAYER IS. Drives text - the save-select screen, anything that would
+// otherwise say BOY or GIRL. Never indexes art.
+enum PlayerGender
+{
+    GENDER_MASCULINE,
+    GENDER_FEMININE,
+    GENDER_ANDROGYNOUS,
+    PLAYER_GENDER_COUNT,
+};
+
+// WHAT THE PLAYER LOOKS LIKE. Indexes every art table - avatar graphics,
+// trainer pics, head icons, mugshot palettes. Stored in
+// gSaveBlock2Ptr->playerGender, which is why both are pinned to the values
+// that field has always held: every existing [MALE] and [FEMALE] designator in
+// a player art table still means exactly what it meant, and every save written
+// before this still reads correctly.
+//
+// IT IS A SEPARATE AXIS FROM IDENTITY ON PURPOSE. An androgynous player may
+// present as either look, which is the whole point - the alternative is
+// telling somebody their identity dictates their sprite.
+//
+// THERE WAS A THIRD LOOK HERE AND REMOVING IT IS THE POINT, not a retreat.
+// PLAYER_LOOK_ANDRO carried Kris's art and existed only because identity had
+// nowhere else to live; once PlayerGender above became its own field, a third
+// LOOK meant "the enby sprite", which is the exact sentence these two enums
+// were split apart to avoid. Kris is now the feminine half of OUTFIT_JOHTO -
+// a character an outfit offers, reachable at any identity, like every other.
+//
+// So this enum is two wide and equals GENDER_COUNT again. That is a coincidence
+// of arity, not a merge: this one indexes art and enum Gender also types
+// struct Trainer's one-bit field. Do not fold them together.
+enum PlayerLook
+{
+    PLAYER_LOOK_MASC = MALE,
+    PLAYER_LOOK_FEM = FEMALE,
+    PLAYER_LOOK_COUNT,
+};
+
+// Named a whole word apart from GENDER_COUNT on purpose. The commit this was
+// ported from calls its third-gender count GENDERS_COUNT, one letter from the
+// two-wide GENDER_COUNT it sits beside, and the two size different tables.
 
 #define NUM_BARD_SONG_WORDS    6
 #define NUM_STORYTELLER_TALES  4

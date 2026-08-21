@@ -643,6 +643,30 @@ const union AnimCmd *const sBackAnims_OldManPokedude[] = {
         .animation = anim,                                                                   \
     }}
 
+const u32 gTrainerFrontPic_Kris[] = INCGFX_U32("graphics/trainers/front_pics/kris.png", ".4bpp.smol");
+const u16 gTrainerPalette_Kris[] = INCGFX_U16("graphics/trainers/palettes/kris.pal", ".gbapal");
+const u8 gTrainerBackPic_Kris[] = INCGFX_U8("graphics/trainers/back_pics/kris.png", ".4bpp");
+const u16 gTrainerBackPicPalette_Kris[] = INCGFX_U16("graphics/trainers/palettes/kris_back.pal", ".gbapal");
+
+// GOLD TAKES BOTH PALETTES OFF THE PNGs, the way Red and Leaf do, rather than
+// out of separate .pal files the way Kris does. One source of truth per pic:
+// a .pal that drifts from the art it is paired with is a recolour nothing can
+// see, and there is no second consumer here that would need the file.
+const u32 gTrainerFrontPic_Gold[] = INCGFX_U32("graphics/trainers/front_pics/gold.png", ".4bpp.smol");
+const u16 gTrainerPalette_Gold[] = INCGFX_U16("graphics/trainers/front_pics/gold.png", ".gbapal");
+const u8 gTrainerBackPic_Gold[] = INCGFX_U8("graphics/trainers/back_pics/gold.png", ".4bpp");
+const u16 gTrainerBackPicPalette_Gold[] = INCGFX_U16("graphics/trainers/back_pics/gold.png", ".gbapal");
+
+// Sinnoh. Palettes off the PNGs, as Gold's and Red's are.
+const u32 gTrainerFrontPic_Dawn[] = INCGFX_U32("graphics/trainers/front_pics/dawn.png", ".4bpp.smol");
+const u16 gTrainerPalette_Dawn[] = INCGFX_U16("graphics/trainers/front_pics/dawn.png", ".gbapal");
+const u8 gTrainerBackPic_Dawn[] = INCGFX_U8("graphics/trainers/back_pics/dawn.png", ".4bpp");
+const u16 gTrainerBackPicPalette_Dawn[] = INCGFX_U16("graphics/trainers/back_pics/dawn.png", ".gbapal");
+const u32 gTrainerFrontPic_Lucas[] = INCGFX_U32("graphics/trainers/front_pics/lucas.png", ".4bpp.smol");
+const u16 gTrainerPalette_Lucas[] = INCGFX_U16("graphics/trainers/front_pics/lucas.png", ".gbapal");
+const u8 gTrainerBackPic_Lucas[] = INCGFX_U8("graphics/trainers/back_pics/lucas.png", ".4bpp");
+const u16 gTrainerBackPicPalette_Lucas[] = INCGFX_U16("graphics/trainers/back_pics/lucas.png", ".gbapal");
+
 const struct TrainerPicInfo gTrainerPicInfo[TRAINER_PIC_COUNT] =
 {
     [TRAINER_PIC_NONE] =
@@ -659,6 +683,36 @@ const struct TrainerPicInfo gTrainerPicInfo[TRAINER_PIC_COUNT] =
     {
         .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_May, gTrainerPalette_May),
         .backPic = TRAINER_BACK_PIC(4, gTrainerBackPic_May, gTrainerPalette_May, sBackAnims_Hoenn),
+    },
+    [TRAINER_PIC_KRIS] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_Kris, gTrainerPalette_Kris),
+        .backPic = TRAINER_BACK_PIC(4, gTrainerBackPic_Kris, gTrainerBackPicPalette_Kris, sBackAnims_Hoenn),
+    },
+    // FIVE FRAMES, NOT FOUR, and the first argument is the frame COUNT despite
+    // being named yOffset - CopyTrainerBackspriteFramesToDest copies exactly
+    // that many. gold.png is 64x320. Declaring 4 here would draw a truncated
+    // throw; declaring 5 against a 4-frame sheet reads past the end. This one
+    // is only safe because MAX_TRAINER_PIC_FRAMES was raised to 5 first - at 4
+    // it was a 2 KB overrun of every buffer that copies, which is the freeze
+    // the Kanto row shipped. sBackAnims_Kanto is the five-frame sequence.
+    [TRAINER_PIC_GOLD] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_Gold, gTrainerPalette_Gold),
+        .backPic = TRAINER_BACK_PIC(5, gTrainerBackPic_Gold, gTrainerBackPicPalette_Gold, sBackAnims_Kanto),
+    },
+    // FOUR frames, not five: dawn.png and lucas.png are 64x256 where Gold's is
+    // 64x320. The first argument is the frame COUNT despite being named
+    // yOffset, and it must match the pixels behind the symbol.
+    [TRAINER_PIC_DAWN] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_Dawn, gTrainerPalette_Dawn),
+        .backPic = TRAINER_BACK_PIC(4, gTrainerBackPic_Dawn, gTrainerBackPicPalette_Dawn, sBackAnims_Hoenn),
+    },
+    [TRAINER_PIC_LUCAS] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_Lucas, gTrainerPalette_Lucas),
+        .backPic = TRAINER_BACK_PIC(4, gTrainerBackPic_Lucas, gTrainerBackPicPalette_Lucas, sBackAnims_Hoenn),
     },
     [TRAINER_PIC_RED] =
     {

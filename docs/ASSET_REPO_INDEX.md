@@ -44,12 +44,34 @@ with its transparent colour at palette index 8. See `JOHTO_SINNOH_SPRITES.md`.
 | User Interface | 24 MB | 9 creators + Fonts |
 | Battle effects | 512 KB | 2 creators |
 | Overworld Pokemon Sprites | 405 MB | we already ship 1.12 MB of these; replacement art, not new capability |
-| Trainer Back Sprites | 277 MB | **trap** — back sprites were deliberately dropped in `8bd9b05f4f` |
+| Trainer Back Sprites | 277 MB | **HUMAN trainer back pics, and they are usable** — `hyo/` alone ships Brendan, May, RS Brendan, RS May, RGBY Red and two Golds. See the correction below |
 | Other | 397 MB | 381 MB is `Pokemon LIFE`, a whole fan-game dump. Not decomp assets |
 | Projects | 178 MB | FFVII sprites, a Zelda port. Novelty |
 | Pokemon | 78 MB | custom mon sprites |
 | Pokemon Essentials Packs | 93 MB | **RPG Maker**, wrong engine, needs conversion |
 | Maps | 18 MB | one contributor |
+
+### THAT `Trainer Back Sprites` ROW USED TO SAY "trap", AND IT WAS WRONG
+
+It read: *back sprites were deliberately dropped in `8bd9b05f4f`*. That commit
+dropped the **BW animated Pokémon back sprites** — `ROGUE_BW_ANIM_BACK`, 386
+species, 4.47 MB of ROM. It has nothing whatever to do with this directory,
+which holds **human trainer** back pics.
+
+**The cost of that one word was a wrong answer given with confidence.** Asked
+whether a Johto outfit was possible, a search that trusted this line concluded
+Gold had no back pic and that the outfit would have to ship masculine-less
+behind a new per-look availability gate in `struct Outfit`. `hyo/gold_back_pic.png`
+had been sitting here the whole time, 64×320, exactly the five frames
+`MAX_TRAINER_PIC_FRAMES` had just been raised to accept. The design was
+reversed and the gate was never built.
+
+**Two lessons, and the second is the general one.** A directory named for what
+it holds is not a trap because something with a similar name was once removed
+from the ROM — check which thing the commit actually touched. And an index like
+this file is read *instead of* the tree; a line that says "do not look here"
+is the most expensive kind of line to get wrong, because nothing later
+contradicts it.
 
 ## Tilesets — format
 
@@ -265,3 +287,117 @@ is the same shape, so whatever splits one splits all forty-eight.
 - `Tilesets/Other Tilesets/` — 6 more collections, uncensused
 - `Tilesets/The Great Tileset Exchange/Individual Tiles/` — 4 creators, uncensused
 - Wiki (feature branches, tutorials) is on the GitHub repo, not in the clone
+
+## Kris, the third player look
+
+`graphics/object_events/pics/people/kris/`,
+`graphics/trainers/{front_pics,back_pics}/kris.png` and the two `kris*.pal`
+palettes.
+
+**Not from an asset repo.** They came in via `RubyRaven6/pokemon-glc` commit
+`36d1e61b2d`, which credits the overworld set as a FireRed/LeafGreen-style Kris
+posted to The Spriters Resource under "Pokemon Generation 2 Customs". The
+artist's source contact sheet shipped in that commit and is deliberately NOT
+vendored here: its filename contains spaces, nothing INCBINs it, and a stray
+`.png` inside an object event pic directory is one wildcard rule away from
+being fed to `gfx` as a sprite.
+
+**No reflection palette, and that is correct rather than missing.** Nothing in
+this tree reads `reflectionPaletteTag` — `LoadObjectRegularReflectionPalette`
+builds the reflection at runtime with `ApplyPondFilter` over the sprite's live
+palette — so a third `*_reflection.pal` would be dead data. The source commit
+ships one anyway, pointed at `may_reflection.pal`, which is somebody else's
+colours.
+
+**A tool was written to derive one properly, and it refused.** Fitted against
+vanilla's own six base/reflection pairs, a per-channel scale-and-offset in
+5-bit space reproduces them to no better than **13/31 worst channel error** —
+so that is not the transform vanilla used, and deriving a new palette from it
+would have been inventing rather than matching. Worth knowing before anyone
+tries again: vanilla's reflection palettes are not a linear function of their
+base.
+
+**The frame layouts are May's.** Every `sPicTable_Kris*` is May's table with
+the pointers repointed, which is only correct because the art was drawn to the
+same template. The surfing and underwater tables in particular are
+hand-ordered frame lists, not ascending runs — check the sheet layout before
+reusing them for art from anywhere else.
+
+## Gold, OUTFIT_JOHTO's masculine half
+
+**By hyo, from this repo**, across three directories that have to be searched
+separately — which is the misfiling note at the top of this file in practice:
+
+| what | where in the repo | lands at |
+|---|---|---|
+| ten overworld sheets, incl. **running** | `Overworld Trainer Sprites/hyo/gold/` | `graphics/object_events/pics/people/gold/` |
+| object event palette | same folder, `gold.pal` | `graphics/object_events/palettes/gold.pal` |
+| region map head + its palette | same folder, `gold_icon.*` | `graphics/pokenav/region_map/` |
+| front pic | `Trainer Front Sprites/hyo/gold_front_pic.png` | `graphics/trainers/front_pics/gold.png` |
+| back pic | `Trainer Back Sprites/hyo/gold_back_pic.png` | `graphics/trainers/back_pics/gold.png` |
+
+**Licence: hyo asks for credit and permits editing.** Their `README.md` also
+says outright where the `.pal` and the character icon are meant to go, which
+is worth reading before guessing.
+
+**THE FRAME LAYOUTS ARE BRENDAN'S**, for the reason Kris's are May's — hyo
+ships a `brendan/` folder in the identical shape, and all ten Gold sheets
+measure the same dimensions as vanilla Brendan's. That was **measured, not
+assumed**, because the surfing, underwater and watering tables are hand-ordered
+frame lists that are silently wrong on differently-laid-out art.
+
+**Two Gold back pics, and they are the same drawing.** `gold_back_pic.png` and
+`gsc_gold_back_pic.png` differ in **200 silhouette pixels out of 20,480** — it
+is a recolour, not a repose. Took `gold_back_pic.png`: its transparent index 0
+is `(115, 197, 164)`, byte-identical to `brendan_back_pic.png` and to this
+tree's convention, where the `gsc_` one uses a one-off purple.
+
+**It is FIVE frames, 64×320.** Safe only because `MAX_TRAINER_PIC_FRAMES` went
+to 5 in `c38a209bfa`; at 4 this was the same 2 KB heap overrun that froze the
+Kanto row. Check that constant before importing any back pic.
+
+**Both palettes come off the PNGs** via `INCGFX_U16(..., ".gbapal")`, the way
+Red and Leaf do, rather than out of separate `.pal` files the way Kris does —
+one source of truth per pic, and no second consumer that would need the file.
+
+**No `gold_reflection.pal`,** although hyo ships one. Nothing in this tree reads
+`reflectionPaletteTag`; reflections are built at runtime by `ApplyPondFilter`
+over the live palette. Same call as Kris's.
+
+**There is no Kris or Lyra head anywhere in this repo**, and hyo has no female
+Johto set — searched by name and by path. Kris's region map head in
+`OUTFIT_JOHTO` falls back to May's, marked on the line.
+
+## Dawn and Lucas, OUTFIT_SINNOH
+
+**By spilledpizza**, at `Overworld Trainer Sprites/spilledpizza/`. Credit is
+required. Their README lists: spilledpizza, TheWiggliestJiggliest, RichardPT,
+robloxmaster376, The Spriters Resource, and the Radiant Quartz / Prismatic
+Platinum team.
+
+The folder is already a decomp-layout tree, so the paths map straight across:
+`graphics/object_events/pics/people/{dawn,lucas}/`,
+`graphics/object_events/palettes/`, `graphics/trainers/front_pics/DP_*.png`
+(renamed to `dawn.png` / `lucas.png` on import) and
+`graphics/trainers/back_pics/`.
+
+**Dawn has eight of the ten overworld sheets, Lucas five.** Both are missing
+underwater and an acro bike; Lucas is also missing field move, watering and
+decorating. What that cost is recorded in the `OUTFIT_SINNOH` row.
+
+**Back pics are 64×256, four frames** — `sBackAnims_Hoenn`, count 4. Gold's is
+five. Check the dimensions before copying a `TRAINER_BACK_PIC` line.
+
+**Their `acro_bike.png` files are build outputs, not art from this repo.**
+`tools/rogue/compose_acro_bike.py` generates them. Do not hand-edit them and do
+not credit spilledpizza for them.
+
+**The shipped `src/` and `include/` files do not mention Dawn or Lucas.** They
+cover the 95 Diamond/Pearl trainer front pics in the same folder. The player
+art is PNGs only, so the tables were written by hand.
+
+**Two other Sinnoh sources were checked and rejected.** Lhea's Platinum set is
+one walking sheet plus a front and back pic — fewer states than spilledpizza,
+and a different costume design. Twinleaf Logan's is walk and run only, on an
+oversized canvas that would need re-slicing, in a custom RSE style. kwenio's
+files are RGBA reference sheets, not sliceable.

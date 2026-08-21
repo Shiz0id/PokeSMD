@@ -59,6 +59,57 @@ const u32 gObjectEventPic_MayUnderwater[] = INCGFX_U32("graphics/object_events/p
 const u16 gObjectEventPal_PlayerUnderwater[] = INCGFX_U16("graphics/object_events/palettes/player_underwater.pal", ".gbapal");
 const u32 gObjectEventPic_MayNormalRunning[] = INCBIN_U32("graphics/object_events/pics/people/may/walking.4bpp", "graphics/object_events/pics/people/may/running.4bpp");
 const u16 gObjectEventPal_May[] = INCGFX_U16("graphics/object_events/palettes/may.pal", ".gbapal");
+
+// Kris, the third player look. No reflection palette: this tree computes those
+// at runtime, see the note by OBJ_EVENT_PAL_TAG_ROGUE_KRIS.
+const u32 gObjectEventPic_KrisNormalRunning[] = INCBIN_U32("graphics/object_events/pics/people/kris/walking.4bpp", "graphics/object_events/pics/people/kris/running.4bpp");
+const u16 gObjectEventPal_Kris[] = INCGFX_U16("graphics/object_events/palettes/kris.pal", ".gbapal");
+const u32 gObjectEventPic_KrisMachBike[] = INCGFX_U32("graphics/object_events/pics/people/kris/mach_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_KrisAcroBike[] = INCGFX_U32("graphics/object_events/pics/people/kris/acro_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_KrisSurfing[] = INCGFX_U32("graphics/object_events/pics/people/kris/surfing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_KrisUnderwater[] = INCGFX_U32("graphics/object_events/pics/people/kris/underwater.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_KrisFieldMove[] = INCGFX_U32("graphics/object_events/pics/people/kris/field_move.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_KrisFishing[] = INCGFX_U32("graphics/object_events/pics/people/kris/fishing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_KrisWatering[] = INCGFX_U32("graphics/object_events/pics/people/kris/watering.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_KrisDecorating[] = INCGFX_U32("graphics/object_events/pics/people/kris/decorating.png", ".4bpp");
+
+// Gold, the masculine half of OUTFIT_JOHTO. hyo's set, which ships its own
+// palette and its own region map head - so unlike Kris, nothing here falls
+// back to somebody else's colours. No reflection palette for the same reason
+// hers has none: this tree builds those at runtime with ApplyPondFilter, so a
+// *_reflection.pal would be dead data. hyo's folder ships one; it is
+// deliberately not vendored.
+const u32 gObjectEventPic_GoldNormalRunning[] = INCBIN_U32("graphics/object_events/pics/people/gold/walking.4bpp", "graphics/object_events/pics/people/gold/running.4bpp");
+const u16 gObjectEventPal_Gold[] = INCGFX_U16("graphics/object_events/palettes/gold.pal", ".gbapal");
+const u32 gObjectEventPic_GoldMachBike[] = INCGFX_U32("graphics/object_events/pics/people/gold/mach_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_GoldAcroBike[] = INCGFX_U32("graphics/object_events/pics/people/gold/acro_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_GoldSurfing[] = INCGFX_U32("graphics/object_events/pics/people/gold/surfing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_GoldUnderwater[] = INCGFX_U32("graphics/object_events/pics/people/gold/underwater.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_GoldFieldMove[] = INCGFX_U32("graphics/object_events/pics/people/gold/field_move.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_GoldFishing[] = INCGFX_U32("graphics/object_events/pics/people/gold/fishing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_GoldWatering[] = INCGFX_U32("graphics/object_events/pics/people/gold/watering.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_GoldDecorating[] = INCGFX_U32("graphics/object_events/pics/people/gold/decorating.png", ".4bpp");
+
+// Dawn and Lucas, OUTFIT_SINNOH, from spilledpizza's set. THE acro_bike.png
+// FILES ARE BUILD OUTPUTS, not art: tools/rogue/compose_acro_bike.py makes
+// them from Brendan's poses and each character's own head, because neither
+// ships one and a 9-frame mach sheet cannot answer sAnimTable_AcroBike.
+// Re-run the tool rather than editing them.
+const u32 gObjectEventPic_DawnNormalRunning[] = INCBIN_U32("graphics/object_events/pics/people/dawn/walking.4bpp", "graphics/object_events/pics/people/dawn/running.4bpp");
+const u32 gObjectEventPic_DawnMachBike[] = INCGFX_U32("graphics/object_events/pics/people/dawn/mach_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_DawnAcroBike[] = INCGFX_U32("graphics/object_events/pics/people/dawn/acro_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_DawnSurfing[] = INCGFX_U32("graphics/object_events/pics/people/dawn/surfing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_DawnFishing[] = INCGFX_U32("graphics/object_events/pics/people/dawn/fishing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_LucasNormalRunning[] = INCBIN_U32("graphics/object_events/pics/people/lucas/walking.4bpp", "graphics/object_events/pics/people/lucas/running.4bpp");
+const u32 gObjectEventPic_LucasMachBike[] = INCGFX_U32("graphics/object_events/pics/people/lucas/mach_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_LucasAcroBike[] = INCGFX_U32("graphics/object_events/pics/people/lucas/acro_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_LucasSurfing[] = INCGFX_U32("graphics/object_events/pics/people/lucas/surfing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_LucasFishing[] = INCGFX_U32("graphics/object_events/pics/people/lucas/fishing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_DawnFieldMove[] = INCGFX_U32("graphics/object_events/pics/people/dawn/field_move.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_DawnWatering[] = INCGFX_U32("graphics/object_events/pics/people/dawn/watering.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_DawnDecorating[] = INCGFX_U32("graphics/object_events/pics/people/dawn/decorating.png", ".4bpp");
+const u16 gObjectEventPal_Dawn[] = INCGFX_U16("graphics/object_events/palettes/dawn.pal", ".gbapal");
+const u16 gObjectEventPal_Lucas[] = INCGFX_U16("graphics/object_events/palettes/lucas.pal", ".gbapal");
 const u16 gObjectEventPal_MayReflection[] = INCGFX_U16("graphics/object_events/palettes/may_reflection.pal", ".gbapal");
 const u32 gObjectEventPic_RubySapphireMayNormal[] = INCGFX_U32("graphics/object_events/pics/people/ruby_sapphire_may/walking.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u32 gObjectEventPic_RubySapphireMayRunning[] = INCGFX_U32("graphics/object_events/pics/people/ruby_sapphire_may/running.png", ".4bpp", "-mwidth 2 -mheight 4");
@@ -520,12 +571,20 @@ const u16 gObjectEventPic_RedSurfRun[] = INCGFX_U16("graphics/object_events/pics
 const u16 gObjectEventPic_RedFish[] = INCGFX_U16("graphics/object_events/pics/people/red/red_fish.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u16 gObjectEventPic_RedItem[] = INCGFX_U16("graphics/object_events/pics/people/red/red_item.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_RedVSSeekerBike[] = INCGFX_U16("graphics/object_events/pics/people/red/red_vs_seeker_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+// GENERATED, not drawn - tools/rogue/compose_acro_bike.py builds it from
+// Brendan's acro poses and Red's own head. FireRed has no acro bike and so no
+// art for one; this project grants both bikes on floor one, so the state is
+// reachable and OBJ_EVENT_GFX_RED_BIKE cannot serve it - nine frames against
+// the 27 sAnimTable_AcroBike indexes. Re-run the tool, do not hand-edit.
+const u16 gObjectEventPic_RedAcroBike[] = INCGFX_U16("graphics/object_events/pics/people/red/red_acro_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u16 gObjectEventPic_GreenNormal[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_normal.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_GreenBike[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u16 gObjectEventPic_GreenSurf[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_surf.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u16 gObjectEventPic_GreenSurfRun[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_surf_run.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_GreenFish[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_fish.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u16 gObjectEventPic_GreenItem[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_item.png", ".4bpp", "-mwidth 2 -mheight 4");
+// Generated, as Red's above. Same tool, same reason.
+const u16 gObjectEventPic_GreenAcroBike[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_acro_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u16 gObjectEventPic_GreenVSSeekerBike[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_vs_seeker_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
 
 const u16 gObjectEventPal_PlayerFrlg[] = INCGFX_U16("graphics/object_events/palettes/player_frlg.pal", ".gbapal");

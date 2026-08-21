@@ -1,5 +1,6 @@
 #include "global.h"
 #include "naming_screen.h"
+#include "outfit.h"
 #include "malloc.h"
 #include "palette.h"
 #include "task.h"
@@ -1401,11 +1402,17 @@ static void NamingScreen_NoIcon(void)
 
 static void NamingScreen_CreatePlayerIcon(void)
 {
-    u16 rivalGfxId;
+    u16 gfxId;
     u8 spriteId;
 
-    rivalGfxId = GetRivalAvatarGraphicsIdByStateIdAndGender(PLAYER_AVATAR_STATE_NORMAL, (enum Gender)sNamingScreen->monSpecies);
-    spriteId = CreateObjectGraphicsSprite(rivalGfxId, SpriteCallbackDummy, 56, 37, 0);
+    // THE PLAYER'S OWN SPRITE, not the rival's. Vanilla draws the rival here
+    // and reads the gender out of the monSpecies parameter, which is a slot
+    // this screen has no other use for - so the naming screen has always shown
+    // a rival on the player's naming screen and has always taken gender from a
+    // field called monSpecies. Both stop now: the sprite is whatever the
+    // player is wearing, and the gender comes from the save.
+    gfxId = GetPlayerAvatarGraphicsIdByStateIdAndGender(PLAYER_AVATAR_STATE_NORMAL, gSaveBlock2Ptr->playerGender);
+    spriteId = CreateObjectGraphicsSprite(gfxId, SpriteCallbackDummy, 56, 37, 0);
     gSprites[spriteId].oam.priority = 3;
     StartSpriteAnim(&gSprites[spriteId], ANIM_STD_GO_SOUTH);
 }

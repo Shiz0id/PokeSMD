@@ -1,4 +1,5 @@
 #include "global.h"
+#include "outfit.h"
 #include "battle.h"
 #include "battle_transition.h"
 #include "battle_transition_frontier.h"
@@ -881,10 +882,14 @@ static const u16 *const sOpponentMugshotsPals[MUGSHOT_COLOR_COUNT] =
     [MUGSHOT_COLOR_YELLOW] = sMugshotPal_Yellow
 };
 
-static const u16 *const sPlayerMugshotsPals[GENDER_COUNT] =
+// KEYED ON THE LOOK, NOT ON THE OUTFIT, and that is a known limitation rather
+// than an oversight: the mugshot is its own art asset, so Kris in OUTFIT_JOHTO
+// transitions in on May's palette exactly as she did as the third look. What
+// went away with that look is the row that pretended otherwise.
+static const u16 *const sPlayerMugshotsPals[PLAYER_LOOK_COUNT] =
 {
-    [MALE] = sMugshotPal_Brendan,
-    [FEMALE] = sMugshotPal_May
+    [PLAYER_LOOK_MASC] = sMugshotPal_Brendan,
+    [PLAYER_LOOK_FEM]  = sMugshotPal_May,
 };
 
 static const u16 sUnusedTrainerPalette[] = INCGFX_U16("graphics/battle_transitions/unused_trainer.pal", ".gbapal");
@@ -2629,7 +2634,7 @@ static void Mugshots_CreateTrainerPics(struct Task *task)
         SetOamMatrixRotationScaling(partnerSprite->oam.matrixNum, -512, 512, 0);
     }
 
-    task->tPlayerSpriteId = CreateTrainerSprite(PlayerGenderToFrontTrainerPicId(gSaveBlock2Ptr->playerGender),
+    task->tPlayerSpriteId = CreateTrainerSprite(GetPlayerTrainerPicId(),
                                                 DISPLAY_WIDTH + 32,
                                                 106,
                                                 0, NULL);

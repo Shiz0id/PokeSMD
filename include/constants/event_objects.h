@@ -23,6 +23,17 @@
 #define PLAYER_AVATAR_GFX_FEMALE_WATERING   (IS_FRLG ? OBJ_EVENT_GFX_GREEN_FIELD_MOVE : OBJ_EVENT_GFX_MAY_WATERING)
 #define PLAYER_AVATAR_GFX_FEMALE_VSSEEKER   (IS_FRLG ? OBJ_EVENT_GFX_GREEN_VS_SEEKER  : OBJ_EVENT_GFX_MAY_FIELD_MOVE)
 
+// THERE WAS A PLAYER_AVATAR_GFX_ANDRO_* BLOCK HERE, pointing at Kris, and it
+// is gone with the third look. Kris now reaches the player through
+// OUTFIT_JOHTO's feminine row in src/data/outfit_tables.h, which names
+// OBJ_EVENT_GFX_KRIS_* directly.
+//
+// A MACRO WOULD BE THE WRONG SHAPE FOR HER NOW. These two blocks exist to
+// carry the IS_FRLG ternary, so that the DEFAULT outfit is the vanilla look on
+// both builds by construction. An outfit that is one game's art has no
+// ternary to hide and belongs in the table, where a raw id is correct - the
+// same call outfit_tables.h already makes for the RS and Kanto rows.
+
 enum
 {
     OBJ_EVENT_GFX_BRENDAN_NORMAL,
@@ -461,6 +472,73 @@ enum
     // templates the save block carries - inserting in the middle renames
     // every sprite after it in a save that already exists.
     OBJ_EVENT_GFX_ROGUE_EGG,
+    // Kris, the third player look. APPENDED for the same reason the egg above
+    // is - the reference commit this came from inserts these next to May so
+    // that TRAINER_BACK_PIC_BRENDAN + gender keeps working, but nothing in this
+    // tree does that arithmetic any more (the only consumer is a ternary in
+    // trainer.c), so there is no reason to pay for a renumber.
+    OBJ_EVENT_GFX_KRIS_NORMAL,
+    OBJ_EVENT_GFX_KRIS_MACH_BIKE,
+    OBJ_EVENT_GFX_KRIS_ACRO_BIKE,
+    OBJ_EVENT_GFX_KRIS_SURFING,
+    OBJ_EVENT_GFX_KRIS_UNDERWATER,
+    OBJ_EVENT_GFX_KRIS_FIELD_MOVE,
+    OBJ_EVENT_GFX_KRIS_FISHING,
+    OBJ_EVENT_GFX_KRIS_WATERING,
+    OBJ_EVENT_GFX_KRIS_DECORATING,
+    // Gold, OUTFIT_JOHTO's masculine half. Appended for the reason Kris's
+    // block above is, and note the name: this is the AVATAR set, distinct from
+    // OBJ_EVENT_GFX_ROGUE_JOHTO_ETHAN, which is an NPC boss on
+    // sAnimTable_Standard with a nine-frame walking sheet. Wearing that one is
+    // the hang described below. Two ids for one region's boy, exactly as FRLG
+    // ships OBJ_EVENT_GFX_RED beside OBJ_EVENT_GFX_RED_NORMAL.
+    OBJ_EVENT_GFX_GOLD_NORMAL,
+    OBJ_EVENT_GFX_GOLD_MACH_BIKE,
+    OBJ_EVENT_GFX_GOLD_ACRO_BIKE,
+    OBJ_EVENT_GFX_GOLD_SURFING,
+    OBJ_EVENT_GFX_GOLD_UNDERWATER,
+    OBJ_EVENT_GFX_GOLD_FIELD_MOVE,
+    OBJ_EVENT_GFX_GOLD_FISHING,
+    OBJ_EVENT_GFX_GOLD_WATERING,
+    OBJ_EVENT_GFX_GOLD_DECORATING,
+    // FRLG ACRO BIKES. Appended rather than taking OBJ_EVENT_GFX_UNUSED_250,
+    // which sits in the middle of the FRLG block: filling a hole there is a
+    // renumber waiting to be mistaken for a free slot. The art is generated -
+    // see tools/rogue/compose_acro_bike.py.
+    OBJ_EVENT_GFX_RED_ACRO_BIKE,
+    OBJ_EVENT_GFX_GREEN_ACRO_BIKE,
+    // Dawn and Lucas, OUTFIT_SINNOH. Appended for the reason the Kris and Gold
+    // blocks above are. NEITHER HAS AN UNDERWATER SPRITE and Sinnoh has no
+    // diving, so the outfit row sends that state to their own surfing sprite -
+    // the same call the Kanto row makes. Lucas is also short field move,
+    // watering and decorating; those fall back to the default, marked.
+    OBJ_EVENT_GFX_DAWN_NORMAL,
+    OBJ_EVENT_GFX_DAWN_MACH_BIKE,
+    OBJ_EVENT_GFX_DAWN_ACRO_BIKE,
+    OBJ_EVENT_GFX_DAWN_SURFING,
+    OBJ_EVENT_GFX_DAWN_FIELD_MOVE,
+    OBJ_EVENT_GFX_DAWN_FISHING,
+    OBJ_EVENT_GFX_DAWN_WATERING,
+    OBJ_EVENT_GFX_DAWN_DECORATING,
+    OBJ_EVENT_GFX_LUCAS_NORMAL,
+    OBJ_EVENT_GFX_LUCAS_MACH_BIKE,
+    OBJ_EVENT_GFX_LUCAS_ACRO_BIKE,
+    OBJ_EVENT_GFX_LUCAS_SURFING,
+    OBJ_EVENT_GFX_LUCAS_FISHING,
+    // THE RS OUTFIT'S PLAYER SPRITE, which is NOT the same thing as
+    // OBJ_EVENT_GFX_LINK_RS_BRENDAN above. That one is an NPC: a nine-frame
+    // sheet on sAnimTable_Standard, which defines anim ids 0-19 and stops.
+    // The player on foot plays ANIM_RUN_* (20-23) when running and
+    // ANIM_SPIN_* (24-27) on a warp, so wearing the NPC sprite indexes one
+    // past the end of its anim table and the game hangs on the first step.
+    //
+    // Separate ids rather than a promotion of the NPC ones, following the
+    // FRLG pair: OBJ_EVENT_GFX_RED is the NPC and OBJ_EVENT_GFX_RED_NORMAL
+    // is the avatar. The NPC entries are still used by the contest hall and
+    // the link record corner, and a player-shaped info would put them on
+    // PALSLOT_PLAYER - the player's own palette slot.
+    OBJ_EVENT_GFX_RS_BRENDAN_NORMAL,
+    OBJ_EVENT_GFX_RS_MAY_NORMAL,
     NUM_OBJ_EVENT_GFX,
 };
 
@@ -702,6 +780,22 @@ enum
 #define OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_DAWN                      0x1189
 #define OBJ_EVENT_PAL_TAG_ROGUE_SINNOH_BARRY                     0x118A
 #define OBJ_EVENT_PAL_TAG_ROGUE_EGG                              0x118B
+// NO REFLECTION TAG. reflectionPaletteTag is never read in this tree -
+// LoadObjectRegularReflectionPalette computes the reflection at runtime with
+// ApplyPondFilter over the sprite's LIVE palette - so the reference commit's
+// OBJ_EVENT_PAL_TAG_KRIS_REFLECTION is both unnecessary and, pointed at
+// may_reflection.pal as it is there, the wrong colours.
+#define OBJ_EVENT_PAL_TAG_ROGUE_KRIS                             0x118C
+// Gold's own palette, and it must be registered in sObjectEventSpritePalettes
+// in src/event_object_movement.c as well as declared here. A tag the table
+// does not carry resolves to 0xFF, ObjectEventSetGraphics guards on that and
+// simply loads NO palette, and the sprite then draws through whatever colours
+// its OAM slot last held - corruption that changes with what else is on the
+// map, from a clean build. The two halves live in different files and nothing
+// connects them.
+#define OBJ_EVENT_PAL_TAG_ROGUE_GOLD                             0x118D
+#define OBJ_EVENT_PAL_TAG_ROGUE_DAWN                             0x118E
+#define OBJ_EVENT_PAL_TAG_ROGUE_LUCAS                            0x118F
 #define OBJ_EVENT_PAL_TAG_NONE                    0x11FF
 
 // This + localId is used as the tileTag

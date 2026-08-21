@@ -3,6 +3,7 @@
 #include "constants/rogue_dungeon.h"
 #include "rogue_dungeon.h"
 #include "clock.h"
+#include "outfit.h"
 #include "new_game.h"
 #include "random.h"
 #include "pokemon.h"
@@ -292,6 +293,7 @@ void NewGameInitData(void)
     ResetContestLinkResults();
     SetCurrentDifficultyLevel(DIFFICULTY_NORMAL);
     ResetItemFlags();
+    ResetOutfitData();
     ResetDexNav();
     ClearFollowerNPCData();
 

@@ -14,8 +14,24 @@
 #define TRAINER_PIC_HEIGHT 64
 #define TRAINER_PIC_SIZE (TRAINER_PIC_WIDTH * TRAINER_PIC_HEIGHT / 2)
 
-// Red and Leaf's back pics have 5 frames, but this is presumably irrelevant in the places this is used.
-#define MAX_TRAINER_PIC_FRAMES 4
+// THE DATA DECIDES THIS, NOT US. A back pic's frame count is declared in
+// its own row - TRAINER_BACK_PIC's first argument, which is named yOffset
+// and is used as a frame count - and CopyTrainerBackspriteFramesToDest
+// copies exactly that many frames into whatever buffer it is handed. A
+// buffer sized smaller is a heap overflow with no error and no crash at
+// the point of damage.
+//
+// It said 4 here, with a comment reading `Red and Leaf's back pics have 5
+// frames, but this is presumably irrelevant in the places this is used.`
+// It was not irrelevant: the outfit picker draws a back pic every time the
+// cursor moves, so landing on the Kanto outfit wrote 10240 bytes into an
+// 8192-byte allocation, twice a second. The game froze with a stray sound
+// effect playing - the heap it had just walked over.
+//
+// tools/rogue/check_trainer_backpic_frames.py holds this against every row
+// in gTrainerPicInfo AND against the pixels behind them, so a sixth frame
+// fails a check rather than a console.
+#define MAX_TRAINER_PIC_FRAMES 5
 
 enum {
     BATTLER_AFFINE_NORMAL,
@@ -423,5 +439,56 @@ static inline const u16 *GetTrainerBackPicPalette(enum TrainerPicID trainerPic)
 {
     return gTrainerPicInfo[SanitizeBackTrainerPic(trainerPic)].backPic->paletteData;
 }
+
+// One outfit: everything about how the player looks, in one row.
+//
+// EVERY ARRAY HERE IS SIZED BY PLAYER_LOOK_COUNT, and no site may write a
+// literal 2 or pair MALE with FEMALE by hand. PLAYER_LOOK_COUNT happens to
+// equal GENDER_COUNT again, which is exactly when that rule stops being
+// enforced by the compiler and starts needing to be followed on purpose.
+//
+// THE LOOK, NOT THE IDENTITY. These pick which sprite and which trainer pic to
+// draw; who the player IS lives in gSaveBlock2Ptr->playerGenderIdentity and
+// never reaches this table. Keeping them apart is what lets an androgynous
+// player present as either look - see enum PlayerLook.
+//
+// A CHARACTER IS AN OUTFIT, NOT A LOOK. There was briefly a third look holding
+// Kris; she is now the feminine half of OUTFIT_JOHTO. The difference matters
+// because a look is a body template every outfit must fill, so a third one
+// made every row carry a column it had no art for - while an outfit is free to
+// be whoever it likes, reachable at any identity.
+//
+// (This comment used to say GENDER_COUNT and that adding a gender was an enum
+// insert plus a row. That was wrong in a way worth recording: enum Gender's
+// MALE/FEMALE tokens are also what struct Trainer's one-bit gender field
+// holds, so widening it would have truncated silently there.)
+struct Outfit
+{
+    bool8 isHidden;                                       // Hidden outfits stay out of the menu while still locked
+    u32 prices[PLAYER_LOOK_COUNT];
+    const u8 *name;
+    const u8 *desc;
+             // ONE PIC ID PER GENDER, not the front/back pair upstream carries.
+             // That pair dates from when front and back pics had separate
+             // enums; this tree's gTrainerPicInfo holds both under a single
+             // TRAINER_PIC_*, so a second element could only ever disagree
+             // with the first.
+    u16 trainerPics[PLAYER_LOOK_COUNT];
+    u16 avatarGfxIds[PLAYER_LOOK_COUNT][PLAYER_AVATAR_STATE_COUNT];
+    u16 animGfxIds[PLAYER_LOOK_COUNT][PLAYER_AVATAR_ANIM_COUNT];
+    struct {
+        const u16 *gfx;
+        const u16 *pal;
+    } iconsRM[PLAYER_LOOK_COUNT];                              // Region map head, one sprite per gender
+             // NO FRONTIER PASS HEAD YET, deliberately. Upstream carries one
+             // here; this tree's frontier pass keeps both genders in a single
+             // .4bpp.smol sheet and picks between them with a sprite ANIM
+             // frame, so wiring an outfit into it means uncompressing the
+             // sheet and changing how the sprite is built - and it also has an
+             // FRLG path this table has no rows for. Left out rather than left
+             // half-done: an unread field reads as finished work.
+};
+
+extern const struct Outfit gOutfits[OUTFIT_COUNT];
 
 #endif // GUARD_DATA_H

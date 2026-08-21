@@ -332,16 +332,46 @@ struct ObjectEventGraphicsInfo
     /*0x20*/ const union AffineAnimCmd *const *affineAnims;
 };
 
+// THE FIRST FIVE ARE THE STATES AN OUTFIT HAS ART FOR, and they are first so
+// that PLAYER_AVATAR_STATE_COUNT can bound the outfit table's avatarGfxIds row
+// while the flag macros below keep their vanilla bit positions.
+//
+// MACH AND ACRO STAY SEPARATE. Upstream's outfit branch collapses them into one
+// PLAYER_AVATAR_STATE_BIKE and moves the distinction into a save bit, which
+// costs one bike sprite: whichever art the single slot names is what both bikes
+// draw. This project grants BOTH bikes at the start of every run and treats the
+// choice as a real one, so the two states are kept and the outfit row simply
+// carries two bike entries.
 enum {
     PLAYER_AVATAR_STATE_NORMAL,
     PLAYER_AVATAR_STATE_MACH_BIKE,
     PLAYER_AVATAR_STATE_ACRO_BIKE,
     PLAYER_AVATAR_STATE_SURFING,
     PLAYER_AVATAR_STATE_UNDERWATER,
-    PLAYER_AVATAR_STATE_FIELD_MOVE,
+    PLAYER_AVATAR_STATE_COUNT,
+    PLAYER_AVATAR_STATE_FIELD_MOVE = PLAYER_AVATAR_STATE_COUNT,
     PLAYER_AVATAR_STATE_FISHING,
     PLAYER_AVATAR_STATE_WATERING,
     PLAYER_AVATAR_STATE_VSSEEKER,
+};
+
+// The animation-only graphics an outfit carries. These are NOT avatar states:
+// nothing transitions into them and none has a PLAYER_AVATAR_FLAG_*, they are
+// just alternate art the player is briefly drawn with. They index the outfit
+// table's animGfxIds row.
+//
+// Named ANIM rather than upstream's PLAYER_AVATAR_GFX_*, because this tree
+// already has PLAYER_AVATAR_GFX_MALE_FISHING and friends in
+// constants/event_objects.h - those are graphics IDS and these are INDICES, and
+// two names one word apart for different kinds of thing is how the wrong one
+// gets used.
+enum {
+    PLAYER_AVATAR_ANIM_FIELD_MOVE,
+    PLAYER_AVATAR_ANIM_FISHING,
+    PLAYER_AVATAR_ANIM_WATERING,
+    PLAYER_AVATAR_ANIM_DECORATING,
+    PLAYER_AVATAR_ANIM_VSSEEKER,
+    PLAYER_AVATAR_ANIM_COUNT,
 };
 
 #define PLAYER_AVATAR_FLAG_ON_FOOT      (1 << 0)
@@ -416,7 +446,15 @@ struct PlayerAvatar
     /*0x04*/ u8 spriteId;
     /*0x05*/ u8 objectEventId;
     /*0x06*/ bool8 preventStep;
-    /*0x07*/ u8 gender;
+             // WAS gender, AND IT IS DELETED ON PURPOSE. It held a copy of
+             // gSaveBlock2Ptr->playerGender, re-derived from the player's
+             // graphics id by GetPlayerAvatarGenderByGraphicsId - which stops
+             // being possible the moment two outfits give one gender different
+             // ids. Renamed rather than removed so every offset below stays
+             // put, and renamed rather than left in place because a field
+             // nothing assigns any more still READS: it would have answered
+             // MALE forever, with a clean build and nothing to see.
+    /*0x07*/ u8 unused_07;
     /*0x08*/ u8 acroBikeState; // 00 is normal, 01 is turning, 02 is standing wheelie, 03 is hopping wheelie
     /*0x09*/ u8 newDirBackup; // during bike movement, the new direction as opposed to player's direction is backed up here.
     /*0x0A*/ u8 bikeFrameCounter; // on the mach bike, when this value is 1, the bike is moving but not accelerating yet for 1 tile. on the acro bike, this acts as a timer for acro bike.

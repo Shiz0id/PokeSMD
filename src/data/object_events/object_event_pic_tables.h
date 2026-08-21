@@ -1399,6 +1399,54 @@ static const struct SpriteFrameImage sPicTable_RubySapphireBrendan[] = {
     overworld_ascending_frames(gObjectEventPic_RubySapphireBrendanNormal, 2, 4),
 };
 
+// THE RS AVATAR SHEETS, WALKING AND RUNNING, as eighteen explicit frames.
+//
+// The running halves were declared in object_event_graphics.h from the day the
+// sprites were imported and referenced by NOTHING - sPicTable_RubySapphire*
+// above describes the walking sheet alone, which is all an NPC needs. The
+// player needs both: ANIM_RUN_* reads frames 9-17.
+static const struct SpriteFrameImage sPicTable_RSBrendanPlayer[] = {
+    overworld_frame(gObjectEventPic_RubySapphireBrendanNormal, 2, 4, 0),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanNormal, 2, 4, 1),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanNormal, 2, 4, 2),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanNormal, 2, 4, 3),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanNormal, 2, 4, 4),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanNormal, 2, 4, 5),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanNormal, 2, 4, 6),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanNormal, 2, 4, 7),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanNormal, 2, 4, 8),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanRunning, 2, 4, 0),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanRunning, 2, 4, 1),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanRunning, 2, 4, 2),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanRunning, 2, 4, 3),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanRunning, 2, 4, 4),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanRunning, 2, 4, 5),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanRunning, 2, 4, 6),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanRunning, 2, 4, 7),
+    overworld_frame(gObjectEventPic_RubySapphireBrendanRunning, 2, 4, 8),
+};
+
+static const struct SpriteFrameImage sPicTable_RSMayPlayer[] = {
+    overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 0),
+    overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 1),
+    overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 2),
+    overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 3),
+    overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 4),
+    overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 5),
+    overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 6),
+    overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 7),
+    overworld_frame(gObjectEventPic_RubySapphireMayNormal, 2, 4, 8),
+    overworld_frame(gObjectEventPic_RubySapphireMayRunning, 2, 4, 0),
+    overworld_frame(gObjectEventPic_RubySapphireMayRunning, 2, 4, 1),
+    overworld_frame(gObjectEventPic_RubySapphireMayRunning, 2, 4, 2),
+    overworld_frame(gObjectEventPic_RubySapphireMayRunning, 2, 4, 3),
+    overworld_frame(gObjectEventPic_RubySapphireMayRunning, 2, 4, 4),
+    overworld_frame(gObjectEventPic_RubySapphireMayRunning, 2, 4, 5),
+    overworld_frame(gObjectEventPic_RubySapphireMayRunning, 2, 4, 6),
+    overworld_frame(gObjectEventPic_RubySapphireMayRunning, 2, 4, 7),
+    overworld_frame(gObjectEventPic_RubySapphireMayRunning, 2, 4, 8),
+};
+
 static const struct SpriteFrameImage sPicTable_KirliaOld[] = {
     overworld_ascending_frames(gObjectEventPic_KirliaOld, 2, 4),
 };
@@ -1458,6 +1506,18 @@ static const struct SpriteFrameImage sPicTable_RedBike[] = {
     overworld_frame(gObjectEventPic_RedBike, 4, 4, 6),
     overworld_frame(gObjectEventPic_RedBike, 4, 4, 7),
     overworld_frame(gObjectEventPic_RedBike, 4, 4, 8),
+};
+
+// TWENTY-SEVEN FRAMES, ascending, because the generated sheet is laid out to
+// match Brendan's acro sheet exactly - which is the whole point of generating
+// it rather than pointing the acro state at the nine-frame red_bike sheet and
+// reading eighteen SpriteFrameImages past the end.
+static const struct SpriteFrameImage sPicTable_RedAcroBike[] = {
+    overworld_ascending_frames(gObjectEventPic_RedAcroBike, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_GreenAcroBike[] = {
+    overworld_ascending_frames(gObjectEventPic_GreenAcroBike, 4, 4),
 };
 
 static const struct SpriteFrameImage sPicTable_GreenNormal[] = {
@@ -3215,3 +3275,225 @@ static const struct SpriteFrameImage sPicTable_RogueSinnohBarry[] = {
     overworld_ascending_frames(gObjectEventPic_RogueSinnohBarry, 2, 4),
 };
 
+// Kris, the third player look. Every table is May's frame layout with the
+// pointers repointed - the art was drawn to the same template, and the surfing
+// and underwater tables are hand-ordered frame lists that are only correct if
+// the sheet they index is laid out the same way.
+static const struct SpriteFrameImage sPicTable_KrisNormal[] = {
+    overworld_ascending_frames(gObjectEventPic_KrisNormalRunning, 2, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_KrisMachBike[] = {
+    overworld_ascending_frames(gObjectEventPic_KrisMachBike, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_KrisAcroBike[] = {
+    overworld_ascending_frames(gObjectEventPic_KrisAcroBike, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_KrisSurfing[] = {
+    overworld_frame(gObjectEventPic_KrisSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_KrisSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_KrisSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_KrisSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_KrisSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_KrisSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_KrisSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_KrisSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_KrisSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_KrisSurfing, 4, 4, 1),
+    overworld_frame(gObjectEventPic_KrisSurfing, 4, 4, 3),
+    overworld_frame(gObjectEventPic_KrisSurfing, 4, 4, 5),
+};
+
+static const struct SpriteFrameImage sPicTable_KrisUnderwater[] = {
+    overworld_frame(gObjectEventPic_KrisUnderwater, 4, 4, 0),
+    overworld_frame(gObjectEventPic_KrisUnderwater, 4, 4, 1),
+    overworld_frame(gObjectEventPic_KrisUnderwater, 4, 4, 2),
+    overworld_frame(gObjectEventPic_KrisUnderwater, 4, 4, 0),
+    overworld_frame(gObjectEventPic_KrisUnderwater, 4, 4, 0),
+    overworld_frame(gObjectEventPic_KrisUnderwater, 4, 4, 1),
+    overworld_frame(gObjectEventPic_KrisUnderwater, 4, 4, 1),
+    overworld_frame(gObjectEventPic_KrisUnderwater, 4, 4, 2),
+    overworld_frame(gObjectEventPic_KrisUnderwater, 4, 4, 2),
+};
+
+static const struct SpriteFrameImage sPicTable_KrisFieldMove[] = {
+    overworld_ascending_frames(gObjectEventPic_KrisFieldMove, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_KrisFishing[] = {
+    overworld_ascending_frames(gObjectEventPic_KrisFishing, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_KrisWatering[] = {
+    overworld_frame(gObjectEventPic_KrisWatering, 4, 4, 0),
+    overworld_frame(gObjectEventPic_KrisWatering, 4, 4, 2),
+    overworld_frame(gObjectEventPic_KrisWatering, 4, 4, 4),
+    overworld_frame(gObjectEventPic_KrisWatering, 4, 4, 1),
+    overworld_frame(gObjectEventPic_KrisWatering, 4, 4, 1),
+    overworld_frame(gObjectEventPic_KrisWatering, 4, 4, 3),
+    overworld_frame(gObjectEventPic_KrisWatering, 4, 4, 3),
+    overworld_frame(gObjectEventPic_KrisWatering, 4, 4, 5),
+    overworld_frame(gObjectEventPic_KrisWatering, 4, 4, 5),
+};
+
+static const struct SpriteFrameImage sPicTable_KrisDecorating[] = {
+    obj_frame_tiles(gObjectEventPic_KrisDecorating),
+};
+
+// Gold, the masculine half of OUTFIT_JOHTO. Every table is BRENDAN's frame
+// layout with the pointers repointed - the same move Kris makes against May
+// above, and it carries the same precondition: the hand-ordered surfing,
+// underwater and watering lists are only correct if the sheet they index is
+// laid out the same way. hyo ships this set beside a brendan/ set in the
+// identical directory shape, and all ten sheets measure byte-for-byte the same
+// dimensions as vanilla Brendan's, which is what was actually checked.
+static const struct SpriteFrameImage sPicTable_GoldNormal[] = {
+    overworld_ascending_frames(gObjectEventPic_GoldNormalRunning, 2, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_GoldMachBike[] = {
+    overworld_ascending_frames(gObjectEventPic_GoldMachBike, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_GoldAcroBike[] = {
+    overworld_ascending_frames(gObjectEventPic_GoldAcroBike, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_GoldSurfing[] = {
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 1),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 3),
+    overworld_frame(gObjectEventPic_GoldSurfing, 4, 4, 5),
+};
+
+static const struct SpriteFrameImage sPicTable_GoldUnderwater[] = {
+    overworld_frame(gObjectEventPic_GoldUnderwater, 4, 4, 0),
+    overworld_frame(gObjectEventPic_GoldUnderwater, 4, 4, 1),
+    overworld_frame(gObjectEventPic_GoldUnderwater, 4, 4, 2),
+    overworld_frame(gObjectEventPic_GoldUnderwater, 4, 4, 0),
+    overworld_frame(gObjectEventPic_GoldUnderwater, 4, 4, 0),
+    overworld_frame(gObjectEventPic_GoldUnderwater, 4, 4, 1),
+    overworld_frame(gObjectEventPic_GoldUnderwater, 4, 4, 1),
+    overworld_frame(gObjectEventPic_GoldUnderwater, 4, 4, 2),
+    overworld_frame(gObjectEventPic_GoldUnderwater, 4, 4, 2),
+};
+
+static const struct SpriteFrameImage sPicTable_GoldFieldMove[] = {
+    overworld_ascending_frames(gObjectEventPic_GoldFieldMove, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_GoldFishing[] = {
+    overworld_ascending_frames(gObjectEventPic_GoldFishing, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_GoldWatering[] = {
+    overworld_frame(gObjectEventPic_GoldWatering, 4, 4, 0),
+    overworld_frame(gObjectEventPic_GoldWatering, 4, 4, 2),
+    overworld_frame(gObjectEventPic_GoldWatering, 4, 4, 4),
+    overworld_frame(gObjectEventPic_GoldWatering, 4, 4, 1),
+    overworld_frame(gObjectEventPic_GoldWatering, 4, 4, 1),
+    overworld_frame(gObjectEventPic_GoldWatering, 4, 4, 3),
+    overworld_frame(gObjectEventPic_GoldWatering, 4, 4, 3),
+    overworld_frame(gObjectEventPic_GoldWatering, 4, 4, 5),
+    overworld_frame(gObjectEventPic_GoldWatering, 4, 4, 5),
+};
+
+static const struct SpriteFrameImage sPicTable_GoldDecorating[] = {
+    obj_frame_tiles(gObjectEventPic_GoldDecorating),
+};
+
+// Dawn and Lucas. Dawn's tables are MAY's frame layouts repointed and Lucas's
+// are BRENDAN's - sound only because every sheet measures identical to the
+// vanilla one it copies, which was checked rather than assumed. The surfing
+// and watering lists are hand-ordered frame lists, not ascending runs.
+static const struct SpriteFrameImage sPicTable_DawnNormal[] = {
+    overworld_ascending_frames(gObjectEventPic_DawnNormalRunning, 2, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_DawnMachBike[] = {
+    overworld_ascending_frames(gObjectEventPic_DawnMachBike, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_DawnAcroBike[] = {
+    overworld_ascending_frames(gObjectEventPic_DawnAcroBike, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_DawnSurfing[] = {
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 1),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 3),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 5),
+};
+
+static const struct SpriteFrameImage sPicTable_DawnFishing[] = {
+    overworld_ascending_frames(gObjectEventPic_DawnFishing, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_LucasNormal[] = {
+    overworld_ascending_frames(gObjectEventPic_LucasNormalRunning, 2, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_LucasMachBike[] = {
+    overworld_ascending_frames(gObjectEventPic_LucasMachBike, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_LucasAcroBike[] = {
+    overworld_ascending_frames(gObjectEventPic_LucasAcroBike, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_LucasSurfing[] = {
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 1),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 3),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 5),
+};
+
+static const struct SpriteFrameImage sPicTable_LucasFishing[] = {
+    overworld_ascending_frames(gObjectEventPic_LucasFishing, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_DawnFieldMove[] = {
+    overworld_ascending_frames(gObjectEventPic_DawnFieldMove, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_DawnWatering[] = {
+    overworld_frame(gObjectEventPic_DawnWatering, 4, 4, 0),
+    overworld_frame(gObjectEventPic_DawnWatering, 4, 4, 2),
+    overworld_frame(gObjectEventPic_DawnWatering, 4, 4, 4),
+    overworld_frame(gObjectEventPic_DawnWatering, 4, 4, 1),
+    overworld_frame(gObjectEventPic_DawnWatering, 4, 4, 1),
+    overworld_frame(gObjectEventPic_DawnWatering, 4, 4, 3),
+    overworld_frame(gObjectEventPic_DawnWatering, 4, 4, 3),
+    overworld_frame(gObjectEventPic_DawnWatering, 4, 4, 5),
+    overworld_frame(gObjectEventPic_DawnWatering, 4, 4, 5),
+};
+
+static const struct SpriteFrameImage sPicTable_DawnDecorating[] = {
+    obj_frame_tiles(gObjectEventPic_DawnDecorating),
+};

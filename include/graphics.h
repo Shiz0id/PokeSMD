@@ -1812,6 +1812,9 @@ extern const u16 gItemIconPalette_SwapSnack[];
 extern const u32 gItemIcon_TwiceSpicedRadish[];
 extern const u16 gItemIconPalette_TwiceSpicedRadish[];
 
+extern const u32 gItemIcon_OutfitBox[];
+extern const u16 gItemIconPalette_OutfitBox[];
+
 extern const u32 gItemIcon_ReturnToFieldArrow[];
 extern const u16 gItemIconPalette_ReturnToFieldArrow[];
 
@@ -3449,6 +3452,10 @@ extern const u16 gFrontierFactoryMenu_Pal[];
 // Object event pals
 extern const u16 gObjectEventPal_Brendan[];
 extern const u16 gObjectEventPal_May[];
+extern const u16 gObjectEventPal_Kris[];
+extern const u16 gObjectEventPal_Gold[];
+extern const u16 gObjectEventPal_Dawn[];
+extern const u16 gObjectEventPal_Lucas[];
 extern const u16 gObjectEventPal_RubySapphireBrendan[];
 extern const u16 gObjectEventPal_RubySapphireMay[];
 

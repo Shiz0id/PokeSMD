@@ -1983,10 +1983,95 @@
 
 @ Supplementary
 
+	@ Unlocks or locks an outfit. type is OUTFIT_TOGGLE_UNLOCK or OUTFIT_TOGGLE_LOCK.
+	.macro toggleoutfit outfitId:req, type:req
+	.byte SCR_OP_TOGGLEOUTFIT
+	.2byte \outfitId
+	.byte \type
+	.endm
+
+	@ Sets VAR_RESULT from an outfit. data is OUTFIT_CHECK_FLAG (is it
+	@ unlocked) or OUTFIT_CHECK_USED (is it being worn).
+	.macro getoutfitstatus outfitId:req, data:req
+	.byte SCR_OP_GETOUTFITSTATUS
+	.2byte \outfitId
+	.byte \data
+	.endm
+
+	@ Buffers an outfit's name or description to a string var. type is
+	@ OUTFIT_BUFFER_NAME or OUTFIT_BUFFER_DESC.
+	.macro bufferoutfitstr stringVarId:req, outfitId:req, type:req
+	.byte SCR_OP_BUFFEROUTFITSTR
+	stringvar \stringVarId
+	.2byte \outfitId
+	.byte \type
+	.endm
+
+	@ Puts the graphics id of the worn outfit's avatar, in the given state,
+	@ into a var - so a script can spawn an object event that looks like the
+	@ player without knowing what they are wearing.
+	.macro setoutfitgfxintovar var:req, state=0 @ PLAYER_AVATAR_STATE_NORMAL
+	callnative SetCurrentOutfitGfxIntoVar
+	.2byte \var
+	.2byte \state
+	.endm
+
 	@ Gets the width of the specified message in the Braille font and sets the result to VAR_0x8004.
 	.macro getbraillestringwidth msg:req
 	.byte SCR_OP_GETBRAILLESTRINGWIDTH
 	.4byte \msg
+	.endm
+
+	@ Outfit shortcuts.
+
+	.macro checkoutfitflag outfitId:req
+	getoutfitstatus \outfitId, OUTFIT_CHECK_FLAG
+	.endm
+
+	.macro iswearingoutfit outfitId:req
+	getoutfitstatus \outfitId, OUTFIT_CHECK_USED
+	.endm
+
+	.macro bufferoutfitname stringVarId:req, outfitId:req
+	bufferoutfitstr \stringVarId, \outfitId, OUTFIT_BUFFER_NAME
+	.endm
+
+	.macro bufferoutfitdesc stringVarId:req, outfitId:req
+	bufferoutfitstr \stringVarId, \outfitId, OUTFIT_BUFFER_DESC
+	.endm
+
+	.macro unlockoutfit outfitId:req
+	toggleoutfit \outfitId, OUTFIT_TOGGLE_UNLOCK
+	.endm
+
+	.macro lockoutfit outfitId:req
+	toggleoutfit \outfitId, OUTFIT_TOGGLE_LOCK
+	.endm
+
+	@ Calls \dest if the outfit IS unlocked. Upstream has these two the wrong
+	@ way round - checkoutfitflag sets VAR_RESULT to the unlocked status, so
+	@ its call_if_outfitunlocked tests FALSE and fires on a LOCKED outfit.
+	.macro call_if_outfitunlocked outfit:req, dest:req
+	checkoutfitflag \outfit
+	call_if TRUE, \dest
+	.endm
+
+	@ Calls \dest if the outfit is locked.
+	.macro call_if_outfitlocked outfit:req, dest:req
+	checkoutfitflag \outfit
+	call_if FALSE, \dest
+	.endm
+
+	@ Calls \dest if the outfit is currently being worn.
+	.macro call_if_wearoutfit outfit:req, dest:req
+	iswearingoutfit \outfit
+	call_if TRUE, \dest
+	.endm
+
+	@ Calls \dest if the outfit is not currently being worn.
+	.macro call_if_notwearoutfit outfit:req, dest:req
+	iswearingoutfit \outfit
+	call_if FALSE, \dest
 	.endm
 
 	.macro goto_if_unset flag:req, dest:req

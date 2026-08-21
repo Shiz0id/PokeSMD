@@ -4496,6 +4496,50 @@ const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RubySapphireMay = 
     .images = sPicTable_RubySapphireMay,
 };
 
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RSBrendanPlayer = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_RS_BRENDAN,
+    // EVERY FIELD BUT THE PALETTE AND THE IMAGES IS COPIED FROM
+    // gObjectEventGraphicsInfo_BrendanNormal, deliberately and field for field.
+    // What makes a sprite wearable by the player is not one property but five,
+    // and the RS NPC entry differs in four of them: the anim table stops at
+    // ANIM_STD_GO_FASTEST_EAST, the size is one frame rather than two, the
+    // palette lands in an NPC slot instead of the player's, and it has no
+    // reflection - so the player would also have walked over water casting
+    // nothing. tools/rogue/check_player_sprite_anims.py asserts the anim half.
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 16,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_16x32,
+    .subspriteTables = sOamTables_16x32,
+    .anims = sAnimTable_BrendanMayNormal,
+    .images = sPicTable_RSBrendanPlayer,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RSMayPlayer = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_RS_MAY,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 16,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_16x32,
+    .subspriteTables = sOamTables_16x32,
+    .anims = sAnimTable_BrendanMayNormal,
+    .images = sPicTable_RSMayPlayer,
+};
+
 const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Lugia = {
     .tileTag = TAG_NONE,
     .paletteTag = OBJ_EVENT_PAL_TAG_LUGIA,
@@ -4631,7 +4675,10 @@ const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RedNormal = {
     .tracks = TRACKS_FOOT,
     .oam = &gObjectEventBaseOam_16x32,
     .subspriteTables = sOamTables_16x32,
-    .anims = sAnimTable_BrendanMayNormal,
+    // FRLG FRAME ORDER - see sAnimTable_RedGreenNormal. sPicTable_RedNormal
+    // takes its running frames from the surf+run sheet, which lays 9-17 out
+    // differently from a Hoenn walking+running concatenation.
+    .anims = sAnimTable_RedGreenNormal,
     .images = sPicTable_RedNormal,
     .affineAnims = gDummySpriteAffineAnimTable,
 };
@@ -4652,6 +4699,47 @@ const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RedBike = {
     .subspriteTables = sOamTables_32x32,
     .anims = sAnimTable_Standard,
     .images = sPicTable_RedBike,
+    .affineAnims = gDummySpriteAffineAnimTable,
+};
+
+// THE ACRO BIKE, which FireRed does not have and this project grants on floor
+// one. Identical to RedBike above except the two fields that matter: the acro
+// anim table, and the 27-frame generated sheet that can answer it.
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RedAcroBike = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_PLAYER_RED,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_BIKE_TIRE,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_AcroBike,
+    .images = sPicTable_RedAcroBike,
+    .affineAnims = gDummySpriteAffineAnimTable,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenAcroBike = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_PLAYER_GREEN,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_BIKE_TIRE,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_AcroBike,
+    .images = sPicTable_GreenAcroBike,
     .affineAnims = gDummySpriteAffineAnimTable,
 };
 
@@ -4821,7 +4909,8 @@ const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenNormal = {
     .tracks = TRACKS_FOOT,
     .oam = &gObjectEventBaseOam_16x32,
     .subspriteTables = sOamTables_16x32,
-    .anims = sAnimTable_BrendanMayNormal,
+    // FRLG FRAME ORDER - see sAnimTable_RedGreenNormal.
+    .anims = sAnimTable_RedGreenNormal,
     .images = sPicTable_GreenNormal,
     .affineAnims = gDummySpriteAffineAnimTable,
 };
@@ -7859,3 +7948,581 @@ const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RogueSinnohBarry =
     .images = sPicTable_RogueSinnohBarry,
 };
 
+// Kris. Cloned from May's infos with the palette tag and the pic tables
+// repointed, so every OAM shape, subsprite table, anim table, shadow size and
+// track type is whatever May's already is - which is what makes the third look
+// behave identically to the two that shipped rather than subtly differently.
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisNormal = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_KRIS,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 16,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_16x32,
+    .subspriteTables = sOamTables_16x32,
+    .anims = sAnimTable_BrendanMayNormal,
+    .images = sPicTable_KrisNormal,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisMachBike = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_KRIS,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_BIKE_TIRE,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_Standard,
+    .images = sPicTable_KrisMachBike,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisAcroBike = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_KRIS,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_BIKE_TIRE,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_AcroBike,
+    .images = sPicTable_KrisAcroBike,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisSurfing = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_KRIS,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_NONE,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_Surfing,
+    .images = sPicTable_KrisSurfing,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisUnderwater = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_PLAYER_UNDERWATER,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_NONE,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_NPC_SPECIAL,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_Standard,
+    .images = sPicTable_KrisUnderwater,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisFieldMove = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_KRIS,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_FieldMove,
+    .images = sPicTable_KrisFieldMove,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisFishing = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_KRIS,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_Fishing,
+    .images = sPicTable_KrisFishing,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisWatering = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_KRIS,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_Standard,
+    .images = sPicTable_KrisWatering,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisDecorating = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_KRIS,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 256,
+    .width = 16,
+    .height = 32,
+    .paletteSlot = PALSLOT_NPC_SPECIAL,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = TRUE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_16x32,
+    .subspriteTables = sOamTables_16x32,
+    .anims = sAnimTable_Inanimate,
+    .images = sPicTable_KrisDecorating,
+};
+
+// GOLD, OUTFIT_JOHTO's masculine half. Copied field-for-field from the Kris
+// block above, which is itself Brendan's shape - PALSLOT_PLAYER, size 512, the
+// bridge reflection tag, and sAnimTable_BrendanMayNormal on the on-foot entry
+// so that ANIM_RUN_* (20-23) and ANIM_SPIN_* (24-27) exist. Those are among
+// the five properties that separate a wearable sprite from an NPC one; taking
+// any of them from gObjectEventGraphicsInfo_RogueJohtoEthan instead builds
+// cleanly and hangs on the first step.
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldNormal = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_GOLD,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 16,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_16x32,
+    .subspriteTables = sOamTables_16x32,
+    .anims = sAnimTable_BrendanMayNormal,
+    .images = sPicTable_GoldNormal,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldMachBike = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_GOLD,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_BIKE_TIRE,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_Standard,
+    .images = sPicTable_GoldMachBike,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldAcroBike = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_GOLD,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_BIKE_TIRE,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_AcroBike,
+    .images = sPicTable_GoldAcroBike,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldSurfing = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_GOLD,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_NONE,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_Surfing,
+    .images = sPicTable_GoldSurfing,
+};
+
+// THE SHARED UNDERWATER PALETTE, not Gold's own - the same choice Kris's
+// underwater entry makes. The tag is already registered and everybody is the
+// same silhouette down there, so this costs no palette slot.
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldUnderwater = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_PLAYER_UNDERWATER,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_NONE,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_NPC_SPECIAL,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_Standard,
+    .images = sPicTable_GoldUnderwater,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldFieldMove = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_GOLD,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_FieldMove,
+    .images = sPicTable_GoldFieldMove,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldFishing = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_GOLD,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_Fishing,
+    .images = sPicTable_GoldFishing,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldWatering = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_GOLD,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_Standard,
+    .images = sPicTable_GoldWatering,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldDecorating = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_GOLD,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 256,
+    .width = 16,
+    .height = 32,
+    .paletteSlot = PALSLOT_NPC_SPECIAL,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = TRUE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_16x32,
+    .subspriteTables = sOamTables_16x32,
+    .anims = sAnimTable_Inanimate,
+    .images = sPicTable_GoldDecorating,
+};
+
+// DAWN AND LUCAS, OUTFIT_SINNOH. Copied field-for-field from the Kris and Gold
+// blocks above - PALSLOT_PLAYER, size 512, bridge reflection, and
+// sAnimTable_BrendanMayNormal on the on-foot entries so ANIM_RUN_* and
+// ANIM_SPIN_* exist. Neither has an underwater entry: Sinnoh has no diving and
+// neither set ships the art, so the outfit row points that state at their own
+// surfing sprite, exactly as the Kanto row does.
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_DawnNormal = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_DAWN,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 16,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_16x32,
+    .subspriteTables = sOamTables_16x32,
+    .anims = sAnimTable_BrendanMayNormal,
+    .images = sPicTable_DawnNormal,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_DawnMachBike = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_DAWN,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_BIKE_TIRE,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_Standard,
+    .images = sPicTable_DawnMachBike,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_DawnAcroBike = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_DAWN,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_BIKE_TIRE,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_AcroBike,
+    .images = sPicTable_DawnAcroBike,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_DawnSurfing = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_DAWN,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_NONE,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_Surfing,
+    .images = sPicTable_DawnSurfing,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_DawnFishing = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_DAWN,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_Fishing,
+    .images = sPicTable_DawnFishing,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_LucasNormal = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_LUCAS,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 16,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_16x32,
+    .subspriteTables = sOamTables_16x32,
+    .anims = sAnimTable_BrendanMayNormal,
+    .images = sPicTable_LucasNormal,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_LucasMachBike = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_LUCAS,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_BIKE_TIRE,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_Standard,
+    .images = sPicTable_LucasMachBike,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_LucasAcroBike = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_LUCAS,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_BIKE_TIRE,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_AcroBike,
+    .images = sPicTable_LucasAcroBike,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_LucasSurfing = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_LUCAS,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_NONE,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_Surfing,
+    .images = sPicTable_LucasSurfing,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_LucasFishing = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_LUCAS,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_Fishing,
+    .images = sPicTable_LucasFishing,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_DawnFieldMove = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_DAWN,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_FieldMove,
+    .images = sPicTable_DawnFieldMove,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_DawnWatering = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_DAWN,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 512,
+    .width = 32,
+    .height = 32,
+    .paletteSlot = PALSLOT_PLAYER,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = FALSE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_32x32,
+    .subspriteTables = sOamTables_32x32,
+    .anims = sAnimTable_Standard,
+    .images = sPicTable_DawnWatering,
+};
+
+const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_DawnDecorating = {
+    .tileTag = TAG_NONE,
+    .paletteTag = OBJ_EVENT_PAL_TAG_ROGUE_DAWN,
+    .reflectionPaletteTag = OBJ_EVENT_PAL_TAG_BRIDGE_REFLECTION,
+    .size = 256,
+    .width = 16,
+    .height = 32,
+    .paletteSlot = PALSLOT_NPC_SPECIAL,
+    .shadowSize = SHADOW_SIZE_M,
+    .inanimate = TRUE,
+    .compressed = FALSE,
+    .tracks = TRACKS_FOOT,
+    .oam = &gObjectEventBaseOam_16x32,
+    .subspriteTables = sOamTables_16x32,
+    .anims = sAnimTable_Inanimate,
+    .images = sPicTable_DawnDecorating,
+};
