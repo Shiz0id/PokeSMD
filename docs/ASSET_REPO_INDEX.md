@@ -44,12 +44,34 @@ with its transparent colour at palette index 8. See `JOHTO_SINNOH_SPRITES.md`.
 | User Interface | 24 MB | 9 creators + Fonts |
 | Battle effects | 512 KB | 2 creators |
 | Overworld Pokemon Sprites | 405 MB | we already ship 1.12 MB of these; replacement art, not new capability |
-| Trainer Back Sprites | 277 MB | **trap** — back sprites were deliberately dropped in `8bd9b05f4f` |
+| Trainer Back Sprites | 277 MB | **HUMAN trainer back pics, and they are usable** — `hyo/` alone ships Brendan, May, RS Brendan, RS May, RGBY Red and two Golds. See the correction below |
 | Other | 397 MB | 381 MB is `Pokemon LIFE`, a whole fan-game dump. Not decomp assets |
 | Projects | 178 MB | FFVII sprites, a Zelda port. Novelty |
 | Pokemon | 78 MB | custom mon sprites |
 | Pokemon Essentials Packs | 93 MB | **RPG Maker**, wrong engine, needs conversion |
 | Maps | 18 MB | one contributor |
+
+### THAT `Trainer Back Sprites` ROW USED TO SAY "trap", AND IT WAS WRONG
+
+It read: *back sprites were deliberately dropped in `8bd9b05f4f`*. That commit
+dropped the **BW animated Pokémon back sprites** — `ROGUE_BW_ANIM_BACK`, 386
+species, 4.47 MB of ROM. It has nothing whatever to do with this directory,
+which holds **human trainer** back pics.
+
+**The cost of that one word was a wrong answer given with confidence.** Asked
+whether a Johto outfit was possible, a search that trusted this line concluded
+Gold had no back pic and that the outfit would have to ship masculine-less
+behind a new per-look availability gate in `struct Outfit`. `hyo/gold_back_pic.png`
+had been sitting here the whole time, 64×320, exactly the five frames
+`MAX_TRAINER_PIC_FRAMES` had just been raised to accept. The design was
+reversed and the gate was never built.
+
+**Two lessons, and the second is the general one.** A directory named for what
+it holds is not a trap because something with a similar name was once removed
+from the ROM — check which thing the commit actually touched. And an index like
+this file is read *instead of* the tree; a line that says "do not look here"
+is the most expensive kind of line to get wrong, because nothing later
+contradicts it.
 
 ## Tilesets — format
 
@@ -300,3 +322,48 @@ the pointers repointed, which is only correct because the art was drawn to the
 same template. The surfing and underwater tables in particular are
 hand-ordered frame lists, not ascending runs — check the sheet layout before
 reusing them for art from anywhere else.
+
+## Gold, OUTFIT_JOHTO's masculine half
+
+**By hyo, from this repo**, across three directories that have to be searched
+separately — which is the misfiling note at the top of this file in practice:
+
+| what | where in the repo | lands at |
+|---|---|---|
+| ten overworld sheets, incl. **running** | `Overworld Trainer Sprites/hyo/gold/` | `graphics/object_events/pics/people/gold/` |
+| object event palette | same folder, `gold.pal` | `graphics/object_events/palettes/gold.pal` |
+| region map head + its palette | same folder, `gold_icon.*` | `graphics/pokenav/region_map/` |
+| front pic | `Trainer Front Sprites/hyo/gold_front_pic.png` | `graphics/trainers/front_pics/gold.png` |
+| back pic | `Trainer Back Sprites/hyo/gold_back_pic.png` | `graphics/trainers/back_pics/gold.png` |
+
+**Licence: hyo asks for credit and permits editing.** Their `README.md` also
+says outright where the `.pal` and the character icon are meant to go, which
+is worth reading before guessing.
+
+**THE FRAME LAYOUTS ARE BRENDAN'S**, for the reason Kris's are May's — hyo
+ships a `brendan/` folder in the identical shape, and all ten Gold sheets
+measure the same dimensions as vanilla Brendan's. That was **measured, not
+assumed**, because the surfing, underwater and watering tables are hand-ordered
+frame lists that are silently wrong on differently-laid-out art.
+
+**Two Gold back pics, and they are the same drawing.** `gold_back_pic.png` and
+`gsc_gold_back_pic.png` differ in **200 silhouette pixels out of 20,480** — it
+is a recolour, not a repose. Took `gold_back_pic.png`: its transparent index 0
+is `(115, 197, 164)`, byte-identical to `brendan_back_pic.png` and to this
+tree's convention, where the `gsc_` one uses a one-off purple.
+
+**It is FIVE frames, 64×320.** Safe only because `MAX_TRAINER_PIC_FRAMES` went
+to 5 in `c38a209bfa`; at 4 this was the same 2 KB heap overrun that froze the
+Kanto row. Check that constant before importing any back pic.
+
+**Both palettes come off the PNGs** via `INCGFX_U16(..., ".gbapal")`, the way
+Red and Leaf do, rather than out of separate `.pal` files the way Kris does —
+one source of truth per pic, and no second consumer that would need the file.
+
+**No `gold_reflection.pal`,** although hyo ships one. Nothing in this tree reads
+`reflectionPaletteTag`; reflections are built at runtime by `ApplyPondFilter`
+over the live palette. Same call as Kris's.
+
+**There is no Kris or Lyra head anywhere in this repo**, and hyo has no female
+Johto set — searched by name and by path. Kris's region map head in
+`OUTFIT_JOHTO` falls back to May's, marked on the line.
