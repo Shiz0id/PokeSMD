@@ -4675,7 +4675,10 @@ const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RedNormal = {
     .tracks = TRACKS_FOOT,
     .oam = &gObjectEventBaseOam_16x32,
     .subspriteTables = sOamTables_16x32,
-    .anims = sAnimTable_BrendanMayNormal,
+    // FRLG FRAME ORDER - see sAnimTable_RedGreenNormal. sPicTable_RedNormal
+    // takes its running frames from the surf+run sheet, which lays 9-17 out
+    // differently from a Hoenn walking+running concatenation.
+    .anims = sAnimTable_RedGreenNormal,
     .images = sPicTable_RedNormal,
     .affineAnims = gDummySpriteAffineAnimTable,
 };
@@ -4865,7 +4868,8 @@ const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenNormal = {
     .tracks = TRACKS_FOOT,
     .oam = &gObjectEventBaseOam_16x32,
     .subspriteTables = sOamTables_16x32,
-    .anims = sAnimTable_BrendanMayNormal,
+    // FRLG FRAME ORDER - see sAnimTable_RedGreenNormal.
+    .anims = sAnimTable_RedGreenNormal,
     .images = sPicTable_GreenNormal,
     .affineAnims = gDummySpriteAffineAnimTable,
 };

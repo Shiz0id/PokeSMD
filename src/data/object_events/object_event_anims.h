@@ -1451,10 +1451,75 @@ static const union AnimCmd *const sAnimTable_BrendanMayNormal[] = {
     [ANIM_STD_GO_FASTEST_NORTH] = sAnim_GoFastestNorth,
     [ANIM_STD_GO_FASTEST_WEST] = sAnim_GoFastestWest,
     [ANIM_STD_GO_FASTEST_EAST] = sAnim_GoFastestEast,
-    [ANIM_RUN_SOUTH] = (IS_FRLG ? sAnim_RunSouthFrlg : sAnim_RunSouth),
-    [ANIM_RUN_NORTH] = (IS_FRLG ? sAnim_RunNorthFrlg : sAnim_RunNorth),
-    [ANIM_RUN_WEST] = (IS_FRLG ? sAnim_RunWestFrlg : sAnim_RunWest),
-    [ANIM_RUN_EAST] = (IS_FRLG ? sAnim_RunEastFrlg : sAnim_RunEast),
+    // THE RUN ANIMS BELONG TO THE SHEET, NOT TO THE BUILD, and these four
+    // lines used to say `IS_FRLG ? sAnim_RunSouthFrlg : sAnim_RunSouth`.
+    //
+    // That was true while the FRLG sprites only existed in an FRLG build. This
+    // tree unguarded them - four `#if IS_FRLG` blocks became `#if 1` so that
+    // Red and Green could be worn as OUTFIT_KANTO_CLASSIC - and IS_FRLG is 0
+    // here, so the FRLG-layout pic tables were handed the HOENN run anims.
+    // The two layouts disagree about what frames 9-17 are:
+    //
+    //     Hoenn   9,10,11 = mid-stride S/N/W   12,13 = S   14,15 = N   16,17 = W
+    //     FRLG    9,10,11 = S                  12,13,14 = N            15,16,17 = W
+    //
+    // so ANIM_RUN_SOUTH played 12,9,13,9 and drew a NORTH-facing frame most of
+    // the time, and ANIM_RUN_WEST played 16,11,17,11 and dropped a south frame
+    // into a sideways run. Every frame index was in range, so nothing failed:
+    // the player just ran backwards, and sideways-but-facing-up.
+    //
+    // THE FOUR TERNARIES SURVIVED THE UNGUARDING BECAUSE THEY ARE NOT `#if`.
+    // A search for `#if IS_FRLG` finds the four blocks and not these lines.
+    //
+    // Pinned to the Hoenn anims now, because THIS table is the Hoenn-layout
+    // one - Brendan, May, Kris, Gold, the RS pair and the rivals all index a
+    // walking sheet concatenated with a running sheet. FRLG-layout sprites use
+    // sAnimTable_RedGreenNormal below. The pairing is asserted by
+    // tools/rogue/check_player_sprite_anims.py.
+    [ANIM_RUN_SOUTH] = sAnim_RunSouth,
+    [ANIM_RUN_NORTH] = sAnim_RunNorth,
+    [ANIM_RUN_WEST] = sAnim_RunWest,
+    [ANIM_RUN_EAST] = sAnim_RunEast,
+    [ANIM_SPIN_SOUTH] = sAnim_SpinSouth,
+    [ANIM_SPIN_NORTH] = sAnim_SpinNorth,
+    [ANIM_SPIN_WEST] = sAnim_SpinWest,
+    [ANIM_SPIN_EAST] = sAnim_SpinEast,
+};
+
+// THE FRLG PLAYER AVATARS. Identical to sAnimTable_BrendanMayNormal above
+// except for the four run entries, which name the Frlg frame order because
+// sPicTable_RedNormal and sPicTable_GreenNormal take their running frames from
+// a combined surf+run sheet at indices 3..13 rather than from a running sheet
+// concatenated onto a walking one.
+//
+// Only OBJ_EVENT_GFX_RED_NORMAL and OBJ_EVENT_GFX_GREEN_NORMAL use this. It is
+// a whole table rather than a run-anim swap because .anims is one pointer:
+// there is nowhere for a sprite to say "this table, but those four".
+static const union AnimCmd *const sAnimTable_RedGreenNormal[] = {
+    [ANIM_STD_FACE_SOUTH] = sAnim_FaceSouth,
+    [ANIM_STD_FACE_NORTH] = sAnim_FaceNorth,
+    [ANIM_STD_FACE_WEST] = sAnim_FaceWest,
+    [ANIM_STD_FACE_EAST] = sAnim_FaceEast,
+    [ANIM_STD_GO_SOUTH] = sAnim_GoSouth,
+    [ANIM_STD_GO_NORTH] = sAnim_GoNorth,
+    [ANIM_STD_GO_WEST] = sAnim_GoWest,
+    [ANIM_STD_GO_EAST] = sAnim_GoEast,
+    [ANIM_STD_GO_FAST_SOUTH] = sAnim_GoFastSouth,
+    [ANIM_STD_GO_FAST_NORTH] = sAnim_GoFastNorth,
+    [ANIM_STD_GO_FAST_WEST] = sAnim_GoFastWest,
+    [ANIM_STD_GO_FAST_EAST] = sAnim_GoFastEast,
+    [ANIM_STD_GO_FASTER_SOUTH] = sAnim_GoFasterSouth,
+    [ANIM_STD_GO_FASTER_NORTH] = sAnim_GoFasterNorth,
+    [ANIM_STD_GO_FASTER_WEST] = sAnim_GoFasterWest,
+    [ANIM_STD_GO_FASTER_EAST] = sAnim_GoFasterEast,
+    [ANIM_STD_GO_FASTEST_SOUTH] = sAnim_GoFastestSouth,
+    [ANIM_STD_GO_FASTEST_NORTH] = sAnim_GoFastestNorth,
+    [ANIM_STD_GO_FASTEST_WEST] = sAnim_GoFastestWest,
+    [ANIM_STD_GO_FASTEST_EAST] = sAnim_GoFastestEast,
+    [ANIM_RUN_SOUTH] = sAnim_RunSouthFrlg,
+    [ANIM_RUN_NORTH] = sAnim_RunNorthFrlg,
+    [ANIM_RUN_WEST] = sAnim_RunWestFrlg,
+    [ANIM_RUN_EAST] = sAnim_RunEastFrlg,
     [ANIM_SPIN_SOUTH] = sAnim_SpinSouth,
     [ANIM_SPIN_NORTH] = sAnim_SpinNorth,
     [ANIM_SPIN_WEST] = sAnim_SpinWest,

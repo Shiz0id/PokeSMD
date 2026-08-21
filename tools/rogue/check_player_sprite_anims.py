@@ -250,6 +250,60 @@ def pic_table_frames(repo, symbol):
     return None
 
 
+def pic_table_run_layout(repo, symbol):
+    """Which frame ORDER a pic table lays its running frames out in.
+
+    Returns "frlg", "hoenn", or None when the table has no running half.
+
+    The discriminator is where frames 9+ come from. A Hoenn-layout player table
+    is a walking sheet with a running sheet concatenated onto it, either as one
+    ascending run over a *NormalRunning symbol or as two named sheets. An FRLG
+    one takes its running frames out of a COMBINED SURF+RUN sheet, at an
+    offset - sPicTable_RedNormal starts at gObjectEventPic_RedSurfRun frame 3,
+    because 0-2 are the surf poses.
+
+    The two orders disagree about what frames 9-17 mean, and every index is in
+    range under both, so nothing in the engine or the build can tell them apart.
+    """
+    text = strip_comments(read(repo, PIC_TABLES))
+    m = re.search(r"\b" + re.escape(symbol) + r"\[\]\s*=\s*\{(.*?)\n\};", text, re.S)
+    if not m:
+        return None
+    body = m.group(1)
+    sheets = re.findall(r"gObjectEventPic_(\w+)", body)
+    if not sheets:
+        return None
+    if any("SurfRun" in s for s in sheets):
+        return "frlg"
+    if any("Running" in s for s in sheets) or len(set(sheets)) > 1:
+        return "hoenn"
+    return None
+
+
+def anim_table_run_variant(repo, symbol):
+    """Which run-anim family an anim table names: "frlg", "hoenn", or None."""
+    text = strip_comments(read(repo, ANIMS))
+    m = re.search(r"\b" + re.escape(symbol) + r"\[\]\s*=\s*\{(.*?)\n\};", text, re.S)
+    if not m:
+        return None
+    body = m.group(1)
+    run = re.findall(r"\[ANIM_RUN_[A-Z]+\]\s*=\s*([^,\n]+)", body)
+    if not run:
+        return None
+    joined = " ".join(run)
+    frlg = "Frlg" in joined
+    hoenn = re.search(r"sAnim_Run(South|North|West|East)\b(?!Frlg)", joined) is not None
+    if frlg and hoenn:
+        # A ternary, or a table mixing both families. Either way it is not a
+        # property of the sprite any more, which is the bug this guards.
+        return "mixed"
+    if frlg:
+        return "frlg"
+    if hoenn:
+        return "hoenn"
+    return None
+
+
 def outfit_slots(repo):
     """{(outfit, array, look, slot): id token}."""
     text = strip_comments(read(repo, TABLE))
@@ -389,8 +443,116 @@ def check(repo, fail):
                     % (look, gid, info, name)
                 )
 
+    # 3. THE RUN ANIMS MUST MATCH THE SHEET, NOT THE BUILD.
+    #
+    #    A sprite's pic table and its anim table have to agree about what
+    #    frames 9-17 MEAN, and the two layouts in this tree disagree:
+    #
+    #      Hoenn   9,10,11 mid-stride S/N/W   12,13 S   14,15 N   16,17 W
+    #      FRLG    9,10,11 S                  12,13,14 N          15,16,17 W
+    #
+    #    EVERY INDEX IS IN RANGE UNDER BOTH, so assertion 1 above passes, the
+    #    build is clean, and the sprite draws - it just draws the wrong
+    #    direction. Red and Green shipped like this: running south played two
+    #    north-facing frames out of four, and running west dropped a
+    #    south-facing frame into the middle of a sideways stride.
+    #
+    #    THE CAUSE IS WORTH THE PARAGRAPH. sAnimTable_BrendanMayNormal chose
+    #    between the families with `IS_FRLG ? sAnim_RunSouthFrlg : ...`. That
+    #    was right while FRLG sprites only existed in an FRLG build. This tree
+    #    unguarded them - four `#if IS_FRLG` blocks became `#if 1` so Red and
+    #    Green could be worn - and IS_FRLG is 0 here, so FRLG-layout tables got
+    #    Hoenn anims. THE TERNARIES SURVIVED THE UNGUARDING BECAUSE THEY ARE
+    #    NOT `#if`: a search for `#if IS_FRLG` finds the blocks and not them.
+    #    That makes six sites in this one unguarding, the fifth having been the
+    #    palette table in a different file again.
+    #
+    #    So the rule is: the run-anim family is a property of the PIC TABLE the
+    #    sprite points at. Not of the build, and not of who the character is.
+    seen = set()
+    for key, token in sorted(slots.items()):
+        if key[3] != "PLAYER_AVATAR_STATE_NORMAL":
+            continue
+        gid, info, covered, _ = resolve(token)
+        if info is None or info in seen:
+            continue
+        seen.add(info)
+        fields = infos.get(info, {})
+        anim_sym, images = fields.get("anims"), fields.get("images")
+        if not anim_sym or not images:
+            continue
+        want = pic_table_run_layout(repo, images)
+        got = anim_table_run_variant(repo, anim_sym)
+        if want is None or got is None:
+            continue
+        if got == "mixed":
+            fail(
+                "%s (%s) selects its run anims with a build-time test rather than "
+                "naming one family. The frame order is a property of %s, so a "
+                "sprite whose sheet disagrees with the build draws the wrong "
+                "direction with every index still in range"
+                % (info, gid, images)
+            )
+        elif want != got:
+            fail(
+                "%s (%s) pairs %s, which is %s frame order, with %s, which names "
+                "the %s run anims. Frames 9-17 mean different directions in the "
+                "two layouts, so this runs backwards or turns to face the camera "
+                "mid-stride - and every frame index is in range, so nothing else "
+                "will ever catch it"
+                % (info, gid, images, want.upper(), anim_sym, got.upper())
+            )
+
 
 BREAKS = [
+    (
+        # THE SHIPPED BUG, restored exactly. Red kept a working anim table, a
+        # working sheet and in-range frame indices, and ran backwards.
+        "Red's FRLG-layout sheet back on the Hoenn run anims",
+        INFOS,
+        lambda s: s.replace(
+            "    .anims = sAnimTable_RedGreenNormal,\n    .images = sPicTable_RedNormal,",
+            "    .anims = sAnimTable_BrendanMayNormal,\n    .images = sPicTable_RedNormal,",
+            1,
+        ),
+    ),
+    (
+        "Green's FRLG-layout sheet back on the Hoenn run anims",
+        INFOS,
+        lambda s: s.replace(
+            "    .anims = sAnimTable_RedGreenNormal,\n    .images = sPicTable_GreenNormal,",
+            "    .anims = sAnimTable_BrendanMayNormal,\n    .images = sPicTable_GreenNormal,",
+            1,
+        ),
+    ),
+    (
+        # The original shape of the fault: a build-time test deciding something
+        # that is a property of the art.
+        "the run anims chosen by IS_FRLG again, instead of by the sheet",
+        ANIMS,
+        lambda s: s.replace(
+            "    [ANIM_RUN_SOUTH] = sAnim_RunSouth,\n"
+            "    [ANIM_RUN_NORTH] = sAnim_RunNorth,\n"
+            "    [ANIM_RUN_WEST] = sAnim_RunWest,\n"
+            "    [ANIM_RUN_EAST] = sAnim_RunEast,",
+            "    [ANIM_RUN_SOUTH] = (IS_FRLG ? sAnim_RunSouthFrlg : sAnim_RunSouth),\n"
+            "    [ANIM_RUN_NORTH] = (IS_FRLG ? sAnim_RunNorthFrlg : sAnim_RunNorth),\n"
+            "    [ANIM_RUN_WEST] = (IS_FRLG ? sAnim_RunWestFrlg : sAnim_RunWest),\n"
+            "    [ANIM_RUN_EAST] = (IS_FRLG ? sAnim_RunEastFrlg : sAnim_RunEast),",
+            1,
+        ),
+    ),
+    (
+        # The inverse, so the assertion is not one-directional: a Hoenn sheet
+        # handed the FRLG order.
+        "Gold's Hoenn-layout sheet pointed at the FRLG run anims",
+        INFOS,
+        lambda s: s.replace(
+            "    .anims = sAnimTable_BrendanMayNormal,\n    .images = sPicTable_GoldNormal,",
+            "    .anims = sAnimTable_RedGreenNormal,\n    .images = sPicTable_GoldNormal,",
+            1,
+        ),
+    ),
     (
         "the RS outfit back on the NPC sprite, the bug this check exists for",
         TABLE,
@@ -463,11 +625,12 @@ BREAKS = [
         lambda s: s.replace("    [ANIM_SPIN_EAST] = sAnim_SpinEast,\n", "", 1),
     ),
     (
+        # Was pinned to the IS_FRLG ternary and stopped matching when that was
+        # replaced by a plain name. The runner reporting NO-OP is the only
+        # reason it surfaced - the check went on passing either way.
         "the default row's on-foot sprite losing its run anims",
         ANIMS,
-        lambda s: s.replace(
-            "    [ANIM_RUN_SOUTH] = (IS_FRLG ? sAnim_RunSouthFrlg : sAnim_RunSouth),\n", "", 1
-        ),
+        lambda s: s.replace("    [ANIM_RUN_SOUTH] = sAnim_RunSouth,\n", "", 1),
     ),
 ]
 
