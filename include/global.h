@@ -23,6 +23,7 @@
 #include "constants/easy_chat.h"
 #include "constants/trainer_hill.h"
 #include "constants/trainer_tower.h"
+#include "constants/outfits.h"
 #include "constants/items.h"
 #include "constants/moves.h"
 #include "config/save.h"
@@ -154,6 +155,8 @@
 #define NUM_TRENDY_SAYING_BYTES ROUND_BITS_TO_BYTES(NUM_TRENDY_SAYINGS)
 
 #define NUM_APRICORN_TREE_BYTES ROUND_BITS_TO_BYTES(APRICORN_TREE_COUNT)
+
+#define NUM_OUTFIT_OWNED_BYTES ROUND_BITS_TO_BYTES(OUTFIT_COUNT)
 
 // This produces an error at compile-time if expr is zero.
 // It looks like file.c:line: size of array `id' is negative
@@ -719,7 +722,26 @@ struct SaveBlock2
              u16 optionsAutoRun:1;           // Autorun setting (TRUE = automatically run)
              //u16 padding1:1;
     /*0x18*/ struct Pokedex pokedex;
-    /*0x90*/ u8 filler_90[0x8];
+             // OUTFITS LIVE IN THE FILLER, NOT IN THE OPTION BITFIELD ABOVE.
+             // Upstream's outfit branch packs these into padding1/padding2,
+             // which this project has already spent on battleMode,
+             // optionsBattleSpeed and optionsAutoRun - one bit is left there.
+             // filler_90 is eight untouched bytes, so taking two keeps every
+             // field after it at the offset it has always had and no existing
+             // save is invalidated.
+             //
+             // currOutfitId IS A WHOLE BYTE, not the 4-bit field upstream uses.
+             // A 4-bit field truncates silently the moment OUTFIT_COUNT passes
+             // 16 - the build stays clean and the wrong outfit is worn - and
+             // there is no shortage of room here to pay for that risk.
+    /*0x90*/ u8 currOutfitId;
+    /*0x91*/ u8 outfits[NUM_OUTFIT_OWNED_BYTES]; // Bitfield: which outfits are unlocked
+             // Sized from what the two fields above took, so that raising
+             // OUTFIT_COUNT past a byte boundary cannot silently shift
+             // localTimeOffset and everything after it. When the filler is
+             // exhausted this is a negative array size and the build stops,
+             // which is the whole point of writing it this way.
+    /*0x92*/ u8 filler_92[0x8 - 1 - NUM_OUTFIT_OWNED_BYTES];
     /*0x98*/ struct Time localTimeOffset;
     /*0xA0*/ struct Time lastBerryTreeUpdate;
     /*0xA8*/ u32 gcnLinkFlags; // Read by Pokémon Colosseum/XD

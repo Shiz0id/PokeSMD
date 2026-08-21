@@ -3148,7 +3148,6 @@ static void SetPlayerAvatarObjectEventIdAndObjectId(u8 objectEventId, u8 spriteI
 {
     gPlayerAvatar.objectEventId = objectEventId;
     gPlayerAvatar.spriteId = spriteId;
-    gPlayerAvatar.gender = GetPlayerAvatarGenderByGraphicsId(gObjectEvents[objectEventId].graphicsId);
     SetPlayerAvatarExtraStateTransition(gObjectEvents[objectEventId].graphicsId, PLAYER_AVATAR_FLAG_CONTROLLABLE);
 }
 
@@ -12316,3 +12315,18 @@ bool8 MovementType_OverworldWildEncounter_Despawn_Step11(struct ObjectEvent *obj
 }
 
 #undef sDespawnTimer
+
+// An outfit's head icon borrows its overworld sprite's palette, and that table
+// is static to this file. Falls back to entry 0 on a miss rather than indexing
+// out of bounds: FindObjectEventPaletteIndexByTag answers 0xFF for a tag it
+// does not carry, and two of the engine's own consumers index the table with
+// that answer unguarded.
+const struct SpritePalette *GetObjectEventPaletteFromTag(u16 tag)
+{
+    u32 i = FindObjectEventPaletteIndexByTag(tag);
+
+    if (i == 0xFF)
+        i = 0;
+
+    return &sObjectEventSpritePalettes[i];
+}

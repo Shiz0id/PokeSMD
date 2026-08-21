@@ -1,4 +1,5 @@
 #include "global.h"
+#include "outfit.h"
 #include "battle.h"
 #include "battle_ai_switch.h"
 #include "battle_ai_util.h"
@@ -204,7 +205,7 @@ static enum TrainerPicID PlayerPartnerGetTrainerBackPicId(enum DifficultyLevel d
     if (gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER)
         trainerPicId = gBattlePartners[difficulty][gPartnerTrainerId - TRAINER_PARTNER(PARTNER_NONE)].trainerPic;
     else
-        trainerPicId = GetPlayerTrainerPic(gSaveBlock2Ptr->playerGender, GAME_VERSION);
+        trainerPicId = GetPlayerTrainerPicId();
 
     return trainerPicId;
 }

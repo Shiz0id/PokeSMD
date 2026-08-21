@@ -1,4 +1,6 @@
 #include "global.h"
+#include "data.h"
+#include "outfit.h"
 #include "main.h"
 #include "bike.h"
 #include "event_data.h"
@@ -278,18 +280,13 @@ static const u8 sRivalAvatarGfxIds[][GENDER_COUNT] =
     [PLAYER_AVATAR_STATE_VSSEEKER]   = {OBJ_EVENT_GFX_RIVAL_BRENDAN_FIELD_MOVE, OBJ_EVENT_GFX_RIVAL_MAY_FIELD_MOVE},
 };
 
-static const u16 sPlayerAvatarGfxIds[][GENDER_COUNT] =
-{
-    [PLAYER_AVATAR_STATE_NORMAL]     = {PLAYER_AVATAR_GFX_MALE_NORMAL,     PLAYER_AVATAR_GFX_FEMALE_NORMAL},
-    [PLAYER_AVATAR_STATE_MACH_BIKE]  = {PLAYER_AVATAR_GFX_MALE_MACH_BIKE,  PLAYER_AVATAR_GFX_FEMALE_MACH_BIKE},
-    [PLAYER_AVATAR_STATE_ACRO_BIKE]  = {PLAYER_AVATAR_GFX_MALE_ACRO_BIKE,  PLAYER_AVATAR_GFX_FEMALE_ACRO_BIKE},
-    [PLAYER_AVATAR_STATE_SURFING]    = {PLAYER_AVATAR_GFX_MALE_SURFING,    PLAYER_AVATAR_GFX_FEMALE_SURFING},
-    [PLAYER_AVATAR_STATE_UNDERWATER] = {PLAYER_AVATAR_GFX_MALE_UNDERWATER, PLAYER_AVATAR_GFX_FEMALE_UNDERWATER},
-    [PLAYER_AVATAR_STATE_FIELD_MOVE] = {PLAYER_AVATAR_GFX_MALE_FIELD_MOVE, PLAYER_AVATAR_GFX_FEMALE_FIELD_MOVE},
-    [PLAYER_AVATAR_STATE_FISHING]    = {PLAYER_AVATAR_GFX_MALE_FISHING,    PLAYER_AVATAR_GFX_FEMALE_FISHING},
-    [PLAYER_AVATAR_STATE_WATERING]   = {PLAYER_AVATAR_GFX_MALE_WATERING,   PLAYER_AVATAR_GFX_FEMALE_WATERING},
-    [PLAYER_AVATAR_STATE_VSSEEKER]   = {PLAYER_AVATAR_GFX_MALE_VSSEEKER,   PLAYER_AVATAR_GFX_FEMALE_VSSEEKER},
-};
+// sPlayerAvatarGfxIds USED TO BE HERE. What the player looks like is now a
+// property of the outfit being worn rather than a fixed table, so it lives in
+// src/data/outfit_tables.h and is read through
+// GetPlayerAvatarGraphicsIdByOutfitStateIdAndGender below. The default
+// outfit's row is built from the same PLAYER_AVATAR_GFX_* macros this table
+// named, so the vanilla look is unchanged by construction rather than by
+// having been copied across correctly.
 
 static const u8 sFRLGAvatarGfxIds[GENDER_COUNT] =
 {
@@ -303,28 +300,19 @@ static const u8 sRSAvatarGfxIds[GENDER_COUNT] =
     [FEMALE] = OBJ_EVENT_GFX_LINK_RS_MAY
 };
 
-static const struct PACKED
+// THE GRAPHICS ID HALF OF THIS TABLE IS GONE, and only the state-to-flag
+// mapping is left. It used to pair a fixed gfx id with each flag, per gender,
+// which cannot survive outfits: the same gender and state now answers with a
+// different id depending on what is being worn. Both readers below ask the
+// outfit table for the id and use this only for the flag, so the pairing is
+// derived at the point of use instead of stored twice.
+static const u8 sPlayerAvatarStateToFlag[PLAYER_AVATAR_STATE_COUNT] =
 {
-    u16 graphicsId;
-    u8 playerFlag;
-} sPlayerAvatarGfxToStateFlag[GENDER_COUNT][5] =
-{
-    [MALE] =
-    {
-        {PLAYER_AVATAR_GFX_MALE_NORMAL,     PLAYER_AVATAR_FLAG_ON_FOOT},
-        {PLAYER_AVATAR_GFX_MALE_MACH_BIKE,  PLAYER_AVATAR_FLAG_MACH_BIKE},
-        {PLAYER_AVATAR_GFX_MALE_ACRO_BIKE,  PLAYER_AVATAR_FLAG_ACRO_BIKE},
-        {PLAYER_AVATAR_GFX_MALE_SURFING,    PLAYER_AVATAR_FLAG_SURFING},
-        {PLAYER_AVATAR_GFX_MALE_UNDERWATER, PLAYER_AVATAR_FLAG_UNDERWATER},
-    },
-    [FEMALE] =
-    {
-        {PLAYER_AVATAR_GFX_FEMALE_NORMAL,         PLAYER_AVATAR_FLAG_ON_FOOT},
-        {PLAYER_AVATAR_GFX_FEMALE_MACH_BIKE,      PLAYER_AVATAR_FLAG_MACH_BIKE},
-        {PLAYER_AVATAR_GFX_FEMALE_ACRO_BIKE,      PLAYER_AVATAR_FLAG_ACRO_BIKE},
-        {PLAYER_AVATAR_GFX_FEMALE_SURFING,        PLAYER_AVATAR_FLAG_SURFING},
-        {PLAYER_AVATAR_GFX_FEMALE_UNDERWATER,     PLAYER_AVATAR_FLAG_UNDERWATER},
-    }
+    [PLAYER_AVATAR_STATE_NORMAL]     = PLAYER_AVATAR_FLAG_ON_FOOT,
+    [PLAYER_AVATAR_STATE_MACH_BIKE]  = PLAYER_AVATAR_FLAG_MACH_BIKE,
+    [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_FLAG_ACRO_BIKE,
+    [PLAYER_AVATAR_STATE_SURFING]    = PLAYER_AVATAR_FLAG_SURFING,
+    [PLAYER_AVATAR_STATE_UNDERWATER] = PLAYER_AVATAR_FLAG_UNDERWATER,
 };
 
 static bool8 (*const sArrowWarpMetatileBehaviorChecks2[])(u8) =  //Duplicate of sArrowWarpMetatileBehaviorChecks
@@ -1631,9 +1619,19 @@ u16 GetRivalAvatarGraphicsIdByStateIdAndGender(u8 state, enum Gender gender)
         return sRivalAvatarGfxIds[state][gender];
 }
 
+u16 GetPlayerAvatarGraphicsIdByOutfitStateIdAndGender(u8 outfitId, u8 state, enum Gender gender)
+{
+    return gOutfits[SanitizeOutfitId(outfitId)].avatarGfxIds[gender][state];
+}
+
+u16 GetPlayerAnimGraphicsIdByOutfitStateIdAndGender(u8 outfitId, u8 anim, enum Gender gender)
+{
+    return gOutfits[SanitizeOutfitId(outfitId)].animGfxIds[gender][anim];
+}
+
 u16 GetPlayerAvatarGraphicsIdByStateIdAndGender(u8 state, enum Gender gender)
 {
-    return sPlayerAvatarGfxIds[state][gender];
+    return GetPlayerAvatarGraphicsIdByOutfitStateIdAndGender(gSaveBlock2Ptr->currOutfitId, state, gender);
 }
 
 u16 GetFRLGAvatarGraphicsIdByGender(enum Gender gender)
@@ -1648,33 +1646,19 @@ u16 GetRSAvatarGraphicsIdByGender(enum Gender gender)
 
 u16 GetPlayerAvatarGraphicsIdByStateId(u8 state)
 {
-    return GetPlayerAvatarGraphicsIdByStateIdAndGender(state, gPlayerAvatar.gender);
+    return GetPlayerAvatarGraphicsIdByStateIdAndGender(state, gSaveBlock2Ptr->playerGender);
 }
 
-enum Gender GetPlayerAvatarGenderByGraphicsId(u16 gfxId)
-{
-    switch (gfxId)
-    {
-    case OBJ_EVENT_GFX_MAY_NORMAL:
-    case OBJ_EVENT_GFX_MAY_MACH_BIKE:
-    case OBJ_EVENT_GFX_MAY_ACRO_BIKE:
-    case OBJ_EVENT_GFX_MAY_SURFING:
-    case OBJ_EVENT_GFX_MAY_FIELD_MOVE:
-    case OBJ_EVENT_GFX_MAY_UNDERWATER:
-    case OBJ_EVENT_GFX_MAY_FISHING:
-    case OBJ_EVENT_GFX_MAY_WATERING:
-    case OBJ_EVENT_GFX_GREEN_NORMAL:
-    case OBJ_EVENT_GFX_GREEN_BIKE:
-    case OBJ_EVENT_GFX_GREEN_SURF:
-    case OBJ_EVENT_GFX_GREEN_FIELD_MOVE:
-    case OBJ_EVENT_GFX_GREEN_FISH:
-    case OBJ_EVENT_GFX_GREEN_VS_SEEKER:
-    case OBJ_EVENT_GFX_GREEN_VS_SEEKER_BIKE:
-        return FEMALE;
-    default:
-        return MALE;
-    }
-}
+// GetPlayerAvatarGenderByGraphicsId WAS HERE, and it is deleted rather than
+// updated. It answered "which gender is this sprite" from a hand-written list
+// of every female graphics id - a question that stopped having an answer the
+// moment an outfit could give one gender an id the list has never heard of.
+// Its default arm returns MALE, so an unlisted id was never an error: it was
+// silently a boy.
+//
+// gSaveBlock2Ptr->playerGender is the only source of truth now, and struct
+// PlayerAvatar's gender field is renamed to unused_07 so that anything still
+// reading the derived copy fails to build rather than reading MALE forever.
 
 bool8 PartyHasMonWithSurf(void)
 {
@@ -1735,47 +1719,51 @@ void SetPlayerAvatarStateMask(u8 flags)
     gPlayerAvatar.flags |= flags;
 }
 
-static u8 GetPlayerAvatarStateTransitionByGraphicsId(u16 graphicsId, u8 gender)
+// Resolves against the outfit currently being worn. A graphics id belonging to
+// some OTHER outfit matches nothing and falls through to ON_FOOT - the same
+// answer the old table gave for an id it did not know - so changing outfit
+// cannot leave the player in a state with no flag at all.
+static u8 GetPlayerAvatarStateTransitionByGraphicsId(u16 graphicsId, enum Gender gender)
 {
-    u8 i;
+    u32 i;
 
-    for (i = 0; i < ARRAY_COUNT(sPlayerAvatarGfxToStateFlag[0]); i++)
+    for (i = 0; i < ARRAY_COUNT(sPlayerAvatarStateToFlag); i++)
     {
-        if (sPlayerAvatarGfxToStateFlag[gender][i].graphicsId == graphicsId)
-            return sPlayerAvatarGfxToStateFlag[gender][i].playerFlag;
+        if (GetPlayerAvatarGraphicsIdByStateIdAndGender(i, gender) == graphicsId)
+            return sPlayerAvatarStateToFlag[i];
     }
     return PLAYER_AVATAR_FLAG_ON_FOOT;
 }
 
 u16 GetPlayerAvatarGraphicsIdByCurrentState(void)
 {
-    u8 i;
+    u32 i;
     u8 flags = gPlayerAvatar.flags;
 
-    for (i = 0; i < ARRAY_COUNT(sPlayerAvatarGfxToStateFlag[0]); i++)
+    for (i = 0; i < ARRAY_COUNT(sPlayerAvatarStateToFlag); i++)
     {
-        if (sPlayerAvatarGfxToStateFlag[gPlayerAvatar.gender][i].playerFlag & flags)
-            return sPlayerAvatarGfxToStateFlag[gPlayerAvatar.gender][i].graphicsId;
+        if (sPlayerAvatarStateToFlag[i] & flags)
+            return GetPlayerAvatarGraphicsIdByStateId(i);
     }
     return 0;
 }
 
 void SetPlayerAvatarExtraStateTransition(u16 graphicsId, u8 transitionFlag)
 {
-    u8 stateFlag = GetPlayerAvatarStateTransitionByGraphicsId(graphicsId, gPlayerAvatar.gender);
+    u8 stateFlag = GetPlayerAvatarStateTransitionByGraphicsId(graphicsId, gSaveBlock2Ptr->playerGender);
 
     gPlayerAvatar.transitionFlags |= stateFlag | transitionFlag;
     DoPlayerAvatarTransition();
 }
 
-void InitPlayerAvatar(s16 x, s16 y, enum Direction direction, enum Gender gender)
+void InitPlayerAvatar(s16 x, s16 y, enum Direction direction)
 {
     struct ObjectEventTemplate playerObjEventTemplate;
     u8 objectEventId;
     struct ObjectEvent *objectEvent;
 
     playerObjEventTemplate.localId = LOCALID_PLAYER;
-    playerObjEventTemplate.graphicsId = GetPlayerAvatarGraphicsIdByStateIdAndGender(PLAYER_AVATAR_STATE_NORMAL, gender);
+    playerObjEventTemplate.graphicsId = GetPlayerAvatarGraphicsIdByStateId(PLAYER_AVATAR_STATE_NORMAL);
     playerObjEventTemplate.x = x - MAP_OFFSET;
     playerObjEventTemplate.y = y - MAP_OFFSET;
     playerObjEventTemplate.elevation = ELEVATION_TRANSITION;
@@ -1796,7 +1784,6 @@ void InitPlayerAvatar(s16 x, s16 y, enum Direction direction, enum Gender gender
     gPlayerAvatar.tileTransitionState = T_NOT_MOVING;
     gPlayerAvatar.objectEventId = objectEventId;
     gPlayerAvatar.spriteId = objectEvent->spriteId;
-    gPlayerAvatar.gender = gender;
     SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_CONTROLLABLE | PLAYER_AVATAR_FLAG_ON_FOOT);
     CreateFollowerNPCAvatar();
 }
@@ -1808,17 +1795,28 @@ void SetPlayerInvisibility(bool8 invisible)
         gSprites[gObjectEvents[gPlayerAvatar.objectEventId].fieldEffectSpriteId].invisible = invisible;
 }
 
+// The animation-only graphics all follow this shape: swap in whatever art the
+// outfit names for that animation, then start it. PLAYER_AVATAR_ANIM_* indexes
+// the outfit's animGfxIds row and is not an avatar state - nothing transitions
+// into these and none of them has a PLAYER_AVATAR_FLAG_*.
+static void SetPlayerAvatarAnimation(u32 anim, u32 animNum)
+{
+    u16 gfxId = GetPlayerAnimGraphicsIdByOutfitStateIdAndGender(gSaveBlock2Ptr->currOutfitId, anim, gSaveBlock2Ptr->playerGender);
+
+    ObjectEventSetGraphicsId(&gObjectEvents[gPlayerAvatar.objectEventId], gfxId);
+    StartSpriteAnim(&gSprites[gPlayerAvatar.spriteId], animNum);
+}
+
 void SetPlayerAvatarFieldMove(void)
 {
     EndORASDowsing();
-    ObjectEventSetGraphicsId(&gObjectEvents[gPlayerAvatar.objectEventId], GetPlayerAvatarGraphicsIdByStateId(PLAYER_AVATAR_STATE_FIELD_MOVE));
-    StartSpriteAnim(&gSprites[gPlayerAvatar.spriteId], ANIM_FIELD_MOVE);
+    SetPlayerAvatarAnimation(PLAYER_AVATAR_ANIM_FIELD_MOVE, ANIM_FIELD_MOVE);
 }
 
 void SetPlayerAvatarFishing(enum Direction direction)
 {
     EndORASDowsing();
-    ObjectEventSetGraphicsId(&gObjectEvents[gPlayerAvatar.objectEventId], GetPlayerAvatarGraphicsIdByStateId(PLAYER_AVATAR_STATE_FISHING));
+    SetPlayerAvatarAnimation(PLAYER_AVATAR_ANIM_FISHING, GetFishingDirectionAnimNum(direction));
     StartSpriteAnim(&gSprites[gPlayerAvatar.spriteId], GetFishingDirectionAnimNum(direction));
 }
 
@@ -1832,8 +1830,7 @@ void PlayerUseAcroBikeOnBumpySlope(enum Direction direction)
 void SetPlayerAvatarWatering(enum Direction direction)
 {
     EndORASDowsing();
-    ObjectEventSetGraphicsId(&gObjectEvents[gPlayerAvatar.objectEventId], GetPlayerAvatarGraphicsIdByStateId(PLAYER_AVATAR_STATE_WATERING));
-    StartSpriteAnim(&gSprites[gPlayerAvatar.spriteId], GetFaceDirectionAnimNum(direction));
+    SetPlayerAvatarAnimation(PLAYER_AVATAR_ANIM_WATERING, GetFaceDirectionAnimNum(direction));
 }
 
 static void HideShowWarpArrow(struct ObjectEvent *objectEvent)

@@ -424,4 +424,40 @@ static inline const u16 *GetTrainerBackPicPalette(enum TrainerPicID trainerPic)
     return gTrainerPicInfo[SanitizeBackTrainerPic(trainerPic)].backPic->paletteData;
 }
 
+// One outfit: everything about how the player looks, in one row.
+//
+// EVERY ARRAY HERE IS SIZED BY GENDER_COUNT, and no site may write a literal 2
+// or pair MALE with FEMALE by hand. GENDER_COUNT is an enum member in
+// constants/global.h, so adding a third gender is an enum insert plus one more
+// entry per row - a data edit, not a refactor - and it only stays that cheap
+// while nothing hardcodes the width.
+struct Outfit
+{
+    bool8 isHidden;                                       // Hidden outfits stay out of the menu while still locked
+    u32 prices[GENDER_COUNT];
+    const u8 *name;
+    const u8 *desc;
+             // ONE PIC ID PER GENDER, not the front/back pair upstream carries.
+             // That pair dates from when front and back pics had separate
+             // enums; this tree's gTrainerPicInfo holds both under a single
+             // TRAINER_PIC_*, so a second element could only ever disagree
+             // with the first.
+    u16 trainerPics[GENDER_COUNT];
+    u16 avatarGfxIds[GENDER_COUNT][PLAYER_AVATAR_STATE_COUNT];
+    u16 animGfxIds[GENDER_COUNT][PLAYER_AVATAR_ANIM_COUNT];
+    struct {
+        const u16 *gfx;
+        const u16 *pal;
+    } iconsRM[GENDER_COUNT];                              // Region map head, one sprite per gender
+             // NO FRONTIER PASS HEAD YET, deliberately. Upstream carries one
+             // here; this tree's frontier pass keeps both genders in a single
+             // .4bpp.smol sheet and picks between them with a sprite ANIM
+             // frame, so wiring an outfit into it means uncompressing the
+             // sheet and changing how the sprite is built - and it also has an
+             // FRLG path this table has no rows for. Left out rather than left
+             // half-done: an unread field reads as finished work.
+};
+
+extern const struct Outfit gOutfits[OUTFIT_COUNT];
+
 #endif // GUARD_DATA_H

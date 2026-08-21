@@ -21,6 +21,7 @@
 #include "fldeff.h"
 #include "regions.h"
 #include "region_map.h"
+#include "outfit.h"
 #include "decompress.h"
 #include "constants/region_map_sections.h"
 #include "heal_location.h"
@@ -1735,8 +1736,8 @@ static void UNUSED ClearUnkCursorSpriteData(void)
 void CreateRegionMapPlayerIcon(u16 tileTag, u16 paletteTag)
 {
     u8 spriteId;
-    struct SpriteSheet sheet = {sRegionMapPlayerIcon_BrendanGfx, 0x80, tileTag};
-    struct SpritePalette palette = {sRegionMapPlayerIcon_BrendanPal, paletteTag};
+    struct SpriteSheet sheet = {GetPlayerHeadGfx(), REGION_MAP_HEAD_SIZE, tileTag};
+    struct SpritePalette palette = {GetPlayerHeadPal(), paletteTag};
     struct SpriteTemplate template = {tileTag, paletteTag, &sRegionMapPlayerIconOam, sRegionMapPlayerIconAnimTable, NULL, gDummySpriteAffineAnimTable, SpriteCallbackDummy};
 
     if (IsEventIslandMapSecId(gMapHeader.regionMapSectionId))
@@ -1744,20 +1745,21 @@ void CreateRegionMapPlayerIcon(u16 tileTag, u16 paletteTag)
         sRegionMap->playerIconSprite = NULL;
         return;
     }
-    if (IS_FRLG && gSaveBlock2Ptr->playerGender == FEMALE)
+    // FRLG keeps its own pair. Outfits are Hoenn art and the table has no
+    // Red/Leaf rows, so on an FRLG build the outfit choice does not reach the
+    // region map at all - which is the honest outcome, not an oversight.
+    if (IS_FRLG)
     {
-        sheet.data = sRegionMapPlayerIcon_LeafGfx;
-        palette.data = sRegionMapPlayerIcon_LeafPal;
-    }
-    else if (gSaveBlock2Ptr->playerGender == FEMALE)
-    {
-        sheet.data = sRegionMapPlayerIcon_MayGfx;
-        palette.data = sRegionMapPlayerIcon_MayPal;
-    }
-    else if (IS_FRLG)
-    {
-        sheet.data = sRegionMapPlayerIcon_RedGfx;
-        palette.data = sRegionMapPlayerIcon_RedPal;
+        if (gSaveBlock2Ptr->playerGender == FEMALE)
+        {
+            sheet.data = sRegionMapPlayerIcon_LeafGfx;
+            palette.data = sRegionMapPlayerIcon_LeafPal;
+        }
+        else
+        {
+            sheet.data = sRegionMapPlayerIcon_RedGfx;
+            palette.data = sRegionMapPlayerIcon_RedPal;
+        }
     }
     LoadSpriteSheet(&sheet);
     LoadSpritePalette(&palette);

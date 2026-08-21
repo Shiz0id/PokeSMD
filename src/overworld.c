@@ -2454,6 +2454,12 @@ static bool32 ReturnToFieldLocal(u8 *state)
         ResetScreenForMapLoad();
         ResumeMap(FALSE);
         InitObjectEventsReturnToField();
+        // Re-read the player's graphics id: an outfit changed while the field
+        // was suspended has to reach the avatar already standing on the map,
+        // and nothing else on this path touches its sprite. A no-op when the
+        // outfit is unchanged, since it resolves to the same id.
+        ObjectEventSetGraphicsId(&gObjectEvents[gPlayerAvatar.objectEventId], GetPlayerAvatarGraphicsIdByCurrentState());
+        ObjectEventTurn(&gObjectEvents[gPlayerAvatar.objectEventId], gObjectEvents[gPlayerAvatar.objectEventId].movementDirection);
         if (gFieldCallback == FieldCallback_UseFly)
             RemoveFollowingPokemon();
         else
@@ -2496,6 +2502,12 @@ static bool32 ReturnToFieldLink(u8 *state)
     case 2:
         CreateLinkPlayerSprites();
         InitObjectEventsReturnToField();
+        // Re-read the player's graphics id: an outfit changed while the field
+        // was suspended has to reach the avatar already standing on the map,
+        // and nothing else on this path touches its sprite. A no-op when the
+        // outfit is unchanged, since it resolves to the same id.
+        ObjectEventSetGraphicsId(&gObjectEvents[gPlayerAvatar.objectEventId], GetPlayerAvatarGraphicsIdByCurrentState());
+        ObjectEventTurn(&gObjectEvents[gPlayerAvatar.objectEventId], gObjectEvents[gPlayerAvatar.objectEventId].movementDirection);
         SetCameraToTrackGuestPlayer_2();
         (*state)++;
         break;
@@ -2692,7 +2704,7 @@ static void InitObjectEventsLocal(void)
     ResetObjectEvents();
     GetCameraFocusCoords(&x, &y);
     player = GetInitialPlayerAvatarState();
-    InitPlayerAvatar(x, y, player->direction, gSaveBlock2Ptr->playerGender);
+    InitPlayerAvatar(x, y, player->direction);
     SetPlayerAvatarTransitionFlags(player->transitionFlags);
     ResetInitialPlayerAvatarState();
     TrySpawnObjectEvents(0, 0);

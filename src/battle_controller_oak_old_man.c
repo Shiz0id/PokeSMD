@@ -1,4 +1,5 @@
 #include "global.h"
+#include "outfit.h"
 #include "battle.h"
 #include "battle_anim.h"
 #include "battle_controllers.h"
@@ -684,7 +685,7 @@ static void OakOldManHandleDrawTrainerPic(enum BattlerId battler)
     enum TrainerPicID trainerPicId;
 
     if (gBattleTypeFlags & BATTLE_TYPE_FIRST_BATTLE)
-        trainerPicId = GetPlayerTrainerPic(gSaveBlock2Ptr->playerGender, GAME_VERSION);
+        trainerPicId = GetPlayerTrainerPicId();
     else
         trainerPicId = TRAINER_PIC_OLD_MAN;
 
@@ -696,7 +697,7 @@ static void OakOldManHandleTrainerSlide(enum BattlerId battler)
     enum TrainerPicID trainerPicId;
 
     if (gBattleTypeFlags & BATTLE_TYPE_FIRST_BATTLE)
-        trainerPicId = GetPlayerTrainerPic(gSaveBlock2Ptr->playerGender, GAME_VERSION);
+        trainerPicId = GetPlayerTrainerPicId();
     else
         trainerPicId = TRAINER_PIC_OLD_MAN;
 
@@ -873,7 +874,7 @@ static void OakOldManHandleIntroTrainerBallThrow(enum BattlerId battler)
 {
     if (gBattleTypeFlags & BATTLE_TYPE_FIRST_BATTLE)
     {
-        enum TrainerPicID trainerPicID = GetPlayerTrainerPic(gSaveBlock2Ptr->playerGender, GAME_VERSION);
+        enum TrainerPicID trainerPicID = GetPlayerTrainerPicId();
         const u16 *trainerPal = GetTrainerBackPicPalette(trainerPicID);
         BtlController_HandleIntroTrainerBallThrow(battler, 0xD6F8, trainerPal, 31, Intro_TryShinyAnimShowHealthbox);
     }
