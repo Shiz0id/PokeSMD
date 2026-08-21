@@ -367,3 +367,37 @@ over the live palette. Same call as Kris's.
 **There is no Kris or Lyra head anywhere in this repo**, and hyo has no female
 Johto set — searched by name and by path. Kris's region map head in
 `OUTFIT_JOHTO` falls back to May's, marked on the line.
+
+## Dawn and Lucas, OUTFIT_SINNOH
+
+**By spilledpizza**, at `Overworld Trainer Sprites/spilledpizza/`. Credit is
+required. Their README lists: spilledpizza, TheWiggliestJiggliest, RichardPT,
+robloxmaster376, The Spriters Resource, and the Radiant Quartz / Prismatic
+Platinum team.
+
+The folder is already a decomp-layout tree, so the paths map straight across:
+`graphics/object_events/pics/people/{dawn,lucas}/`,
+`graphics/object_events/palettes/`, `graphics/trainers/front_pics/DP_*.png`
+(renamed to `dawn.png` / `lucas.png` on import) and
+`graphics/trainers/back_pics/`.
+
+**Dawn has eight of the ten overworld sheets, Lucas five.** Both are missing
+underwater and an acro bike; Lucas is also missing field move, watering and
+decorating. What that cost is recorded in the `OUTFIT_SINNOH` row.
+
+**Back pics are 64×256, four frames** — `sBackAnims_Hoenn`, count 4. Gold's is
+five. Check the dimensions before copying a `TRAINER_BACK_PIC` line.
+
+**Their `acro_bike.png` files are build outputs, not art from this repo.**
+`tools/rogue/compose_acro_bike.py` generates them. Do not hand-edit them and do
+not credit spilledpizza for them.
+
+**The shipped `src/` and `include/` files do not mention Dawn or Lucas.** They
+cover the 95 Diamond/Pearl trainer front pics in the same folder. The player
+art is PNGs only, so the tables were written by hand.
+
+**Two other Sinnoh sources were checked and rejected.** Lhea's Platinum set is
+one walking sheet plus a front and back pic — fewer states than spilledpizza,
+and a different costume design. Twinleaf Logan's is walk and run only, on an
+oversized canvas that would need re-slicing, in a custom RSE style. kwenio's
+files are RGBA reference sheets, not sliceable.
