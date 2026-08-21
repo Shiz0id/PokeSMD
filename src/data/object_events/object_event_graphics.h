@@ -89,6 +89,27 @@ const u32 gObjectEventPic_GoldFieldMove[] = INCGFX_U32("graphics/object_events/p
 const u32 gObjectEventPic_GoldFishing[] = INCGFX_U32("graphics/object_events/pics/people/gold/fishing.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u32 gObjectEventPic_GoldWatering[] = INCGFX_U32("graphics/object_events/pics/people/gold/watering.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u32 gObjectEventPic_GoldDecorating[] = INCGFX_U32("graphics/object_events/pics/people/gold/decorating.png", ".4bpp");
+
+// Dawn and Lucas, OUTFIT_SINNOH, from spilledpizza's set. THE acro_bike.png
+// FILES ARE BUILD OUTPUTS, not art: tools/rogue/compose_acro_bike.py makes
+// them from Brendan's poses and each character's own head, because neither
+// ships one and a 9-frame mach sheet cannot answer sAnimTable_AcroBike.
+// Re-run the tool rather than editing them.
+const u32 gObjectEventPic_DawnNormalRunning[] = INCBIN_U32("graphics/object_events/pics/people/dawn/walking.4bpp", "graphics/object_events/pics/people/dawn/running.4bpp");
+const u32 gObjectEventPic_DawnMachBike[] = INCGFX_U32("graphics/object_events/pics/people/dawn/mach_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_DawnAcroBike[] = INCGFX_U32("graphics/object_events/pics/people/dawn/acro_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_DawnSurfing[] = INCGFX_U32("graphics/object_events/pics/people/dawn/surfing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_DawnFishing[] = INCGFX_U32("graphics/object_events/pics/people/dawn/fishing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_LucasNormalRunning[] = INCBIN_U32("graphics/object_events/pics/people/lucas/walking.4bpp", "graphics/object_events/pics/people/lucas/running.4bpp");
+const u32 gObjectEventPic_LucasMachBike[] = INCGFX_U32("graphics/object_events/pics/people/lucas/mach_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_LucasAcroBike[] = INCGFX_U32("graphics/object_events/pics/people/lucas/acro_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_LucasSurfing[] = INCGFX_U32("graphics/object_events/pics/people/lucas/surfing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_LucasFishing[] = INCGFX_U32("graphics/object_events/pics/people/lucas/fishing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_DawnFieldMove[] = INCGFX_U32("graphics/object_events/pics/people/dawn/field_move.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_DawnWatering[] = INCGFX_U32("graphics/object_events/pics/people/dawn/watering.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u32 gObjectEventPic_DawnDecorating[] = INCGFX_U32("graphics/object_events/pics/people/dawn/decorating.png", ".4bpp");
+const u16 gObjectEventPal_Dawn[] = INCGFX_U16("graphics/object_events/palettes/dawn.pal", ".gbapal");
+const u16 gObjectEventPal_Lucas[] = INCGFX_U16("graphics/object_events/palettes/lucas.pal", ".gbapal");
 const u16 gObjectEventPal_MayReflection[] = INCGFX_U16("graphics/object_events/palettes/may_reflection.pal", ".gbapal");
 const u32 gObjectEventPic_RubySapphireMayNormal[] = INCGFX_U32("graphics/object_events/pics/people/ruby_sapphire_may/walking.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u32 gObjectEventPic_RubySapphireMayRunning[] = INCGFX_U32("graphics/object_events/pics/people/ruby_sapphire_may/running.png", ".4bpp", "-mwidth 2 -mheight 4");

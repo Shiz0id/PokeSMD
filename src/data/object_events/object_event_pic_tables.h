@@ -3411,3 +3411,89 @@ static const struct SpriteFrameImage sPicTable_GoldWatering[] = {
 static const struct SpriteFrameImage sPicTable_GoldDecorating[] = {
     obj_frame_tiles(gObjectEventPic_GoldDecorating),
 };
+
+// Dawn and Lucas. Dawn's tables are MAY's frame layouts repointed and Lucas's
+// are BRENDAN's - sound only because every sheet measures identical to the
+// vanilla one it copies, which was checked rather than assumed. The surfing
+// and watering lists are hand-ordered frame lists, not ascending runs.
+static const struct SpriteFrameImage sPicTable_DawnNormal[] = {
+    overworld_ascending_frames(gObjectEventPic_DawnNormalRunning, 2, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_DawnMachBike[] = {
+    overworld_ascending_frames(gObjectEventPic_DawnMachBike, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_DawnAcroBike[] = {
+    overworld_ascending_frames(gObjectEventPic_DawnAcroBike, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_DawnSurfing[] = {
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 1),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 3),
+    overworld_frame(gObjectEventPic_DawnSurfing, 4, 4, 5),
+};
+
+static const struct SpriteFrameImage sPicTable_DawnFishing[] = {
+    overworld_ascending_frames(gObjectEventPic_DawnFishing, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_LucasNormal[] = {
+    overworld_ascending_frames(gObjectEventPic_LucasNormalRunning, 2, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_LucasMachBike[] = {
+    overworld_ascending_frames(gObjectEventPic_LucasMachBike, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_LucasAcroBike[] = {
+    overworld_ascending_frames(gObjectEventPic_LucasAcroBike, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_LucasSurfing[] = {
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 0),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 2),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 4),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 1),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 3),
+    overworld_frame(gObjectEventPic_LucasSurfing, 4, 4, 5),
+};
+
+static const struct SpriteFrameImage sPicTable_LucasFishing[] = {
+    overworld_ascending_frames(gObjectEventPic_LucasFishing, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_DawnFieldMove[] = {
+    overworld_ascending_frames(gObjectEventPic_DawnFieldMove, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_DawnWatering[] = {
+    overworld_frame(gObjectEventPic_DawnWatering, 4, 4, 0),
+    overworld_frame(gObjectEventPic_DawnWatering, 4, 4, 2),
+    overworld_frame(gObjectEventPic_DawnWatering, 4, 4, 4),
+    overworld_frame(gObjectEventPic_DawnWatering, 4, 4, 1),
+    overworld_frame(gObjectEventPic_DawnWatering, 4, 4, 1),
+    overworld_frame(gObjectEventPic_DawnWatering, 4, 4, 3),
+    overworld_frame(gObjectEventPic_DawnWatering, 4, 4, 3),
+    overworld_frame(gObjectEventPic_DawnWatering, 4, 4, 5),
+    overworld_frame(gObjectEventPic_DawnWatering, 4, 4, 5),
+};
+
+static const struct SpriteFrameImage sPicTable_DawnDecorating[] = {
+    obj_frame_tiles(gObjectEventPic_DawnDecorating),
+};

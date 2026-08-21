@@ -507,6 +507,24 @@ enum
     // see tools/rogue/compose_acro_bike.py.
     OBJ_EVENT_GFX_RED_ACRO_BIKE,
     OBJ_EVENT_GFX_GREEN_ACRO_BIKE,
+    // Dawn and Lucas, OUTFIT_SINNOH. Appended for the reason the Kris and Gold
+    // blocks above are. NEITHER HAS AN UNDERWATER SPRITE and Sinnoh has no
+    // diving, so the outfit row sends that state to their own surfing sprite -
+    // the same call the Kanto row makes. Lucas is also short field move,
+    // watering and decorating; those fall back to the default, marked.
+    OBJ_EVENT_GFX_DAWN_NORMAL,
+    OBJ_EVENT_GFX_DAWN_MACH_BIKE,
+    OBJ_EVENT_GFX_DAWN_ACRO_BIKE,
+    OBJ_EVENT_GFX_DAWN_SURFING,
+    OBJ_EVENT_GFX_DAWN_FIELD_MOVE,
+    OBJ_EVENT_GFX_DAWN_FISHING,
+    OBJ_EVENT_GFX_DAWN_WATERING,
+    OBJ_EVENT_GFX_DAWN_DECORATING,
+    OBJ_EVENT_GFX_LUCAS_NORMAL,
+    OBJ_EVENT_GFX_LUCAS_MACH_BIKE,
+    OBJ_EVENT_GFX_LUCAS_ACRO_BIKE,
+    OBJ_EVENT_GFX_LUCAS_SURFING,
+    OBJ_EVENT_GFX_LUCAS_FISHING,
     // THE RS OUTFIT'S PLAYER SPRITE, which is NOT the same thing as
     // OBJ_EVENT_GFX_LINK_RS_BRENDAN above. That one is an NPC: a nine-frame
     // sheet on sAnimTable_Standard, which defines anim ids 0-19 and stops.
@@ -776,6 +794,8 @@ enum
 // map, from a clean build. The two halves live in different files and nothing
 // connects them.
 #define OBJ_EVENT_PAL_TAG_ROGUE_GOLD                             0x118D
+#define OBJ_EVENT_PAL_TAG_ROGUE_DAWN                             0x118E
+#define OBJ_EVENT_PAL_TAG_ROGUE_LUCAS                            0x118F
 #define OBJ_EVENT_PAL_TAG_NONE                    0x11FF
 
 // This + localId is used as the tileTag

@@ -984,11 +984,18 @@ BREAKS = [
         # sprite and both say so. Stripping ONE side's comment is the case
         # assertion 2 exists for: a value two non-default outfits share, where
         # only one of them believes it is a fallback.
+        #
+        # RE-POINTED TWICE NOW. It rode the ANDRO row until the third look went
+        # away, then the Kanto acro bike until that got real art. Both times
+        # the mutation silently matched nothing. WATERING is a steadier
+        # subject: the RS, Kanto and Sinnoh rows all fall back to the default's
+        # watering sprite and all three say so, and none of them is likely to
+        # gain art - it is the state nobody draws.
         "a duplicate only one side admits is a fallback",
         TABLE,
         lambda s: s.replace(
-            "                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_GFX_MALE_ACRO_BIKE, // no FRLG art",
-            "                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_GFX_MALE_ACRO_BIKE,",
+            "                [PLAYER_AVATAR_ANIM_WATERING]   = PLAYER_AVATAR_GFX_MALE_WATERING,   // no DP art",
+            "                [PLAYER_AVATAR_ANIM_WATERING]   = PLAYER_AVATAR_GFX_MALE_WATERING,",
             1,
         ),
     ),

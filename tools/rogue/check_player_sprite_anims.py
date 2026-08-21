@@ -650,11 +650,26 @@ BREAKS = [
         ),
     ),
     (
+        # Kanto's acro bike used to FALL BACK to the default's, and this break
+        # stripped that fallback onto the 9-frame red_bike sheet. It now has
+        # generated art of its own, so the mutation reads the other way: put it
+        # back on red_bike and the 18 frames sAnimTable_AcroBike wants past the
+        # end are the whole point of generating the sheet.
         "the Kanto acro bike back on a sprite with no wheelie anims",
         TABLE,
         lambda s: s.replace(
-            "[PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_GFX_MALE_ACRO_BIKE, // no FRLG art",
+            "[PLAYER_AVATAR_STATE_ACRO_BIKE]  = OBJ_EVENT_GFX_RED_ACRO_BIKE,",
             "[PLAYER_AVATAR_STATE_ACRO_BIKE]  = OBJ_EVENT_GFX_RED_BIKE,",
+            1,
+        ),
+    ),
+    (
+        # The same for Sinnoh, whose acro sheets are generated too.
+        "the Sinnoh acro bike back on a sprite with no wheelie anims",
+        TABLE,
+        lambda s: s.replace(
+            "[PLAYER_AVATAR_STATE_ACRO_BIKE]  = OBJ_EVENT_GFX_LUCAS_ACRO_BIKE,",
+            "[PLAYER_AVATAR_STATE_ACRO_BIKE]  = OBJ_EVENT_GFX_LUCAS_MACH_BIKE,",
             1,
         ),
     ),

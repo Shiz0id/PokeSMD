@@ -657,6 +657,16 @@ const u16 gTrainerPalette_Gold[] = INCGFX_U16("graphics/trainers/front_pics/gold
 const u8 gTrainerBackPic_Gold[] = INCGFX_U8("graphics/trainers/back_pics/gold.png", ".4bpp");
 const u16 gTrainerBackPicPalette_Gold[] = INCGFX_U16("graphics/trainers/back_pics/gold.png", ".gbapal");
 
+// Sinnoh. Palettes off the PNGs, as Gold's and Red's are.
+const u32 gTrainerFrontPic_Dawn[] = INCGFX_U32("graphics/trainers/front_pics/dawn.png", ".4bpp.smol");
+const u16 gTrainerPalette_Dawn[] = INCGFX_U16("graphics/trainers/front_pics/dawn.png", ".gbapal");
+const u8 gTrainerBackPic_Dawn[] = INCGFX_U8("graphics/trainers/back_pics/dawn.png", ".4bpp");
+const u16 gTrainerBackPicPalette_Dawn[] = INCGFX_U16("graphics/trainers/back_pics/dawn.png", ".gbapal");
+const u32 gTrainerFrontPic_Lucas[] = INCGFX_U32("graphics/trainers/front_pics/lucas.png", ".4bpp.smol");
+const u16 gTrainerPalette_Lucas[] = INCGFX_U16("graphics/trainers/front_pics/lucas.png", ".gbapal");
+const u8 gTrainerBackPic_Lucas[] = INCGFX_U8("graphics/trainers/back_pics/lucas.png", ".4bpp");
+const u16 gTrainerBackPicPalette_Lucas[] = INCGFX_U16("graphics/trainers/back_pics/lucas.png", ".gbapal");
+
 const struct TrainerPicInfo gTrainerPicInfo[TRAINER_PIC_COUNT] =
 {
     [TRAINER_PIC_NONE] =
@@ -690,6 +700,19 @@ const struct TrainerPicInfo gTrainerPicInfo[TRAINER_PIC_COUNT] =
     {
         .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_Gold, gTrainerPalette_Gold),
         .backPic = TRAINER_BACK_PIC(5, gTrainerBackPic_Gold, gTrainerBackPicPalette_Gold, sBackAnims_Kanto),
+    },
+    // FOUR frames, not five: dawn.png and lucas.png are 64x256 where Gold's is
+    // 64x320. The first argument is the frame COUNT despite being named
+    // yOffset, and it must match the pixels behind the symbol.
+    [TRAINER_PIC_DAWN] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_Dawn, gTrainerPalette_Dawn),
+        .backPic = TRAINER_BACK_PIC(4, gTrainerBackPic_Dawn, gTrainerBackPicPalette_Dawn, sBackAnims_Hoenn),
+    },
+    [TRAINER_PIC_LUCAS] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_Lucas, gTrainerPalette_Lucas),
+        .backPic = TRAINER_BACK_PIC(4, gTrainerBackPic_Lucas, gTrainerBackPicPalette_Lucas, sBackAnims_Hoenn),
     },
     [TRAINER_PIC_RED] =
     {

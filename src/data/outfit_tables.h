@@ -332,4 +332,79 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
             [FEMALE] = { sRegionMapPlayerIcon_MayGfx,  sRegionMapPlayerIcon_MayPal }, // no Kris art
         },
     },
+
+    // LUCAS AND DAWN, from spilledpizza's Diamond/Pearl set. THE LEAST
+    // COMPLETE ROW IN THE TABLE and the comments say where: Dawn has eight of
+    // her ten sheets, Lucas five of his.
+    //
+    // TWO KINDS OF GAP HERE, and only one is a fallback:
+    //
+    //   UNDERWATER is each character's OWN SURFING sprite. Sinnoh has no
+    //   diving, so no such art was ever drawn, and the Kanto row makes exactly
+    //   this call for the same reason. It is the right person, so it carries no
+    //   `no ... art` marker - nothing is standing in for anyone.
+    //
+    //   FIELD MOVE, WATERING and DECORATING for Lucas fall back to the DEFAULT
+    //   outfit and are marked. He becomes Brendan for those animations. They
+    //   were judged the least visible states in a roguelike - though note the
+    //   project does have berries, so watering is reachable.
+    //
+    // THE ACRO BIKES ARE GENERATED, not fallbacks. Neither ships one, and a
+    // nine-frame mach sheet cannot answer sAnimTable_AcroBike's 27 frames.
+    // tools/rogue/compose_acro_bike.py builds them from Brendan's poses with
+    // each character's own head; the sheets are build outputs.
+    [OUTFIT_SINNOH] =
+    {
+        .isHidden = FALSE,
+        .prices = { 300, 300 },
+        .name = COMPOUND_STRING("SINNOH TREK"),
+        // One line. A \n lands at y=32, over the new game picker's hints.
+        .desc = COMPOUND_STRING("From DIAMOND and PEARL."),
+        .trainerPics = {
+            [MALE]   = TRAINER_PIC_LUCAS,
+            [FEMALE] = TRAINER_PIC_DAWN,
+        },
+        .avatarGfxIds = {
+            [MALE] = {
+                [PLAYER_AVATAR_STATE_NORMAL]     = OBJ_EVENT_GFX_LUCAS_NORMAL,
+                [PLAYER_AVATAR_STATE_MACH_BIKE]  = OBJ_EVENT_GFX_LUCAS_MACH_BIKE,
+                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = OBJ_EVENT_GFX_LUCAS_ACRO_BIKE,
+                [PLAYER_AVATAR_STATE_SURFING]    = OBJ_EVENT_GFX_LUCAS_SURFING,
+                // His own surf sprite, not somebody else's diver.
+                [PLAYER_AVATAR_STATE_UNDERWATER] = OBJ_EVENT_GFX_LUCAS_SURFING,
+            },
+            [FEMALE] = {
+                [PLAYER_AVATAR_STATE_NORMAL]     = OBJ_EVENT_GFX_DAWN_NORMAL,
+                [PLAYER_AVATAR_STATE_MACH_BIKE]  = OBJ_EVENT_GFX_DAWN_MACH_BIKE,
+                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = OBJ_EVENT_GFX_DAWN_ACRO_BIKE,
+                [PLAYER_AVATAR_STATE_SURFING]    = OBJ_EVENT_GFX_DAWN_SURFING,
+                [PLAYER_AVATAR_STATE_UNDERWATER] = OBJ_EVENT_GFX_DAWN_SURFING,
+            },
+        },
+        .animGfxIds = {
+            [MALE] = {
+                [PLAYER_AVATAR_ANIM_FIELD_MOVE] = PLAYER_AVATAR_GFX_MALE_FIELD_MOVE, // no DP art
+                [PLAYER_AVATAR_ANIM_FISHING]    = OBJ_EVENT_GFX_LUCAS_FISHING,
+                [PLAYER_AVATAR_ANIM_WATERING]   = PLAYER_AVATAR_GFX_MALE_WATERING,   // no DP art
+                [PLAYER_AVATAR_ANIM_DECORATING] = OBJ_EVENT_GFX_BRENDAN_DECORATING,  // no DP art
+                [PLAYER_AVATAR_ANIM_VSSEEKER]   = PLAYER_AVATAR_GFX_MALE_VSSEEKER,   // no DP art
+            },
+            [FEMALE] = {
+                [PLAYER_AVATAR_ANIM_FIELD_MOVE] = OBJ_EVENT_GFX_DAWN_FIELD_MOVE,
+                [PLAYER_AVATAR_ANIM_FISHING]    = OBJ_EVENT_GFX_DAWN_FISHING,
+                [PLAYER_AVATAR_ANIM_WATERING]   = OBJ_EVENT_GFX_DAWN_WATERING,
+                [PLAYER_AVATAR_ANIM_DECORATING] = OBJ_EVENT_GFX_DAWN_DECORATING,
+                // Her field move sprite doubles as the VS Seeker one, the same
+                // pairing every other row makes.
+                [PLAYER_AVATAR_ANIM_VSSEEKER]   = OBJ_EVENT_GFX_DAWN_FIELD_MOVE,
+            },
+        },
+        // NEITHER HAS A REGION MAP HEAD - spilledpizza ships none and no other
+        // repo has one - so both fall to the DEFAULT outfit's, which is the
+        // only direction a fallback may go.
+        .iconsRM = {
+            [MALE]   = { sRegionMapPlayerIcon_BrendanGfx, sRegionMapPlayerIcon_BrendanPal }, // no DP art
+            [FEMALE] = { sRegionMapPlayerIcon_MayGfx,     sRegionMapPlayerIcon_MayPal },     // no DP art
+        },
+    },
 };

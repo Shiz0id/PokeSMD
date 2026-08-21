@@ -109,6 +109,19 @@ extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldWaterin
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldDecorating;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RedAcroBike;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenAcroBike;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_DawnNormal;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_DawnMachBike;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_DawnAcroBike;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_DawnSurfing;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_DawnFishing;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_LucasNormal;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_LucasMachBike;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_LucasAcroBike;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_LucasSurfing;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_LucasFishing;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_DawnFieldMove;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_DawnWatering;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_DawnDecorating;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_MayMachBike;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_MayAcroBike;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_MaySurfing;
@@ -591,6 +604,19 @@ const struct ObjectEventGraphicsInfo *const gObjectEventGraphicsInfoPointers[NUM
     [OBJ_EVENT_GFX_GOLD_DECORATING] =          &gObjectEventGraphicsInfo_GoldDecorating,
     [OBJ_EVENT_GFX_RED_ACRO_BIKE] =            &gObjectEventGraphicsInfo_RedAcroBike,
     [OBJ_EVENT_GFX_GREEN_ACRO_BIKE] =          &gObjectEventGraphicsInfo_GreenAcroBike,
+    [OBJ_EVENT_GFX_DAWN_NORMAL] =                &gObjectEventGraphicsInfo_DawnNormal,
+    [OBJ_EVENT_GFX_DAWN_MACH_BIKE] =             &gObjectEventGraphicsInfo_DawnMachBike,
+    [OBJ_EVENT_GFX_DAWN_ACRO_BIKE] =             &gObjectEventGraphicsInfo_DawnAcroBike,
+    [OBJ_EVENT_GFX_DAWN_SURFING] =               &gObjectEventGraphicsInfo_DawnSurfing,
+    [OBJ_EVENT_GFX_DAWN_FIELD_MOVE] =            &gObjectEventGraphicsInfo_DawnFieldMove,
+    [OBJ_EVENT_GFX_DAWN_FISHING] =               &gObjectEventGraphicsInfo_DawnFishing,
+    [OBJ_EVENT_GFX_DAWN_WATERING] =              &gObjectEventGraphicsInfo_DawnWatering,
+    [OBJ_EVENT_GFX_DAWN_DECORATING] =            &gObjectEventGraphicsInfo_DawnDecorating,
+    [OBJ_EVENT_GFX_LUCAS_NORMAL] =               &gObjectEventGraphicsInfo_LucasNormal,
+    [OBJ_EVENT_GFX_LUCAS_MACH_BIKE] =            &gObjectEventGraphicsInfo_LucasMachBike,
+    [OBJ_EVENT_GFX_LUCAS_ACRO_BIKE] =            &gObjectEventGraphicsInfo_LucasAcroBike,
+    [OBJ_EVENT_GFX_LUCAS_SURFING] =              &gObjectEventGraphicsInfo_LucasSurfing,
+    [OBJ_EVENT_GFX_LUCAS_FISHING] =              &gObjectEventGraphicsInfo_LucasFishing,
     [OBJ_EVENT_GFX_RS_BRENDAN_NORMAL] =        &gObjectEventGraphicsInfo_RSBrendanPlayer,
     [OBJ_EVENT_GFX_RS_MAY_NORMAL] =            &gObjectEventGraphicsInfo_RSMayPlayer,
     [OBJ_EVENT_GFX_ROGUE_EGG] = &gObjectEventGraphicsInfo_RogueEgg,

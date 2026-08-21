@@ -220,6 +220,10 @@ enum __attribute__((packed)) TrainerPicID
     // TRAINER_PIC_ROGUE_JOHTO_ETHAN above: that is a boss's front pic with no
     // back pic at all, and a player needs both.
     TRAINER_PIC_GOLD,
+    // OUTFIT_SINNOH. Not the same as TRAINER_PIC_ROGUE_SINNOH_DAWN, which is a
+    // boss's front pic with no back pic - the distinction that cost a check.
+    TRAINER_PIC_DAWN,
+    TRAINER_PIC_LUCAS,
     TRAINER_PIC_COUNT,
 };
 
@@ -347,6 +351,8 @@ enum
     // Appended for the same reason as TRAINER_PIC_KRIS.
     FACILITY_CLASS_KRIS,
     FACILITY_CLASS_GOLD,
+    FACILITY_CLASS_DAWN,
+    FACILITY_CLASS_LUCAS,
     FACILITY_CLASSES_COUNT,
 };
 

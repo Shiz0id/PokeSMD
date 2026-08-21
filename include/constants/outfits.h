@@ -34,12 +34,13 @@
 #define OUTFIT_UNUSUAL_RED   2
 #define OUTFIT_KANTO_CLASSIC 3
 #define OUTFIT_JOHTO         4
-#define OUTFIT_COUNT         5
+#define OUTFIT_SINNOH        5
+#define OUTFIT_COUNT         6
 
 // Inclusive. OUTFIT_NONE is not a wearable outfit - it is the zeroed row that
 // an out-of-range id lands on - so menu iteration starts at OUTFIT_BEGIN.
 #define OUTFIT_BEGIN OUTFIT_USUAL_GREEN
-#define OUTFIT_END   OUTFIT_JOHTO
+#define OUTFIT_END   OUTFIT_SINNOH
 
 // THE UNLOCK BITS ARE ROUND_BITS_TO_BYTES(OUTFIT_COUNT) OF AN EIGHT-BYTE
 // FILLER, and filler_92 is sized against that, so growing this past a byte
