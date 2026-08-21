@@ -730,7 +730,7 @@ static const struct RogueDungeonTrainer sRogueDungeonTrainers[] =
 // meant a floor-5 mini boss could be a mid-game grunt with a level 31
 // Zubat. The leaders are included: without them the pool stopped at 38
 // while the last gym dungeon asks for 45.
-// 63 entries, levels 9-43.
+// 116 entries, levels 9-54.
 
 struct RogueDungeonMiniBoss
 {
@@ -743,14 +743,40 @@ static const struct RogueDungeonMiniBoss sRogueDungeonMiniBosses[] =
 {
     { TRAINER_GRUNT_PETALBURG_WOODS, OBJ_EVENT_GFX_AQUA_MEMBER_M, 9 },        // Team Aqua
     { TRAINER_GRUNT_RUSTURF_TUNNEL, OBJ_EVENT_GFX_AQUA_MEMBER_M, 11 },        // Team Aqua
+    { TRAINER_ROGUE_ROCKET_GRUNT_2, OBJ_EVENT_GFX_ROCKET_M, 11 },             // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_3, OBJ_EVENT_GFX_ROCKET_M, 11 },             // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_1, OBJ_EVENT_GFX_ROCKET_M, 13 },             // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_4, OBJ_EVENT_GFX_ROCKET_M, 13 },             // Team Rocket Frlg
     { TRAINER_GRUNT_MUSEUM_2, OBJ_EVENT_GFX_AQUA_MEMBER_M, 14 },              // Team Aqua
     { TRAINER_GRUNT_MUSEUM_1, OBJ_EVENT_GFX_AQUA_MEMBER_M, 15 },              // Team Aqua
+    { TRAINER_ROGUE_ROCKET_GRUNT_6, OBJ_EVENT_GFX_ROCKET_M, 15 },             // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_13, OBJ_EVENT_GFX_ROCKET_M, 17 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_5, OBJ_EVENT_GFX_ROCKET_M, 17 },             // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_11, OBJ_EVENT_GFX_ROCKET_M, 19 },            // Team Rocket Frlg
     { TRAINER_GRUNT_MT_CHIMNEY_1, OBJ_EVENT_GFX_MAGMA_MEMBER_F, 20 },         // Team Magma
     { TRAINER_GRUNT_MT_CHIMNEY_2, OBJ_EVENT_GFX_MAGMA_MEMBER_M, 20 },         // Team Magma
+    { TRAINER_ROGUE_ROCKET_GRUNT_10, OBJ_EVENT_GFX_ROCKET_M, 20 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_14, OBJ_EVENT_GFX_ROCKET_M, 20 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_7, OBJ_EVENT_GFX_ROCKET_M, 20 },             // Team Rocket Frlg
     { TRAINER_TABITHA_MT_CHIMNEY, OBJ_EVENT_GFX_MAGMA_MEMBER_M, 20 },         // Magma Admin
+    { TRAINER_ROGUE_ROCKET_GRUNT_15, OBJ_EVENT_GFX_ROCKET_M, 21 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_18, OBJ_EVENT_GFX_ROCKET_M, 21 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_8, OBJ_EVENT_GFX_ROCKET_M, 21 },             // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_9, OBJ_EVENT_GFX_ROCKET_M, 21 },             // Team Rocket Frlg
     { TRAINER_GRUNT_JAGGED_PASS, OBJ_EVENT_GFX_MAGMA_MEMBER_M, 22 },          // Team Magma
+    { TRAINER_ROGUE_ROCKET_GRUNT_12, OBJ_EVENT_GFX_ROCKET_M, 22 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_16, OBJ_EVENT_GFX_ROCKET_M, 23 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_17, OBJ_EVENT_GFX_ROCKET_M, 23 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_21, OBJ_EVENT_GFX_ROCKET_M, 23 },            // Team Rocket Frlg
     { TRAINER_MAXIE_MT_CHIMNEY, OBJ_EVENT_GFX_MAXIE, 24 },                    // Magma Leader
+    { TRAINER_ROGUE_ROCKET_GRUNT_19, OBJ_EVENT_GFX_ROCKET_M, 25 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_24, OBJ_EVENT_GFX_ROCKET_M, 25 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_40, OBJ_EVENT_GFX_ROCKET_M, 25 },            // Team Rocket Frlg
     { TRAINER_GRUNT_WEATHER_INST_3, OBJ_EVENT_GFX_AQUA_MEMBER_M, 26 },        // Team Aqua
+    { TRAINER_ROGUE_ROCKET_GRUNT_20, OBJ_EVENT_GFX_ROCKET_M, 26 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_22, OBJ_EVENT_GFX_ROCKET_M, 26 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_32, OBJ_EVENT_GFX_ROCKET_M, 26 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_35, OBJ_EVENT_GFX_ROCKET_M, 26 },            // Team Rocket Frlg
     { TRAINER_GRUNT_WEATHER_INST_1, OBJ_EVENT_GFX_AQUA_MEMBER_M, 27 },        // Team Aqua
     { TRAINER_GRUNT_WEATHER_INST_2, OBJ_EVENT_GFX_AQUA_MEMBER_M, 27 },        // Team Aqua
     { TRAINER_GRUNT_WEATHER_INST_5, OBJ_EVENT_GFX_AQUA_MEMBER_F, 27 },        // Team Aqua
@@ -758,6 +784,12 @@ static const struct RogueDungeonMiniBoss sRogueDungeonMiniBosses[] =
     { TRAINER_GRUNT_MAGMA_HIDEOUT_5, OBJ_EVENT_GFX_MAGMA_MEMBER_M, 28 },      // Team Magma
     { TRAINER_GRUNT_SPACE_CENTER_2, OBJ_EVENT_GFX_MAGMA_MEMBER_M, 28 },       // Team Magma
     { TRAINER_GRUNT_WEATHER_INST_4, OBJ_EVENT_GFX_AQUA_MEMBER_F, 28 },        // Team Aqua
+    { TRAINER_ROGUE_ROCKET_GRUNT_25, OBJ_EVENT_GFX_ROCKET_M, 28 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_27, OBJ_EVENT_GFX_ROCKET_M, 28 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_31, OBJ_EVENT_GFX_ROCKET_M, 28 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_36, OBJ_EVENT_GFX_ROCKET_M, 28 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_37, OBJ_EVENT_GFX_ROCKET_M, 28 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_38, OBJ_EVENT_GFX_ROCKET_M, 28 },            // Team Rocket Frlg
     { TRAINER_SHELLY_WEATHER_INSTITUTE, OBJ_EVENT_GFX_AQUA_MEMBER_F, 28 },    // Aqua Admin
     { TRAINER_GRUNT_MAGMA_HIDEOUT_1, OBJ_EVENT_GFX_MAGMA_MEMBER_M, 29 },      // Team Magma
     { TRAINER_GRUNT_MAGMA_HIDEOUT_10, OBJ_EVENT_GFX_MAGMA_MEMBER_M, 29 },     // Team Magma
@@ -773,6 +805,11 @@ static const struct RogueDungeonMiniBoss sRogueDungeonMiniBosses[] =
     { TRAINER_GRUNT_MAGMA_HIDEOUT_7, OBJ_EVENT_GFX_MAGMA_MEMBER_M, 29 },      // Team Magma
     { TRAINER_GRUNT_MAGMA_HIDEOUT_8, OBJ_EVENT_GFX_MAGMA_MEMBER_M, 29 },      // Team Magma
     { TRAINER_GRUNT_MAGMA_HIDEOUT_9, OBJ_EVENT_GFX_MAGMA_MEMBER_M, 29 },      // Team Magma
+    { TRAINER_ROGUE_ROCKET_GRUNT_23, OBJ_EVENT_GFX_ROCKET_M, 29 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_26, OBJ_EVENT_GFX_ROCKET_M, 29 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_30, OBJ_EVENT_GFX_ROCKET_M, 29 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_33, OBJ_EVENT_GFX_ROCKET_M, 29 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_34, OBJ_EVENT_GFX_ROCKET_M, 29 },            // Team Rocket Frlg
     { TRAINER_TABITHA_MAGMA_HIDEOUT, OBJ_EVENT_GFX_MAGMA_MEMBER_M, 29 },      // Magma Admin
     { TRAINER_GRUNT_MT_PYRE_3, OBJ_EVENT_GFX_AQUA_MEMBER_M, 30 },             // Team Aqua
     { TRAINER_GRUNT_MT_PYRE_4, OBJ_EVENT_GFX_AQUA_MEMBER_F, 30 },             // Team Aqua
@@ -793,17 +830,33 @@ static const struct RogueDungeonMiniBoss sRogueDungeonMiniBosses[] =
     { TRAINER_GRUNT_SPACE_CENTER_5, OBJ_EVENT_GFX_MAGMA_MEMBER_M, 32 },       // Team Magma
     { TRAINER_GRUNT_SPACE_CENTER_6, OBJ_EVENT_GFX_MAGMA_MEMBER_M, 32 },       // Team Magma
     { TRAINER_GRUNT_SPACE_CENTER_7, OBJ_EVENT_GFX_MAGMA_MEMBER_M, 32 },       // Team Magma
+    { TRAINER_ROGUE_ROCKET_GRUNT_41, OBJ_EVENT_GFX_ROCKET_M, 32 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_28, OBJ_EVENT_GFX_ROCKET_M, 33 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_29, OBJ_EVENT_GFX_ROCKET_M, 33 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_39, OBJ_EVENT_GFX_ROCKET_M, 33 },            // Team Rocket Frlg
     { TRAINER_MATT, OBJ_EVENT_GFX_AQUA_MEMBER_M, 34 },                        // Aqua Admin
     { TRAINER_GRUNT_SEAFLOOR_CAVERN_5, OBJ_EVENT_GFX_AQUA_MEMBER_M, 35 },     // Team Aqua
+    { TRAINER_ROGUE_ROCKET_GRUNT_44, OBJ_EVENT_GFX_ROCKET_M, 35 },            // Team Rocket Frlg
     { TRAINER_GRUNT_SEAFLOOR_CAVERN_1, OBJ_EVENT_GFX_AQUA_MEMBER_M, 36 },     // Team Aqua
     { TRAINER_GRUNT_SEAFLOOR_CAVERN_2, OBJ_EVENT_GFX_AQUA_MEMBER_M, 36 },     // Team Aqua
     { TRAINER_GRUNT_SEAFLOOR_CAVERN_3, OBJ_EVENT_GFX_AQUA_MEMBER_M, 36 },     // Team Aqua
     { TRAINER_GRUNT_SEAFLOOR_CAVERN_4, OBJ_EVENT_GFX_AQUA_MEMBER_F, 36 },     // Team Aqua
+    { TRAINER_ROGUE_ROCKET_GRUNT_43, OBJ_EVENT_GFX_ROCKET_M, 37 },            // Team Rocket Frlg
     { TRAINER_SHELLY_SEAFLOOR_CAVERN, OBJ_EVENT_GFX_AQUA_MEMBER_F, 37 },      // Aqua Admin
     { TRAINER_MAXIE_MAGMA_HIDEOUT, OBJ_EVENT_GFX_MAXIE, 38 },                 // Magma Leader
+    { TRAINER_ROGUE_ROCKET_GRUNT_45, OBJ_EVENT_GFX_ROCKET_M, 38 },            // Team Rocket Frlg
     { TRAINER_TABITHA_MOSSDEEP, OBJ_EVENT_GFX_MAGMA_MEMBER_M, 38 },           // Magma Admin
     { TRAINER_ARCHIE, OBJ_EVENT_GFX_ARCHIE, 42 },                             // Aqua Leader
     { TRAINER_MAXIE_MOSSDEEP, OBJ_EVENT_GFX_MAXIE, 43 },                      // Magma Leader
+    { TRAINER_ROGUE_ROCKET_GRUNT_46, OBJ_EVENT_GFX_ROCKET_M, 48 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_47, OBJ_EVENT_GFX_ROCKET_M, 48 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_49, OBJ_EVENT_GFX_ROCKET_M, 48 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_51, OBJ_EVENT_GFX_ROCKET_F, 48 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_42, OBJ_EVENT_GFX_ROCKET_F, 49 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_48, OBJ_EVENT_GFX_ROCKET_M, 49 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_GRUNT_50, OBJ_EVENT_GFX_ROCKET_M, 49 },            // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_ADMIN_1, OBJ_EVENT_GFX_ROCKET_F, 53 },             // Team Rocket Frlg
+    { TRAINER_ROGUE_ROCKET_ADMIN_2, OBJ_EVENT_GFX_ROCKET_M, 54 },             // Team Rocket Frlg
 };
 
 #endif // GUARD_CONSTANTS_ROGUE_DUNGEON_TRAINERS_H

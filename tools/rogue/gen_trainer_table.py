@@ -96,26 +96,75 @@ def parse():
     return out
 
 
-# The leaders are in here deliberately. Leaving them out capped the mini boss
-# pool at 38 while the last gym dungeon targets 45, so the floor-75 mini boss
-# was seven levels light. Archie and Maxie cover 41-43 and close that.
-TEAM_CLASSES = {
-    'Team Aqua', 'Team Magma',
-    'Aqua Admin', 'Magma Admin',
-    'Aqua Leader', 'Magma Leader',
+# THE MINI BOSS ROSTER, ONE ROW PER TEAM CLASS: the class as trainers.party
+# spells it, mapped to (male sprite, female sprite).
+#
+# A TABLE RATHER THAN A CHAIN OF IFS, and that is the whole point of this shape.
+# This used to end in `team = 'MAGMA' if 'Magma' in cls else 'AQUA'`, so ANY team
+# added to the roster that was not Magma silently came out in an AQUA uniform --
+# walking the floor as a Team Aqua grunt while opening the battle with its own
+# trainer pic. Nothing would have failed: the sprite is a real member of a real
+# enum, the roster generates, the build is clean. That is the same shape as the
+# Ruby gemstone that stood in for a trainer, and it was sitting here loaded.
+#
+# ADDING A TEAM IS A ROW HERE AND NOTHING ELSE. An unknown class now stops the
+# tool rather than guessing, so the failure arrives at generation time with the
+# class name in it.
+#
+# The leaders are in deliberately. Leaving them out capped the mini boss pool at
+# 38 while the last gym dungeon targets 45, so the floor-75 mini boss was seven
+# levels light. Archie and Maxie cover 41-43 and close that.
+#
+# See docs/TEAM_MINIBOSSES.md for what each candidate team still needs.
+TEAM_GFX = {
+    'Team Aqua':    ('OBJ_EVENT_GFX_AQUA_MEMBER_M',  'OBJ_EVENT_GFX_AQUA_MEMBER_F'),
+    'Aqua Admin':   ('OBJ_EVENT_GFX_AQUA_MEMBER_M',  'OBJ_EVENT_GFX_AQUA_MEMBER_F'),
+    'Aqua Leader':  ('OBJ_EVENT_GFX_ARCHIE',         'OBJ_EVENT_GFX_ARCHIE'),
+    'Team Magma':   ('OBJ_EVENT_GFX_MAGMA_MEMBER_M', 'OBJ_EVENT_GFX_MAGMA_MEMBER_F'),
+    'Magma Admin':  ('OBJ_EVENT_GFX_MAGMA_MEMBER_M', 'OBJ_EVENT_GFX_MAGMA_MEMBER_F'),
+    'Magma Leader': ('OBJ_EVENT_GFX_MAXIE',          'OBJ_EVENT_GFX_MAXIE'),
+
+    # Gen 1 Rocket. The sprites were in the build long before the parties
+    # were; both are here now. See tools/rogue/gen_rocket_parties.py.
+    'Team Rocket Frlg': ('OBJ_EVENT_GFX_ROCKET_M', 'OBJ_EVENT_GFX_ROCKET_F'),
 }
 
+TEAM_CLASSES = set(TEAM_GFX)
 
-def team_gfx(cls, gender):
+
+def team_gfx(cls, gender, pic=''):
     """Overworld sprite for a mini boss. Leaders get their own, so a mini boss
-    that is actually Archie does not walk around dressed as a grunt."""
-    if cls == 'Aqua Leader':
-        return 'OBJ_EVENT_GFX_ARCHIE'
-    if cls == 'Magma Leader':
-        return 'OBJ_EVENT_GFX_MAXIE'
-    team = 'MAGMA' if 'Magma' in cls else 'AQUA'
-    sex = 'F' if gender == 'Female' else 'M'
-    return f'OBJ_EVENT_GFX_{team}_MEMBER_{sex}'
+    that is actually Archie does not walk around dressed as a grunt.
+
+    THE PIC DECIDES THE SEX, NOT THE Gender FIELD, and the two really do
+    disagree. Three of the fifty-three FireRed Rocket trainers are
+    `Gender: Male` carrying `Pic: Rocket Grunt F Frlg` -- GRUNT_42, GRUNT_51 and
+    ADMIN_1. In FireRed that field drives encounter music and costs nothing
+    visible, so the mismatch never showed there. Here it decides the figure
+    standing on the floor, and keying on it would put a man on the tile who
+    opens the battle as a woman: the exact fault check_theme_trainers.py was
+    written for after a diver did it.
+
+    So the pic wins where it names a sex, and Gender is the fallback for a pic
+    that does not. Every Aqua and Magma row agrees either way, which is why this
+    changes exactly three rows and nothing else.
+    """
+    if re.search(r'(^| )F( |$)', pic):
+        gender = 'Female'
+    elif re.search(r'(^| )M( |$)', pic):
+        gender = 'Male'
+    # UNREACHABLE WHILE TEAM_CLASSES IS DERIVED FROM THIS TABLE, and that is
+    # the stronger guarantee: a team cannot join the roster without bringing its
+    # sprites, because the roster IS the sprite table. Kept for the day someone
+    # splits the two again, which is the edit that reopens the bug above.
+    if cls not in TEAM_GFX:
+        raise SystemExit(
+            f"gen_trainer_table.py: no sprite row for team class {cls!r}. "
+            f"Add one to TEAM_GFX -- do not let it fall back, which is how a "
+            f"team ends up wearing another team's uniform.")
+
+    male, female = TEAM_GFX[cls]
+    return female if gender == 'Female' else male
 
 
 def parse_team():
@@ -131,7 +180,7 @@ def parse_team():
         levels = [int(m) for m in re.findall(r'^Level: (\d+)', body, re.M)]
         if not levels:
             continue
-        gfx = team_gfx(cls, field(body, 'Gender'))
+        gfx = team_gfx(cls, field(body, 'Gender'), field(body, 'Pic'))
         out.append((round(sum(levels) / len(levels)), tid, cls, gfx))
     out.sort(key=lambda r: (r[0], r[1]))
     return out

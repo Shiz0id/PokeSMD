@@ -6068,6 +6068,11 @@ static const struct RogueClassGfx sTrainerClassGfx[TRAINER_CLASS_COUNT] =
     [TRAINER_CLASS_TEAM_AQUA]    = { OBJ_EVENT_GFX_AQUA_MEMBER_M, OBJ_EVENT_GFX_AQUA_MEMBER_F },
     [TRAINER_CLASS_AQUA_ADMIN]   = { OBJ_EVENT_GFX_AQUA_MEMBER_M, OBJ_EVENT_GFX_AQUA_MEMBER_F },
     [TRAINER_CLASS_TEAM_MAGMA]   = { OBJ_EVENT_GFX_MAGMA_MEMBER_M, OBJ_EVENT_GFX_MAGMA_MEMBER_F },
+    // Gen 1 Rocket, wired ahead of the parties that will use it. The class and
+    // both sprites are already in this build; only the trainer data is missing,
+    // and an unfilled row here is what sends a trainer to the theme's fallback
+    // sprite rather than to their own. See docs/TEAM_MINIBOSSES.md.
+    [TRAINER_CLASS_TEAM_ROCKET_FRLG] = { OBJ_EVENT_GFX_ROCKET_M, OBJ_EVENT_GFX_ROCKET_F },
     [TRAINER_CLASS_MAGMA_ADMIN]  = { OBJ_EVENT_GFX_MAGMA_MEMBER_M, OBJ_EVENT_GFX_MAGMA_MEMBER_F },
     [TRAINER_CLASS_PKMN_BREEDER] = { OBJ_EVENT_GFX_POKEFAN_M, OBJ_EVENT_GFX_POKEFAN_F },
     [TRAINER_CLASS_POKEFAN]      = { OBJ_EVENT_GFX_POKEFAN_M, OBJ_EVENT_GFX_POKEFAN_F },
