@@ -115,63 +115,31 @@ static u32 DungeonFloorWithin(u16 floor)
     return floor - DUNGEON_E4_END_FLOOR;
 }
 
-// The twenty-four permutations of the four shuffled Elite Four slots, row 0
-// identity. A table rather than a shuffle because it is four elements: a
-// Fisher-Yates here would need a random stream, and the only one live at the
-// moment a theme is looked up belongs to floor generation. 96 bytes of ROM buys
-// a pure function of the order word.
-static const u8 sE4Orders[][DUNGEON_E4_SHUFFLED] =
-{
-    {0,1,2,3}, {0,1,3,2}, {0,2,1,3}, {0,2,3,1}, {0,3,1,2}, {0,3,2,1},
-    {1,0,2,3}, {1,0,3,2}, {1,2,0,3}, {1,2,3,0}, {1,3,0,2}, {1,3,2,0},
-    {2,0,1,3}, {2,0,3,1}, {2,1,0,3}, {2,1,3,0}, {2,3,0,1}, {2,3,1,0},
-    {3,0,1,2}, {3,0,2,1}, {3,1,0,2}, {3,1,2,0}, {3,2,0,1}, {3,2,1,0},
-};
-
-// SLOT IN, IDENTITY OUT. A slot is a position in the run - which decides the
-// floors it spans, whether it has a mini boss, and how far down the curve it
-// sits. An identity is which dungeon is standing there - its theme, its boss,
-// that boss's sprite and TM. Before the shuffle the two were the same number and
-// every caller used one variable for both; they are now different questions and
-// the call sites have to pick deliberately.
+// A DUNGEON DOES NOT MOVE. Slot and identity are the same number again, and
+// that is deliberate rather than a simplification waiting to be undone.
 //
-// Things that stay on the SLOT: all the floor arithmetic above, the finale test
-// in PrepareArenaFloor, the rod unlocks in ApplyRunConfig, and the dungeon number
-// the debug readout prints. Things that take the IDENTITY: ThemeForFloor,
-// sDungeonBosses, sDungeonBossGfx and sDungeonBossTMs.
+// This file used to permute WHERE each dungeon stood: four gym bands of two,
+// one swap-or-not bit each, plus the twenty-four orders of the four shuffled
+// Elite Four slots. 384 arrangements. It was retired once the boss tables grew
+// to four regions, because the two features answer the same wish and only one
+// of them can do it without dragging the level curve behind it:
 //
-// The gym half is one bit per band because the band is two: swapping within a
-// pair is the low bit of the slot. The assert is what stops a wider band reading
-// as a working shuffle - DUNGEON_SHUFFLE_BAND at 3 or 4 would still compile here
-// and would still permute, just not within the bands it claims to.
-STATIC_ASSERT(DUNGEON_SHUFFLE_BAND == 2, GymBandIsAPairOrThisCodeIsWrong);
-STATIC_ASSERT(DUNGEON_GYM_DUNGEONS % DUNGEON_SHUFFLE_BAND == 0, GymBandsDivideEvenly);
-STATIC_ASSERT(DUNGEON_GYM_BANDS <= 8, GymBandBitsFitTheOrderWord);
-
-static u32 DungeonForSlot(u32 slot)
-{
-    u32 order = VarGet(VAR_ROGUE_RUN_ORDER);
-
-    // Vanilla order: the gate is closed, the toggle is off, or the roll came up
-    // identity. All three are the same run, so they are the same branch.
-    if (order == 0)
-        return slot;
-
-    if (slot < DUNGEON_GYM_DUNGEONS)
-        return ((order >> (slot / DUNGEON_SHUFFLE_BAND)) & 1) ? (slot ^ 1) : slot;
-
-    // Wallace is the fifth Elite Four slot and does not move, so the range test
-    // is against DUNGEON_E4_SHUFFLED rather than DUNGEON_E4_DUNGEONS. The finale
-    // falls through the same way.
-    if (slot < DUNGEON_GYM_DUNGEONS + DUNGEON_E4_SHUFFLED)
-    {
-        u32 pick = (order >> DUNGEON_GYM_BANDS) % ARRAY_COUNT(sE4Orders);
-
-        return DUNGEON_GYM_DUNGEONS + sE4Orders[pick][slot - DUNGEON_GYM_DUNGEONS];
-    }
-
-    return slot;
-}
+//   - Moving a DUNGEON moves its boss, and a boss carries stock levels. That is
+//     the only reason the gym half was ever bands of two -- a dungeon could move
+//     one slot and no further, because SHUFFLE_TOLERANCE is what a one-slot move
+//     costs. The scramble was therefore always narrow: four coin flips.
+//   - Rolling a REGION changes WHO stands at a slot without changing WHERE
+//     anything stands. Every region row is authored against its own slot, so the
+//     level fit is exact rather than tolerated, and floor 1 cannot produce a
+//     boss written for floor 70 by any roll.
+//
+// So the shuffle is now the region roll alone: dungeon 1 is always the woods,
+// and its boss is one of Roxanne, Brock, Falkner or Roark. The theme, its art,
+// its species ladder and its depth stay where they were written for.
+//
+// VAR_ROGUE_RUN_ORDER is RETIRED, not reclaimed -- see the note beside it in
+// constants/rogue_dungeon.h. Nothing reads it; RollDungeonOrder zeroes it so a
+// save carried over from a shuffled build does not keep a stale word.
 
 // The boss stands on the last floor of its dungeon, whichever length that is.
 static bool8 IsDungeonBossFloor(u16 floor)
@@ -2322,10 +2290,11 @@ static const struct RogueDungeonTheme sDungeonThemes[DUNGEON_THEME_COUNT] =
 // is true, and the reason the "wraps to another theme's art" gap is closed.
 static const struct RogueDungeonTheme *ThemeForFloor(u16 floor)
 {
-    // IDENTITY, not slot - which dungeon is standing at this depth. Everything a
-    // theme owns travels with it: its art, its encounter surface, its species
-    // ladder and its weather. See DungeonForSlot.
-    u32 dungeon = DungeonForSlot(DungeonIndexOf(floor));
+    // The slot IS the identity: a dungeon stands where it was written to stand,
+    // and everything a theme owns -- its art, its encounter surface, its species
+    // ladder, its weather -- stays at the depth it was written for. See the note
+    // at the top of this file on why the position permutation was retired.
+    u32 dungeon = DungeonIndexOf(floor);
 
     return &sDungeonThemes[dungeon % DUNGEON_THEME_COUNT];
 }
@@ -3369,23 +3338,20 @@ static u32 DungeonRegionOf(u32 identity)
 }
 
 // Slot in, ROW OUT - the row every one of the five parallel boss tables is
-// indexed by. This is DungeonForSlot composed with the region roll, and it is
-// the only thing that should ever index those tables.
+// indexed by, and STILL the only expression permitted to index them.
 //
-// The two halves compose in this order and not the other: the shuffle decides
-// WHICH DUNGEON stands at a slot, and the region decides WHO ITS BOSS IS. So the
-// identity comes out of DungeonForSlot first and the region bit is then read for
-// that identity, never for the slot.
+// It used to compose two halves, a position permutation and a region roll. The
+// permutation is gone, so a slot is its own identity and the row is the region
+// roll alone. The seam stays a named function anyway: five parallel tables read
+// by one expression is the property check_boss_regions.py guards, and it is no
+// less worth guarding for the expression being shorter.
 static u32 BossRowForSlot(u32 slot)
 {
-    u32 identity = DungeonForSlot(slot);
-
-    return identity + DungeonRegionOf(identity) * DUNGEON_COUNT;
+    return slot + DungeonRegionOf(slot) * DUNGEON_COUNT;
 }
 
 static void RollDungeonOrder(void)
 {
-    u32 order;
 
     // THE TOGGLE IS THE ONLY AUTHORITY HERE, and the clear is what sets its
     // DEFAULT rather than what overrides it. This used to be gated on
@@ -3414,18 +3380,16 @@ static void RollDungeonOrder(void)
         return;
     }
 
+    // ZEROED ON EVERY ROLL, not left alone. Nothing reads this word any more,
+    // but a save made under the shuffling build still holds whatever order it
+    // drew, and a retired var that quietly keeps live-looking data is how the
+    // next claimant of it gets a run rewritten under them.
+    VarSet(VAR_ROGUE_RUN_ORDER, 0);
+
     // THE GLOBAL RNG, deliberately, and this is the one place in the file that
     // wants it. Floor generation uses a local LCG so that a layout cannot depend
-    // on the player's step count; a run's dungeon order is rolled exactly once
-    // and being unpredictable is the entire point of it.
-    order = Random() & ((1 << DUNGEON_GYM_BANDS) - 1);
-    order |= (Random() % ARRAY_COUNT(sE4Orders)) << DUNGEON_GYM_BANDS;
-
-    // Zero is a legitimate roll - every band unswapped and Elite Four order 0 -
-    // and it lands on the same branch as "not shuffling" in DungeonForSlot,
-    // because it describes the same run. 1 in 384.
-    VarSet(VAR_ROGUE_RUN_ORDER, order);
-
+    // on the player's step count; a run's bosses are rolled exactly once and
+    // being unpredictable is the entire point of it.
     RollDungeonRegion();
 }
 
@@ -11225,14 +11189,13 @@ u32 RogueDungeon_Test_HashFloorPlacements(u16 floor, u16 seed)
     u8 savedMapSec = gMapHeader.regionMapSectionId;
     bool8 savedPrepared = sFloorPrepared;
 
-    // PINNED TO THE VANILLA DUNGEON ORDER. ThemeForFloor goes through
-    // DungeonForSlot, which reads VAR_ROGUE_RUN_ORDER, so without this the
-    // digest would depend on whatever run order the save block happened to
-    // hold and no value could be pinned. Order 0 means "no shuffle", so a
-    // floor number maps to one fixed theme and the cases below can name it.
+    // THE ORDER WORD IS RETIRED and ThemeForFloor no longer reads anything but
+    // the floor, so a theme is pinned by arithmetic now rather than by this.
+    // The write stays because the digest should not depend on a stale word
+    // surviving in a save either.
     //
-    // AND PINNED TO HOENN, for exactly the same reason and one step further
-    // along: PrepareBossFloor goes through BossRowForSlot, which reads
+    // PINNED TO HOENN, and this half is still load bearing:
+    // PrepareBossFloor goes through BossRowForSlot, which reads
     // the region words, so a boss floor's trainer id and sprite would otherwise
     // depend on the save block too. Zero is all-Hoenn, which is the arrangement
     // every pinned digest in this file was taken under. BOTH words: the region

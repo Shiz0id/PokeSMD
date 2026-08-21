@@ -517,22 +517,21 @@
 // +33.8, a level-13 two-mon Roxanne on floor 80 at -32.0 - which is why band
 // width is the difficulty knob and not a preference.
 //
-// verify_run_structure.py enumerates every permitted permutation and asserts
-// that tolerance, so widening a band fails the build rather than the run.
-#define DUNGEON_SHUFFLE_BAND 2
+// THAT ARITHMETIC IS WHY THE PERMUTATION WAS RETIRED RATHER THAN WIDENED. A
+// band of two was the only width the level curve tolerated, so the whole feature
+// amounted to four coin flips on adjacent pairs; the region roll delivers the
+// variety it was reaching for and costs the curve nothing, because every region
+// row is authored against its own slot. DUNGEON_SHUFFLE_BAND is gone with it.
 
-// The run's order, rolled once when the starters are picked and constant for the
-// rest of the run. Low DUNGEON_GYM_BANDS bits are one swap-or-not per gym band;
-// the bits above them index the Elite Four permutation table.
+// RETIRED, AND NOT YET RECLAIMED. This held the position permutation; nothing
+// reads it now. RollDungeonOrder still zeroes it on every roll so a save carried
+// over from the shuffling build cannot leave a live-looking word behind.
 //
-// IT NEEDS A VAR OF ITS OWN. VAR_ROGUE_DUNGEON_SEED cannot carry this: the
-// stairs script warps, which re-enters LoadMapFromWarp and rolls a fresh seed
-// every single floor. An order derived from it would reshuffle the dungeons
-// under the player as they descended.
-//
-// Zero means vanilla order, which covers all three ways that happens - the gate
-// is closed, the player turned the toggle off, or the roll genuinely came up
-// identity. The three are indistinguishable because they produce the same run.
+// DO NOT HAND 0x40FD TO SOMETHING ELSE WITHOUT READING THIS. A save that has not
+// reached a run reset under the current build still holds its old order word, so
+// the next claimant would read someone else's shuffle as its own value - which
+// is the collision the var pool note warns about, arriving from the one
+// direction nobody watches, a var that used to be ours.
 #define VAR_ROGUE_RUN_ORDER VAR_UNUSED_0x40FD
 
 // SET means the player turned the shuffle OFF, so clear - the value every save
@@ -561,14 +560,15 @@
 // bits, which is a third var - do that deliberately rather than discovering it
 // when a roll silently wraps.
 //
-// KEYED ON THE IDENTITY, NOT THE SLOT, and the distinction is the same one
-// DungeonForSlot draws. A slot is a position in the run; an identity is which
-// dungeon stands there. The region bit says "this dungeon is its Kanto
-// counterpart" - Norman becomes Koga, Wallace becomes Blue, Steven becomes Red -
-// and the order shuffle is then free to move that dungeon wherever it likes,
-// because the two compose. Keying it on the slot instead would build a fixed
-// per-position roster that the shuffle then permuted, which is a different and
-// much less interesting feature.
+// SLOT AND IDENTITY ARE THE SAME NUMBER NOW, so this is keyed on both and the
+// distinction has stopped mattering. The region field says "this dungeon is its
+// Kanto counterpart" - Norman becomes Koga, Wallace becomes Blue, Steven becomes
+// Red - and with the position permutation retired that is the whole scrambler.
+//
+// A fixed per-position roster is exactly what this now is, and it is what was
+// wanted: dungeon 1 is always the woods, and its boss is one of Roxanne, Brock,
+// Falkner or Roark. Every one of those four is authored against floor 10, so no
+// roll can put a boss written for floor 70 on it.
 //
 // THE PAIRING IS 1:1 AND THE FOURTEENTH IS AUTHORED. Kanto ships eight leaders,
 // four Elite Four and one Champion - thirteen, against Hoenn's fourteen, because

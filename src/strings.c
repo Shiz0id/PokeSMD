@@ -943,7 +943,7 @@ const u8 gText_Autorun[] = _("AUTORUN");
 // against gFontNormalLatinGlyphWidths rather than counted - the caps here are
 // narrower than character count suggests, and an over-long label does not fail
 // to build, it draws underneath the ON/OFF it collides with.
-const u8 gText_DungeonShuffle[] = _("DUNGEON SHUFFLE");
+const u8 gText_DungeonShuffle[] = _("BOSS SHUFFLE");
 const u8 gText_TextSpeedSlow[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}SLOW");
 const u8 gText_TextSpeedMid[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}MID");
 const u8 gText_TextSpeedFast[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}FAST");

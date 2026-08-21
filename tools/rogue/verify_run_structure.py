@@ -15,19 +15,25 @@ src/rogue_dungeon.c and checks:
   5. the curve lands near each boss's actual stock party average
   6. every sFloorMapOverride covers a contiguous run of exactly lastFloors
      floors, ending ON its dungeon's boss floor
-  7. EVERY PERMITTED DUNGEON ORDER keeps every boss inside SHUFFLE_TOLERANCE of
-     the curve at the slot it lands on
+  7. EVERY REGION VARIANT of every dungeon keeps its boss inside
+     SHUFFLE_TOLERANCE of the curve at that dungeon's own slot
 
 The party levels are read out of src/data/trainers.party rather than typed in,
 so this notices if a boss is swapped for one at a different level.
 
-Check 7 is what makes the shuffle's band width a fact rather than an opinion.
-The order is gated behind FLAG_ROGUE_RUN_COMPLETED and permutes the eight gyms
-in bands of two plus four of the five Elite Four slots - 16 x 24 = 384 orders,
-small enough to enumerate exhaustively, so there is no sampling and no argument.
-Widening DUNGEON_SHUFFLE_BAND then fails the build rather than the run: bands of
-four reach -16.5, and a free permutation of all eight is ruinous both ways - Juan
-on floor 10 at +33.8 and a level-13 two-mon Roxanne on floor 80 at -32.0.
+THE POSITION PERMUTATION IS RETIRED, and check 7 shrank with it. It used to
+enumerate 384 order words - the eight gyms in bands of two, four of the five
+Elite Four slots - and prove that no arrangement moved a boss further off the
+curve than SHUFFLE_TOLERANCE. A dungeon does not move any more, so the sweep is
+the region variants alone: four bosses per slot, each authored against that
+slot.
+
+That is a strictly tighter statement than the one it replaces. The band was only
+ever two wide because a wider one broke this check - bands of four reach -16.5,
+and a free permutation of all eight is ruinous both ways, Juan on floor 10 at
++33.8 and a level-13 two-mon Roxanne on floor 80 at -32.0. None of those runs
+are reachable now, and the numbers stay here because they are the reason the
+feature was retired rather than widened.
 
 Broken two ways to confirm it fires: tolerance tightened to 6, which trips on
 Sidney at -6.6; and the free-permutation sweep above, which the tolerance
@@ -160,11 +166,8 @@ RIVAL = "TRAINER_ROGUE_RIVAL"
 # deliberately further over than anyone - both are checked separately.
 TOLERANCE = 5
 
-# Mirrors DUNGEON_SHUFFLE_BAND in include/constants/rogue_dungeon.h and
-# DUNGEON_GYM_BANDS / DUNGEON_E4_SHUFFLED in include/rogue_dungeon.h.
-SHUFFLE_BAND = 2
-GYM_BANDS = GYM_DUNGEONS // SHUFFLE_BAND
-E4_SHUFFLED = E4_DUNGEONS - 1          # Wallace is pinned to the fifth slot
+# SHUFFLE_BAND, GYM_BANDS and E4_SHUFFLED are gone with the constants they
+# mirrored. Nothing permutes positions any more.
 
 # How far off the curve a SHUFFLED boss may sit. Wider than TOLERANCE on purpose:
 # the shuffle is gated behind a first clear, so it is allowed to be lumpier than
@@ -232,27 +235,8 @@ def within(floor):
     return floor - E4_END_FLOOR
 
 
-# sE4Orders in src/rogue_dungeon.c, in the same lexicographic order.
-E4_ORDERS = sorted(itertools.permutations(range(E4_SHUFFLED)))
-
-
-def dungeon_for_slot(slot, order):
-    """An exact port of DungeonForSlot. Slot in, dungeon identity out."""
-    if order == 0:
-        return slot
-    if slot < GYM_DUNGEONS:
-        return (slot ^ 1) if (order >> (slot // SHUFFLE_BAND)) & 1 else slot
-    if slot < GYM_DUNGEONS + E4_SHUFFLED:
-        pick = (order >> GYM_BANDS) % len(E4_ORDERS)
-        return GYM_DUNGEONS + E4_ORDERS[pick][slot - GYM_DUNGEONS]
-    return slot
-
-
-def every_order():
-    """All 384 order words the C can roll, identity included."""
-    for bands in range(1 << GYM_BANDS):
-        for pick in range(len(E4_ORDERS)):
-            yield bands | (pick << GYM_BANDS)
+# dungeon_for_slot and every_order are gone: BossRowForSlot is now the region
+# roll alone, so a slot is its own identity and there is no order word to port.
 
 
 def is_boss_floor(floor):
@@ -464,26 +448,25 @@ def main():
     worst_high = (0.0, None)
     seen = {}
 
-    for order in every_order():
-        for slot in boss_slots:
-            identity = dungeon_for_slot(slot, order)
-            floor = sum(length_of(d) for d in range(slot + 1)) - 1
+    for slot in boss_slots:
+        identity = slot          # a dungeon stands where it was written to stand
+        floor = sum(length_of(d) for d in range(slot + 1)) - 1
 
-            for region, table in REGIONS.items():
-                levels = parties[table[identity]]
-                gap = sum(levels) / len(levels) - target_level(floor)
-                bound = TOLERANCE_FOR[region]
-                seen[(slot, identity, region)] = gap
+        for region, table in REGIONS.items():
+            levels = parties[table[identity]]
+            gap = sum(levels) / len(levels) - target_level(floor)
+            bound = TOLERANCE_FOR[region]
+            seen[(slot, identity, region)] = gap
 
-                if gap < worst_low[0]:
-                    worst_low = (gap, (slot, identity, region, floor))
-                if gap > worst_high[0]:
-                    worst_high = (gap, (slot, identity, region, floor))
+            if gap < worst_low[0]:
+                worst_low = (gap, (slot, identity, region, floor))
+            if gap > worst_high[0]:
+                worst_high = (gap, (slot, identity, region, floor))
 
-                check(abs(gap) <= bound,
-                      f"order {order:#05x} region {region}: {table[identity]} "
-                      f"at slot {slot} (floor {floor + 1}) is {gap:+.1f} off "
-                      f"the curve, past the {bound} that region allows")
+            check(abs(gap) <= bound,
+                  f"region {region}: {table[identity]} at slot {slot} "
+                  f"(floor {floor + 1}) is {gap:+.1f} off the curve, past "
+                  f"the {bound} that region allows")
 
     def describe(entry):
         gap, place = entry
@@ -493,10 +476,9 @@ def main():
         return (f"{gap:+.1f}  {REGIONS[region][identity]} at slot {slot}, "
                 f"floor {floor + 1}")
 
-    print(f"shuffle: {len(list(every_order()))} orders "
-          f"({1 << GYM_BANDS} gym x {len(E4_ORDERS)} E4) "
-          f"x {len(REGIONS) ** DUNGEON_COUNT:,} region words, "
-          f"{len(seen)} distinct slot/boss/region pairings")
+    print(f"shuffle: {len(REGIONS)} bosses per dungeon x "
+          f"{len(REGIONS) ** DUNGEON_COUNT:,} region words, "
+          f"{len(seen)} slot/boss pairings (positions do not permute)")
     print(f"  worst under curve  {describe(worst_low)}")
     print(f"  worst over curve   {describe(worst_high)}")
     print("  tolerance          " + ", ".join(

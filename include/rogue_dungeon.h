@@ -1881,12 +1881,10 @@ struct RogueFloorEvent
 #define DUNGEON_E4_DUNGEONS  5
 #define DUNGEON_COUNT       (DUNGEON_GYM_DUNGEONS + DUNGEON_E4_DUNGEONS + 1)
 
-// How many bands the eight gyms shuffle in, and how many of the Elite Four's
-// five slots actually permute. Wallace is pinned to the fifth: he is the champion
-// and the top of that ladder, and at +10.3 over the curve at the first Elite Four
-// slot he is the one member who cannot move. See DUNGEON_SHUFFLE_BAND.
-#define DUNGEON_GYM_BANDS      (DUNGEON_GYM_DUNGEONS / DUNGEON_SHUFFLE_BAND)
-#define DUNGEON_E4_SHUFFLED    (DUNGEON_E4_DUNGEONS - 1)
+// DUNGEON_GYM_BANDS and DUNGEON_E4_SHUFFLED are GONE, with the position
+// permutation they described. A dungeon no longer moves, so there is nothing to
+// band and nothing to pin Wallace against. The shuffle is the region roll: see
+// the note at the top of rogue_dungeon.c.
 
 #define DUNGEON_GYM_FLOORS   (DUNGEON_GYM_DUNGEONS * DUNGEON_LONG_FLOORS)
 #define DUNGEON_E4_FLOORS    (DUNGEON_E4_DUNGEONS * DUNGEON_SHORT_FLOORS)

@@ -4,9 +4,9 @@ THE OWNERSHIP RULE, stated once, here:
 
     The five boss tables are ONE array of DUNGEON_COUNT * DUNGEON_REGION_COUNT
     rows, and the only expression allowed to index any of them is the row
-    BossRowForSlot() returns. A slot is a position in the run; an identity is
-    which dungeon stands there; a row is that identity in the region it rolled.
-    Nothing may index a boss table with a slot, or with an identity.
+    BossRowForSlot() returns. A row is a dungeon in the region it rolled.
+    Nothing may index a boss table with a bare slot, which reads the Hoenn row
+    for every run and makes the shuffle silently do nothing.
 
 WHY THIS EXISTS, and why it is not a data check. verify_run_structure.py already
 proves the level arithmetic - that every boss in either region lands near the
@@ -36,11 +36,13 @@ WHAT IT ASSERTS.
      RogueDungeon_GetBossEnvironment) are exempt: they walk the whole array by
      loop counter, which is correct and is how they cover both region blocks.
 
-  3. BossRowForSlot composes the two halves in the right ORDER - the identity
-     comes out of DungeonForSlot first, and the region bit is then read for that
-     identity. Reading the region for the SLOT instead compiles, permutes, and
-     builds a fixed per-position roster that the shuffle merely reorders, which
-     is a different feature that looks like this one.
+  3. BossRowForSlot is the region roll and the DUNGEON_COUNT stride, and it
+     reads the region for the slot it was handed. It used to compose two halves,
+     a position permutation and this one; the permutation was retired when the
+     tables grew to four regions, because moving a dungeon drags its boss's stock
+     levels with it and the region roll does not. Dropping the roll from this
+     expression leaves a legal-looking `return slot`, which is every run in
+     Hoenn with the toggle reporting ON.
 
   4. The region word is rolled behind the same gate as the order word, and is
      CLEARED on the closed-gate branch. Both are vars and survive a run, so a
@@ -208,18 +210,16 @@ def check(repo):
                            f"src/rogue_dungeon.c:{line}; only the row "
                            f"BossRowForSlot returns may index a boss table")
 
-    # 3. BossRowForSlot composes identity-then-region, in that order.
+    # 3. BossRowForSlot is the region roll, and strides by DUNGEON_COUNT.
     row_fn = body_of(src, "BossRowForSlot")
     if not row_fn:
         fail(msgs, "BossRowForSlot not found")
     else:
-        if "DungeonForSlot(slot)" not in row_fn:
-            fail(msgs, "BossRowForSlot does not take its identity from "
-                       "DungeonForSlot(slot)")
-        if "DungeonRegionOf(identity)" not in row_fn:
-            fail(msgs, "BossRowForSlot reads the region for something other "
-                       "than the identity; a per-slot roster is a different "
-                       "feature that looks like this one")
+        if "DungeonRegionOf(slot)" not in row_fn:
+            fail(msgs, "BossRowForSlot does not read DungeonRegionOf(slot). "
+                       "Without the roll the row is the Hoenn block for every "
+                       "run, which is the shuffle doing nothing while the "
+                       "toggle says it is on")
         if "DUNGEON_COUNT" not in row_fn:
             fail(msgs, "BossRowForSlot does not stride by DUNGEON_COUNT")
 
@@ -348,10 +348,14 @@ SELFTESTS = [
      "src/rogue_dungeon.c",
      "MUS_DPPT_BATTLE_CHAMPION,                          // Cynthia",
      "MUS_NOT_A_REAL_SONG,                               // Cynthia"),
-    ("the region read for the slot rather than the identity",
+    ("the region roll dropped out of the row entirely",
      "src/rogue_dungeon.c",
-     "DungeonRegionOf(identity) * DUNGEON_COUNT",
-     "DungeonRegionOf(slot) * DUNGEON_COUNT"),
+     "return slot + DungeonRegionOf(slot) * DUNGEON_COUNT;",
+     "return slot;"),
+    ("the row stops striding by DUNGEON_COUNT",
+     "src/rogue_dungeon.c",
+     "return slot + DungeonRegionOf(slot) * DUNGEON_COUNT;",
+     "return slot + DungeonRegionOf(slot) * DUNGEON_REGION_WIRED;"),
     ("the clear latch put back into the roll (the one-way switch)",
      "src/rogue_dungeon.c",
      "    if (FlagGet(FLAG_ROGUE_VANILLA_ORDER))\n    {\n"
