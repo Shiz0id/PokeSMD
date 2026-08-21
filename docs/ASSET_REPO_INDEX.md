@@ -265,3 +265,38 @@ is the same shape, so whatever splits one splits all forty-eight.
 - `Tilesets/Other Tilesets/` — 6 more collections, uncensused
 - `Tilesets/The Great Tileset Exchange/Individual Tiles/` — 4 creators, uncensused
 - Wiki (feature branches, tutorials) is on the GitHub repo, not in the clone
+
+## Kris, the third player look
+
+`graphics/object_events/pics/people/kris/`,
+`graphics/trainers/{front_pics,back_pics}/kris.png` and the two `kris*.pal`
+palettes.
+
+**Not from an asset repo.** They came in via `RubyRaven6/pokemon-glc` commit
+`36d1e61b2d`, which credits the overworld set as a FireRed/LeafGreen-style Kris
+posted to The Spriters Resource under "Pokemon Generation 2 Customs". The
+artist's source contact sheet shipped in that commit and is deliberately NOT
+vendored here: its filename contains spaces, nothing INCBINs it, and a stray
+`.png` inside an object event pic directory is one wildcard rule away from
+being fed to `gfx` as a sprite.
+
+**No reflection palette, and that is correct rather than missing.** Nothing in
+this tree reads `reflectionPaletteTag` — `LoadObjectRegularReflectionPalette`
+builds the reflection at runtime with `ApplyPondFilter` over the sprite's live
+palette — so a third `*_reflection.pal` would be dead data. The source commit
+ships one anyway, pointed at `may_reflection.pal`, which is somebody else's
+colours.
+
+**A tool was written to derive one properly, and it refused.** Fitted against
+vanilla's own six base/reflection pairs, a per-channel scale-and-offset in
+5-bit space reproduces them to no better than **13/31 worst channel error** —
+so that is not the transform vanilla used, and deriving a new palette from it
+would have been inventing rather than matching. Worth knowing before anyone
+tries again: vanilla's reflection palettes are not a linear function of their
+base.
+
+**The frame layouts are May's.** Every `sPicTable_Kris*` is May's table with
+the pointers repointed, which is only correct because the art was drawn to the
+same template. The surfing and underwater tables in particular are
+hand-ordered frame lists, not ascending runs — check the sheet layout before
+reusing them for art from anywhere else.
