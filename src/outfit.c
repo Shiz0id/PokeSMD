@@ -6,43 +6,51 @@
 
 // See include/outfit.h for why this is not part of outfit_menu.c.
 
-const struct PlayerGenderStop gPlayerGenderStops[] =
+// THE PICKER'S LABELS, one table per axis. See include/outfit.h for why the
+// curated list of (identity, look) pairs this replaced was the wrong shape.
+//
+// The two tables spell the same three words and that is not duplication to be
+// factored out: they are indexed by different enums, sized by different
+// counts, and either axis may gain a member the other never gets.
+const u8 *const gPlayerLookNames[PLAYER_LOOK_COUNT] =
 {
-    { GENDER_MASCULINE,   PLAYER_LOOK_MASC,  COMPOUND_STRING("BOY") },
-    { GENDER_FEMININE,    PLAYER_LOOK_FEM,   COMPOUND_STRING("GIRL") },
-    { GENDER_ANDROGYNOUS, PLAYER_LOOK_ANDRO, COMPOUND_STRING("ENBY") },
-    // AN ENBY PLAYER MAY PRESENT AS EITHER OF THE OTHER TWO. That is the whole
-    // reason identity and look are separate fields rather than one - the
-    // alternative is telling somebody their identity picks their sprite.
-    { GENDER_ANDROGYNOUS, PLAYER_LOOK_MASC,  COMPOUND_STRING("ENBY/BOY") },
-    { GENDER_ANDROGYNOUS, PLAYER_LOOK_FEM,   COMPOUND_STRING("ENBY/GIRL") },
+    [PLAYER_LOOK_MASC]  = COMPOUND_STRING("BOY"),
+    [PLAYER_LOOK_FEM]   = COMPOUND_STRING("GIRL"),
+    [PLAYER_LOOK_ANDRO] = COMPOUND_STRING("ENBY"),
 };
 
-u32 GetPlayerGenderStopCount(void)
+const u8 *const gPlayerIdentityNames[PLAYER_GENDER_COUNT] =
 {
-    return ARRAY_COUNT(gPlayerGenderStops);
+    [GENDER_MASCULINE]   = COMPOUND_STRING("BOY"),
+    [GENDER_FEMININE]    = COMPOUND_STRING("GIRL"),
+    [GENDER_ANDROGYNOUS] = COMPOUND_STRING("ENBY"),
+};
+
+const u8 *GetPlayerLookName(void)
+{
+    return gPlayerLookNames[gSaveBlock2Ptr->playerGender % PLAYER_LOOK_COUNT];
 }
 
-u32 FindPlayerGenderStop(void)
+const u8 *GetPlayerIdentityName(void)
 {
-    u32 i;
-
-    for (i = 0; i < ARRAY_COUNT(gPlayerGenderStops); i++)
-    {
-        if (gPlayerGenderStops[i].identity == gSaveBlock2Ptr->playerGenderIdentity
-         && gPlayerGenderStops[i].look == gSaveBlock2Ptr->playerGender)
-            return i;
-    }
-    return 0;
+    return gPlayerIdentityNames[gSaveBlock2Ptr->playerGenderIdentity % PLAYER_GENDER_COUNT];
 }
 
-void ApplyPlayerGenderStop(u32 index)
+// ONE AXIS, ONE FIELD, and the modulo on the way in as well as on the way out:
+// a save written before this feature holds an identity byte that was never
+// assigned, so the read clamps rather than the write alone.
+void StepPlayerLook(s32 delta)
 {
-    if (index >= ARRAY_COUNT(gPlayerGenderStops))
-        return;
+    u32 look = gSaveBlock2Ptr->playerGender % PLAYER_LOOK_COUNT;
 
-    gSaveBlock2Ptr->playerGenderIdentity = gPlayerGenderStops[index].identity;
-    gSaveBlock2Ptr->playerGender = gPlayerGenderStops[index].look;
+    gSaveBlock2Ptr->playerGender = (look + PLAYER_LOOK_COUNT + delta) % PLAYER_LOOK_COUNT;
+}
+
+void StepPlayerIdentity(s32 delta)
+{
+    u32 identity = gSaveBlock2Ptr->playerGenderIdentity % PLAYER_GENDER_COUNT;
+
+    gSaveBlock2Ptr->playerGenderIdentity = (identity + PLAYER_GENDER_COUNT + delta) % PLAYER_GENDER_COUNT;
 }
 
 u8 SanitizeOutfitId(u8 outfitId)

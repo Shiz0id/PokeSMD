@@ -69,6 +69,14 @@ enum Windows {
 // cannot fall out of step with the window it is aligned inside.
 #define WIN_INFO_WIDTH_PX (23 * 8)
 
+// THE THIRD TEXT ROW of a six-tile-tall window, under the name at 0 and the
+// description at 16, and the two hints are the only things that use it.
+// MEASURED, not guessed: at their widest the pair is 145 px of the 182 this
+// window has to give, so they do not fit beside the name (FONT_NORMAL) and
+// they do not fit beside the description either. Widen a label and check it -
+// the two would silently overlap rather than wrap or clip.
+#define WIN_INFO_HINT_Y 32
+
 enum Sprites {
     GFX_OW = 0, // reserved: the overworld preview, not built yet
     GFX_FTS, // front
@@ -134,10 +142,11 @@ static void Task_CloseOutfitMenu(u8 taskId);
 static u32 BuildOutfitLists(void);
 static inline void UpdateOutfitInfo(void);
 static void UpdateCursorPosition(void);
-static void PrintGenderHint(void);
+static void PrintGenderHints(void);
 
 static const u8 sText_OutfitLocked[] = _("???");
-static const u8 gText_OutfitGenderHint[] = _("{L_BUTTON}{R_BUTTON} ");
+static const u8 sText_OutfitLookHint[] = _("{L_BUTTON}{R_BUTTON}LOOK:");
+static const u8 sText_OutfitIdentityHint[] = _("{SELECT_BUTTON}I AM:");
 static const u8 sText_OutfitLockedMsg[] =
 _(
     "You don't have this OUTFIT yet.\n"
@@ -543,7 +552,7 @@ static void SetupOutfitMenu_PrintStr(void)
     // table for a name and a description.
     u32 outfitId = GetCurrentOutfitId();
 
-    PrintGenderHint();
+    PrintGenderHints();
     PrintTexts(WIN_INFO, FONT_NORMAL, 2, 0, COLORID_NORMAL, gOutfits[outfitId].name);
     PrintTexts(WIN_INFO, FONT_NORMAL, 2, 16, COLORID_NORMAL, gOutfits[outfitId].desc);
     CopyWindowToVram(WIN_INFO, COPYWIN_FULL);
@@ -835,11 +844,17 @@ static void SetupOutfitMenu_Grids(void)
 
 //! Similar to above, but without redrawing the frame
 //! and also clean up the frame.
-// Right-aligned on the name row, new game only. The trainer pics do change
-// when L or R is pressed, but nothing on the screen otherwise says the buttons
-// do anything at all - and this is the only screen in the game where the
-// player picks their gender, so it cannot be left to be discovered.
-static void PrintGenderHint(void)
+// BOTH AXES, ON THEIR OWN ROW, new game only. The look changes the sprites on
+// screen the moment L or R is pressed; THE IDENTITY CHANGES NOTHING VISIBLE AT
+// ALL - its one consumer is the colour of the player's name on the save
+// window, screens away - so without this line SELECT is a button that appears
+// to do nothing, on the only screen in the game where that choice is offered.
+//
+// Printed from the setup path as well as the update path, because those two
+// print this window through different functions and drawing it in only one
+// means the hint appears after the first cursor move, which is after the
+// moment it existed to explain.
+static void PrintGenderHints(void)
 {
     u8 str[32];
     u8 *end;
@@ -847,17 +862,21 @@ static void PrintGenderHint(void)
     if (!sOutfitMenu->newGame)
         return;
 
-    end = StringCopy(str, gText_OutfitGenderHint);
-    StringCopy(end, gPlayerGenderStops[FindPlayerGenderStop()].label);
+    end = StringCopy(str, sText_OutfitLookHint);
+    StringCopy(end, GetPlayerLookName());
+    PrintTexts(WIN_INFO, FONT_SMALL, 2, WIN_INFO_HINT_Y, COLORID_NORMAL, str);
+
+    end = StringCopy(str, sText_OutfitIdentityHint);
+    StringCopy(end, GetPlayerIdentityName());
     PrintTexts(WIN_INFO, FONT_SMALL,
-               GetStringRightAlignXOffset(FONT_SMALL, str, WIN_INFO_WIDTH_PX - 2), 2,
-               COLORID_NORMAL, str);
+               GetStringRightAlignXOffset(FONT_SMALL, str, WIN_INFO_WIDTH_PX - 2),
+               WIN_INFO_HINT_Y, COLORID_NORMAL, str);
 }
 
 static inline void UpdateOutfitInfo(void)
 {
     FillWindowPixelBuffer(WIN_INFO, PIXEL_FILL(0));
-    PrintGenderHint();
+    PrintGenderHints();
 
     if (IsOutfitUnlocked(sOutfitMenu->idx) == FALSE)
     {
@@ -972,30 +991,38 @@ static void Task_OutfitMenuHandleInput(u8 taskId)
         return;
     }
 
-    // GENDER, NEW GAME ONLY. Changing it later would mean rewriting the
-    // player's object event, the trainer card, every met-location record's
-    // implied trainer and the save's own idea of who it belongs to - this
-    // screen is simply where the choice is made, in place of the Birch speech
-    // this project does not run.
+    // WHO THEY ARE AND WHAT THEY LOOK LIKE, TWO CONTROLS, NEW GAME ONLY.
+    // Changing either later would mean rewriting the player's object event,
+    // the trainer card, every met-location record's implied trainer and the
+    // save's own idea of who it belongs to - this screen is simply where the
+    // choice is made, in place of the Birch speech this project does not run.
+    //
+    // TWO CONTROLS RATHER THAN ONE LIST OF PAIRINGS. See include/outfit.h:
+    // the list gave the choice of sprite to the androgynous stop alone, which
+    // is the thing two fields exist to avoid saying.
     if (sOutfitMenu->newGame && JOY_NEW(L_BUTTON | R_BUTTON))
     {
-        // STEPS THE STOP LIST, which carries an identity AND a look. Cycled
-        // rather than toggled, and over a table rather than named values, so
-        // adding a pairing is a row in gPlayerGenderStops and nothing here.
-        u32 count = GetPlayerGenderStopCount();
-        u32 stop = FindPlayerGenderStop();
-
-        if (JOY_NEW(R_BUTTON))
-            stop = (stop + 1) % count;
-        else
-            stop = (stop + count - 1) % count;
-        ApplyPlayerGenderStop(stop);
+        StepPlayerLook(JOY_NEW(R_BUTTON) ? 1 : -1);
 
         // The grid too, not only the big pics: every cell draws that outfit's
-        // overworld sprite for the current gender, so leaving them alone shows
-        // the player a row of the gender they just stopped being.
+        // overworld sprite for the current look, so leaving them alone shows
+        // the player a row of the look they just stopped wearing.
         PlaySE(SE_SELECT);
         RebuildOutfitGrid();
+        UpdateOutfitInfo();
+        return;
+    }
+
+    if (sOutfitMenu->newGame && JOY_NEW(SELECT_BUTTON))
+    {
+        // NO REBUILD, DELIBERATELY. Identity indexes no art table anywhere in
+        // this tree - that is the whole of what makes it a separate field - so
+        // there is nothing on this screen to redraw but the word. Rebuilding
+        // here would be six sprite teardowns per press for a text change.
+        //
+        // One direction only, because this is one button rather than a pair.
+        StepPlayerIdentity(1);
+        PlaySE(SE_SELECT);
         UpdateOutfitInfo();
         return;
     }

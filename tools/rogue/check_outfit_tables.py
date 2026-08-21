@@ -79,11 +79,31 @@ WHAT IT ASSERTS.
      grid. The gender switch rebuilds on every press, which is what turns a
      dormant leak into an empty palette table in about four seconds.
 
-  9. THE GENDER SWITCH IS NEW GAME ONLY, steps a TABLE of (identity, look)
-     pairs rather than flipping named values, and rebuilds the GRID as well as
-     the trainer pics - every cell draws its outfit at the current look, so
-     redrawing only the pics leaves a row of who the player just stopped
-     being.
+  9. THE PICKER IS TWO AXES ON TWO CONTROLS, new game only. L and R step the
+     LOOK and SELECT steps the IDENTITY, and each arm writes exactly one field
+     through one setter.
+
+     CROSSING THEM IS THE SILENT ONE. An arm that steps the other axis builds
+     cleanly, moves a value, prints a word, and leaves the save holding a
+     player who is not the one on the screen - so the arms are matched to
+     their setters here, and the setters to their fields.
+
+     Only the LOOK arm rebuilds the grid, because only the look indexes art:
+     every cell draws its outfit at the current look, so redrawing the pics
+     alone leaves a row of who the player just stopped being. The identity arm
+     redraws text and nothing else.
+
+     AND BOTH HINTS ARE PRINTED, FROM BOTH PRINT PATHS. The look announces
+     itself - the sprites change - but identity has no visible consumer on this
+     screen at all, so an unprinted hint makes SELECT a button that does
+     nothing, on the only screen where that choice exists. The setup path and
+     the update path print this window through different functions; drawing it
+     in one means the hint arrives after the first cursor move.
+
+     This replaced a curated list of five (identity, look) pairs. The list gave
+     the choice of sprite to the androgynous stop and to no other, which is the
+     sentence the two fields exist to avoid, and it made the second axis
+     visible only in the two stops that spelled both halves with a slash.
 
  10. IDENTITY AND LOOK STAY SEPARATE, and this is the assertion that matters
      most in this file.
@@ -476,38 +496,175 @@ def check(repo, fail):
                     "real palette number, so this frees something else's" % field
                 )
 
-    # 9. THE GENDER SWITCH. New game only, cycled through GENDER_COUNT rather
-    #    than flipped between two names, and it must rebuild the GRID as well
-    #    as the trainer pics - every cell draws its outfit at the current
-    #    gender, so pics-only leaves a row of who the player just stopped being.
+    # 9. THE PICKER'S TWO AXES. L/R steps the look, SELECT steps the identity,
+    #    each arm writes one field through one setter, and only the look arm
+    #    rebuilds the grid. Crossing the two is silent: it builds, it moves a
+    #    value, and the save stops agreeing with the sprite on the screen.
     if not handler:
         pass  # already reported
     else:
         body = handler.group(1)
-        gender_arm = re.search(r"if\s*\(\s*sOutfitMenu->newGame\s*&&\s*JOY_NEW\(L_BUTTON \| R_BUTTON\)\s*\)", body)
-        if not gender_arm:
+        arms = {}
+        for axis, cond, buttons in (
+            ("look", r"if\s*\(\s*sOutfitMenu->newGame\s*&&\s*JOY_NEW\(L_BUTTON \| R_BUTTON\)\s*\)", "L_BUTTON | R_BUTTON"),
+            ("identity", r"if\s*\(\s*sOutfitMenu->newGame\s*&&\s*JOY_NEW\(SELECT_BUTTON\)\s*\)", "SELECT_BUTTON"),
+        ):
+            m2 = re.search(cond, body)
+            if not m2:
+                fail(
+                    "no `if (sOutfitMenu->newGame && JOY_NEW(%s))` arm in "
+                    "Task_OutfitMenuHandleInput - the %s axis must have its own "
+                    "control and must be new game only, because changing it later "
+                    "would leave the trainer card, the player object and the save "
+                    "disagreeing about who this is" % (buttons, axis)
+                )
+                continue
+            open_brace = body.find("{", m2.end())
+            close = matching_brace(body, open_brace) if open_brace != -1 else None
+            if close is None:
+                fail("the %s arm of Task_OutfitMenuHandleInput has no body" % axis)
+                continue
+            arms[axis] = body[open_brace : close + 1]
+
+        for axis, mine, theirs in (
+            ("look", "StepPlayerLook", "StepPlayerIdentity"),
+            ("identity", "StepPlayerIdentity", "StepPlayerLook"),
+        ):
+            arm = arms.get(axis)
+            if arm is None:
+                continue
+            if mine + "(" not in arm:
+                fail(
+                    "the %s arm does not call %s - stepping an axis has to go "
+                    "through its setter, which is the only place that knows which "
+                    "save field the axis lives in and what it wraps on"
+                    % (axis, mine)
+                )
+            if theirs in arm:
+                fail(
+                    "the %s arm calls %s. THE TWO ARMS ARE CROSSED: this builds "
+                    "cleanly, the picker looks like it works, and the player ends "
+                    "up as somebody the sprite on the screen is not"
+                    % (axis, theirs)
+                )
+            if "gSaveBlock2Ptr->playerGender" in arm:
+                fail(
+                    "the %s arm writes gSaveBlock2Ptr->playerGender* directly "
+                    "instead of stepping through its setter" % axis
+                )
+
+        if "look" in arms and "RebuildOutfitGrid" not in arms["look"]:
             fail(
-                "no `if (sOutfitMenu->newGame && JOY_NEW(L_BUTTON | R_BUTTON))` arm "
-                "in Task_OutfitMenuHandleInput - the gender switch must be new game "
-                "only, because changing gender later would leave the trainer card, "
-                "the player object and the save disagreeing about who this is"
+                "the look arm does not rebuild the grid. Every cell draws its "
+                "outfit's overworld sprite AT THE CURRENT LOOK, so redrawing only "
+                "the trainer pics leaves the grid showing the look the player just "
+                "stopped wearing"
             )
-        else:
-            arm = body[gender_arm.start() :]
-            arm = arm[: arm.index("\n    }") + 6] if "\n    }" in arm else arm
-            if "GetPlayerGenderStopCount" not in arm or "ApplyPlayerGenderStop" not in arm:
+
+    # 9b. THE SETTERS. One axis, one field, and the two-wide GENDER_COUNT is
+    #     never what either wraps on - that count sizes trainer tables, and
+    #     wrapping a look on it makes PLAYER_LOOK_ANDRO unreachable from the
+    #     picker while every table that holds it stays perfectly correct.
+    for fn, field, other_field, count, other_count in (
+        ("StepPlayerLook", r"->playerGender\b", r"->playerGenderIdentity\b",
+         "PLAYER_LOOK_COUNT", "PLAYER_GENDER_COUNT"),
+        ("StepPlayerIdentity", r"->playerGenderIdentity\b", r"->playerGender\b",
+         "PLAYER_GENDER_COUNT", "PLAYER_LOOK_COUNT"),
+    ):
+        m2 = re.search(r"void " + fn + r"\(s32 delta\)\s*\{(.*?)\n\}", outfit_c, re.S)
+        if not m2:
+            fail("%s not found in %s" % (fn, OUTFIT_C))
+            continue
+        fn_body = m2.group(1)
+        if not re.search(field, fn_body):
+            fail("%s never writes %s" % (fn, field.replace(r"\b", "")))
+        if re.search(other_field, fn_body):
+            fail(
+                "%s touches %s - the two axes are separate fields precisely so one "
+                "control cannot move the other, and a setter that writes both is "
+                "that separation undone in the one place nothing else guards"
+                % (fn, other_field.replace(r"\b", ""))
+            )
+        if count not in fn_body:
+            fail("%s does not wrap on %s" % (fn, count))
+        if other_count in fn_body:
+            fail("%s wraps on %s, the other axis's count" % (fn, other_count))
+        if re.search(r"\bGENDER_COUNT\b", fn_body):
+            fail(
+                "%s wraps on GENDER_COUNT, which is TWO WIDE and sizes trainer "
+                "tables. The third value is then unreachable from the picker while "
+                "every table that holds it stays correct - nothing fails, the "
+                "option simply is not there" % fn
+            )
+
+    # 9c. EVERY VALUE OF EITHER AXIS HAS A LABEL. A missing row is a NULL that
+    #     the hint prints straight through.
+    for table_name, count, members in (
+        ("gPlayerLookNames", "PLAYER_LOOK_COUNT",
+         ("PLAYER_LOOK_MASC", "PLAYER_LOOK_FEM", "PLAYER_LOOK_ANDRO")),
+        ("gPlayerIdentityNames", "PLAYER_GENDER_COUNT",
+         ("GENDER_MASCULINE", "GENDER_FEMININE", "GENDER_ANDROGYNOUS")),
+    ):
+        m2 = re.search(
+            r"const u8 \*const " + table_name + r"\[([A-Za-z0-9_]+)\]\s*=\s*\{(.*?)\n\};",
+            outfit_c,
+            re.S,
+        )
+        if not m2:
+            fail("%s not found in %s" % (table_name, OUTFIT_C))
+            continue
+        if m2.group(1) != count:
+            fail(
+                "%s is sized [%s], not [%s] - the picker steps over the count, so a "
+                "table shorter than it reads past the end and prints whatever "
+                "follows as a string" % (table_name, m2.group(1), count)
+            )
+        for member in members:
+            if member not in m2.group(2):
                 fail(
-                    "the gender switch does not step gPlayerGenderStops - setting "
-                    "the identity and look fields directly here is what puts the "
-                    "list of pairings in the input handler instead of in the data"
+                    "%s has no row for %s, so that stop prints a NULL label"
+                    % (table_name, member)
                 )
-            if "RebuildOutfitGrid" not in arm:
+
+    # 9d. BOTH HINTS, FROM BOTH PRINT PATHS.
+    hint = re.search(r"static void PrintGenderHints\(void\)\s*\{(.*?)\n\}", menu_c, re.S)
+    if not hint:
+        fail("PrintGenderHints not found in %s" % MENU_C)
+    else:
+        hint_body = hint.group(1)
+        for axis, string, getter in (
+            ("look", "sText_OutfitLookHint", "GetPlayerLookName"),
+            ("identity", "sText_OutfitIdentityHint", "GetPlayerIdentityName"),
+        ):
+            if string not in hint_body or getter not in hint_body:
                 fail(
-                    "the gender switch does not rebuild the grid. Every cell draws "
-                    "its outfit's overworld sprite AT THE CURRENT GENDER, so "
-                    "redrawing only the trainer pics leaves the grid showing the "
-                    "gender the player just stopped being"
+                    "PrintGenderHints does not print the %s hint. The look at least "
+                    "announces itself by redrawing the sprites; identity changes "
+                    "NOTHING on this screen, so an unprinted hint makes SELECT a "
+                    "button that appears to do nothing on the only screen in the "
+                    "game where that choice is offered" % axis
                 )
+
+    for fn in ("SetupOutfitMenu_PrintStr", "UpdateOutfitInfo"):
+        m2 = re.search(
+            r"(?:static )?(?:inline )?void " + fn + r"\(void\)\s*\{(.*?)\n\}", menu_c, re.S
+        )
+        if not m2:
+            fail("%s not found in %s" % (fn, MENU_C))
+        elif "PrintGenderHints()" not in m2.group(1):
+            fail(
+                "%s does not print the gender hints. The setup path and the update "
+                "path draw this window through different functions, so printing "
+                "them in one means the hint appears after the first cursor move - "
+                "after the moment it existed to explain" % fn
+            )
+
+    m2 = re.search(r"sText_OutfitLookHint\[\] = _\(\"([^\"]*)\"\)", menu_c)
+    if not m2 or "{L_BUTTON}{R_BUTTON}" not in m2.group(1):
+        fail("sText_OutfitLookHint does not name the L and R buttons")
+    m2 = re.search(r"sText_OutfitIdentityHint\[\] = _\(\"([^\"]*)\"\)", menu_c)
+    if not m2 or "{SELECT_BUTTON}" not in m2.group(1):
+        fail("sText_OutfitIdentityHint does not name the SELECT button")
 
     # 10. identity and look stay separate, and enum Gender stays two wide
     consts = read(repo, GLOBAL_CONSTANTS)
@@ -769,7 +926,7 @@ BREAKS = [
         ),
     ),
     (
-        "the gender switch reachable outside a new game",
+        "the look switch reachable outside a new game",
         MENU_C,
         lambda s: s.replace(
             "if (sOutfitMenu->newGame && JOY_NEW(L_BUTTON | R_BUTTON))",
@@ -778,7 +935,7 @@ BREAKS = [
         ),
     ),
     (
-        "the gender switch redrawing the pics but not the grid",
+        "the look arm redrawing the pics but not the grid",
         MENU_C,
         lambda s: s.replace(
             "        PlaySE(SE_SELECT);\n        RebuildOutfitGrid();\n        UpdateOutfitInfo();",
@@ -824,9 +981,99 @@ BREAKS = [
         lambda s: s.replace("gSaveBlock2Ptr->playerGenderIdentity", "gSaveBlock2Ptr->playerGender", 1),
     ),
     (
-        "the picker setting the fields itself instead of stepping the table",
+        "the picker setting the field itself instead of stepping the axis",
         MENU_C,
-        lambda s: s.replace("ApplyPlayerGenderStop(stop);", "gSaveBlock2Ptr->playerGender = stop;", 1),
+        lambda s: s.replace(
+            "StepPlayerLook(JOY_NEW(R_BUTTON) ? 1 : -1);",
+            "gSaveBlock2Ptr->playerGender = PLAYER_LOOK_FEM;",
+            1,
+        ),
+    ),
+    (
+        "the look arm stepping the identity, so L and R change nothing visible",
+        MENU_C,
+        lambda s: s.replace(
+            "StepPlayerLook(JOY_NEW(R_BUTTON) ? 1 : -1);",
+            "StepPlayerIdentity(JOY_NEW(R_BUTTON) ? 1 : -1);",
+            1,
+        ),
+    ),
+    (
+        "the identity arm stepping the look, so SELECT redresses the player",
+        MENU_C,
+        lambda s: s.replace("StepPlayerIdentity(1);", "StepPlayerLook(1);", 1),
+    ),
+    (
+        "SELECT losing its arm, so identity is unreachable and defaults forever",
+        MENU_C,
+        lambda s: s.replace(
+            "if (sOutfitMenu->newGame && JOY_NEW(SELECT_BUTTON))", "if (FALSE)", 1
+        ),
+    ),
+    (
+        "the identity switch reachable outside a new game",
+        MENU_C,
+        lambda s: s.replace(
+            "if (sOutfitMenu->newGame && JOY_NEW(SELECT_BUTTON))",
+            "if (JOY_NEW(SELECT_BUTTON))",
+            1,
+        ),
+    ),
+    (
+        "the identity hint never printed, so SELECT looks like a dead button",
+        MENU_C,
+        lambda s: s.replace(
+            "    end = StringCopy(str, sText_OutfitIdentityHint);",
+            "    end = StringCopy(str, sText_OutfitLookHint);",
+            1,
+        ),
+    ),
+    (
+        "the hints drawn from the update path only",
+        MENU_C,
+        lambda s: s.replace(
+            "    PrintGenderHints();\n"
+            "    PrintTexts(WIN_INFO, FONT_NORMAL, 2, 0, COLORID_NORMAL, gOutfits[outfitId].name);",
+            "    PrintTexts(WIN_INFO, FONT_NORMAL, 2, 0, COLORID_NORMAL, gOutfits[outfitId].name);",
+            1,
+        ),
+    ),
+    (
+        "StepPlayerLook writing the identity field",
+        OUTFIT_C,
+        lambda s: s.replace(
+            "gSaveBlock2Ptr->playerGender = (look",
+            "gSaveBlock2Ptr->playerGenderIdentity = (look",
+            1,
+        ),
+    ),
+    (
+        "StepPlayerIdentity writing the look field",
+        OUTFIT_C,
+        lambda s: s.replace(
+            "gSaveBlock2Ptr->playerGenderIdentity = (identity",
+            "gSaveBlock2Ptr->playerGender = (identity",
+            1,
+        ),
+    ),
+    (
+        "the look wrapping on the two-wide count, so ENBY is unreachable",
+        OUTFIT_C,
+        lambda s: s.replace(
+            "(look + PLAYER_LOOK_COUNT + delta) % PLAYER_LOOK_COUNT",
+            "(look + GENDER_COUNT + delta) % GENDER_COUNT",
+            1,
+        ),
+    ),
+    (
+        "a look with no label, printed as a NULL",
+        OUTFIT_C,
+        lambda s: s.replace('    [PLAYER_LOOK_ANDRO] = COMPOUND_STRING("ENBY"),\n', "", 1),
+    ),
+    (
+        "an identity with no label, printed as a NULL",
+        OUTFIT_C,
+        lambda s: s.replace('    [GENDER_ANDROGYNOUS] = COMPOUND_STRING("ENBY"),\n', "", 1),
     ),
 ]
 
