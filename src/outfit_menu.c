@@ -16,6 +16,9 @@
 #include "list_menu.h"
 #include "menu.h"
 #include "menu_helpers.h"
+#include "field_effect.h"
+#include "international_string_util.h"
+#include "strings.h"
 #include "outfit.h"
 #include "outfit_menu.h"
 #include "overworld.h"
@@ -61,6 +64,10 @@ enum Windows {
     WIN_INFO = 0,
     WIN_MSGBOX,
 };
+
+// 23 tiles wide, from sWindowTemplates. Named so the gender hint's right-align
+// cannot fall out of step with the window it is aligned inside.
+#define WIN_INFO_WIDTH_PX (23 * 8)
 
 enum Sprites {
     GFX_OW = 0, // reserved: the overworld preview, not built yet
@@ -127,8 +134,10 @@ static void Task_CloseOutfitMenu(u8 taskId);
 static u32 BuildOutfitLists(void);
 static inline void UpdateOutfitInfo(void);
 static void UpdateCursorPosition(void);
+static void PrintGenderHint(void);
 
 static const u8 sText_OutfitLocked[] = _("???");
+static const u8 gText_OutfitGenderHint[] = _("{L_BUTTON}{R_BUTTON} ");
 static const u8 sText_OutfitLockedMsg[] =
 _(
     "You don't have this OUTFIT yet.\n"
@@ -528,8 +537,15 @@ static void SetupOutfitMenu_Windows(void)
 
 static void SetupOutfitMenu_PrintStr(void)
 {
-    PrintTexts(WIN_INFO, FONT_NORMAL, 2, 0, COLORID_NORMAL, gOutfits[gSaveBlock2Ptr->currOutfitId].name);
-    PrintTexts(WIN_INFO, FONT_NORMAL, 2, 16, COLORID_NORMAL, gOutfits[gSaveBlock2Ptr->currOutfitId].desc);
+    // Sanitized, unlike the original. Every other read of currOutfitId goes
+    // through this and it costs nothing to be consistent; indexing gOutfits
+    // with a raw save byte is one corrupt save away from reading past the
+    // table for a name and a description.
+    u32 outfitId = GetCurrentOutfitId();
+
+    PrintGenderHint();
+    PrintTexts(WIN_INFO, FONT_NORMAL, 2, 0, COLORID_NORMAL, gOutfits[outfitId].name);
+    PrintTexts(WIN_INFO, FONT_NORMAL, 2, 16, COLORID_NORMAL, gOutfits[outfitId].desc);
     CopyWindowToVram(WIN_INFO, COPYWIN_FULL);
 }
 
@@ -631,11 +647,10 @@ static void SpriteCB_Indicator(struct Sprite *s)
 
 static inline void ForEachCB_DrawIndicatorSprites(u32 idx, u32 col, u32 row)
 {
-    u32 x, y, i;
+    u32 x, y;
     if (idx >= sOutfitMenu->listCount)
         return;
 
-    i = sOutfitMenu->grid->topLeftItemIndex + idx;
     x = ((col % GRID_COLS) < ARRAY_COUNT(sGridPosX)) ? sGridPosX[col] : sGridPosX[0];
     y = ((row % GRID_ROWS) < ARRAY_COUNT(sGridPosY)) ? sGridPosY[row] : sGridPosY[0];
     x -= 8, y -= 8;
@@ -695,26 +710,67 @@ static void ForEachCB_PopulateOutfitOverworlds(u32 idx, u32 col, u32 row)
     }
 }
 
+// THE GRID ICONS ARE CreateObjectGraphicsSprite SPRITES, AND DESTROYING ONE
+// FREES NEITHER OF THE TWO THINGS IT ALLOCATED. That call loads a sheet (when
+// OW_GFX_COMPRESS is on, which it is) and one of the sixteen OBJ palette slots;
+// DestroySprite's tile-freeing branch is the !usingSheet one, so it releases
+// nothing here. This function was called Free and only destroyed.
+//
+// It never showed, because the only caller was the scroll path and two outfits
+// do not fill a four-row grid - so it has never once run in this build. The
+// gender switch below rebuilds the grid on every press, which is what turns a
+// dormant leak into sixteen palette slots gone in about four seconds.
+//
+// The ordering is the flier rule, and every clause of it earns its place:
+// read the fields BEFORE destroying (DestroySprite zeroes the struct, and zero
+// is a real tile start and a real palette number, so reading after frees
+// something else's), destroy BEFORE freeing (the *IfUnused scans count this
+// sprite until inUse clears), and use the SCANNING variants (two outfits can
+// share one graphics id, and on this screen they usually do).
+// tools/rogue/check_flier_lifetime.py states the whole rule.
 static void ForAllCB_FreeOutfitOverworlds(u32 idx, u32 col, u32 row)
 {
+    struct Sprite *sprite;
+    u16 tileStart;
+    u8 paletteNum;
+    bool32 usingSheet;
+
     if (sOutfitMenu->grid->iconSpriteIds[idx] == SPRITE_NONE)
         return;
 
-    if (gSprites[sOutfitMenu->grid->iconSpriteIds[idx]].inUse)
+    sprite = &gSprites[sOutfitMenu->grid->iconSpriteIds[idx]];
+    if (sprite->inUse)
     {
-        DestroySprite(&gSprites[sOutfitMenu->grid->iconSpriteIds[idx]]);
+        tileStart = sprite->sheetTileStart;
+        paletteNum = sprite->oam.paletteNum;
+        usingSheet = sprite->usingSheet;
+
+        DestroySprite(sprite);
+
+        if (usingSheet)
+            FieldEffectFreeTilesIfUnused(tileStart);
+        FieldEffectFreePaletteIfUnused(paletteNum);
     }
 
     sOutfitMenu->grid->iconSpriteIds[idx] = SPRITE_NONE;
 }
 
-static void InputCB_UpDownScroll(void)
+// Every icon in the grid is rebuilt from scratch. Extracted so the scroll and
+// the gender switch cannot drift apart - the gender switch has to redraw
+// exactly what the scroll does, because both change which graphics id every
+// cell resolves to.
+static void RebuildOutfitGrid(void)
 {
-    sOutfitMenu->idx = sOutfitMenu->list[GridMenu_SelectedIndex(sOutfitMenu->grid)];
     GridMenu_ForAll(sOutfitMenu->grid, ForAllCB_FreeOutfitOverworlds);
     GridMenu_ForAll(sOutfitMenu->grid, ForAllCb_DestroyIndicatorSprites);
     GridMenu_ForEach(sOutfitMenu->grid, ForEachCB_PopulateOutfitOverworlds);
     GridMenu_ForEach(sOutfitMenu->grid, ForEachCB_DrawIndicatorSprites);
+}
+
+static void InputCB_UpDownScroll(void)
+{
+    sOutfitMenu->idx = sOutfitMenu->list[GridMenu_SelectedIndex(sOutfitMenu->grid)];
+    RebuildOutfitGrid();
     UpdateOutfitInfo();
     if (!IsSEPlaying())
         PlaySE(SE_RG_BAG_CURSOR);
@@ -779,9 +835,30 @@ static void SetupOutfitMenu_Grids(void)
 
 //! Similar to above, but without redrawing the frame
 //! and also clean up the frame.
+// Right-aligned on the name row, new game only. The trainer pics do change
+// when L or R is pressed, but nothing on the screen otherwise says the buttons
+// do anything at all - and this is the only screen in the game where the
+// player picks their gender, so it cannot be left to be discovered.
+static void PrintGenderHint(void)
+{
+    const u8 *name = (gSaveBlock2Ptr->playerGender == MALE) ? gText_Boy : gText_Girl;
+    u8 str[24];
+    u8 *end;
+
+    if (!sOutfitMenu->newGame)
+        return;
+
+    end = StringCopy(str, gText_OutfitGenderHint);
+    StringCopy(end, name);
+    PrintTexts(WIN_INFO, FONT_SMALL,
+               GetStringRightAlignXOffset(FONT_SMALL, str, WIN_INFO_WIDTH_PX - 2), 2,
+               COLORID_NORMAL, str);
+}
+
 static inline void UpdateOutfitInfo(void)
 {
     FillWindowPixelBuffer(WIN_INFO, PIXEL_FILL(0));
+    PrintGenderHint();
 
     if (IsOutfitUnlocked(sOutfitMenu->idx) == FALSE)
     {
@@ -893,6 +970,30 @@ static void Task_OutfitMenuHandleInput(u8 taskId)
             sOutfitMenu->retCB = sOutfitMenu->backCB;
         }
         CloseOutfitMenu(taskId);
+        return;
+    }
+
+    // GENDER, NEW GAME ONLY. Changing it later would mean rewriting the
+    // player's object event, the trainer card, every met-location record's
+    // implied trainer and the save's own idea of who it belongs to - this
+    // screen is simply where the choice is made, in place of the Birch speech
+    // this project does not run.
+    if (sOutfitMenu->newGame && JOY_NEW(L_BUTTON | R_BUTTON))
+    {
+        // CYCLED, not toggled, and through GENDER_COUNT rather than a flip
+        // between two named values - so a third gender is an enum member and
+        // one more art row, with nothing here to revisit.
+        if (JOY_NEW(R_BUTTON))
+            gSaveBlock2Ptr->playerGender = (gSaveBlock2Ptr->playerGender + 1) % GENDER_COUNT;
+        else
+            gSaveBlock2Ptr->playerGender = (gSaveBlock2Ptr->playerGender + GENDER_COUNT - 1) % GENDER_COUNT;
+
+        // The grid too, not only the big pics: every cell draws that outfit's
+        // overworld sprite for the current gender, so leaving them alone shows
+        // the player a row of the gender they just stopped being.
+        PlaySE(SE_SELECT);
+        RebuildOutfitGrid();
+        UpdateOutfitInfo();
         return;
     }
 

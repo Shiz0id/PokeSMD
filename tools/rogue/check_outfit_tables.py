@@ -66,6 +66,25 @@ WHAT IT ASSERTS.
      This is the jukebox-funnel shape: four sites, one rule, and missing any
      one of them breaks the feature at a different moment with a clean build.
 
+  8. THE GRID ICONS ARE BORROWED ALLOCATIONS, and this is the flier rule again.
+     CreateObjectGraphicsSprite takes a sheet and one of sixteen OBJ palette
+     slots; DestroySprite gives back neither, because its tile-freeing branch
+     is the !usingSheet one and OW_GFX_COMPRESS puts these on the other. Read
+     the fields before destroying, destroy before freeing, and use the
+     scanning *IfUnused variants. tools/rogue/check_flier_lifetime.py states
+     the whole rule; this asserts the same pairing at a second site.
+
+     It leaked here from the day it was ported and never showed, because the
+     only caller was the scroll path and two outfits do not fill a four-row
+     grid. The gender switch rebuilds on every press, which is what turns a
+     dormant leak into an empty palette table in about four seconds.
+
+  9. THE GENDER SWITCH IS NEW GAME ONLY, cycles through GENDER_COUNT rather
+     than flipping between two named values, and rebuilds the GRID as well as
+     the trainer pics - every cell draws its outfit at the current gender, so
+     redrawing only the pics leaves a row of who the player just stopped
+     being.
+
 COMPARISONS RUN ON VALUES, NOT SPELLINGS, and that was not true when this file
 was first written: the alias-shaped break below passed on its first run,
 because two different tokens naming one id compared as different. Every id is
@@ -120,6 +139,20 @@ MACRO_DEF = (
 
 def read(repo, path):
     return (repo / path).read_text(encoding="utf-8")
+
+
+def strip_comments(text):
+    """Drop // and /* */ comments.
+
+    EVERY ASSERTION ABOUT CODE RUNS THROUGH THIS, and the selftest is why. The
+    GENDER_COUNT break replaced the cycling arithmetic with a two-way flip and
+    still passed, because the comment directly above the line explains that it
+    cycles through GENDER_COUNT - so the token was still in the text being
+    searched. An assertion that a well-written comment can satisfy is checking
+    the documentation, not the code.
+    """
+    text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
+    return re.sub(r"//[^\n]*", "", text)
 
 
 def macro_map(repo):
@@ -291,6 +324,10 @@ def check(repo, fail):
     main_menu = read(repo, MAIN_MENU)
     menu_c = read(repo, MENU_C)
 
+    outfit_c = strip_comments(outfit_c)
+    main_menu = strip_comments(main_menu)
+    menu_c = strip_comments(menu_c)
+
     reset = re.search(r"void ResetOutfitData\(void\)\s*\{(.*?)\n\}", outfit_c, re.S)
     if not reset:
         fail("ResetOutfitData not found in %s" % OUTFIT_C)
@@ -357,6 +394,79 @@ def check(repo, fail):
                 "the on-foot test comes before the new game arm in "
                 "Task_OutfitMenuHandleInput, so the new game arm cannot be reached"
             )
+
+    # 8. THE GRID ICONS ARE BORROWED ALLOCATIONS. CreateObjectGraphicsSprite
+    #    takes a sheet and an OBJ palette slot; DestroySprite gives back
+    #    neither. The gender switch rebuilds the grid on every press, so a
+    #    free path that only destroys empties the palette table in seconds.
+    free_fn = re.search(
+        r"static void ForAllCB_FreeOutfitOverworlds\(.*?\)\s*\{(.*?)\n\}", menu_c, re.S
+    )
+    if not free_fn:
+        fail("ForAllCB_FreeOutfitOverworlds not found in %s" % MENU_C)
+    else:
+        body = free_fn.group(1)
+        for needed, why in (
+            ("FieldEffectFreePaletteIfUnused",
+             "the OBJ palette CreateObjectGraphicsSprite loaded is never given back"),
+            ("FieldEffectFreeTilesIfUnused",
+             "the sheet is never given back - DestroySprite frees tiles only on "
+             "the !usingSheet branch, and OW_GFX_COMPRESS puts these on the other one"),
+        ):
+            if needed not in body:
+                fail("ForAllCB_FreeOutfitOverworlds does not call %s: %s" % (needed, why))
+
+        if "DestroySprite" in body and "FieldEffectFreePaletteIfUnused" in body:
+            if body.index("DestroySprite") > body.index("FieldEffectFreePaletteIfUnused"):
+                fail(
+                    "ForAllCB_FreeOutfitOverworlds frees before it destroys - the "
+                    "*IfUnused scans count this very sprite until DestroySprite "
+                    "clears inUse, so they decline and it leaks anyway"
+                )
+        # The fields must be read out before the destroy zeroes the struct.
+        for field in ("sheetTileStart", "oam.paletteNum"):
+            m2 = re.search(re.escape(field), body)
+            if not m2:
+                fail("ForAllCB_FreeOutfitOverworlds never reads %s" % field)
+            elif "DestroySprite" in body and m2.start() > body.index("DestroySprite"):
+                fail(
+                    "ForAllCB_FreeOutfitOverworlds reads %s after DestroySprite, "
+                    "which zeroes the struct - and zero is a real tile start and a "
+                    "real palette number, so this frees something else's" % field
+                )
+
+    # 9. THE GENDER SWITCH. New game only, cycled through GENDER_COUNT rather
+    #    than flipped between two names, and it must rebuild the GRID as well
+    #    as the trainer pics - every cell draws its outfit at the current
+    #    gender, so pics-only leaves a row of who the player just stopped being.
+    if not handler:
+        pass  # already reported
+    else:
+        body = handler.group(1)
+        gender_arm = re.search(r"if\s*\(\s*sOutfitMenu->newGame\s*&&\s*JOY_NEW\(L_BUTTON \| R_BUTTON\)\s*\)", body)
+        if not gender_arm:
+            fail(
+                "no `if (sOutfitMenu->newGame && JOY_NEW(L_BUTTON | R_BUTTON))` arm "
+                "in Task_OutfitMenuHandleInput - the gender switch must be new game "
+                "only, because changing gender later would leave the trainer card, "
+                "the player object and the save disagreeing about who this is"
+            )
+        else:
+            arm = body[gender_arm.start() :]
+            arm = arm[: arm.index("\n    }") + 6] if "\n    }" in arm else arm
+            if "GENDER_COUNT" not in arm:
+                fail(
+                    "the gender switch does not cycle through GENDER_COUNT - a flip "
+                    "between two named values is the one thing that makes adding a "
+                    "third gender a code change rather than a data change"
+                )
+            if "RebuildOutfitGrid" not in arm:
+                fail(
+                    "the gender switch does not rebuild the grid. Every cell draws "
+                    "its outfit's overworld sprite AT THE CURRENT GENDER, so "
+                    "redrawing only the trainer pics leaves the grid showing the "
+                    "gender the player just stopped being"
+                )
 
     # 6. the struct is sized by GENDER_COUNT throughout
     sm = re.search(r"struct Outfit\s*\{(.*?)\n\};", struct, re.S)
@@ -495,6 +605,77 @@ BREAKS = [
         "the picker losing its new game arm to the on-foot test",
         MENU_C,
         lambda s: s.replace("        else if (sOutfitMenu->newGame)", "        else if (FALSE)", 1),
+    ),
+    (
+        "the grid icons destroyed without their palette given back",
+        MENU_C,
+        lambda s: s.replace("        FieldEffectFreePaletteIfUnused(paletteNum);\n", "", 1),
+    ),
+    (
+        "the grid icons destroyed without their sheet given back",
+        MENU_C,
+        lambda s: s.replace(
+            "        if (usingSheet)\n            FieldEffectFreeTilesIfUnused(tileStart);\n", "", 1
+        ),
+    ),
+    (
+        "freeing before destroying, so the scans decline and it leaks anyway",
+        MENU_C,
+        lambda s: s.replace(
+            "        DestroySprite(sprite);\n\n        if (usingSheet)\n"
+            "            FieldEffectFreeTilesIfUnused(tileStart);\n"
+            "        FieldEffectFreePaletteIfUnused(paletteNum);",
+            "        if (usingSheet)\n"
+            "            FieldEffectFreeTilesIfUnused(tileStart);\n"
+            "        FieldEffectFreePaletteIfUnused(paletteNum);\n\n"
+            "        DestroySprite(sprite);",
+            1,
+        ),
+    ),
+    (
+        "reading the palette number after the struct has been zeroed",
+        MENU_C,
+        lambda s: s.replace(
+            "        tileStart = sprite->sheetTileStart;\n"
+            "        paletteNum = sprite->oam.paletteNum;\n"
+            "        usingSheet = sprite->usingSheet;\n\n"
+            "        DestroySprite(sprite);",
+            "        tileStart = sprite->sheetTileStart;\n"
+            "        usingSheet = sprite->usingSheet;\n\n"
+            "        DestroySprite(sprite);\n"
+            "        paletteNum = sprite->oam.paletteNum;",
+            1,
+        ),
+    ),
+    (
+        "the gender switch reachable outside a new game",
+        MENU_C,
+        lambda s: s.replace(
+            "if (sOutfitMenu->newGame && JOY_NEW(L_BUTTON | R_BUTTON))",
+            "if (JOY_NEW(L_BUTTON | R_BUTTON))",
+            1,
+        ),
+    ),
+    (
+        "the gender switch flipping two names instead of cycling GENDER_COUNT",
+        MENU_C,
+        lambda s: s.replace(
+            "        if (JOY_NEW(R_BUTTON))\n"
+            "            gSaveBlock2Ptr->playerGender = (gSaveBlock2Ptr->playerGender + 1) % GENDER_COUNT;\n"
+            "        else\n"
+            "            gSaveBlock2Ptr->playerGender = (gSaveBlock2Ptr->playerGender + GENDER_COUNT - 1) % GENDER_COUNT;",
+            "        gSaveBlock2Ptr->playerGender = (gSaveBlock2Ptr->playerGender == MALE) ? FEMALE : MALE;",
+            1,
+        ),
+    ),
+    (
+        "the gender switch redrawing the pics but not the grid",
+        MENU_C,
+        lambda s: s.replace(
+            "        PlaySE(SE_SELECT);\n        RebuildOutfitGrid();\n        UpdateOutfitInfo();",
+            "        PlaySE(SE_SELECT);\n        UpdateOutfitInfo();",
+            1,
+        ),
     ),
     (
         "struct sized by a literal instead of GENDER_COUNT",
