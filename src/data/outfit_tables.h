@@ -204,14 +204,16 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
                 // and this project refused, kept here to the one row where the
                 // source art actually works that way.
                 [PLAYER_AVATAR_STATE_MACH_BIKE]  = OBJ_EVENT_GFX_RED_BIKE,
-                // THE ACRO BIKE IS THE DEFAULT'S, and this is the same hang as
-                // the RS one above rather than an art preference. The acro bike
-                // state plays wheelie and hop anims at ids 20-39;
-                // OBJ_EVENT_GFX_RED_BIKE is on sAnimTable_Standard, which stops
-                // at 19. FRLG has no acro bike at all, so its own macro points
-                // the state at this sprite and never exercises it - here both
-                // bikes are granted on floor one.
-                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_GFX_MALE_ACRO_BIKE, // no FRLG art
+                // THE ACRO BIKE IS RED'S OWN NOW. It used to fall back to the
+                // default outfit's, which built and ran and turned the player
+                // into Brendan on floor one - both bikes are granted there.
+                // FRLG has no acro bike art, so this sheet is GENERATED:
+                // Brendan's 27 acro poses, index-remapped to the FRLG palette,
+                // with Red's own head pasted at a per-frame offset. See
+                // tools/rogue/compose_acro_bike.py. The plain red_bike sheet
+                // still cannot serve this state - nine frames against the 27
+                // sAnimTable_AcroBike indexes.
+                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = OBJ_EVENT_GFX_RED_ACRO_BIKE,
                 [PLAYER_AVATAR_STATE_SURFING]    = OBJ_EVENT_GFX_RED_SURF,
                 // Kanto has no diving, so the surf sprite stands in - the same
                 // choice PLAYER_AVATAR_GFX_MALE_UNDERWATER makes on an FRLG build.
@@ -220,7 +222,7 @@ const struct Outfit gOutfits[OUTFIT_COUNT] =
             [FEMALE] = {
                 [PLAYER_AVATAR_STATE_NORMAL]     = OBJ_EVENT_GFX_GREEN_NORMAL,
                 [PLAYER_AVATAR_STATE_MACH_BIKE]  = OBJ_EVENT_GFX_GREEN_BIKE,
-                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PLAYER_AVATAR_GFX_FEMALE_ACRO_BIKE, // no FRLG art
+                [PLAYER_AVATAR_STATE_ACRO_BIKE]  = OBJ_EVENT_GFX_GREEN_ACRO_BIKE,
                 [PLAYER_AVATAR_STATE_SURFING]    = OBJ_EVENT_GFX_GREEN_SURF,
                 [PLAYER_AVATAR_STATE_UNDERWATER] = OBJ_EVENT_GFX_GREEN_SURF,
             },

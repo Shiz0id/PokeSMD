@@ -550,12 +550,20 @@ const u16 gObjectEventPic_RedSurfRun[] = INCGFX_U16("graphics/object_events/pics
 const u16 gObjectEventPic_RedFish[] = INCGFX_U16("graphics/object_events/pics/people/red/red_fish.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u16 gObjectEventPic_RedItem[] = INCGFX_U16("graphics/object_events/pics/people/red/red_item.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_RedVSSeekerBike[] = INCGFX_U16("graphics/object_events/pics/people/red/red_vs_seeker_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+// GENERATED, not drawn - tools/rogue/compose_acro_bike.py builds it from
+// Brendan's acro poses and Red's own head. FireRed has no acro bike and so no
+// art for one; this project grants both bikes on floor one, so the state is
+// reachable and OBJ_EVENT_GFX_RED_BIKE cannot serve it - nine frames against
+// the 27 sAnimTable_AcroBike indexes. Re-run the tool, do not hand-edit.
+const u16 gObjectEventPic_RedAcroBike[] = INCGFX_U16("graphics/object_events/pics/people/red/red_acro_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u16 gObjectEventPic_GreenNormal[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_normal.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_GreenBike[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u16 gObjectEventPic_GreenSurf[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_surf.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u16 gObjectEventPic_GreenSurfRun[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_surf_run.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_GreenFish[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_fish.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u16 gObjectEventPic_GreenItem[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_item.png", ".4bpp", "-mwidth 2 -mheight 4");
+// Generated, as Red's above. Same tool, same reason.
+const u16 gObjectEventPic_GreenAcroBike[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_acro_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u16 gObjectEventPic_GreenVSSeekerBike[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_vs_seeker_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
 
 const u16 gObjectEventPal_PlayerFrlg[] = INCGFX_U16("graphics/object_events/palettes/player_frlg.pal", ".gbapal");

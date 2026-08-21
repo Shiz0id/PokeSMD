@@ -107,6 +107,8 @@ extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldFieldMo
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldFishing;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldWatering;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldDecorating;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RedAcroBike;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenAcroBike;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_MayMachBike;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_MayAcroBike;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_MaySurfing;
@@ -587,6 +589,8 @@ const struct ObjectEventGraphicsInfo *const gObjectEventGraphicsInfoPointers[NUM
     [OBJ_EVENT_GFX_GOLD_FISHING] =             &gObjectEventGraphicsInfo_GoldFishing,
     [OBJ_EVENT_GFX_GOLD_WATERING] =            &gObjectEventGraphicsInfo_GoldWatering,
     [OBJ_EVENT_GFX_GOLD_DECORATING] =          &gObjectEventGraphicsInfo_GoldDecorating,
+    [OBJ_EVENT_GFX_RED_ACRO_BIKE] =            &gObjectEventGraphicsInfo_RedAcroBike,
+    [OBJ_EVENT_GFX_GREEN_ACRO_BIKE] =          &gObjectEventGraphicsInfo_GreenAcroBike,
     [OBJ_EVENT_GFX_RS_BRENDAN_NORMAL] =        &gObjectEventGraphicsInfo_RSBrendanPlayer,
     [OBJ_EVENT_GFX_RS_MAY_NORMAL] =            &gObjectEventGraphicsInfo_RSMayPlayer,
     [OBJ_EVENT_GFX_ROGUE_EGG] = &gObjectEventGraphicsInfo_RogueEgg,

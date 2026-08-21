@@ -501,6 +501,12 @@ enum
     OBJ_EVENT_GFX_GOLD_FISHING,
     OBJ_EVENT_GFX_GOLD_WATERING,
     OBJ_EVENT_GFX_GOLD_DECORATING,
+    // FRLG ACRO BIKES. Appended rather than taking OBJ_EVENT_GFX_UNUSED_250,
+    // which sits in the middle of the FRLG block: filling a hole there is a
+    // renumber waiting to be mistaken for a free slot. The art is generated -
+    // see tools/rogue/compose_acro_bike.py.
+    OBJ_EVENT_GFX_RED_ACRO_BIKE,
+    OBJ_EVENT_GFX_GREEN_ACRO_BIKE,
     // THE RS OUTFIT'S PLAYER SPRITE, which is NOT the same thing as
     // OBJ_EVENT_GFX_LINK_RS_BRENDAN above. That one is an NPC: a nine-frame
     // sheet on sAnimTable_Standard, which defines anim ids 0-19 and stops.

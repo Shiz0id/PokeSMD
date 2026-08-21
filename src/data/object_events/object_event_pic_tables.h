@@ -1508,6 +1508,18 @@ static const struct SpriteFrameImage sPicTable_RedBike[] = {
     overworld_frame(gObjectEventPic_RedBike, 4, 4, 8),
 };
 
+// TWENTY-SEVEN FRAMES, ascending, because the generated sheet is laid out to
+// match Brendan's acro sheet exactly - which is the whole point of generating
+// it rather than pointing the acro state at the nine-frame red_bike sheet and
+// reading eighteen SpriteFrameImages past the end.
+static const struct SpriteFrameImage sPicTable_RedAcroBike[] = {
+    overworld_ascending_frames(gObjectEventPic_RedAcroBike, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_GreenAcroBike[] = {
+    overworld_ascending_frames(gObjectEventPic_GreenAcroBike, 4, 4),
+};
+
 static const struct SpriteFrameImage sPicTable_GreenNormal[] = {
     overworld_frame(gObjectEventPic_GreenNormal, 2, 4, 0),
     overworld_frame(gObjectEventPic_GreenNormal, 2, 4, 1),
